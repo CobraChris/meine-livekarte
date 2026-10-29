@@ -29,6 +29,19 @@
       return { name, lat, lng, category, description: description.join('; ') };
     }));
   }
+  // Merge recommendations without replacing saved places; keep existing metadata on duplicates.
+  function merge(existing, incoming) {
+    const combined = [];
+    const seen = new Set();
+    for (const place of [...normalize(existing), ...normalize(incoming)]) {
+      const key = JSON.stringify([place.name, place.lat, place.lng]);
+      if (seen.has(key)) continue;
+      if (combined.length >= 200) throw new Error('Maximal 200 verschiedene Orte möglich. Bitte zunächst Orte entfernen.');
+      seen.add(key);
+      combined.push(place);
+    }
+    return combined;
+  }
   function encode(places) { return '#places=' + encodeURIComponent(JSON.stringify(normalize(places))); }
   function decode(hash) {
     if (!hash.startsWith('#places=')) return null;
@@ -40,7 +53,7 @@
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, parse, encode, decode, distance };
+  const api = { categories, normalize, merge, parse, encode, decode, distance };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);

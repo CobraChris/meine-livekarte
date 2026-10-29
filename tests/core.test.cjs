@@ -23,3 +23,21 @@ test('distance uses great-circle meters including same point and antipodes',()=>
  assert.ok(Math.abs(C.distance({lat:0,lng:0},{lat:0,lng:1})-111195)<1);
  assert.ok(Number.isFinite(C.distance({lat:0,lng:0},{lat:0,lng:180})));
 });
+
+test('merging new recommendations preserves saved ones and removes duplicates', () => {
+ const b = {name:'Gora Bahnhof',lat:35.25077,lng:139.04819,category:'station',description:'Bahnhof'};
+ const c = {name:'Hakone-Schrein',lat:35.20396,lng:139.02557,category:'sight',description:'Schrein'};
+ const saved = C.merge([b], [b, c]);
+ assert.deepEqual(saved, [b, c]);
+ assert.deepEqual(C.merge(saved, [c]), [b, c]);
+ assert.deepEqual(C.merge([], [p]), [p]);
+ const duplicate = {...b,description:'Neue Beschreibung'};
+ assert.deepEqual(C.merge([b],[duplicate]),[b]); // Keep earlier saved metadata.
+});
+test('merging checks maximum unique place limit and does not mutate inputs', () => {
+ const entries = Array.from({length:200}, (_,i)=>({...p,name:'Ort ' + i}));
+ const original = JSON.stringify(entries);
+ assert.equal(C.merge(entries,[entries[0]]).length,200);
+ assert.throws(()=>C.merge(entries,[{...p,name:'Ort 200'}]),/200/);
+ assert.equal(JSON.stringify(entries),original);
+});
