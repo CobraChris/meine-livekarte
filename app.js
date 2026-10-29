@@ -150,8 +150,8 @@
     // georeferenced platform positions or a pedestrian routing claim.
     const root = node('div',undefined,'rail-station-map');
     root.setAttribute('role','group');
-    root.setAttribute('aria-label','Schematische Gleisübersicht Hakone-Yumoto. Gleis 3 Richtung Gōra; Ankunft um 09:16 Gleis vor Ort prüfen; Abfahrt 09:24 von Gleis 2 Richtung Odawara.');
-    root.append(node('div','GLEISORIENTIERUNG · SCHEMATISCH','rail-map-heading'));
+    root.setAttribute('aria-label','Schematische Umstiegshilfe Hakone-Yumoto. Ankunft 09:16 aus Gōra: Ankunftsgleis vor Ort prüfen. Gleis 2: Abfahrt 09:24 nach Odawara. Gleis 2 und 3 liegen an einem durchgehenden Bahnsteigbereich; Weg ebenerdig. Umsteigezeit 8 Minuten.');
+    root.append(node('div','UMSTEIGEN · DEUTSCH','rail-map-heading'));
     const track3 = node('div',undefined,'rail-track-label rail-track-label-gora');
     track3.append(node('strong','Gleis 3'),node('span','Richtung Gōra'));
     const track2 = node('div',undefined,'rail-track-label rail-track-label-odawara');
@@ -159,11 +159,11 @@
     const arrival = node('div',undefined,'rail-arrival-note');
     arrival.append(node('span','09:16 Ankunft aus Gōra'),node('strong','Gleis vor Ort prüfen'));
     const crossing = node('div',undefined,'rail-crossing');
-    crossing.append(node('span','8 Min. Umstieg'),node('span','↘','rail-crossing-arrow'));
+    crossing.append(node('span','2 ↔ 3 am selben Bahnsteig','rail-crossing-main'),node('span','Ebenerdig weitergehen','rail-crossing-sub'));
     const disclosure = node('div',undefined,'rail-map-disclosure');
-    disclosure.append(node('span','Gleispositionen nicht vermessen'));
-    const info = node('a','Offizieller Gleisplan ↗','rail-map-official');
-    info.href = 'https://www.odakyu.jp/station/hakone_yumoto/homeview/';
+    disclosure.append(node('span','8 Min. bis zur Abfahrt · Ankunftsgleis prüfen'));
+    const info = node('a','Plan auf Englisch ↗','rail-map-official');
+    info.href = 'https://www.hakonenavi.jp/international/en/station/yumoto';
     info.target = '_blank';
     info.rel = 'noopener noreferrer';
     info.addEventListener('click', e => e.stopPropagation());
