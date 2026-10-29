@@ -41,3 +41,22 @@ test('merging checks maximum unique place limit and does not mutate inputs', () 
  assert.throws(()=>C.merge(entries,[{...p,name:'Ort 200'}]),/200/);
  assert.equal(JSON.stringify(entries),original);
 });
+
+test('compass accepts absolute magnetic-north headings but not relative yaw', () => {
+ assert.equal(C.compassHeading({absolute:true,alpha:0}),0);
+ assert.equal(C.compassHeading({absolute:true,alpha:90}),270);
+ assert.equal(C.compassHeading({absolute:true,alpha:270}),90);
+ assert.equal(C.compassHeading({absolute:true,alpha:359}),1);
+ assert.equal(C.compassHeading({absolute:false,alpha:45}),null);
+ assert.equal(C.compassHeading({alpha:45}),null);
+ assert.equal(C.compassHeading({absolute:true,alpha:null}),null);
+ assert.equal(C.compassHeading({absolute:true,alpha:NaN}),null);
+ assert.equal(C.compassHeading({absolute:true,alpha:Infinity}),null);
+ assert.equal(C.compassHeading(null),null);
+});
+test('iOS compass heading takes precedence over relative alpha', () => {
+ assert.equal(C.compassHeading({absolute:false,alpha:15,webkitCompassHeading:124}),124);
+ assert.equal(C.compassHeading({absolute:true,alpha:40,webkitCompassHeading:200}),200);
+ assert.equal(C.compassHeading({webkitCompassHeading:360}),0);
+ assert.equal(C.compassHeading({webkitCompassHeading:-10}),350);
+});
