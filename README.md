@@ -35,6 +35,15 @@ Berlin Hauptbahnhof;52.5251;13.3694;station;Zentraler Bahnhof
 
 JSON unterstützt auch `{ "places": [...] }`, einzelne Objekte, Markdown-Codeblöcke und `lon` als Alternative zu `lng`. Eingaben werden validiert und nur als Text angezeigt, niemals als HTML.
 
+## Reiseplan als Kartenlink
+
+Die Live-Karte unterstützt außerdem einen separaten Reiseplan über einen Link mit `#trip=`.
+Ein Reiseplan enthält Datum, Stationen, Ankunfts- und Abfahrtszeiten und den jeweiligen nächsten Zug. Er erscheint als **nummerierte Stationen**, **schematische gestrichelte Verbindungslinie** und **Zeitleiste mit Umstiegen**. Via-Punkte lassen sich für den ungefähren Streckenverlauf hinzufügen, sie sind keine gesonderten Umstiege.
+
+Zum Erstellen kann `MapCore.encodeJourney({title,date,stops:[...]})` verwendet werden. Ein Stop hat `name`, `lat`, `lng` und optional `arrival`, `departure`, `description`, `leg` sowie `via` (Liste von Koordinatenpaaren für die Verbindung zur nächsten Station).
+
+Der Reiseplan wird lokal und **getrennt von den gesammelten Empfehlungen** gespeichert. „Reiseplan entfernen“ löscht ihn, nicht deine Empfehlungen. Reisepläne enthalten **keine GPS-Position**. Alle Linien sind ausdrücklich *schematisch* und keine exakten Gleisgeometrien oder Echtzeit-Routen. Abfahrtsgleis und Zeiten am Reisetag überprüfen.
+
 ## Datenschutz
 
 GPS und Kompass starten ausschließlich beim Tippen auf „GPS einschalten“ und werden nur im Arbeitsspeicher verarbeitet. GPS-Koordinaten und Ausrichtung werden weder lokal gespeichert noch in Links oder Navigations-URLs eingefügt. Der Kompass wird beim Ausschalten der Ortung wieder abgemeldet. Je nach Gerät, Browser und Sensorkalibrierung kann die Ausrichtung fehlen oder ungenau sein. Der Pfeil zeigt die **Geräteausrichtung**, nicht die Bewegungsrichtung oder eine geplante Route. Ausschalten und Verlassen der Seite beenden die Standortabfrage. Empfehlungen (einschließlich Orten aus empfangenen Kartenlinks) bleiben im localStorage dieses Browsers. Nach erfolgreichem Speichern wird das Linkfragment aus der Adresszeile entfernt, damit „Leeren“ nicht beim Neuladen rückgängig gemacht wird. Geteilte Orte stehen im URL-Fragment (nicht im HTTP-Request an GitHub Pages); Empfänger können diese lesen und weitergeben. Keine Analyse, Cookies oder eigene Telemetrie.
