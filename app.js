@@ -105,15 +105,24 @@
       inList.textContent = value;
     });
   }
-  function fit(items = places) {
+  function fit(items = currentPlaces()) {
     const visible = items.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
   function render() {
-    pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = []; $('count').textContent = places.length;
-    $('empty').hidden = places.length > 0; $('share').disabled = !places.length; $('clear').disabled = !places.length;
+    pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = [];
+    const planPlaces=currentPlaces();
+    $('count').textContent = planPlaces.length;
+    $('empty').hidden = planPlaces.length > 0;
+    $('demo').hidden = activePlanId !== 'all';
+    $('empty').querySelector('h3').textContent = activePlanId === 'all'
+      ? 'Hier beginnt dein nächster Ausflug' : 'Für diesen Abschnitt sind noch keine Orte gespeichert';
+    $('empty').querySelector('p').textContent = activePlanId === 'all'
+      ? 'Füge deine Empfehlungen hinzu oder erkunde eine kleine Beispielroute durch Berlin.'
+      : 'Importiere Ziele, während dieser Abschnitt ausgewählt ist. Deine anderen Ziele bleiben erhalten.';
+    $('share').disabled = !planPlaces.length; $('clear').disabled = !places.length;
     let shown = 0;
-    places.forEach(p => {
+    planPlaces.forEach(p => {
       if (filter !== 'all' && p.category !== filter) return;
       shown++;
       const inPopup = node('p',metric(p));
@@ -125,7 +134,28 @@
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
       show.onclick = () => { following = false; map.setView([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
       const distance = node('span',metric(p),'distance');
-      actions.append(show,route(p),distance); card.append(top,node('p',p.description),actions); $('places').append(card);
+      actions.append(show,route(p),distance);
+      const assignRow=node('div',undefined,'plan-assign-row');
+      const assignLabel=node('label','Zuordnen:','sr-only');
+      const assignSelect=node('select',undefined,'place-plan-select');
+      assignSelect.setAttribute('aria-label','Ort '+p.name+' einem Reiseabschnitt zuordnen');
+      const tags=planAssignments[C.placePlanKey(p)] || [];
+      const options=[{id:'',name:'Keinem Abschnitt zugeordnet'},...allPlans().filter(section=>section.id!=='all')];
+      options.forEach(section=>{
+        const opt=node('option',section.name);
+        opt.value=section.id;
+        if (section.id=== (tags[0]||'')) opt.selected=true;
+        assignSelect.append(opt);
+      });
+      assignSelect.onchange=()=>{
+        const key=C.placePlanKey(p);
+        if(assignSelect.value) planAssignments[key]=[assignSelect.value];
+        else delete planAssignments[key];
+        persistPlanState(); render();
+        say('Zuordnung gespeichert. Alle Orte bleiben erhalten.');
+      };
+      assignRow.append(assignSelect);
+      card.append(top,node('p',p.description),actions,assignRow); $('places').append(card);
       distanceDisplays.push({ place:p, inPopup, inList:distance });
     });
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
