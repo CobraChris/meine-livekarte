@@ -167,8 +167,11 @@
       info.append(item);
       const popup = node('div');
       popup.append(node('strong',(i+1)+'. '+stop.name),node('p',times),node('p',stop.description),node('p',stop.leg ? 'Weiter: '+stop.leg : 'Ankunft'));
+      // Use DOM text nodes, not HTML interpolation, for untrusted station names.
+      const label = node('div',undefined,'trip-marker'+(i===1?' trip-marker-alt':''));
+      label.append(node('span',String(i+1),'trip-number'),node('span',stop.name,'trip-marker-name'));
       const marker = L.marker([stop.lat,stop.lng],{zIndexOffset:500,icon:L.divIcon({
-        className:'trip-pin',html:'<span class="trip-number">'+(i+1)+'</span>',iconSize:[30,30],iconAnchor:[15,15]
+        className:'trip-pin',html:label,iconSize:[30,30],iconAnchor:[15,15]
       })}).bindPopup(popup).addTo(journeyLayer);
       marker.on('popupopen',()=>{following=false;});
       item.addEventListener('click',()=>{following=false;map.setView([stop.lat,stop.lng],14);marker.openPopup();});
@@ -176,14 +179,21 @@
     info.append(node('p','Gestrichelte Linien verbinden Stationen nur schematisch – nicht entlang der tatsächlichen Gleise. Fahrpläne vor Abfahrt nochmals prüfen.','journey-warning'));
   }
   function readJourneyLink() {
-    if (!location.hash.startsWith('#trip=')) return false;
+    const params = new URLSearchParams(location.search);
+    const slug = params.get('trip');
+    const hasLongLink = location.hash.startsWith('#trip=');
+    if (!slug && !hasLongLink) return false;
     try {
-      const decoded=C.decodeJourney(location.hash);
-      if (!decoded) return false;
+      const decoded = slug ? C.presetJourney(slug) : C.decodeJourney(location.hash);
+      if (!decoded) throw new Error('Unbekannter Reiseplan.');
       journey=decoded;
       try {
         localStorage.setItem('livekarte-journey-v1',JSON.stringify(journey));
-        history.replaceState(null,'',location.pathname+location.search);
+        // Remove the consumed trip URL so clearing the itinerary stays cleared after reload.
+        params.delete('trip');
+        const otherQuery=params.toString();
+        history.replaceState(null,'',location.pathname+(otherQuery?'?'+otherQuery:'')+
+          (hasLongLink?'':location.hash));
       } catch { say('Reiseplan geöffnet, konnte aber nicht dauerhaft gespeichert werden.'); }
       renderJourney(); fitJourney();
       say('Reiseplan auf der Karte geladen. Deine bisherigen Empfehlungen bleiben erhalten.');
