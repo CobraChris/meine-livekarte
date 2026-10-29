@@ -55,12 +55,50 @@
       : (event?.absolute === true && Number.isFinite(event?.alpha) ? 360 - event.alpha : null);
     return raw === null ? null : ((raw % 360) + 360) % 360;
   }
+  // Timed railway itinerary. Geographical legs are schematic and must never be
+  // presented as actual rail tracks or live vehicle positions.
+  function normalizeJourney(journey) {
+    if (!journey || typeof journey !== 'object' || !Array.isArray(journey.stops)
+        || journey.stops.length < 2 || journey.stops.length > 15) {
+      throw new Error('Reiseplan muss 2 bis 15 Haltepunkte enthalten.');
+    }
+    const number = value => (typeof value === 'number' || (typeof value === 'string' && value.trim())) ? Number(value) : NaN;
+    const coords = p => {
+      const lat = number(p?.lat), lng = number(p?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
+        throw new Error('Ungültige Koordinaten im Reiseplan.');
+      return [lat, lng];
+    };
+    const trim = (value, max) => String(value ?? '').trim().slice(0, max);
+    const time = value => {
+      const t = trim(value, 5);
+      if (t && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(t))
+        throw new Error('Ungültige Zeit im Reiseplan.');
+      return t;
+    };
+    const stops = journey.stops.map(stop => {
+      if (!stop || typeof stop.name !== 'string' || !stop.name.trim()) throw new Error('Bahnhofname fehlt.');
+      const [lat, lng] = coords(stop);
+      const via = stop.via ?? [];
+      if (!Array.isArray(via) || via.length > 20) throw new Error('Zu viele Streckenpunkte.');
+      return {name:trim(stop.name,100),lat,lng,arrival:time(stop.arrival),departure:time(stop.departure),
+        description:trim(stop.description,250),leg:trim(stop.leg,140),via:via.map(coords)};
+    });
+    return {title:trim(journey.title,120) || 'Mein Reiseplan',date:trim(journey.date,10),stops};
+  }
+  function encodeJourney(journey) { return '#trip=' + encodeURIComponent(JSON.stringify(normalizeJourney(journey))); }
+  function decodeJourney(hash) {
+    if (!hash.startsWith('#trip=')) return null;
+    if (hash.length > 30000) throw new Error('Der Reiseplan-Link ist zu groß.');
+    try { return normalizeJourney(JSON.parse(decodeURIComponent(hash.slice(6)))); }
+    catch (e) { throw new Error('Reiseplan-Link ungültig: ' + e.message); }
+  }
   function distance(a, b) {
     const r = Math.PI / 180, dlat = (b.lat-a.lat)*r, dlng = (b.lng-a.lng)*r;
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading };
+  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);
