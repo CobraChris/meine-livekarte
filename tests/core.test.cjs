@@ -207,3 +207,53 @@ test('manual zoom pauses GPS camera follow but keeps watchPosition and marker up
  assert.match(css,/#recenter-gps\[hidden\]\{display:none\}/);
  assert.match(html,/unterschiedliche Gleise hintereinander an einem durchgehenden Bahnsteig/);
 });
+
+test('multi-day presets separate journey days from city stays', () => {
+ const expected=[
+  ['all','all'],['ride-takayama','journey'],['town-takayama','city'],
+  ['ride-kyoto','journey'],['town-kyoto','city']
+ ];
+ assert.deepEqual(C.planPresets.map(p=>[p.id,p.kind]),expected);
+ assert.deepEqual(C.planPresets.find(p=>p.id==='town-takayama').center,[36.141062,137.251454]);
+ assert.deepEqual(C.planPresets.find(p=>p.id==='town-kyoto').center,[34.98535,135.75877]);
+ const names=C.planPresets.map(p=>p.name);
+ assert.ok(names.some(n=>n.includes('Fahrt nach Takayama')));
+ assert.ok(names.some(n=>n.includes('Fahrt nach Kyoto')));
+});
+test('saved destinations can be filtered into sections without changing the master list', () => {
+ const places=C.normalize([
+  {name:'Burg',lat:36.1,lng:137.2,category:'sight'},
+  {name:'Tempel',lat:35,lng:135.8,category:'sight'}
+ ]);
+ const tags=Object.create(null);
+ tags[C.placePlanKey(places[0])]=['town-takayama'];
+ tags[C.placePlanKey(places[1])]=['town-kyoto'];
+ assert.equal(C.placesForPlan(places,tags,'all').length,2);
+ assert.deepEqual(C.placesForPlan(places,tags,'town-takayama').map(p=>p.name),['Burg']);
+ assert.deepEqual(C.placesForPlan(places,tags,'town-kyoto').map(p=>p.name),['Tempel']);
+ assert.deepEqual(C.placesForPlan(places,tags,'ride-kyoto'),[]);
+ assert.equal(places.length,2);
+});
+test('custom section data is validated before showing it in the picker', () => {
+ const good=C.validCustomPlans([{id:'custom-abcde1',name:'Nikko entdecken',kind:'city',center:[36.75,139.6]}]);
+ assert.equal(good[0].name,'Nikko entdecken');
+ assert.throws(()=>C.validCustomPlans([{id:'all',name:'Oops',kind:'city'}]));
+ assert.throws(()=>C.validCustomPlans([{id:'custom-abcd',name:'Oops',kind:'drive'}]));
+ assert.throws(()=>C.validCustomPlans([{id:'custom-abcd',name:'X',kind:'city'},{id:'custom-abcd',name:'Y',kind:'city'}]));
+ assert.equal(C.validCustomPlans([{id:'custom-longname',name:'Ok',kind:'journey',center:[200,0]}])[0].center,null);
+});
+test('section picker and import flow do not erase existing places or GPS tracking', () => {
+ const {readFileSync}=require('node:fs'),{join}=require('node:path');
+ const root=join(__dirname,'..');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ assert.match(html,/id="plan-select"/);
+ assert.match(html,/id="add-plan"/);
+ assert.match(html,/id="plan-dialog"/);
+ assert.match(app,/localStorage\.setItem\('livekarte-active-plan-v1'/);
+ assert.match(app,/planPlaces=currentPlaces\(\)/);
+ assert.match(app,/assignToCurrentPlan\(additions\)/);
+ assert.match(app,/navigator\.geolocation\.watchPosition/);
+ assert.match(app,/selectPlan\(activePlanId/);
+ assert.match(app,/function activeJourney\(\)/);
+});
