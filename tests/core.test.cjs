@@ -105,3 +105,21 @@ test('short-link preset for Hakone to Takayama has all stations, correct timings
  const u=new URL('https://cobrachris.github.io/meine-livekarte/?trip='+id);
  assert.equal(C.presetJourney(u.searchParams.get('trip')).stops[4].name,'Takayama');
 });
+
+test('smooth zoom and Hakone-Yumoto transfer inset are wired into the map UI', () => {
+ const {readFileSync} = require('node:fs');
+ const {join} = require('node:path');
+ const root = join(__dirname, '..');
+ const app = readFileSync(join(root, 'app.js'), 'utf8');
+ const html = readFileSync(join(root, 'index.html'), 'utf8');
+ const css = readFileSync(join(root, 'style.css'), 'utf8');
+ assert.match(app, /zoomSnap:\s*0,\s*zoomDelta:\s*0\.5/);
+ assert.match(app, /map\.getZoom\(\)\s*>=\s*17/);
+ assert.match(app, /map\.getBounds\(\)\.contains\(hakoneYumoto\)/);
+ assert.match(app, /map\.on\('zoomend moveend', updateStationTransfer\)/);
+ assert.match(html, /id="station-transfer"[^>]*hidden/);
+ assert.match(html, /09:16 Ankunft/);
+ assert.match(html, /09:24 Abfahrt/);
+ assert.match(html, /www\.odakyu\.jp\/station\/hakone_yumoto/);
+ assert.match(css, /\.station-transfer-inset\[hidden\]\{display:none\}/);
+});
