@@ -166,3 +166,12 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .rail-map-official{font-size:10px;padding:6px 7px;line-height:1.2;white-space:nowrap;flex-shrink:0}
 .station-transfer-inset .station-transfer-connector{line-height:1.45}
 .station-transfer-inset p{line-height:1.5}
+
+/* Manual exploration must never be overwritten by a new GPS fix.
+   Show a separate, easy-to-hit follow-again control only when needed. */
+#recenter-gps{position:absolute;right:20px;top:176px;z-index:850;
+  width:48px;height:48px;padding:0;display:grid;place-items:center;
+  border:1px solid #a4ecc9;border-radius:12px;background:#17392f;
+  color:#b6f1d4;font-size:29px;font-weight:750;box-shadow:0 4px 14px #0007}
+#recenter-gps[hidden]{display:none}
+@media(max-width:760px){#recenter-gps{right:10px;top:176px}}

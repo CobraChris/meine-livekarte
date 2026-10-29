@@ -282,11 +282,36 @@
     journey=null;try{localStorage.removeItem('livekarte-journey-v1');}catch{}
     renderJourney();fit();say('Reiseplan entfernt. Empfehlungen bleiben erhalten.');
   };
-  $('fit').onclick = () => { following = false; fit(); };
-  map.on('dragstart', () => { following = false; });
+  $('fit').onclick = () => { pauseGPSFollow(); fit(); };
+  const recenterGPS = $('recenter-gps');
+  let automaticGPSView = false;
+  function refreshGPSFollowControl() {
+    // When the user moves the map, show a one-tap way to resume auto-follow.
+    recenterGPS.hidden = watch === null || following || !position;
+  }
+  function pauseGPSFollow() {
+    if (!following) return;
+    following = false;
+    refreshGPSFollowControl();
+  }
+  function centerOnGPS(ll,zoom) {
+    automaticGPSView = true;
+    try { map.setView(ll,zoom,{animate:false}); }
+    finally { automaticGPSView = false; }
+  }
+  // Includes pinch/double-tap zoom, mouse wheel, +/- and keyboard zoom.
+  // Only GPS-initiated zooms are exempt. GPS measurements keep updating.
+  map.on('zoomstart', () => { if (!automaticGPSView) pauseGPSFollow(); });
+  map.on('dragstart', pauseGPSFollow);
+  recenterGPS.onclick = () => {
+    if (!position || watch === null) return;
+    following = true;
+    refreshGPSFollowControl();
+    centerOnGPS([position.lat,position.lng],Math.max(map.getZoom(),16));
+  };
   function stopGPS(message = 'GPS ausgeschaltet. Standort wurde entfernt.') {
     if (watch !== null) navigator.geolocation.clearWatch(watch);
-    watch = null; position = null; following = false; stopCompass();
+    watch = null; position = null; following = false; stopCompass(); refreshGPSFollowControl();
     if (userDot) { map.removeLayer(userDot); userDot = null; }
     if (accuracy) { map.removeLayer(accuracy); accuracy = null; }
     $('gps').setAttribute('aria-pressed','false'); $('gps').lastElementChild.textContent = 'GPS einschalten'; refreshDistances(); say(message);
@@ -294,7 +319,8 @@
   $('gps').onclick = () => {
     if (watch !== null) { stopGPS(); return; }
     if (!window.isSecureContext || !navigator.geolocation) { say('GPS benötigt HTTPS und einen Browser mit Standortunterstützung.'); return; }
-    following = true; $('gps').setAttribute('aria-pressed','true'); $('gps').lastElementChild.textContent = 'GPS ausschalten'; say('Standort wird ermittelt …');
+    following = true; refreshGPSFollowControl();
+    $('gps').setAttribute('aria-pressed','true'); $('gps').lastElementChild.textContent = 'GPS ausschalten'; say('Standort wird ermittelt …');
     watch = navigator.geolocation.watchPosition(result => {
       if (watch === null) return;
       position = {lat:result.coords.latitude,lng:result.coords.longitude};
@@ -309,10 +335,13 @@
             iconSize: [64,64], iconAnchor: [32,32]
           })
         }).addTo(map);
-        userDot.on('click', () => { following = true; map.setView(userDot.getLatLng(),16); });
+        userDot.on('click', () => {
+          following = true; refreshGPSFollowControl(); centerOnGPS(userDot.getLatLng(),16);
+        });
         renderHeading();
       } else { userDot.setLatLng(ll); accuracy.setLatLng(ll).setRadius(result.coords.accuracy); }
-      if (following) map.setView(ll,Math.max(map.getZoom(),15));
+      if (following) centerOnGPS(ll,Math.max(map.getZoom(),15));
+      refreshGPSFollowControl();
       refreshDistances();
       say(`GPS aktiv · Genauigkeit ca. ${Math.round(result.coords.accuracy)} m${heading === null ? '' : ' · Richtungspfeil aktiv'}`);
     }, error => {

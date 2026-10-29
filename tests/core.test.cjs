@@ -188,3 +188,22 @@ test('German wayfinding helps without the Japanese operator station map', () => 
  assert.match(html,/Bahnhofsinformationen auf Englisch/);
  assert.match(css,/rail-crossing-main/);
 });
+
+test('manual zoom pauses GPS camera follow but keeps watchPosition and marker updates', () => {
+ const {readFileSync}=require('node:fs');
+ const {join}=require('node:path');
+ const root=join(__dirname,'..');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ const css=readFileSync(join(root,'style.css'),'utf8');
+ assert.match(app,/map\.on\('zoomstart',\s*\(\)\s*=>\s*\{\s*if\s*\(!automaticGPSView\)\s*pauseGPSFollow\(\)/);
+ assert.match(app,/map\.on\('dragstart',\s*pauseGPSFollow\)/);
+ assert.match(app,/function centerOnGPS\(ll,zoom\)\s*\{[\s\S]*?automaticGPSView = true/);
+ assert.match(app,/if \(following\) centerOnGPS\(ll,Math\.max\(map\.getZoom\(\),15\)\)/);
+ assert.match(app,/userDot\.setLatLng\(ll\); accuracy\.setLatLng\(ll\)/);
+ assert.match(app,/function pauseGPSFollow\(\)[\s\S]*?following = false;[\s\S]*?refreshGPSFollowControl\(\)/);
+ assert.match(app,/recenterGPS\.onclick = \(\) =>/);
+ assert.match(html,/id="recenter-gps"[^>]*hidden/);
+ assert.match(css,/#recenter-gps\[hidden\]\{display:none\}/);
+ assert.match(html,/unterschiedliche Gleise hintereinander an einem durchgehenden Bahnsteig/);
+});
