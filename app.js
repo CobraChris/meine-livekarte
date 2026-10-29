@@ -80,7 +80,9 @@
       document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === 'all')));
       const saved = persist();
       render();
+      following = false;
       if (shared.length) fit(shared); // Focus on the newly received recommendations, even if older places are far away.
+      else fit();
       const added = places.length - before;
       say(saved ? (added ? `${added} neue Orte gespeichert · ${places.length} insgesamt.` : 'Alle Orte aus dem Link sind bereits gespeichert.')
                 : 'Orte übernommen, aber nicht dauerhaft gespeichert. Bitte den Kartenlink sichern.');
