@@ -48,12 +48,19 @@
     if (hash.length > 30000) throw new Error('Dieser Kartenlink ist zu groß.');
     return parse(decodeURIComponent(hash.slice(8)));
   }
+  // Only absolute, north-referenced compass data is suitable for a map arrow.
+  // Relative deviceorientation alpha must never be treated as a compass heading.
+  function compassHeading(event) {
+    const raw = Number.isFinite(event?.webkitCompassHeading) ? event.webkitCompassHeading
+      : (event?.absolute === true && Number.isFinite(event?.alpha) ? 360 - event.alpha : null);
+    return raw === null ? null : ((raw % 360) + 360) % 360;
+  }
   function distance(a, b) {
     const r = Math.PI / 180, dlat = (b.lat-a.lat)*r, dlng = (b.lng-a.lng)*r;
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, parse, encode, decode, distance };
+  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);
