@@ -4,6 +4,50 @@
   const symbols = { restaurant: '♨', sight: '◇', station: '▤' };
   let places = [], filter = 'all', position = null, watch = null, following = false, userDot, accuracy;
   let distanceDisplays = [];
+  let heading = null, visualHeading = null, compassGeneration = 0;
+  function renderHeading() {
+    const el = userDot?.getElement();
+    if (!el) return;
+    el.classList.toggle('has-heading', heading !== null);
+    const arrow = el.querySelector('.gps-bearing');
+    if (heading === null || !arrow) return;
+    // Rotate via the shortest angular path to avoid a full spin at north (359° → 1°).
+    if (visualHeading === null) visualHeading = heading;
+    else visualHeading += ((heading - visualHeading + 540) % 360) - 180;
+    arrow.style.transform = `rotate(${visualHeading}deg)`;
+  }
+  function onOrientation(e) {
+    if (watch === null) return;
+    const next = C.compassHeading(e);
+    if (next === null) return; // Do not show arbitrary relative orientation.
+    heading = next;
+    renderHeading();
+  }
+  function stopCompass() {
+    compassGeneration++;
+    window.removeEventListener('deviceorientationabsolute', onOrientation);
+    window.removeEventListener('deviceorientation', onOrientation);
+    heading = null;
+    visualHeading = null;
+  }
+  function startCompass() {
+    const generation = ++compassGeneration;
+    const listen = () => {
+      if (watch === null || generation !== compassGeneration) return;
+      window.addEventListener('deviceorientationabsolute', onOrientation);
+      // Safari may provide webkitCompassHeading on the standard event.
+      window.addEventListener('deviceorientation', onOrientation);
+    };
+    if (typeof DeviceOrientationEvent === 'undefined') return;
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // Request while the GPS button's user activation is still active.
+      try {
+        Promise.resolve(DeviceOrientationEvent.requestPermission(true))
+          .then(result => { if (result === 'granted') listen(); })
+          .catch(() => {}); // GPS remains usable if orientation permission is denied.
+      } catch { /* Browser denied sensor permission. */ }
+    } else listen();
+  }
   const say = text => { $('status').textContent = text; };
   if (!window.L) { say('Die Kartenbibliothek konnte nicht geladen werden. Bitte Seite neu laden.'); return; }
   // No hard-coded home city. Without saved places, show a neutral world view until GPS is enabled.
@@ -96,7 +140,7 @@
   map.on('dragstart', () => { following = false; });
   function stopGPS(message = 'GPS ausgeschaltet. Standort wurde entfernt.') {
     if (watch !== null) navigator.geolocation.clearWatch(watch);
-    watch = null; position = null; following = false;
+    watch = null; position = null; following = false; stopCompass();
     if (userDot) { map.removeLayer(userDot); userDot = null; }
     if (accuracy) { map.removeLayer(accuracy); accuracy = null; }
     $('gps').setAttribute('aria-pressed','false'); $('gps').lastElementChild.textContent = 'GPS einschalten'; refreshDistances(); say(message);
@@ -111,16 +155,26 @@
       const ll = [position.lat,position.lng];
       if (!userDot) {
         accuracy = L.circle(ll,{radius:result.coords.accuracy,color:'#60a5fa',weight:1,fillOpacity:.08}).addTo(map);
-        userDot = L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#398bfa',fillOpacity:1}).addTo(map);
+        userDot = L.marker(ll,{
+          zIndexOffset: 1000,
+          icon: L.divIcon({
+            className: 'gps-location-icon',
+            html: '<div class="gps-bearing" aria-hidden="true"></div><div class="gps-center-dot"></div>',
+            iconSize: [64,64], iconAnchor: [32,32]
+          })
+        }).addTo(map);
         userDot.on('click', () => { following = true; map.setView(userDot.getLatLng(),16); });
+        renderHeading();
       } else { userDot.setLatLng(ll); accuracy.setLatLng(ll).setRadius(result.coords.accuracy); }
       if (following) map.setView(ll,Math.max(map.getZoom(),15));
-      refreshDistances(); say(`GPS aktiv · Genauigkeit ca. ${Math.round(result.coords.accuracy)} m`);
+      refreshDistances();
+      say(`GPS aktiv · Genauigkeit ca. ${Math.round(result.coords.accuracy)} m${heading === null ? '' : ' · Richtungspfeil aktiv'}`);
     }, error => {
       if (watch === null) return;
       const messages = {1:'Standortzugriff verweigert. Du kannst GPS in den Website-Einstellungen des Browsers erlauben.',2:'Standort derzeit nicht verfügbar. Bitte erneut versuchen.',3:'Standortabfrage hat zu lange gedauert. Bitte erneut versuchen.'};
       stopGPS(messages[error.code] || 'GPS konnte nicht gestartet werden.');
     }, {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+    startCompass();
   };
   document.querySelectorAll('[data-filter]').forEach(b => { b.onclick = () => {
     filter = b.dataset.filter; document.querySelectorAll('[data-filter]').forEach(e => e.setAttribute('aria-pressed', String(e === b))); render();
