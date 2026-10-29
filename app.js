@@ -151,9 +151,7 @@
     const root = node('div',undefined,'rail-station-map');
     root.setAttribute('role','group');
     root.setAttribute('aria-label','Schematische Gleisübersicht Hakone-Yumoto. Gleis 3 Richtung Gōra; Ankunft um 09:16 Gleis vor Ort prüfen; Abfahrt 09:24 von Gleis 2 Richtung Odawara.');
-    const north = node('div',undefined,'rail-track rail-track-gora');
-    const south = node('div',undefined,'rail-track rail-track-odawara');
-    root.append(north,south);
+    root.append(node('div','GLEISORIENTIERUNG · SCHEMATISCH','rail-map-heading'));
     const track3 = node('div',undefined,'rail-track-label rail-track-label-gora');
     track3.append(node('strong','Gleis 3'),node('span','Richtung Gōra'));
     const track2 = node('div',undefined,'rail-track-label rail-track-label-odawara');
@@ -161,9 +159,9 @@
     const arrival = node('div',undefined,'rail-arrival-note');
     arrival.append(node('span','09:16 Ankunft aus Gōra'),node('strong','Gleis vor Ort prüfen'));
     const crossing = node('div',undefined,'rail-crossing');
-    crossing.append(node('span','8 Min. Umstieg'),node('span','↓','rail-crossing-arrow'));
+    crossing.append(node('span','8 Min. Umstieg'),node('span','↘','rail-crossing-arrow'));
     const disclosure = node('div',undefined,'rail-map-disclosure');
-    disclosure.append(node('span','Schematisch · keine gleisgenaue Position'));
+    disclosure.append(node('span','Gleispositionen nicht vermessen'));
     const info = node('a','Offizieller Gleisplan ↗','rail-map-official');
     info.href = 'https://www.odakyu.jp/station/hakone_yumoto/homeview/';
     info.target = '_blank';
@@ -180,6 +178,7 @@
     const visible = routeIncludesStation && map.getZoom() >= 17 &&
       map.getBounds().contains(hakoneYumoto);
     const showMapLabels = visible && map.getZoom() >= 18;
+    document.querySelector('.workspace').classList.toggle('show-station-detail', showMapLabels);
     if (showMapLabels && !platformOverlay) {
       platformOverlay = L.marker(hakoneYumoto,{
         interactive:true,keyboard:false,zIndexOffset:750,
@@ -228,7 +227,7 @@
       const popup = node('div');
       popup.append(node('strong',(i+1)+'. '+stop.name),node('p',times),node('p',stop.description),node('p',stop.leg ? 'Weiter: '+stop.leg : 'Ankunft'));
       // Use DOM text nodes, not HTML interpolation, for untrusted station names.
-      const label = node('div',undefined,'trip-marker'+(i===1?' trip-marker-alt':''));
+      const label = node('div',undefined,'trip-marker'+(i===1?' trip-marker-alt trip-hakone-yumoto':''));
       label.append(node('span',String(i+1),'trip-number'),node('span',stop.name,'trip-marker-name'));
       const marker = L.marker([stop.lat,stop.lng],{zIndexOffset:500,icon:L.divIcon({
         className:'trip-pin',html:label,iconSize:[30,30],iconAnchor:[15,15]

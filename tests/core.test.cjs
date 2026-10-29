@@ -140,7 +140,7 @@ test('two close-zoom station markers are schematic, and arrival platform is not 
  assert.match(app, /rail-station-map/);
  assert.match(app, /rail-track-label-gora/);
  assert.match(app, /rail-track-label-odawara/);
- assert.match(app, /Schematisch · keine gleisgenaue Position/);
+ assert.match(app, /Gleispositionen nicht vermessen/);
  assert.match(app, /homeview\//);
  assert.match(app, /platformOverlayLayer\.removeLayer\(platformOverlay\)/);
  assert.match(app, /transferCard\.hidden\s*=\s*!visible \|\| transferDismissed \|\| showMapLabels/);
@@ -149,4 +149,25 @@ test('two close-zoom station markers are schematic, and arrival platform is not 
  assert.match(css, /\.rail-track-gora\{top:/);
  assert.match(css, /\.rail-track-odawara\{top:/);
  assert.match(css, /\.rail-map-official\{pointer-events:auto/);
+});
+
+test('station diagram does not invent exact rail geometry and keeps official information usable', () => {
+ const {readFileSync} = require('node:fs');
+ const {join} = require('node:path');
+ const root=join(__dirname,'..');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ const css=readFileSync(join(root,'style.css'),'utf8');
+ const start=app.indexOf('function buildPlatformOverlay()');
+ const end=app.indexOf('function updateStationTransfer()',start);
+ const overlay=app.slice(start,end);
+ assert.ok(start>=0 && end>start);
+ assert.doesNotMatch(overlay,/root\.append\(north,south\)/);
+ assert.match(overlay,/Gleis vor Ort prüfen/);
+ assert.match(overlay,/Gleis 2/);
+ assert.match(overlay,/Gleis 3/);
+ assert.match(overlay,/www\.odakyu\.jp\/station\/hakone_yumoto\/homeview\//);
+ assert.match(overlay,/Gleispositionen nicht vermessen/);
+ assert.match(app,/classList\.toggle\('show-station-detail', showMapLabels\)/);
+ assert.match(css,/\.show-station-detail \.trip-hakone-yumoto \.trip-marker-name\{display:none\}/);
+ assert.match(css,/\.rail-map-official\{color:#d0ffe2/);
 });

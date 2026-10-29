@@ -137,3 +137,23 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 @media(max-width:390px){
   .rail-station-map{transform:scale(.91);transform-origin:50% 75%}
 }
+
+/* Hakone-Yumoto clarity pass.
+   The background OSM railway lines are the only visual rails: we deliberately
+   do not paint a second, unverified pair of "real" tracks over the map. */
+.rail-map-heading{position:absolute;top:6px;left:8px;max-width:220px;
+  border:1px solid #8eb4a9;background:#112b34f2;border-radius:6px;
+  padding:4px 7px;color:#c8efdc;font-size:10px;font-weight:800;letter-spacing:.04em}
+.rail-track-label-gora{left:130px;top:37px}
+.rail-track-label-odawara{left:177px;top:111px}
+.rail-track-label{z-index:2;padding:6px 9px;border-width:2px}
+.rail-arrival-note{top:90px;left:7px;max-width:157px;z-index:2}
+.rail-crossing{left:145px;top:87px;z-index:1;padding:3px 5px}
+.rail-map-disclosure{top:179px;bottom:auto;left:3px;right:3px;
+  padding:7px;line-height:1.35;font-size:10px;flex-wrap:wrap;justify-content:space-between}
+.rail-map-official{color:#d0ffe2;background:#1a5949;border:1px solid #a4ecc9;
+  border-radius:6px;padding:5px 7px;font-size:11px;font-weight:750;
+  text-decoration:underline;min-height:24px}
+.show-station-detail .trip-hakone-yumoto .trip-marker-name{display:none}
+.show-station-detail .trip-hakone-yumoto .trip-number{opacity:.68}
+@media(max-width:390px){.rail-station-map{transform:scale(.9);transform-origin:50% 75%}}
