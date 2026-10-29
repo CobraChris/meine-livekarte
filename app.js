@@ -159,9 +159,9 @@
     const arrival = node('div',undefined,'rail-arrival-note');
     arrival.append(node('span','09:16 Ankunft aus Gōra'),node('strong','Gleis vor Ort prüfen'));
     const crossing = node('div',undefined,'rail-crossing');
-    crossing.append(node('span','2 ↔ 3 am selben Bahnsteig','rail-crossing-main'),node('span','Ebenerdig weitergehen','rail-crossing-sub'));
+    crossing.append(node('span','Gleis 2 suchen','rail-crossing-main'),node('span','→ ebenerdig','rail-crossing-sub'));
     const disclosure = node('div',undefined,'rail-map-disclosure');
-    disclosure.append(node('span','8 Min. bis zur Abfahrt · Ankunftsgleis prüfen'));
+    disclosure.append(node('span','Gleis 2/3: gleicher Bahnsteigbereich · 8 Min. Zeit'));
     const info = node('a','Plan auf Englisch ↗','rail-map-official');
     info.href = 'https://www.hakonenavi.jp/international/en/station/yumoto';
     info.target = '_blank';
