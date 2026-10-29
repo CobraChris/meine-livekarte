@@ -9,8 +9,9 @@ Mobile, statische Leaflet-Karte mit OpenStreetMap, Dark Mode und Empfehlungen au
 3. Pins oder **Auf Karte** anklicken, Kategorien filtern, mit **Alle Orte** den Ausschnitt anpassen. Touch-Zoom und Verschieben werden unterstützt.
 4. **GPS einschalten** startet kontinuierliche Standortaktualisierung mit blauem Punkt und Genauigkeitskreis. Der Browser fragt um Erlaubnis. Die Karte folgt; Verschieben pausiert das Zentrieren. Tippen auf den blauen Punkt zentriert erneut. **GPS ausschalten** beendet die Abfrage und entfernt den Standort und die Entfernungen.
 5. **Zu Fuß** öffnet Google Maps mit dem gewählten Ziel; Google bestimmt den Startpunkt. Die angezeigte Entfernung in der Karte ist Luftlinie.
-6. **Teilen** erzeugt einen Link mit allen Empfehlungen. Link kopieren; alternativ manuell aus dem Textfeld kopieren. Beim Öffnen werden die Orte automatisch geladen. Sehr große Datensätze müssen zum Teilen gekürzt werden (maximal 30.000 URL-Zeichen).
-7. **Leeren** löscht die lokal gespeicherten Empfehlungen nach Bestätigung. Auf Android ist die Seite über das Browser-Menü zum Startbildschirm hinzufügbar. Internet ist erforderlich.
+6. **Teilen** erzeugt einen Link mit allen Empfehlungen. Link kopieren oder manuell aus dem Textfeld kopieren. Beim Öffnen werden die übermittelten Orte zu den bisher gespeicherten Empfehlungen hinzugefügt (ohne doppelte Einträge), automatisch lokal im Browser gespeichert und auf der Karte hervorgehoben. Sehr große Datensätze müssen zum Teilen gekürzt werden (maximal 30.000 URL-Zeichen).
+7. **Startkarte:** Ohne Empfehlungen und ohne GPS zeigt die Karte eine neutrale Weltansicht statt einer fest vorgegebenen Stadt. Nach Aktivierung von GPS folgt sie deinem Standort. Auf Smartphones ist die Kartenansicht höher und hat einen **⛶ Vollbildmodus**; mit **✕** kehrst du zur Seitenansicht zurück.
+8. **Leeren** löscht die lokal gespeicherten Empfehlungen nach Bestätigung. Die Orte bleiben ansonsten bei späteren Aufrufen im **selben Browser auf demselben Gerät** erhalten, solange dessen Website-Daten nicht gelöscht werden. Es gibt keine Synchronisierung zwischen Browsern oder Geräten. Auf Android ist die Seite über das Browser-Menü zum Startbildschirm hinzufügbar. Internet ist erforderlich.
 
 ### ChatGPT-Prompt
 
@@ -36,7 +37,7 @@ JSON unterstützt auch `{ "places": [...] }`, einzelne Objekte, Markdown-Codebl�
 
 ## Datenschutz
 
-GPS startet ausschließlich durch einen Tastendruck und wird nur im Arbeitsspeicher verarbeitet. GPS-Koordinaten werden weder lokal gespeichert noch in Links oder Navigations-URLs eingefügt. Ausschalten und Verlassen der Seite beenden die Standortabfrage. Empfehlungen bleiben im localStorage dieses Browsers. Geteilte Orte stehen im URL-Fragment (nicht im HTTP-Request an GitHub Pages); Empfänger können diese lesen und weitergeben. Keine Analyse, Cookies oder eigene Telemetrie.
+GPS startet ausschließlich durch einen Tastendruck und wird nur im Arbeitsspeicher verarbeitet. GPS-Koordinaten werden weder lokal gespeichert noch in Links oder Navigations-URLs eingefügt. Ausschalten und Verlassen der Seite beenden die Standortabfrage. Empfehlungen (einschließlich Orten aus empfangenen Kartenlinks) bleiben im localStorage dieses Browsers. Nach erfolgreichem Speichern wird das Linkfragment aus der Adresszeile entfernt, damit „Leeren“ nicht beim Neuladen rückgängig gemacht wird. Geteilte Orte stehen im URL-Fragment (nicht im HTTP-Request an GitHub Pages); Empfänger können diese lesen und weitergeben. Keine Analyse, Cookies oder eigene Telemetrie.
 
 OpenStreetMap erhält IP-Adresse und angeforderte Kartenausschnitte – beim Zentrieren auch den Bereich um deinen Standort. Google erhält beim Navigationsaufruf das Ziel und kann eigenen Standortzugriff anfordern. Kartenkacheln werden nach den OpenStreetMap-Nutzungsbedingungen direkt geladen; keine Offline-Massendownloads. Leaflet 1.9.4 ist lokal mit BSD-2-Clause-Lizenz in `vendor/` eingebunden.
 
