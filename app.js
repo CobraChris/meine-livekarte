@@ -4,6 +4,34 @@
   const symbols = { restaurant: '♨', sight: '◇', station: '▤' };
   let places = [], filter = 'all', position = null, watch = null, following = false, userDot, accuracy;
   let distanceDisplays = [];
+  let customPlans = [], planAssignments = Object.create(null), planJourneys = Object.create(null);
+  let activePlanId = 'all';
+  const allPlans = () => [...C.planPresets,...customPlans];
+  const currentPlan = () => allPlans().find(p=>p.id===activePlanId) || C.planPresets[0];
+  const currentPlaces = () => C.placesForPlan(places,planAssignments,activePlanId);
+  function assignToCurrentPlan(items) {
+    if (activePlanId === 'all') return;
+    items.forEach(p => {
+      const key=C.placePlanKey(p);
+      const list=Array.isArray(planAssignments[key]) ? planAssignments[key] : [];
+      planAssignments[key]=[...new Set([...list,activePlanId])];
+    });
+    persistPlanState();
+  }
+  function persistPlanState() {
+    try {
+      localStorage.setItem('livekarte-custom-plans-v1',JSON.stringify(customPlans));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(planAssignments));
+      localStorage.setItem('livekarte-plan-journeys-v1',JSON.stringify(planJourneys));
+      localStorage.setItem('livekarte-active-plan-v1',activePlanId);
+      return true;
+    } catch { say('Reiseabschnitte konnten nicht dauerhaft gespeichert werden.'); return false; }
+  }
+  function activeJourney() {
+    if (Object.prototype.hasOwnProperty.call(planJourneys,activePlanId)) return planJourneys[activePlanId];
+    return activePlanId === 'ride-takayama' ? C.presetJourney('hakone-takayama-2026-10-30') : null;
+  }
+
   let heading = null, visualHeading = null, compassGeneration = 0;
   function renderHeading() {
     const el = userDot?.getElement();
