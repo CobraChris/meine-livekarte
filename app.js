@@ -191,7 +191,25 @@
         className:'trip-pin',html:label,iconSize:[30,30],iconAnchor:[15,15]
       })}).bindPopup(popup).addTo(journeyLayer);
       marker.on('popupopen',()=>{following=false;});
-      item.addEventListener('click',()=>{following=false;map.setView([stop.lat,stop.lng],14);marker.openPopup();});
+      if (stop.name === 'Hakone-Yumoto') {
+        const details = node('button','Umstieg im Detail anzeigen','transfer-details-button');
+        details.onclick = () => {
+          following = false;
+          transferDismissed = false;
+          marker.closePopup();
+          map.setView([stop.lat,stop.lng],17.5);
+          updateStationTransfer();
+        };
+        popup.append(details);
+      }
+      item.addEventListener('click',()=>{
+        following=false;
+        if (stop.name === 'Hakone-Yumoto') {
+          transferDismissed=false;
+          map.setView([stop.lat,stop.lng],17.5);
+          updateStationTransfer();
+        } else { map.setView([stop.lat,stop.lng],14); marker.openPopup(); }
+      });
     });
     info.append(node('p','Gestrichelte Linien verbinden Stationen nur schematisch – nicht entlang der tatsächlichen Gleise. Fahrpläne vor Abfahrt nochmals prüfen.','journey-warning'));
     updateStationTransfer();
