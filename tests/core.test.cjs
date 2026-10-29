@@ -120,7 +120,7 @@ test('smooth zoom and Hakone-Yumoto transfer inset are wired into the map UI', (
  assert.match(html, /id="station-transfer"[^>]*hidden/);
  assert.match(html, /09:16 Ankunft/);
  assert.match(html, /09:24 Abfahrt/);
- assert.match(html, /www\.odakyu\.jp\/station\/hakone_yumoto/);
+ assert.match(html, /www\.hakonenavi\.jp\/international\/en\/station\/yumoto/);
  assert.match(css, /\.station-transfer-inset\[hidden\]\{display:none\}/);
 });
 
@@ -140,8 +140,8 @@ test('two close-zoom station markers are schematic, and arrival platform is not 
  assert.match(app, /rail-station-map/);
  assert.match(app, /rail-track-label-gora/);
  assert.match(app, /rail-track-label-odawara/);
- assert.match(app, /Gleispositionen nicht vermessen/);
- assert.match(app, /homeview\//);
+ assert.match(app, /Gleis 2\/3: gleicher Bahnsteigbereich/);
+ assert.match(app, /www\.hakonenavi\.jp\/international\/en\/station\/yumoto/);
  assert.match(app, /platformOverlayLayer\.removeLayer\(platformOverlay\)/);
  assert.match(app, /transferCard\.hidden\s*=\s*!visible \|\| transferDismissed \|\| showMapLabels/);
  assert.doesNotMatch(html, /class="station-transfer-number">3/);
@@ -165,9 +165,26 @@ test('station diagram does not invent exact rail geometry and keeps official inf
  assert.match(overlay,/Gleis vor Ort prüfen/);
  assert.match(overlay,/Gleis 2/);
  assert.match(overlay,/Gleis 3/);
- assert.match(overlay,/www\.odakyu\.jp\/station\/hakone_yumoto\/homeview\//);
- assert.match(overlay,/Gleispositionen nicht vermessen/);
+ assert.match(overlay,/www\.hakonenavi\.jp\/international\/en\/station\/yumoto/);
+ assert.match(overlay,/Gleis 2\/3: gleicher Bahnsteigbereich/);
  assert.match(app,/classList\.toggle\('show-station-detail', showMapLabels\)/);
  assert.match(css,/\.show-station-detail \.trip-hakone-yumoto \.trip-marker-name\{display:none\}/);
  assert.match(css,/\.rail-map-official\{color:#d0ffe2/);
+});
+
+test('German wayfinding helps without the Japanese operator station map', () => {
+ const {readFileSync}=require('node:fs');
+ const {join}=require('node:path');
+ const root=join(__dirname,'..');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ const css=readFileSync(join(root,'style.css'),'utf8');
+ assert.match(app,/Gleis 2 suchen/);
+ assert.match(app,/ebenerdig/);
+ assert.match(app,/Plan auf Englisch/);
+ assert.match(html,/So gehst du vor/);
+ assert.match(html,/auf dem Bahnsteig bleiben/);
+ assert.match(html,/Ankunftsgleis ist nicht bestätigt/);
+ assert.match(html,/Bahnhofsinformationen auf Englisch/);
+ assert.match(css,/rail-crossing-main/);
 });

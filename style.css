@@ -157,3 +157,12 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .show-station-detail .trip-hakone-yumoto .trip-marker-name{display:none}
 .show-station-detail .trip-hakone-yumoto .trip-number{opacity:.68}
 @media(max-width:390px){.rail-station-map{transform:scale(.9);transform-origin:50% 75%}}
+
+/* German-first platform wayfinding: compact enough for a 320px in-map panel. */
+.rail-crossing{left:174px;top:79px;max-width:139px;min-width:103px;padding:4px 5px}
+.rail-crossing-main{display:block;white-space:nowrap;font-size:10px;font-weight:750}
+.rail-crossing-sub{display:block;color:#b5e8c9;white-space:nowrap;font-size:10px;margin-top:1px}
+.rail-map-disclosure>span{flex:1;min-width:126px}
+.rail-map-official{font-size:10px;padding:6px 7px;line-height:1.2;white-space:nowrap;flex-shrink:0}
+.station-transfer-inset .station-transfer-connector{line-height:1.45}
+.station-transfer-inset p{line-height:1.5}
