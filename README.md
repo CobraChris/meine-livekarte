@@ -38,11 +38,11 @@ JSON unterstützt auch `{ "places": [...] }`, einzelne Objekte, Markdown-Codebl�
 ## Reiseplan als Kartenlink
 
 Die Live-Karte unterstützt außerdem einen separaten Reiseplan über einen Link mit `#trip=`.
-Ein Reiseplan enthält Datum, Stationen, Ankunfts- und Abfahrtszeiten und den jeweiligen nächsten Zug. Er erscheint als **nummerierte Stationen**, **schematische gestrichelte Verbindungslinie** und **Zeitleiste mit Umstiegen**. Via-Punkte lassen sich für den ungefähren Streckenverlauf hinzufügen, sie sind keine gesonderten Umstiege.
+Ein Reiseplan enthält Datum, Stationen, Ankunfts- und Abfahrtszeiten und den jeweiligen nächsten Zug. Er erscheint als **nummerierte Stationen mit kleinen Bahnhofsnamen daneben**, **schematische gestrichelte Verbindungslinie** und **Zeitleiste mit Umstiegen**. Speziell für Hakone nach Takayama am 30.10.2026 funktioniert der kurze Link `https://cobrachris.github.io/meine-livekarte/?trip=hakone-takayama-2026-10-30`, auch direkt in der Browseradresszeile. Der Link lädt das hinterlegte Programm und speichert es lokal. Via-Punkte lassen sich für den ungefähren Streckenverlauf hinzufügen, sie sind keine gesonderten Umstiege.
 
 Zum Erstellen kann `MapCore.encodeJourney({title,date,stops:[...]})` verwendet werden. Ein Stop hat `name`, `lat`, `lng` und optional `arrival`, `departure`, `description`, `leg` sowie `via` (Liste von Koordinatenpaaren für die Verbindung zur nächsten Station).
 
-Der Reiseplan wird lokal und **getrennt von den gesammelten Empfehlungen** gespeichert. „Reiseplan entfernen“ löscht ihn, nicht deine Empfehlungen. Reisepläne enthalten **keine GPS-Position**. Alle Linien sind ausdrücklich *schematisch* und keine exakten Gleisgeometrien oder Echtzeit-Routen. Abfahrtsgleis und Zeiten am Reisetag überprüfen.
+Der Reiseplan wird lokal und **getrennt von den gesammelten Empfehlungen** gespeichert. „Reiseplan entfernen“ löscht ihn, nicht deine Empfehlungen. Reisepläne enthalten **keine GPS-Position**. Alle Linien sind ausdrücklich *schematisch* und keine exakten Gleisgeometrien oder Echtzeit-Routen. Die geplante Reise führt mit Hikari 637 von Odawara westwärts nach Nagoya und mit Hida 9 über Gifu und Gero wieder nach Norden Richtung Takayama. Abfahrtsgleis und Zeiten am Reisetag überprüfen.
 
 ## Datenschutz
 
