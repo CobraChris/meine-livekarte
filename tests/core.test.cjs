@@ -140,7 +140,7 @@ test('two close-zoom station markers are schematic, and arrival platform is not 
  assert.match(app, /rail-station-map/);
  assert.match(app, /rail-track-label-gora/);
  assert.match(app, /rail-track-label-odawara/);
- assert.match(app, /Schematisch · keine gleisgenaue Position/);
+ assert.match(app, /Gleispositionen nicht vermessen/);
  assert.match(app, /homeview\//);
  assert.match(app, /platformOverlayLayer\.removeLayer\(platformOverlay\)/);
  assert.match(app, /transferCard\.hidden\s*=\s*!visible \|\| transferDismissed \|\| showMapLabels/);
