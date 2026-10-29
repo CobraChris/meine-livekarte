@@ -22,3 +22,21 @@
 .gps-center-dot{position:absolute;top:22px;left:22px;width:20px;height:20px;
   border-radius:50%;border:3px solid #fff;background:#398bfa;box-shadow:0 2px 8px #10283e99}
 @media(prefers-reduced-motion:reduce){.gps-bearing{transition:none}}
+
+/* Time-ordered itinerary; railway connections are schematic straight segments. */
+.journey-panel{background:#1c3037;border:1px solid #567369;border-radius:16px;margin:0 0 22px;padding:16px}
+.journey-panel[hidden]{display:none}
+.journey-panel h2{font-size:19px;color:#a4ecc9}
+.journey-panel .journey-date{color:#b5c5ce;margin:5px 0 11px;font-size:12px}
+.journey-panel .journey-warning{font-size:11px;color:#bdc6c9;margin:13px 0 5px}
+.journey-item{border-left:2px dashed #789b92;margin-left:10px;padding:0 0 14px 19px;position:relative;font-size:13px}
+.journey-item:last-child{border-left-color:transparent;padding-bottom:0}
+.journey-item:before{content:"";position:absolute;left:-6px;top:6px;width:10px;height:10px;border-radius:50%;background:#a4ecc9;border:2px solid #172b35}
+.journey-item strong{font-size:14px;display:block}
+.journey-item .times{color:#e3f3eb;font-weight:650}
+.journey-item .leg{color:#b6c5ca;font-size:12px;display:block}
+.journey-item .stop-note{color:#91ada9;font-size:12px;display:block}
+.trip-pin{background:transparent;border:0}
+.trip-number{width:29px;height:29px;display:grid;place-items:center;border-radius:50%;background:#ffdf86;color:#142b30;border:2px solid #fff;
+font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
+#remove-journey{margin-top:7px;text-decoration:underline;text-align:left}
