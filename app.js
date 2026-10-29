@@ -178,6 +178,7 @@
     const visible = routeIncludesStation && map.getZoom() >= 17 &&
       map.getBounds().contains(hakoneYumoto);
     const showMapLabels = visible && map.getZoom() >= 18;
+    document.querySelector('.workspace').classList.toggle('show-station-detail', showMapLabels);
     if (showMapLabels && !platformOverlay) {
       platformOverlay = L.marker(hakoneYumoto,{
         interactive:true,keyboard:false,zIndexOffset:750,
@@ -226,7 +227,7 @@
       const popup = node('div');
       popup.append(node('strong',(i+1)+'. '+stop.name),node('p',times),node('p',stop.description),node('p',stop.leg ? 'Weiter: '+stop.leg : 'Ankunft'));
       // Use DOM text nodes, not HTML interpolation, for untrusted station names.
-      const label = node('div',undefined,'trip-marker'+(i===1?' trip-marker-alt':''));
+      const label = node('div',undefined,'trip-marker'+(i===1?' trip-marker-alt trip-hakone-yumoto':''));
       label.append(node('span',String(i+1),'trip-number'),node('span',stop.name,'trip-marker-name'));
       const marker = L.marker([stop.lat,stop.lng],{zIndexOffset:500,icon:L.divIcon({
         className:'trip-pin',html:label,iconSize:[30,30],iconAnchor:[15,15]
