@@ -143,13 +143,46 @@
   const transferCard = $('station-transfer');
   let transferDismissed = false;
   const hakoneYumoto = L.latLng(35.23365, 139.10398);
+  const platformOverlayLayer = L.layerGroup().addTo(map);
+  let platformOverlay = null;
+  function buildPlatformOverlay() {
+    // Both labels attach to the *same station coordinate*: screen-space schematic,
+    // NOT claimed GPS-precise locations of the actual railway platforms.
+    const root = node('div',undefined,'platform-map-card');
+    root.setAttribute('role','note');
+    root.setAttribute('aria-label','Hakone-Yumoto: 09:16 Ankunft aus Gōra, Gleis nicht bestätigt; 09:24 Abfahrt Richtung Odawara von Gleis 2.');
+    root.append(node('div','HAKONE-YUMOTO · GLEISWECHSEL','platform-map-header'));
+    const row = node('div',undefined,'platform-map-row');
+    const arrival = node('div',undefined,'platform-map-stop platform-map-arrival');
+    arrival.append(node('span','↓ AN 09:16','platform-map-time'),
+      node('strong','Gleis prüfen'),node('small','aus Gōra'));
+    const connector = node('div',undefined,'platform-map-link');
+    connector.append(node('span','8 Min.','platform-map-minutes'),node('span','→','platform-map-arrow'));
+    const departure = node('div',undefined,'platform-map-stop platform-map-departure');
+    departure.append(node('span','↑ AB 09:24','platform-map-time'),
+      node('strong','Gleis 2'),node('small','nach Odawara'));
+    row.append(arrival,connector,departure);
+    root.append(row,node('div','Schematisch · Gleislage und Ankunft am Bahnhof prüfen','platform-map-disclaimer'));
+    return root;
+  }
   function updateStationTransfer() {
-    // Only reveal official-direction platform info, never a fabricated track-level GPS position.
     const routeIncludesStation = !!journey?.stops.some(stop => stop.name.trim().toLowerCase() === 'hakone-yumoto');
     const visible = routeIncludesStation && map.getZoom() >= 17 &&
       map.getBounds().contains(hakoneYumoto);
+    const showMapLabels = visible && map.getZoom() >= 18;
+    if (showMapLabels && !platformOverlay) {
+      platformOverlay = L.marker(hakoneYumoto,{
+        interactive:false,keyboard:false,zIndexOffset:750,
+        icon:L.divIcon({className:'platform-map-icon',html:buildPlatformOverlay(),
+          iconSize:[286,148],iconAnchor:[143,148]})
+      }).addTo(platformOverlayLayer);
+    } else if (!showMapLabels && platformOverlay) {
+      platformOverlayLayer.removeLayer(platformOverlay);
+      platformOverlay = null;
+    }
     if (!visible) transferDismissed = false;
-    transferCard.hidden = !visible || transferDismissed;
+    // At close zoom, prefer the smaller labels directly on the map over the large card.
+    transferCard.hidden = !visible || transferDismissed || showMapLabels;
   }
   $('station-transfer-close').onclick = () => {
     transferDismissed = true;
@@ -197,7 +230,7 @@
           following = false;
           transferDismissed = false;
           marker.closePopup();
-          map.setView([stop.lat,stop.lng],17.5);
+          map.setView([stop.lat,stop.lng],18.25);
           updateStationTransfer();
         };
         popup.append(details);
@@ -206,7 +239,7 @@
         following=false;
         if (stop.name === 'Hakone-Yumoto') {
           transferDismissed=false;
-          map.setView([stop.lat,stop.lng],17.5);
+          map.setView([stop.lat,stop.lng],18.25);
           updateStationTransfer();
         } else { map.setView([stop.lat,stop.lng],14); marker.openPopup(); }
       });
