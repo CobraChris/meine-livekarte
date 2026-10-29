@@ -3,6 +3,7 @@
   const $ = id => document.getElementById(id), C = MapCore;
   const symbols = { restaurant: '♨', sight: '◇', station: '▤' };
   let places = [], filter = 'all', position = null, watch = null, following = false, userDot, accuracy;
+  let distanceDisplays = [];
   const say = text => { $('status').textContent = text; };
   if (!window.L) { say('Die Kartenbibliothek konnte nicht geladen werden. Bitte Seite neu laden.'); return; }
   const map = L.map('map', { zoomControl: false }).setView([52.52, 13.405], 12);
@@ -22,25 +23,36 @@
     const d = C.distance(position, p);
     return d < 1000 ? `${Math.round(d)} m Luftlinie` : `${(d/1000).toLocaleString('de-DE',{maximumFractionDigits:1})} km Luftlinie`;
   }
+  function refreshDistances() {
+    // GPS updates must not rebuild markers: that would close an open place popup.
+    distanceDisplays.forEach(({ place, inPopup, inList }) => {
+      const value = metric(place);
+      inPopup.textContent = value;
+      inList.textContent = value;
+    });
+  }
   function fit() {
     const visible = places.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
   function render() {
-    pins.clearLayers(); $('places').replaceChildren(); $('count').textContent = places.length;
+    pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = []; $('count').textContent = places.length;
     $('empty').hidden = places.length > 0; $('share').disabled = !places.length; $('clear').disabled = !places.length;
     let shown = 0;
     places.forEach(p => {
       if (filter !== 'all' && p.category !== filter) return;
       shown++;
-      const popup = node('div'); popup.append(node('strong',p.name), node('p',p.description), node('p',metric(p)), route(p));
+      const inPopup = node('p',metric(p));
+      const popup = node('div'); popup.append(node('strong',p.name), node('p',p.description), inPopup, route(p));
       const marker = L.marker([p.lat,p.lng], { title:p.name, icon:L.divIcon({className:'pin',html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`,iconSize:[36,36],iconAnchor:[18,36]}) }).bindPopup(popup).addTo(pins);
+      marker.on('popupopen', () => { following = false; });
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
       title.append(node('div',C.categories[p.category], 'category'),node('h3',p.name)); top.append(node('span',symbols[p.category],'place-icon'), title);
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
       show.onclick = () => { following = false; map.setView([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
       const distance = node('span',metric(p),'distance');
       actions.append(show,route(p),distance); card.append(top,node('p',p.description),actions); $('places').append(card);
+      distanceDisplays.push({ place:p, inPopup, inList:distance });
     });
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
   }
@@ -61,7 +73,7 @@
     watch = null; position = null; following = false;
     if (userDot) { map.removeLayer(userDot); userDot = null; }
     if (accuracy) { map.removeLayer(accuracy); accuracy = null; }
-    $('gps').setAttribute('aria-pressed','false'); $('gps').lastElementChild.textContent = 'GPS einschalten'; render(); say(message);
+    $('gps').setAttribute('aria-pressed','false'); $('gps').lastElementChild.textContent = 'GPS einschalten'; refreshDistances(); say(message);
   }
   $('gps').onclick = () => {
     if (watch !== null) { stopGPS(); return; }
@@ -77,7 +89,7 @@
         userDot.on('click', () => { following = true; map.setView(userDot.getLatLng(),16); });
       } else { userDot.setLatLng(ll); accuracy.setLatLng(ll).setRadius(result.coords.accuracy); }
       if (following) map.setView(ll,Math.max(map.getZoom(),15));
-      render(); say(`GPS aktiv · Genauigkeit ca. ${Math.round(result.coords.accuracy)} m`);
+      refreshDistances(); say(`GPS aktiv · Genauigkeit ca. ${Math.round(result.coords.accuracy)} m`);
     }, error => {
       if (watch === null) return;
       const messages = {1:'Standortzugriff verweigert. Du kannst GPS in den Website-Einstellungen des Browsers erlauben.',2:'Standort derzeit nicht verfügbar. Bitte erneut versuchen.',3:'Standortabfrage hat zu lange gedauert. Bitte erneut versuchen.'};
