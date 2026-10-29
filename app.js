@@ -51,7 +51,8 @@
   const say = text => { $('status').textContent = text; };
   if (!window.L) { say('Die Kartenbibliothek konnte nicht geladen werden. Bitte Seite neu laden.'); return; }
   // No hard-coded home city. Without saved places, show a neutral world view until GPS is enabled.
-  const map = L.map('map', { zoomControl: false }).setView([25, 0], 2);
+  // Smooth two-finger zoom on mobile; smaller half-step zoom buttons. OSM raster tiles remain discrete.
+  const map = L.map('map', { zoomControl: false, zoomSnap: 0, zoomDelta: 0.5 }).setView([25, 0], 2);
   L.control.zoom({ position:'topright' }).addTo(map);
   const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>' }).addTo(map);
   let tileWarning = false;
@@ -139,6 +140,22 @@
   // A journey is an optional separate overlay; saved recommendations remain untouched.
   const journeyLayer = L.layerGroup().addTo(map);
   let journey = null;
+  const transferCard = $('station-transfer');
+  let transferDismissed = false;
+  const hakoneYumoto = L.latLng(35.23365, 139.10398);
+  function updateStationTransfer() {
+    // Only reveal official-direction platform info, never a fabricated track-level GPS position.
+    const routeIncludesStation = !!journey?.stops.some(stop => stop.name.trim().toLowerCase() === 'hakone-yumoto');
+    const visible = routeIncludesStation && map.getZoom() >= 17 &&
+      map.getBounds().contains(hakoneYumoto);
+    if (!visible) transferDismissed = false;
+    transferCard.hidden = !visible || transferDismissed;
+  }
+  $('station-transfer-close').onclick = () => {
+    transferDismissed = true;
+    transferCard.hidden = true;
+  };
+  map.on('zoomend moveend', updateStationTransfer);
   function fitJourney() {
     if (!journey) return;
     const coords = journey.stops.flatMap(stop => [[stop.lat,stop.lng], ...stop.via]);
@@ -150,7 +167,7 @@
     const panel = $('journey-panel'), info = $('journey-info');
     info.replaceChildren();
     panel.hidden = !journey;
-    if (!journey) return;
+    if (!journey) { updateStationTransfer(); return; }
     info.append(node('h2',journey.title),node('p',journey.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
     journey.stops.forEach((stop,i) => {
       if (i < journey.stops.length-1) {
@@ -177,6 +194,7 @@
       item.addEventListener('click',()=>{following=false;map.setView([stop.lat,stop.lng],14);marker.openPopup();});
     });
     info.append(node('p','Gestrichelte Linien verbinden Stationen nur schematisch – nicht entlang der tatsächlichen Gleise. Fahrpläne vor Abfahrt nochmals prüfen.','journey-warning'));
+    updateStationTransfer();
   }
   function readJourneyLink() {
     const params = new URLSearchParams(location.search);
