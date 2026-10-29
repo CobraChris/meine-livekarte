@@ -86,3 +86,22 @@ test('journey validation rejects invalid dates, station points, and huge line pa
  assert.throws(()=>C.decodeJourney('#trip=%XX'));
  assert.throws(()=>C.decodeJourney('#trip='+'x'.repeat(30001)));
 });
+
+test('short-link preset for Hakone to Takayama has all stations, correct timings and no private coordinates', () => {
+ const id='hakone-takayama-2026-10-30';
+ const j=C.presetJourney(id);
+ assert.equal(j.stops.length,5);
+ assert.deepEqual(j.stops.map(s=>s.name),['Gōra','Hakone-Yumoto','Odawara','Nagoya','Takayama']);
+ assert.equal(j.stops[0].departure,'08:41');
+ assert.equal(j.stops[2].departure,'10:11');
+ assert.equal(j.stops[3].arrival,'11:19');
+ assert.equal(j.stops[3].departure,'11:43');
+ assert.equal(j.stops[4].arrival,'14:14');
+ assert.equal(j.stops[2].via.length,3);
+ assert.equal(j.stops[3].via.length,3);
+ assert.equal(C.presetJourney('unknown'),null);
+ assert.equal(C.presetJourney('__proto__'),null);
+ assert.equal(JSON.stringify(j).includes('gps'),false);
+ const u=new URL('https://cobrachris.github.io/meine-livekarte/?trip='+id);
+ assert.equal(C.presetJourney(u.searchParams.get('trip')).stops[4].name,'Takayama');
+});
