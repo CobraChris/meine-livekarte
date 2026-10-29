@@ -146,23 +146,33 @@
   const platformOverlayLayer = L.layerGroup().addTo(map);
   let platformOverlay = null;
   function buildPlatformOverlay() {
-    // Both labels attach to the *same station coordinate*: screen-space schematic,
-    // NOT claimed GPS-precise locations of the actual railway platforms.
-    const root = node('div',undefined,'platform-map-card');
-    root.setAttribute('role','note');
-    root.setAttribute('aria-label','Hakone-Yumoto: 09:16 Ankunft aus Gōra, Gleis nicht bestätigt; 09:24 Abfahrt Richtung Odawara von Gleis 2.');
-    root.append(node('div','HAKONE-YUMOTO · GLEISWECHSEL','platform-map-header'));
-    const row = node('div',undefined,'platform-map-row');
-    const arrival = node('div',undefined,'platform-map-stop platform-map-arrival');
-    arrival.append(node('span','↓ AN 09:16','platform-map-time'),
-      node('strong','Gleis prüfen'),node('small','aus Gōra'));
-    const connector = node('div',undefined,'platform-map-link');
-    connector.append(node('span','8 Min.','platform-map-minutes'),node('span','→','platform-map-arrow'));
-    const departure = node('div',undefined,'platform-map-stop platform-map-departure');
-    departure.append(node('span','↑ AB 09:24','platform-map-time'),
-      node('strong','Gleis 2'),node('small','nach Odawara'));
-    row.append(arrival,connector,departure);
-    root.append(row,node('div','Schematisch · Gleislage und Ankunft am Bahnhof prüfen','platform-map-disclaimer'));
+    // This is a schematic diagram tied to the station, not invented
+    // georeferenced platform positions or a pedestrian routing claim.
+    const root = node('div',undefined,'rail-station-map');
+    root.setAttribute('role','group');
+    root.setAttribute('aria-label','Schematische Gleisübersicht Hakone-Yumoto. Gleis 3 Richtung Gōra; Ankunft um 09:16 Gleis vor Ort prüfen; Abfahrt 09:24 von Gleis 2 Richtung Odawara.');
+    const north = node('div',undefined,'rail-track rail-track-gora');
+    const south = node('div',undefined,'rail-track rail-track-odawara');
+    root.append(north,south);
+    const track3 = node('div',undefined,'rail-track-label rail-track-label-gora');
+    track3.append(node('strong','Gleis 3'),node('span','Richtung Gōra'));
+    const track2 = node('div',undefined,'rail-track-label rail-track-label-odawara');
+    track2.append(node('strong','Gleis 2'),node('span','09:24 → Odawara'));
+    const arrival = node('div',undefined,'rail-arrival-note');
+    arrival.append(node('span','09:16 Ankunft aus Gōra'),node('strong','Gleis vor Ort prüfen'));
+    const crossing = node('div',undefined,'rail-crossing');
+    crossing.append(node('span','8 Min. Umstieg'),node('span','↓','rail-crossing-arrow'));
+    const disclosure = node('div',undefined,'rail-map-disclosure');
+    disclosure.append(node('span','Schematisch · keine gleisgenaue Position'));
+    const info = node('a','Offizieller Gleisplan ↗','rail-map-official');
+    info.href = 'https://www.odakyu.jp/station/hakone_yumoto/homeview/';
+    info.target = '_blank';
+    info.rel = 'noopener noreferrer';
+    info.addEventListener('click', e => e.stopPropagation());
+    disclosure.append(info);
+    root.append(track3,arrival,crossing,track2,disclosure);
+    // Keep the leaflet station pin below the labels. Taps on the external
+    // official-plan link remain possible; other gestures pan/zoom the map.
     return root;
   }
   function updateStationTransfer() {
@@ -172,9 +182,9 @@
     const showMapLabels = visible && map.getZoom() >= 18;
     if (showMapLabels && !platformOverlay) {
       platformOverlay = L.marker(hakoneYumoto,{
-        interactive:false,keyboard:false,zIndexOffset:750,
+        interactive:true,keyboard:false,zIndexOffset:750,
         icon:L.divIcon({className:'platform-map-icon',html:buildPlatformOverlay(),
-          iconSize:[286,148],iconAnchor:[143,148]})
+          iconSize:[320,210],iconAnchor:[160,170]})
       }).addTo(platformOverlayLayer);
     } else if (!showMapLabels && platformOverlay) {
       platformOverlayLayer.removeLayer(platformOverlay);
