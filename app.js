@@ -6,7 +6,8 @@
   let distanceDisplays = [];
   const say = text => { $('status').textContent = text; };
   if (!window.L) { say('Die Kartenbibliothek konnte nicht geladen werden. Bitte Seite neu laden.'); return; }
-  const map = L.map('map', { zoomControl: false }).setView([52.52, 13.405], 12);
+  // No hard-coded home city. Without saved places, show a neutral world view until GPS is enabled.
+  const map = L.map('map', { zoomControl: false }).setView([25, 0], 2);
   L.control.zoom({ position:'topright' }).addTo(map);
   const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>' }).addTo(map);
   let tileWarning = false;
@@ -31,8 +32,8 @@
       inList.textContent = value;
     });
   }
-  function fit() {
-    const visible = places.filter(p => filter === 'all' || p.category === filter);
+  function fit(items = places) {
+    const visible = items.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
   function render() {
@@ -57,14 +58,37 @@
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
   }
   function persist() {
-    try { localStorage.setItem('livekarte-places-v1',JSON.stringify(places)); } catch { say('Browserspeicher nicht verfügbar. Nutze Teilen, um deine Orte zu sichern.'); }
-    // Remove an old shared payload so reload never restores deleted recommendations.
-    if (location.hash) history.replaceState(null,'',location.pathname + location.search);
+    try {
+      localStorage.setItem('livekarte-places-v1', JSON.stringify(places));
+      // Once a shared link has been saved, remove its fragment. A later "Leeren"
+      // must not import those same places again after a reload.
+      if (location.hash.startsWith('#places=')) history.replaceState(null, '', location.pathname + location.search);
+      return true;
+    } catch {
+      say('Browserspeicher nicht verfügbar. Sichere deine Orte mit einem Kartenlink.');
+      return false;
+    }
   }
   function readLink() {
-    try { const shared = C.decode(location.hash); if (shared !== null) { places = shared; render(); fit(); return true; } }
-    catch (e) { say('Kartenlink konnte nicht geladen werden: ' + e.message); }
-    return false;
+    try {
+      const shared = C.decode(location.hash);
+      if (shared === null) return false;
+      const before = places.length;
+      const combined = C.merge(places, shared);
+      places = combined;
+      filter = 'all';
+      document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === 'all')));
+      const saved = persist();
+      render();
+      if (shared.length) fit(shared); // Focus on the newly received recommendations, even if older places are far away.
+      const added = places.length - before;
+      say(saved ? (added ? `${added} neue Orte gespeichert · ${places.length} insgesamt.` : 'Alle Orte aus dem Link sind bereits gespeichert.')
+                : 'Orte übernommen, aber nicht dauerhaft gespeichert. Bitte den Kartenlink sichern.');
+      return true;
+    } catch (e) {
+      say('Kartenlink konnte nicht geladen werden: ' + e.message);
+      return false;
+    }
   }
   $('fit').onclick = () => { following = false; fit(); };
   map.on('dragstart', () => { following = false; });
@@ -106,11 +130,11 @@
     event.preventDefault();
     try {
       const additions = C.parse($('import-text').value);
-      const merged = [...places];
-      additions.forEach(p => { if (!merged.some(q => q.name === p.name && q.lat === p.lat && q.lng === p.lng)) merged.push(p); });
-      places = C.normalize(merged); filter = 'all';
+      const before = places.length;
+      places = C.merge(places, additions); filter = 'all';
       document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.filter === 'all')));
-      persist(); render(); following = false; fit(); $('import-dialog').close(); $('import-text').value = ''; say(`${additions.length} Orte importiert.`);
+      const saved = persist(); render(); following = false; fit(additions); $('import-dialog').close(); $('import-text').value = '';
+      say(saved ? `${places.length - before} neue Orte hinzugefügt · ${places.length} insgesamt.` : 'Orte importiert, konnten aber nicht dauerhaft gespeichert werden.');
     } catch (e) { $('import-error').textContent = e.message; }
   };
   $('clear').onclick = () => {
@@ -118,11 +142,14 @@
     places = []; persist(); render(); say('Empfehlungen entfernt.');
   };
   $('demo').onclick = () => {
-    places = C.normalize([
+    const sample = [
       {name:'Brandenburger Tor',lat:52.516275,lng:13.377704,category:'sight',description:'Ein Berliner Wahrzeichen – und ein guter Ausgangspunkt für deinen Spaziergang.'},
       {name:'Markthalle Neun',lat:52.5021,lng:13.4318,category:'restaurant',description:'Kulinarischer Treffpunkt in Kreuzberg. Öffnungszeiten und Angebote bitte aktuell prüfen.'},
       {name:'Berlin Hauptbahnhof',lat:52.5251,lng:13.3694,category:'station',description:'Ankommen, aufbrechen und die Stadt entdecken.'}
-    ]); persist(); render(); fit(); say('Beispielroute Berlin geladen.');
+    ];
+    try {
+      places = C.merge(places, sample); persist(); render(); fit(sample); say('Beispielroute Berlin ergänzt.');
+    } catch (e) { say(e.message); }
   };
   $('share').onclick = () => {
     const url = new URL(location.href); url.search = ''; url.hash = C.encode(places);
@@ -133,10 +160,27 @@
     try { await navigator.clipboard.writeText($('share-url').value); $('share-dialog').close(); say('Kartenlink kopiert.'); }
     catch { $('share-url').focus(); $('share-url').select(); say('Bitte den markierten Link manuell kopieren.'); }
   };
+  const expand = $('expand-map');
+  let expanded = false;
+  function toggleExpanded(force) {
+    expanded = typeof force === 'boolean' ? force : !expanded;
+    document.querySelector('.workspace').classList.toggle('is-expanded', expanded);
+    document.body.classList.toggle('map-fullscreen', expanded);
+    expand.setAttribute('aria-pressed', String(expanded));
+    expand.setAttribute('aria-label', expanded ? 'Vollbild schließen' : 'Karte im Vollbild anzeigen');
+    expand.title = expanded ? 'Vollbild schließen' : 'Karte im Vollbild anzeigen';
+    expand.textContent = expanded ? '✕' : '⛶';
+    requestAnimationFrame(() => map.invalidateSize());
+  }
+  expand.onclick = () => toggleExpanded();
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && expanded) toggleExpanded(false); });
+  window.addEventListener('resize', () => map.invalidateSize());
   window.addEventListener('hashchange',readLink);
   window.addEventListener('pagehide',() => { if (watch !== null) stopGPS(); });
-  if (!readLink()) {
-    try { places = C.parse(localStorage.getItem('livekarte-places-v1') || '[]'); } catch { say('Gespeicherte Orte konnten nicht gelesen werden. Bitte erneut importieren.'); }
-    render(); fit();
-  }
+  // Load saved places first, so recommendations received through a ChatGPT link
+  // are added to them rather than replacing them.
+  try { places = C.parse(localStorage.getItem('livekarte-places-v1') || '[]'); }
+  catch { say('Gespeicherte Orte konnten nicht gelesen werden. Bitte erneut importieren.'); }
+  render();
+  if (!readLink()) fit();
 })();
