@@ -169,7 +169,7 @@
       popup.append(node('strong',(i+1)+'. '+stop.name),node('p',times),node('p',stop.description),node('p',stop.leg ? 'Weiter: '+stop.leg : 'Ankunft'));
       // Use DOM text nodes, not HTML interpolation, for untrusted station names.
       const label = node('div',undefined,'trip-marker'+(i===1?' trip-marker-alt':''));
-      label.append(node('span',String(i+1),'trip-number'),node('span',stop.name.replace(/\\s*\\(Bahnhof\\)\\s*$/i,''),'trip-marker-name'));
+      label.append(node('span',String(i+1),'trip-number'),node('span',stop.name,'trip-marker-name'));
       const marker = L.marker([stop.lat,stop.lng],{zIndexOffset:500,icon:L.divIcon({
         className:'trip-pin',html:label,iconSize:[30,30],iconAnchor:[15,15]
       })}).bindPopup(popup).addTo(journeyLayer);
