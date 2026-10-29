@@ -70,3 +70,6 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .station-transfer-inset p{font-size:10px;line-height:1.45;color:#bbcacb;margin:9px 0 6px}
 .station-transfer-inset a{font-size:11px;color:#a4ecc9;text-decoration:underline}
 @media(max-width:380px){.station-transfer-inset{width:min(260px,calc(100% - 82px));padding:9px}}
+
+.transfer-details-button{margin-top:7px;padding:6px 10px;min-height:38px;font-size:12px}
+.journey-item{cursor:pointer}
