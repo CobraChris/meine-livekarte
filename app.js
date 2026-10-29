@@ -494,7 +494,11 @@
     filter = b.dataset.filter; document.querySelectorAll('[data-filter]').forEach(e => e.setAttribute('aria-pressed', String(e === b))); render();
   }; });
   document.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => b.closest('dialog').close(); });
-  $('open-import').onclick = () => { $('import-error').textContent = ''; $('import-dialog').showModal(); };
+  $('open-import').onclick = () => {
+    $('import-error').textContent = '';
+    $('import-target').textContent = 'Speichern in: '+currentPlan().name;
+    $('import-dialog').showModal();
+  };
   $('privacy').onclick = () => $('help-dialog').showModal();
   $('import-form').onsubmit = event => {
     event.preventDefault();
