@@ -136,7 +136,6 @@
       const distance = node('span',metric(p),'distance');
       actions.append(show,route(p),distance);
       const assignRow=node('div',undefined,'plan-assign-row');
-      const assignLabel=node('label','Zuordnen:','sr-only');
       const assignSelect=node('select',undefined,'place-plan-select');
       assignSelect.setAttribute('aria-label','Ort '+p.name+' einem Reiseabschnitt zuordnen');
       const tags=planAssignments[C.placePlanKey(p)] || [];
@@ -324,6 +323,8 @@
     });
     pick.value=activePlanId;
     const plan=currentPlan();
+    $('fit').lastElementChild.textContent=plan.kind==='journey' ? 'Route zeigen'
+      : plan.kind==='city' ? 'Ziele zeigen' : 'Alle Orte';
     info.replaceChildren();
     info.hidden=activePlanId==='all';
     if (!info.hidden) {
@@ -398,6 +399,7 @@
         persistPlanState();
         // Remove the consumed trip URL so clearing the itinerary stays cleared after reload.
         params.delete('trip');
+        params.set('view',nextView);
         const otherQuery=params.toString();
         history.replaceState(null,'',location.pathname+(otherQuery?'?'+otherQuery:'')+
           (hasLongLink?'':location.hash));
@@ -414,7 +416,12 @@
     renderJourney();renderPlanPicker();
     say('Nur der Reiseplan dieses Abschnitts wurde entfernt. Andere Abschnitte und Orte bleiben erhalten.');
   };
-  $('fit').onclick = () => { pauseGPSFollow(); fit(); };
+  $('fit').onclick = () => {
+    pauseGPSFollow();
+    if(journey) fitJourney();
+    else if(currentPlaces().length) fit();
+    else if(currentPlan().center) map.setView(currentPlan().center,currentPlan().kind==='city'?14:8);
+  };
   const recenterGPS = $('recenter-gps');
   let automaticGPSView = false;
   function refreshGPSFollowControl() {
@@ -571,7 +578,8 @@
   } catch { say('Gespeicherter Reiseplan ist ungültig.'); }
   const queryView=new URLSearchParams(location.search).get('view');
   const savedView=(()=>{try{return localStorage.getItem('livekarte-active-plan-v1')}catch{return null}})();
-  const requestedView=queryView||savedView||(journey?'ride-takayama':'all');
+  const requestedView=queryView||savedView||
+    (Object.prototype.hasOwnProperty.call(planJourneys,'ride-takayama')?'ride-takayama':'all');
   activePlanId=allPlans().some(p=>p.id===requestedView)?requestedView:'all';
   journey=activeJourney();
   renderPlanPicker();renderJourney();render();
