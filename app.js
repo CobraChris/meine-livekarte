@@ -314,6 +314,70 @@
     info.append(node('p','Gestrichelte Linien verbinden Stationen nur schematisch – nicht entlang der tatsächlichen Gleise. Fahrpläne vor Abfahrt nochmals prüfen.','journey-warning'));
     updateStationTransfer();
   }
+  function renderPlanPicker() {
+    const pick=$('plan-select'), info=$('plan-summary');
+    pick.replaceChildren();
+    allPlans().forEach(plan=>{
+      const opt=node('option',plan.name);
+      opt.value=plan.id;pick.append(opt);
+    });
+    pick.value=activePlanId;
+    const plan=currentPlan();
+    info.replaceChildren();
+    info.hidden=activePlanId==='all';
+    if (!info.hidden) {
+      info.append(node('strong',plan.name));
+      const note=plan.kind==='city'
+        ? 'Stadtansicht: hier kannst du Restaurants, Sehenswürdigkeiten und andere Ziele sammeln.'
+        : activeJourney()
+          ? 'Reisetag mit eingezeichneter Zugroute, Zeiten und Umstiegen.'
+          : 'Reisetag angelegt. Fahrzeiten und Strecke sind noch nicht hinterlegt – keine erfundenen Verbindungen.';
+      info.append(node('p',note));
+    }
+  }
+  function selectPlan(id,options={}) {
+    const plan=allPlans().find(p=>p.id===id);
+    if(!plan)return false;
+    activePlanId=id;
+    journey=activeJourney();
+    pauseGPSFollow();
+    renderPlanPicker();renderJourney();render();
+    if (options.focus!==false) {
+      if(journey) fitJourney();
+      else {
+        const matching=currentPlaces();
+        if(matching.length) fit(matching);
+        else if(plan.center) map.setView(plan.center,plan.kind==='city'?14:8);
+      }
+    }
+    if (options.save!==false) persistPlanState();
+    if(options.url!==false) {
+      const url=new URL(location.href);
+      url.searchParams.set('view',id);
+      history.replaceState(null,'',url.pathname+url.search+url.hash);
+    }
+    if(options.announce!==false) say('Abschnitt ausgewählt: '+plan.name);
+    return true;
+  }
+  $('plan-select').onchange=()=>selectPlan($('plan-select').value);
+  $('add-plan').onclick=()=>{
+    $('plan-error').textContent='';
+    $('plan-dialog').showModal();
+  };
+  $('plan-form').onsubmit=e=>{
+    e.preventDefault();
+    try {
+      const name=$('plan-title').value.trim().slice(0,60);
+      const kind=$('plan-type').value;
+      if(!name || !['city','journey'].includes(kind))throw Error('Name und Art fehlen.');
+      if(customPlans.length>=30)throw Error('Maximal 30 eigene Reiseabschnitte.');
+      const id='custom-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
+      const center=map.getCenter();
+      customPlans=C.validCustomPlans([...customPlans,{id,name,kind,center:[center.lat,center.lng]}]);
+      $('plan-dialog').close();$('plan-title').value='';
+      selectPlan(id);
+    }catch(error){$('plan-error').textContent=error.message;}
+  };
   function readJourneyLink() {
     const params = new URLSearchParams(location.search);
     const slug = params.get('trip');
