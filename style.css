@@ -40,3 +40,13 @@
 .trip-number{width:29px;height:29px;display:grid;place-items:center;border-radius:50%;background:#ffdf86;color:#142b30;border:2px solid #fff;
 font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 #remove-journey{margin-top:7px;text-decoration:underline;text-align:left}
+
+/* Compact station names beside numbered itinerary pins. */
+.trip-marker{position:relative;width:30px;height:30px}
+.trip-marker .trip-number{position:relative;z-index:2}
+.trip-marker-name{position:absolute;top:2px;left:36px;max-width:150px;
+  display:inline-block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:3px 7px;border-radius:7px;border:1px solid #a4c7ba;
+  background:#142b34ed;color:#f3f6f2;font:650 12px/20px system-ui,sans-serif;
+  text-shadow:0 1px 2px #0008;box-shadow:0 2px 8px #0008;pointer-events:none}
+.trip-marker-alt .trip-marker-name{left:auto;right:36px}
