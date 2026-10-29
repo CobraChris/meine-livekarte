@@ -99,3 +99,41 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .platform-map-minutes{white-space:nowrap;display:block;font-size:10px}
 .platform-map-arrow{display:block;border-top:2px dashed #b5e0c6;font-size:14px;height:14px;line-height:13px}
 .platform-map-disclaimer{margin-top:6px;color:#c3ced1;font-size:9px;line-height:1.25}
+
+/* Station-level map annotation: actual OSM railway tiles stay visible.
+   Two distinct track labels and a symbolic transfer note replace the large card.
+   IMPORTANT: offsets/rails in this graphic are schematic, not surveyed coordinates. */
+.platform-map-icon{background:transparent;border:0;overflow:visible}
+.rail-station-map{position:relative;width:320px;height:210px;
+  font:12px/1.25 system-ui,sans-serif;color:#f0fbf6;pointer-events:none;
+  filter:drop-shadow(0 3px 5px #001720aa)}
+.rail-track{position:absolute;left:16px;width:292px;height:6px;
+  background:repeating-linear-gradient(90deg,#e9f5f4 0px,#e9f5f4 13px,#34545b 13px,#34545b 19px);
+  border-block:2px solid #1b3339;border-radius:3px;transform:rotate(-15deg);
+  opacity:.87;box-shadow:0 1px 3px #071c22aa}
+.rail-track-gora{top:48px;border-color:#489fd9}
+.rail-track-odawara{top:146px;border-color:#67dca2}
+.rail-track-label{position:absolute;display:flex;flex-direction:column;gap:1px;
+  border-radius:9px;padding:6px 9px;box-shadow:0 2px 10px #001a2699;
+  border:1.5px solid #7eb7b0;background:#102a35f2}
+.rail-track-label strong{font-size:14px}
+.rail-track-label span{font-size:10px;white-space:nowrap;color:#cedfe0}
+.rail-track-label-gora{left:132px;top:12px;border-color:#65b7f9}
+.rail-track-label-odawara{left:139px;top:115px;border-color:#8ee9ba}
+.rail-arrival-note{position:absolute;left:10px;top:78px;padding:5px 7px;
+  background:#112c39f0;border:1px solid #70b8ed;border-radius:8px;
+  display:flex;flex-direction:column;gap:2px;font-size:10px;color:#d5eaf8}
+.rail-arrival-note strong{font-size:11px;color:#fff}
+.rail-crossing{position:absolute;left:237px;top:78px;display:flex;flex-direction:column;
+  align-items:center;gap:0;font-size:10px;color:#fff;background:#12333be8;
+  padding:2px 5px;border-radius:7px;border:1px dashed #9edbbf}
+.rail-crossing-arrow{font-size:18px;line-height:18px;color:#a7f2c6}
+.rail-map-disclosure{position:absolute;bottom:0;left:8px;right:8px;
+  display:flex;align-items:center;justify-content:space-between;gap:5px;
+  border:1px solid #4d807c;border-radius:7px;background:#122e36f2;
+  padding:5px 7px;font-size:9px;color:#c6d5d4}
+.rail-map-official{pointer-events:auto;font-size:10px;color:#a4ecc9;text-decoration:underline;
+  white-space:nowrap}
+@media(max-width:390px){
+  .rail-station-map{transform:scale(.91);transform-origin:50% 75%}
+}
