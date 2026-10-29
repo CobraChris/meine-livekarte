@@ -60,3 +60,29 @@ test('iOS compass heading takes precedence over relative alpha', () => {
  assert.equal(C.compassHeading({webkitCompassHeading:360}),0);
  assert.equal(C.compassHeading({webkitCompassHeading:-10}),350);
 });
+
+test('a timed travel itinerary survives its share link without losing stops or line waypoints', () => {
+ const trip = {title:'Hakone nach Takayama',date:'2026-10-30',stops:[
+  {name:'Gora',lat:35.25085,lng:139.04826,departure:'08:41',leg:'Tozan'},
+  {name:'Nagoya',lat:35.17073,lng:136.88184,arrival:'11:19',departure:'11:43',via:[[35.40949,136.75698],[35.805851,137.239686]],leg:'Hida 9'},
+  {name:'Takayama',lat:36.14113,lng:137.25129,arrival:'14:14'}
+ ]};
+ const link=C.encodeJourney(trip);
+ assert.ok(link.startsWith('#trip='));
+ const decoded=C.decodeJourney(link);
+ assert.equal(decoded.stops.length,3);
+ assert.equal(decoded.stops[1].leg,'Hida 9');
+ assert.deepEqual(decoded.stops[1].via,trip.stops[1].via);
+ assert.equal(decoded.stops[2].arrival,'14:14');
+ assert.equal(C.decodeJourney('#places=%5B%5D'),null);
+});
+test('journey validation rejects invalid dates, station points, and huge line payloads', () => {
+ const trip={title:'Test',stops:[{name:'A',lat:35,lng:139},{name:'B',lat:36,lng:137}]};
+ for(const stops of [[],[trip.stops[0]],Array(16).fill(trip.stops[0])])
+   assert.throws(()=>C.normalizeJourney({...trip,stops}));
+ assert.throws(()=>C.normalizeJourney({...trip,stops:[{...trip.stops[0],departure:'33:99'},trip.stops[1]]}));
+ assert.throws(()=>C.normalizeJourney({...trip,stops:[{...trip.stops[0],lat:Infinity},trip.stops[1]]}));
+ assert.throws(()=>C.normalizeJourney({...trip,stops:[{...trip.stops[0],via:[[95,139]]},trip.stops[1]]}));
+ assert.throws(()=>C.decodeJourney('#trip=%XX'));
+ assert.throws(()=>C.decodeJourney('#trip='+'x'.repeat(30001)));
+});

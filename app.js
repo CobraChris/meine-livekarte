@@ -136,6 +136,64 @@
       return false;
     }
   }
+  // A journey is an optional separate overlay; saved recommendations remain untouched.
+  const journeyLayer = L.layerGroup().addTo(map);
+  let journey = null;
+  function fitJourney() {
+    if (!journey) return;
+    const coords = journey.stops.flatMap(stop => [[stop.lat,stop.lng], ...stop.via]);
+    following = false;
+    if (coords.length) map.fitBounds(coords, {padding:[38,38],maxZoom:13});
+  }
+  function renderJourney() {
+    journeyLayer.clearLayers();
+    const panel = $('journey-panel'), info = $('journey-info');
+    info.replaceChildren();
+    panel.hidden = !journey;
+    if (!journey) return;
+    info.append(node('h2',journey.title),node('p',journey.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
+    journey.stops.forEach((stop,i) => {
+      if (i < journey.stops.length-1) {
+        const next = journey.stops[i+1];
+        L.polyline([[stop.lat,stop.lng],...stop.via,[next.lat,next.lng]],{
+          color:'#ffdf86',weight:4,opacity:.85,dashArray:'7 7'
+        }).addTo(journeyLayer);
+      }
+      const item = node('div',undefined,'journey-item');
+      const times = [stop.arrival && stop.arrival+' an',stop.departure && stop.departure+' ab'].filter(Boolean).join(' · ');
+      item.append(node('span',times,'times'),node('strong',(i+1)+'. '+stop.name));
+      if (stop.description) item.append(node('span',stop.description,'stop-note'));
+      if (stop.leg) item.append(node('span','Weiter: '+stop.leg,'leg'));
+      info.append(item);
+      const popup = node('div');
+      popup.append(node('strong',(i+1)+'. '+stop.name),node('p',times),node('p',stop.description),node('p',stop.leg ? 'Weiter: '+stop.leg : 'Ankunft'));
+      const marker = L.marker([stop.lat,stop.lng],{zIndexOffset:500,icon:L.divIcon({
+        className:'trip-pin',html:'<span class="trip-number">'+(i+1)+'</span>',iconSize:[30,30],iconAnchor:[15,15]
+      })}).bindPopup(popup).addTo(journeyLayer);
+      marker.on('popupopen',()=>{following=false;});
+      item.addEventListener('click',()=>{following=false;map.setView([stop.lat,stop.lng],14);marker.openPopup();});
+    });
+    info.append(node('p','Gestrichelte Linien verbinden Stationen nur schematisch – nicht entlang der tatsächlichen Gleise. Fahrpläne vor Abfahrt nochmals prüfen.','journey-warning'));
+  }
+  function readJourneyLink() {
+    if (!location.hash.startsWith('#trip=')) return false;
+    try {
+      const decoded=C.decodeJourney(location.hash);
+      if (!decoded) return false;
+      journey=decoded;
+      try {
+        localStorage.setItem('livekarte-journey-v1',JSON.stringify(journey));
+        history.replaceState(null,'',location.pathname+location.search);
+      } catch { say('Reiseplan geöffnet, konnte aber nicht dauerhaft gespeichert werden.'); }
+      renderJourney(); fitJourney();
+      say('Reiseplan auf der Karte geladen. Deine bisherigen Empfehlungen bleiben erhalten.');
+    } catch (e) { say('Reiseplan ungültig: '+e.message); }
+    return true;
+  }
+  $('remove-journey').onclick = () => {
+    journey=null;try{localStorage.removeItem('livekarte-journey-v1');}catch{}
+    renderJourney();fit();say('Reiseplan entfernt. Empfehlungen bleiben erhalten.');
+  };
   $('fit').onclick = () => { following = false; fit(); };
   map.on('dragstart', () => { following = false; });
   function stopGPS(message = 'GPS ausgeschaltet. Standort wurde entfernt.') {
@@ -231,12 +289,17 @@
   expand.onclick = () => toggleExpanded();
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && expanded) toggleExpanded(false); });
   window.addEventListener('resize', () => map.invalidateSize());
-  window.addEventListener('hashchange',readLink);
+  window.addEventListener('hashchange',()=>{ if (!readJourneyLink()) readLink(); });
   window.addEventListener('pagehide',() => { if (watch !== null) stopGPS(); });
-  // Load saved places first, so recommendations received through a ChatGPT link
-  // are added to them rather than replacing them.
+  // Load saved recommendations and journey independently. A journey never replaces pins.
   try { places = C.parse(localStorage.getItem('livekarte-places-v1') || '[]'); }
   catch { say('Gespeicherte Orte konnten nicht gelesen werden. Bitte erneut importieren.'); }
-  render();
-  if (!readLink()) fit();
+  try {
+    const savedTrip=localStorage.getItem('livekarte-journey-v1');
+    if(savedTrip) journey=C.normalizeJourney(JSON.parse(savedTrip));
+  } catch { say('Gespeicherter Reiseplan ist ungültig.'); }
+  render();renderJourney();
+  if (!readJourneyLink() && !readLink()) {
+    if(journey) fitJourney(); else fit();
+  }
 })();
