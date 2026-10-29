@@ -137,7 +137,7 @@ test('two close-zoom station markers are schematic, and arrival platform is not 
  assert.match(app, /'Gleis 2'/);
  assert.match(app, /platformOverlayLayer\.removeLayer\(platformOverlay\)/);
  assert.match(app, /transferCard\.hidden\s*=\s*!visible \|\| transferDismissed \|\| showMapLabels/);
- assert.match(app, /Ankunftsgleis vor Ort prüfen/);
+ assert.match(app, /Gleis nicht bestätigt/);
  assert.doesNotMatch(html, /class="station-transfer-number">3/);
  assert.match(html, /station-transfer-unknown/);
  assert.match(css, /\.platform-map-departure\{border-color:/);
