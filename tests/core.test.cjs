@@ -123,3 +123,22 @@ test('smooth zoom and Hakone-Yumoto transfer inset are wired into the map UI', (
  assert.match(html, /www\.odakyu\.jp\/station\/hakone_yumoto/);
  assert.match(css, /\.station-transfer-inset\[hidden\]\{display:none\}/);
 });
+
+test('two close-zoom station markers are schematic, and arrival platform is not invented', () => {
+ const {readFileSync} = require('node:fs');
+ const {join} = require('node:path');
+ const root=join(__dirname,'..');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ const css=readFileSync(join(root,'style.css'),'utf8');
+ assert.match(app, /map\.getZoom\(\)\s*>=\s*18/);
+ assert.match(app, /platformOverlay\s*=\s*L\.marker\(hakoneYumoto/);
+ assert.match(app, /'Gleis prüfen'/);
+ assert.match(app, /'Gleis 2'/);
+ assert.match(app, /platformOverlayLayer\.removeLayer\(platformOverlay\)/);
+ assert.match(app, /transferCard\.hidden\s*=\s*!visible \|\| transferDismissed \|\| showMapLabels/);
+ assert.match(app, /Gleis nicht bestätigt/);
+ assert.doesNotMatch(html, /class="station-transfer-number">3/);
+ assert.match(html, /station-transfer-unknown/);
+ assert.match(css, /\.platform-map-departure\{border-color:/);
+});
