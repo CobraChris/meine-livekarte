@@ -175,3 +175,39 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   color:#b6f1d4;font-size:29px;font-weight:750;box-shadow:0 4px 14px #0007}
 #recenter-gps[hidden]{display:none}
 @media(max-width:760px){#recenter-gps{right:10px;top:176px}}
+
+/* Route/city plan switcher - visible also in map fullscreen. */
+.plan-picker{position:absolute;z-index:860;top:68px;left:20px;
+  width:min(395px,calc(100% - 101px));padding:8px 9px 9px;
+  border-radius:11px;background:#102b35ef;border:1px solid #547169;
+  box-shadow:0 4px 14px #0006}
+.plan-picker label{margin:0 0 3px;display:block;font-size:9px;letter-spacing:.12em;
+  font-weight:800;color:#a4ecc9}
+.plan-picker-row{display:flex;gap:5px;align-items:center}
+.plan-picker select{appearance:auto;width:100%;min-width:0;flex:1;
+  min-height:40px;padding:7px 8px;border:1px solid #53716f;border-radius:8px;
+  color:#f1f6f4;background:#193541;font-size:12px;font-weight:700}
+.plan-picker select option{background:#193541;color:#fff}
+.plan-picker button{min-height:40px;min-width:40px;padding:4px;border-radius:8px;
+  border:1px solid #638a7a;background:#24463d;color:#a4ecc9;font-size:21px}
+.station-transfer-inset{top:178px}
+.plan-summary{border:1px solid #547269;border-radius:13px;background:#1a3137;
+  padding:12px 14px;margin-bottom:15px}
+.plan-summary[hidden]{display:none}
+.plan-summary strong{font-size:13px;color:#a4ecc9}
+.plan-summary p{font-size:12px;color:#bbcdd1;margin:4px 0 0}
+.plan-assign-row{margin-top:10px}
+.place-plan-select{width:100%;min-height:37px;border:1px solid #38535b;
+  border-radius:8px;background:#152d35;color:#d4e2e1;
+  padding:6px 8px;font-size:11px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#plan-dialog input,#plan-dialog select{width:100%;min-height:43px;padding:9px 10px;
+  border:1px solid #4d6a68;border-radius:8px;background:#0e1b22;color:#fff;font-size:14px}
+#plan-dialog .hint{font-size:12px}
+#plan-error{color:#ffb0a2}
+@media(max-width:760px){
+  .plan-picker{left:12px;top:70px;width:min(355px,calc(100% - 88px))}
+  .station-transfer-inset{top:188px}
+}
+@media(max-width:380px){.plan-picker select{font-size:11px}.plan-picker{max-width:calc(100% - 80px)}}
