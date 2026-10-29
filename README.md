@@ -64,3 +64,7 @@ Die Datei `.github/workflows/pages.yml` prüft JavaScript und Tests in Pull Requ
 4. Ziel: https://cobrachris.github.io/meine-livekarte/
 
 Alternative ohne Actions: unter Pages **Deploy from a branch**, `main` und `/ (root)` auswählen. Die Anwendung benötigt keinen Build. HTTPS für GPS aktiviert lassen. Der Workflow setzt die Pages-Konfiguration voraus; das Einchecken allein aktiviert Pages nicht.
+
+## Hinweis bei erstem GitHub-Pages-Deployment
+
+Nach dem erstmaligen Aktivieren von **Settings → Pages → Source: GitHub Actions** kann ein zuvor fehlgeschlagener Deploy-Lauf erneut gestartet werden. Änderungen auf `main` lösen den vorhandenen Workflow ebenfalls neu aus.
