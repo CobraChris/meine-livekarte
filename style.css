@@ -10,3 +10,15 @@
   .workspace.is-expanded #expand-map{top:116px}
   body.map-fullscreen{overflow:hidden}
 }
+
+/* GPS marker: the transparent tip shows the phone's compass bearing; the dot stays in place. */
+.gps-location-icon{background:transparent;border:0}
+.gps-bearing{position:absolute;inset:0;opacity:0;pointer-events:none;transform-origin:50% 50%;transition:transform .12s linear}
+.gps-location-icon.has-heading .gps-bearing{opacity:1}
+.gps-bearing::before{content:"";position:absolute;top:1px;left:18px;width:28px;height:37px;
+  background:linear-gradient(180deg,#3289f2df,#3289f244);
+  clip-path:polygon(50% 0%,100% 100%,50% 78%,0% 100%);
+  filter:drop-shadow(0 1px 2px #0d3563)}
+.gps-center-dot{position:absolute;top:22px;left:22px;width:20px;height:20px;
+  border-radius:50%;border:3px solid #fff;background:#398bfa;box-shadow:0 2px 8px #10283e99}
+@media(prefers-reduced-motion:reduce){.gps-bearing{transition:none}}
