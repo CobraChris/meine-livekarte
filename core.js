@@ -64,7 +64,7 @@
     }
     const number = value => (typeof value === 'number' || (typeof value === 'string' && value.trim())) ? Number(value) : NaN;
     const coords = p => {
-      const lat = number(p?.lat), lng = number(p?.lng);
+      const lat = number(Array.isArray(p) ? p[0] : p?.lat), lng = number(Array.isArray(p) ? p[1] : p?.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
         throw new Error('Ungültige Koordinaten im Reiseplan.');
       return [lat, lng];
