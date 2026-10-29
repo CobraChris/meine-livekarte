@@ -86,6 +86,34 @@
     });
     return {title:trim(journey.title,120) || 'Mein Reiseplan',date:trim(journey.date,10),stops};
   }
+  // Small, non-sensitive trip presets allow short browser-friendly URLs.
+  // Station-to-station waypoints are illustrative, not rail-grade geometry.
+  const journeyPresets = {
+    'hakone-takayama-2026-10-30': {
+      title:'Hakone–Takayama',date:'30.10.2026',
+      stops:[
+        {name:'Gōra',lat:35.25085,lng:139.04826,departure:'08:41',
+          description:'Hotel Suiun gegen 08:25 verlassen; ca. 5–10 Minuten zu Fuß.',
+          leg:'Hakone-Tozan-Bahn 08:41–09:16'},
+        {name:'Hakone-Yumoto',lat:35.23365,lng:139.10398,arrival:'09:16',departure:'09:24',
+          description:'8 Minuten Umstieg',leg:'Regionalbahn 09:24–09:38'},
+        {name:'Odawara',lat:35.25639,lng:139.155,arrival:'09:38',departure:'10:11',
+          description:'33 Minuten Umstieg; Hikari 637 ab Gleis 13.',
+          leg:'Shinkansen Hikari 637 10:11–11:19',
+          via:[[34.9716,138.3886],[34.7037,137.7347],[34.7628,137.3822]]},
+        {name:'Nagoya',lat:35.17073,lng:136.88184,arrival:'11:19',departure:'11:43',
+          description:'24 Minuten Umstieg. Gleis des Hida 9 am Bahnhof prüfen.',
+          leg:'Limited Express Hida 9 11:43–14:14',
+          via:[[35.40949,136.75698],[35.445,137.018],[35.805851,137.239686]]},
+        {name:'Takayama',lat:36.14113,lng:137.25129,arrival:'14:14',
+          description:'Ankunft am Bahnhof Takayama.'}
+      ]
+    }
+  };
+  function presetJourney(slug) {
+    return Object.prototype.hasOwnProperty.call(journeyPresets,slug)
+      ? normalizeJourney(journeyPresets[slug]) : null;
+  }
   function encodeJourney(journey) { return '#trip=' + encodeURIComponent(JSON.stringify(normalizeJourney(journey))); }
   function decodeJourney(hash) {
     if (!hash.startsWith('#trip=')) return null;
@@ -98,7 +126,7 @@
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney };
+  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);
