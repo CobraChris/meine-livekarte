@@ -182,6 +182,7 @@
       filter = 'all';
       document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === 'all')));
       const saved = persist();
+      assignToCurrentPlan(shared);
       render();
       following = false;
       if (shared.length) fit(shared); // Focus on the newly received recommendations, even if older places are far away.
@@ -386,23 +387,32 @@
     try {
       const decoded = slug ? C.presetJourney(slug) : C.decodeJourney(location.hash);
       if (!decoded) throw new Error('Unbekannter Reiseplan.');
+      // Existing Hakone→Takayama links select their travel day automatically.
+      // New custom long itinerary links attach to the currently active travel day.
+      const nextView=slug==='hakone-takayama-2026-10-30' ? 'ride-takayama'
+        : currentPlan().kind==='journey' ? activePlanId : 'ride-takayama';
+      activePlanId=nextView;
+      planJourneys[nextView]=decoded;
       journey=decoded;
       try {
-        localStorage.setItem('livekarte-journey-v1',JSON.stringify(journey));
+        persistPlanState();
         // Remove the consumed trip URL so clearing the itinerary stays cleared after reload.
         params.delete('trip');
         const otherQuery=params.toString();
         history.replaceState(null,'',location.pathname+(otherQuery?'?'+otherQuery:'')+
           (hasLongLink?'':location.hash));
       } catch { say('Reiseplan geöffnet, konnte aber nicht dauerhaft gespeichert werden.'); }
-      renderJourney(); fitJourney();
-      say('Reiseplan auf der Karte geladen. Deine bisherigen Empfehlungen bleiben erhalten.');
+      renderPlanPicker();render();renderJourney();fitJourney();
+      say('Reiseplan in „'+currentPlan().name+'“ geladen. Andere Abschnitte bleiben erhalten.');
     } catch (e) { say('Reiseplan ungültig: '+e.message); }
     return true;
   }
   $('remove-journey').onclick = () => {
-    journey=null;try{localStorage.removeItem('livekarte-journey-v1');}catch{}
-    renderJourney();fit();say('Reiseplan entfernt. Empfehlungen bleiben erhalten.');
+    journey=null;
+    planJourneys[activePlanId]=null;
+    persistPlanState();
+    renderJourney();renderPlanPicker();
+    say('Nur der Reiseplan dieses Abschnitts wurde entfernt. Andere Abschnitte und Orte bleiben erhalten.');
   };
   $('fit').onclick = () => { pauseGPSFollow(); fit(); };
   const recenterGPS = $('recenter-gps');
@@ -486,13 +496,15 @@
       const before = places.length;
       places = C.merge(places, additions); filter = 'all';
       document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.filter === 'all')));
-      const saved = persist(); render(); following = false; fit(additions); $('import-dialog').close(); $('import-text').value = '';
+      const saved = persist(); assignToCurrentPlan(additions);
+      render(); following = false; fit(additions); $('import-dialog').close(); $('import-text').value = '';
       say(saved ? `${places.length - before} neue Orte hinzugefügt · ${places.length} insgesamt.` : 'Orte importiert, konnten aber nicht dauerhaft gespeichert werden.');
     } catch (e) { $('import-error').textContent = e.message; }
   };
   $('clear').onclick = () => {
     if (!confirm('Alle Empfehlungen von diesem Gerät entfernen?')) return;
-    places = []; persist(); render(); say('Empfehlungen entfernt.');
+    places = []; planAssignments=Object.create(null);
+    persist();persistPlanState();render();say('Empfehlungen entfernt. Reiseabschnitte bleiben erhalten.');
   };
   $('demo').onclick = () => {
     const sample = [
@@ -505,7 +517,10 @@
     } catch (e) { say(e.message); }
   };
   $('share').onclick = () => {
-    const url = new URL(location.href); url.search = ''; url.hash = C.encode(places);
+    const url = new URL(location.href);
+    url.search='';
+    if(activePlanId!=='all'&&!activePlanId.startsWith('custom-')) url.searchParams.set('view',activePlanId);
+    url.hash = C.encode(currentPlaces());
     if (url.href.length > 30000) { say('Zu viele Daten für einen Link. Bitte weniger oder kürzere Empfehlungen teilen.'); return; }
     $('share-url').value = url.href; $('share-dialog').showModal();
   };
@@ -534,11 +549,33 @@
   try { places = C.parse(localStorage.getItem('livekarte-places-v1') || '[]'); }
   catch { say('Gespeicherte Orte konnten nicht gelesen werden. Bitte erneut importieren.'); }
   try {
+    customPlans=C.validCustomPlans(JSON.parse(localStorage.getItem('livekarte-custom-plans-v1')||'[]'));
+  } catch { customPlans=[]; say('Eigene Reiseabschnitte konnten nicht geladen werden.'); }
+  try {
+    const raw=JSON.parse(localStorage.getItem('livekarte-plan-assignments-v1')||'{}');
+    if(raw && typeof raw==='object' && !Array.isArray(raw))
+      for(const [key,value] of Object.entries(raw).slice(0,250))
+        if(Array.isArray(value)) planAssignments[key]=value.filter(id=>allPlans().some(p=>p.id===id));
+  } catch { say('Ortszuordnungen konnten nicht geladen werden.'); }
+  try {
+    const raw=JSON.parse(localStorage.getItem('livekarte-plan-journeys-v1')||'{}');
+    if(raw && typeof raw==='object' && !Array.isArray(raw)) {
+      for(const [key,value] of Object.entries(raw).slice(0,35)) {
+        if(!allPlans().some(p=>p.id===key))continue;
+        planJourneys[key]=value===null?null:C.normalizeJourney(value);
+      }
+    }
     const savedTrip=localStorage.getItem('livekarte-journey-v1');
-    if(savedTrip) journey=C.normalizeJourney(JSON.parse(savedTrip));
+    if(savedTrip && !Object.prototype.hasOwnProperty.call(planJourneys,'ride-takayama'))
+      planJourneys['ride-takayama']=C.normalizeJourney(JSON.parse(savedTrip));
   } catch { say('Gespeicherter Reiseplan ist ungültig.'); }
-  render();renderJourney();
+  const queryView=new URLSearchParams(location.search).get('view');
+  const savedView=(()=>{try{return localStorage.getItem('livekarte-active-plan-v1')}catch{return null}})();
+  const requestedView=queryView||savedView||(journey?'ride-takayama':'all');
+  activePlanId=allPlans().some(p=>p.id===requestedView)?requestedView:'all';
+  journey=activeJourney();
+  renderPlanPicker();renderJourney();render();
   if (!readJourneyLink() && !readLink()) {
-    if(journey) fitJourney(); else fit();
+    selectPlan(activePlanId,{save:false,url:false,announce:false});
   }
 })();
