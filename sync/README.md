@@ -32,3 +32,20 @@ Die nach dem Entschlüsseln erwartete JSON-Nachricht lautet:
 - Repos und GitHub-Pages-Daten sind **öffentlich lesbar**, allerdings nur als Ciphertext. GitHub-Repositoriumsbesitzer/Collaborators können Nachrichten ändern. Githubs Schreibberechtigung ist hier die Absenderkontrolle, **keine unabhängige kryptografische Signatur**.
 - Keine hochsensiblen Daten, Identitätsnachweise, Ticket-QR-Codes, API-Keys oder persönliche Buchungsnummern ablegen. Die Metadaten (Geräte-ID, Nachrichtenanzahl, Updatezeit) sind öffentlich erkennbar.
 - Das System ist eine **einseitige verschlüsselte Zustellung**, keine OAuth-basierte bidirektionale ChatGPT-App-Anbindung.
+
+## Synchronisierung diagnostizieren
+
+Nach Tippen auf **„Jetzt synchronisieren“** zeigt die App nun statt der pauschalen Meldung „kein neues Update“ separate Zahlen:
+
+- **Postfach erreichbar**: GitHub Pages hat die JSON-Datei ausgeliefert
+- **Bereits verarbeitet**: Diese Nachrichten-ID wurde lokal schon bestätigt
+- **Neu entschlüsselt**: Das Smartphone konnte den Ciphertext mit seinem privaten Schlüssel öffnen
+- **Akzeptiert**: Die Nachricht war für eine vorhandene Zugverbindung gültig und wurde verarbeitet; der Status kann bereits vorher identisch gewesen sein
+- **Entschlüsselung/Format fehlgeschlagen**: Das Format oder die Verschlüsselung stimmt nicht. Die fehlerhafte Nachricht wird **nicht** als erledigt gespeichert und kann nach Korrektur erneut verarbeitet werden
+- **Reiseplan passt nicht/Übernahme fehlgeschlagen**: Gültig entschlüsselte Nachricht konnte keinem gültigen aktuellen Abschnitt zugeordnet bzw. nicht lokal gespeichert werden. Auch sie bleibt erneut prüfbar.
+
+**HTTP 404** bedeutet, dass das Postfach auf GitHub Pages noch nicht erreichbar ist – etwa weil die Veröffentlichung noch nicht abgeschlossen ist. Das beweist weder eine falsche Kopplung noch einen Schlüsselverlust.
+
+**Sicherheit:** Kein privater Schlüssel, verschlüsselte Nutzdaten oder persönlicher Buchungsinhalt wird in Diagnosemeldungen ausgegeben. Bei Problemen nicht das Gerät entkoppeln oder die Browserdaten löschen, bevor der Fehler eingegrenzt wurde.
+
+Am 30.10.2026 wurde die erste nicht unabhängig verifizierte Test-Ciphertext-Datei durch eine neu mit dem hinterlegten öffentlichen Gerätsschlüssel und standardmäßigem RSA-OAEP/SHA-256 erzeugte Testnachricht ersetzt. Die App darf ihren tatsächlichen Empfang erst nach erfolgreicher Entschlüsselung und Verarbeitung auf dem Smartphone bestätigen.
