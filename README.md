@@ -35,6 +35,12 @@ Berlin Hauptbahnhof;52.5251;13.3694;station;Zentraler Bahnhof
 
 JSON unterstützt auch `{ "places": [...] }`, einzelne Objekte, Markdown-Codeblöcke und `lon` als Alternative zu `lng`. Eingaben werden validiert und nur als Text angezeigt, niemals als HTML.
 
+## Mobile Oberfläche und präzise Etagenanzeige
+
+Auf Smartphones wird die große Marken-Kopfzeile ausgeblendet, weil der Browser bereits die Seitenadresse anzeigt. Die Reiseabschnittsauswahl, GPS und Kartenaktionen bleiben erhalten. Die rein dekorative Meldung „Bereit für deinen nächsten Lieblingsort“ sowie erklärende Dopplungen unter einer vorhandenen Reiseetappe sind entfernt. Interaktionsmeldungen werden nur kurz eingeblendet, Fehler bleiben sichtbar. GPS-Genauigkeit ist über die Beschreibung des GPS-Knopfes verfügbar; sie erzeugt keinen dauerhaften Vollbreiten-Balken auf der Karte. Der OpenStreetMap-Urheberhinweis bleibt **sichtbar**, da er zur Kartennutzung gehört.
+
+Der Nagoya-Pilot zeigt in seiner **Etagenübersicht explizit 2F → 1F → 2F**: Shinkansen-Bahnsteig (2F), Verbindungsebene und JR-Transfer-Gates (1F), JR-Bahnsteig mit Gleis 11 (2F). Die zwei Bahnsteigebenen sind tatsächlich auf derselben Höhe, aber durch einen Weg über die untere Verbindungsebene verbunden. Die schematische Darstellung ist **kein GPS-genauer Fußweg** und verwendet keine erdachten Entfernungen; bahnhofseigene Wegweiser sind verbindlich. Die Vor-/Zurück-Buttons bleiben im Scroll-Dialog gut erreichbar.
+
 ## Nagoya als erster erweiterbarer Bahnhofs-Pilot (30.10.2026)
 
 Für den Reiseabschnitt **„30.10. Fahrt nach Takayama“** gibt es in Nagoya einen interaktiven deutschsprachigen **Bahnhofsmodus**, der ausdrücklich **ohne Indoor-GPS** funktioniert.
