@@ -409,3 +409,22 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 /* Curated place metadata: compact priority and duration line. */
 .place-meta{margin:5px 0 3px;color:#b8f1d2;font-size:11px;font-weight:750;line-height:1.35}
 .leaflet-popup-content .place-meta{color:#315f4f;font-size:11px;margin:4px 0}
+
+/* Optional private ChatGPT-readable return path, collapsed under existing sync UI. */
+.outbox-panel{border-top:1px solid #41625e;margin-top:11px;padding-top:4px}
+.outbox-panel summary{font-size:12px;font-weight:700;padding:7px 0;cursor:pointer}
+.outbox-body{padding:5px 0 10px}
+.outbox-body p{font-size:11px;line-height:1.55;margin:8px 0}
+.outbox-body a{color:#b5f5d6}
+.outbox-body code{font-size:10px;background:#0d272d;padding:2px 4px;border-radius:4px}
+.outbox-body label{font-size:11px;margin:8px 0 4px}
+.outbox-body input{display:block;width:100%;min-height:42px;background:#122a30;
+  color:#e5f8ef;border:1px solid #4d7870;border-radius:8px;
+  font:12px system-ui,sans-serif;padding:8px 9px}
+.outbox-body input:disabled{opacity:.65}
+.outbox-body button[hidden]{display:none!important}
+.outbox-body #outbox-status{padding:7px 9px;border-radius:8px;background:#10282e;
+  color:#bff5d7;overflow-wrap:anywhere}
+.outbox-body #outbox-status.sync-warning{color:#ffd1c0}
+.outbox-actions{margin-top:11px}
+.outbox-actions button{flex:1;min-width:135px}
