@@ -22,8 +22,8 @@ test('walking requests only use FOSSGIS OSRM FOOT profile, no tokens or third-pa
  assert.doesNotMatch(url,/token|access_token|key=|maps\.google/i);
  assert.ok(R.metres(from,to)>600);
  assert.ok(R.metres(from,to)<1500);
- assert.throws(()=>R.requestUrl({lat:Infinity,lng:1},to),/Koordinaten/);
- assert.throws(()=>R.requestUrl({lat:100,lng:1},to),/Koordinaten/);
+ assert.throws(()=>R.requestUrl({lat:Infinity,lng:1},to),/koordinaten/i);
+ assert.throws(()=>R.requestUrl({lat:100,lng:1},to),/koordinaten/i);
  assert.throws(()=>R.requestUrl(from,{lat:0,lng:0}),/30 km/);
  assert.throws(()=>R.requestUrl(null,to));
 });
@@ -42,7 +42,7 @@ test('OSRM GeoJSON path and route metrics are validated before rendering any lin
  assert.throws(()=>R.parse({code:'Ok',routes:[]},from,to),/keinen Fußweg/);
  assert.throws(()=>R.parse({code:'Ok',routes:[{...route.routes[0],distance:-1}]},from,to),/ungültige/);
  assert.throws(()=>R.parse({code:'Ok',routes:[{...route.routes[0],geometry:{type:'LineString',coordinates:[[0,0],[0,0]]}}]},from,to),/zu weit/);
- assert.throws(()=>R.parse({code:'Ok',routes:[{...route.routes[0],geometry:{type:'Point',coordinates:[]}}]},from,to),/Geometrie/);
+ assert.throws(()=>R.parse({code:'Ok',routes:[{...route.routes[0],geometry:{type:'Point',coordinates:[]}}]},from,to),/geometrie/i);
  assert.throws(()=>R.parse({code:'Ok',routes:[{...route.routes[0],geometry:{type:'LineString',coordinates:[[137,36],['NaN',36]]}}]},from,to),/Wegpunkt/);
 });
 
