@@ -196,6 +196,7 @@
     walkingRetry.disabled=true;
     walkingLink.href=route(place).href;
     const startedAt={...position};
+    const startedAccuracy=positionAccuracy;
     let timeout;
     try{
       timeout=setTimeout(()=>controller.abort(),15000);
@@ -227,8 +228,8 @@
       const direct=W.metres(startedAt,place);
       const detour=result.distance>direct*2.1 && direct>80
         ? ' Hinweis: Ungewöhnlich langer Umweg. Zielpunkt und Weg in Google Maps gegenprüfen.' : '';
-      const gpsWarning=positionAccuracy>80
-        ? ' GPS ungenau (ca. '+Math.round(positionAccuracy)+' m); Startposition prüfen.' : '';
+      const gpsWarning=startedAccuracy>80
+        ? ' GPS ungenau (ca. '+Math.round(startedAccuracy)+' m); Startposition prüfen.' : '';
       walkingNote.textContent=(result.shorterAlternative
         ? 'Kürzere Fußweg-Alternative gewählt. ' : '')+
         'Fußweg entlang von Straßen und Wegen · Startposition beim Abruf.'+
