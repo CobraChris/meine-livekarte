@@ -68,6 +68,7 @@ function navigationHarness(){
  const walkingLayers={clears:0,clearLayers(){this.clears++}};
  const destination=pos(36.14,137.256);
  destination.name='Walking target';
+ const centerCalls=[];
  const ctx={
   $,walkingPanel,walkingRetry,walkingStats,walkingNavState,
   walkingLayers,walkDestination:destination,
@@ -75,7 +76,7 @@ function navigationHarness(){
   watch:1,position:pos(36.14,137.25),positionAccuracy:9,
   positionUpdatedAt:Date.now(),following:false,
   W,Date,say(){},
-  centerCalls:[],centerOnGPS(ll,zoom){this.centerCalls.push({ll,zoom})},
+  centerCalls,centerOnGPS(ll,zoom){centerCalls.push({ll,zoom})},
   refreshGPSFollowControl(){},
   map:{getZoom(){return 16}}
  };
@@ -152,7 +153,7 @@ test('routing privacy, existing GPS follow controls and PWA deployment remain in
  assert.match(app,/updateWalkingNavigation\(position,positionAccuracy\);/);
  assert.match(app,/function startWalkingNavigation\(\)/);
  assert.match(app,/function stopWalkingNavigation\(\)/);
- assert.match(app,/if\(following\) centerOnGPS/);
+ assert.match(app,/if\s*\(following\)\s*centerOnGPS/);
  assert.match(app,/map\.on\('dragstart',pauseGPSFollow\)/);
  assert.match(app,/GPS-Navigation aktiv/);
  assert.doesNotMatch(app.slice(app.indexOf('function updateWalkingNavigation('),
