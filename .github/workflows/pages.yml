@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --check core.js && node --check app.js && node --test tests/*.test.cjs
+      - run: node --check core.js && node --check app.js && node --check sync.js && node --test tests/*.test.cjs
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: test
@@ -33,8 +33,9 @@ jobs:
       - name: Prepare public files only
         run: |
           mkdir public
-          cp index.html style.css core.js app.js public/
+          cp index.html style.css core.js app.js sync.js public/
           cp -r vendor public/
+          cp -r sync public/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

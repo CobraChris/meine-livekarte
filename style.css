@@ -382,3 +382,26 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .ticket-badge{font-size:10px}
   .ticket-choice{font-size:10px;max-width:52%;min-height:39px}
 }
+
+/* Optional, end-to-end encrypted ChatGPT -> ticket-status inbox; collapsed by default. */
+.sync-panel{margin:0 0 13px;border:1px solid #456a62;border-radius:11px;
+  background:#19313a;color:#d7e7e2}
+.sync-panel summary{padding:9px 11px;cursor:pointer;font-size:12px;font-weight:700;
+  list-style-position:inside}
+.sync-mini{font-size:10px;color:#a4c5b9;font-weight:450;margin-left:5px}
+.sync-body{padding:0 11px 12px}
+.sync-body p{font-size:11px;line-height:1.55;color:#c0d3cf;margin:8px 0}
+.sync-body #sync-status{padding:7px 8px;border-radius:7px;background:#10282e;
+  color:#bff5d7;overflow-wrap:anywhere}
+.sync-body #sync-status.sync-warning{color:#ffd1c0}
+.sync-body button{min-height:40px;padding:7px 10px;font-size:12px}
+.sync-body button[hidden],.sync-body textarea[hidden]{display:none!important}
+.sync-body textarea{margin:8px 0;font:11px/1.4 ui-monospace,monospace;
+  min-height:75px;word-break:break-all}
+.sync-controls{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.sync-controls button{flex:1;min-width:120px}
+.sync-body .sync-help{font-size:10px;color:#9eafb7;margin:8px 0 0}
+@media(max-width:760px){
+ .sync-panel{margin:0 0 10px}
+ .sync-panel summary{min-height:40px;padding:8px 10px}
+}
