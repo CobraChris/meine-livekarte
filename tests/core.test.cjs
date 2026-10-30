@@ -430,7 +430,7 @@ test('private ChatGPT pairing uses local nonextractable RSA and only encrypted p
  assert.match(app,/ticketStatuses\[key\]\?\.updatedAt/);
  assert.match(app,/encrypted-sync/);
  assert.match(css,/\.sync-panel/);
- assert.match(workflow,/cp index\.html style\.css core\.js app\.js sync\.js(?: [\w.-]+)* public\//);
+ assert.match(workflow,/cp index\.html style\.css core\.js(?: walking-core\.js)? app\.js sync\.js(?: [\w.-]+)* public\//);
  assert.match(workflow,/cp -r sync public\//);
  assert.match(workflow,/node --check sync\.js/);
 });

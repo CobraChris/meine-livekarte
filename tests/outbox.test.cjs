@@ -129,6 +129,6 @@ test('private outbound integration is optional, preserves inbound encryption and
  assert.match(out,/accessToken=null/);
  assert.match(out,/github_pat_/);
  assert.doesNotMatch(out,/localStorage\.setItem\([^)]*accessToken/);
- assert.match(ci,/cp index\.html style\.css core\.js app\.js sync\.js outbox-core\.js sync-out\.js(?: [\w.-]+)* public\//);
+ assert.match(ci,/cp index\.html style\.css core\.js(?: walking-core\.js)? app\.js sync\.js outbox-core\.js sync-out\.js(?: [\w.-]+)* public\//);
  assert.match(ci,/node --check sync-out\.js/);
 });

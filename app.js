@@ -105,11 +105,122 @@
   let tileWarning = false;
   tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
   const pins = L.layerGroup().addTo(map);
+  const walkingLayers=L.layerGroup().addTo(map);
+  const W=window.LivekarteWalkingCore;
+  let walkDestination=null,walkController=null,walkRequestGeneration=0;
+  let lastWalkingRequestAt=0,positionUpdatedAt=0;
   const node = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
+  // The external Google walking link remains available as a full navigation fallback.
   function route(p) {
-    const a = node('a', '↗ Zu Fuß', 'navigate');
-    a.href = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
+    const a = node('a', '↗ Google Maps', 'navigate');
+    a.href = 'https://www.google.com/maps/dir/?api=1&destination='+
+      p.lat+','+p.lng+'&travelmode=walking';
     a.target = '_blank'; a.rel = 'noopener noreferrer'; return a;
+  }
+  const walkingPanel=$('walk-route-panel');
+  const walkingTitle=$('walk-route-title'), walkingStats=$('walk-route-stats');
+  const walkingNote=$('walk-route-note'), walkingRetry=$('walk-route-retry');
+  const walkingLink=$('walk-route-google');
+  function clearWalkingRoute() {
+    walkRequestGeneration++;
+    if(walkController)walkController.abort();
+    walkController=null;walkDestination=null;
+    walkingLayers.clearLayers();
+    walkingPanel.hidden=true;
+  }
+  $('walk-route-close').onclick=clearWalkingRoute;
+  walkingRetry.onclick=()=>{
+    if(walkDestination)void showWalkingRoute(walkDestination);
+  };
+  function walkingButton(p){
+    const btn=node('button','🚶 Fußweg anzeigen','walk-start');
+    btn.type='button';
+    btn.title='Echten Fußweg auf der Karte berechnen (Start- und Zielkoordinaten an FOSSGIS senden)';
+    btn.onclick=()=>{void showWalkingRoute(p);};
+    return btn;
+  }
+  // User-triggered ONLY: we never post GPS coordinates on watchPosition updates,
+  // while showing a place, or merely by opening the app.
+  async function showWalkingRoute(place){
+    if(!W) { say('Fußwegfunktion ist noch nicht geladen. Bitte App aktualisieren.');return; }
+    if(watch===null||!position||!positionUpdatedAt){
+      say('Bitte zuerst GPS einschalten und den Standort abwarten, um einen Fußweg anzuzeigen.');
+      return;
+    }
+    if(Date.now()-positionUpdatedAt>60000){
+      say('Der GPS-Standort ist zu alt. Bitte einen aktuellen Standort abwarten.');
+      return;
+    }
+    let url;
+    try{ url=W.requestUrl(position,place); }
+    catch(e){say(e.message);return;}
+    const elapsed=Date.now()-lastWalkingRequestAt;
+    if(elapsed<1200){
+      say('Bitte kurz warten, bevor du einen weiteren Fußweg berechnen lässt.');
+      return;
+    }
+    lastWalkingRequestAt=Date.now(); // FOSSGIS: never more than 1 request/second.
+    if(walkController)walkController.abort();
+    const controller=new AbortController();
+    walkController=controller;
+    const generation=++walkRequestGeneration;
+    walkDestination=place;
+    walkingLayers.clearLayers();
+    walkingPanel.hidden=false;
+    // A route launched from the list should become visible on the map immediately.
+    if(window.matchMedia?.('(max-width:760px)').matches)
+      $('map').scrollIntoView({behavior:'smooth',block:'start'});
+    walkingTitle.textContent='🚶 '+place.name;
+    walkingStats.textContent='Fußweg wird berechnet …';
+    walkingNote.textContent='Start und Ziel werden einmalig an den FOSSGIS-Fußgänger-Routingdienst übermittelt.';
+    walkingRetry.disabled=true;
+    walkingLink.href=route(place).href;
+    const startedAt={...position};
+    let timeout;
+    try{
+      timeout=setTimeout(()=>controller.abort(),15000);
+      const response=await fetch(url,{
+        method:'GET',mode:'cors',credentials:'omit',
+        referrerPolicy:'origin', // identify app origin, not the full URL or query
+        headers:{'Accept':'application/json'},signal:controller.signal
+      });
+      if(!response.ok){
+        if(response.status===429)throw new Error('Routingdienst ist ausgelastet (Limit). Bitte später erneut versuchen.');
+        throw new Error('Routingdienst ist nicht erreichbar (HTTP '+response.status+').');
+      }
+      const raw=await response.text();
+      if(raw.length>2000000)throw new Error('Die Fußwegantwort war ungewöhnlich groß.');
+      const result=W.parse(JSON.parse(raw),startedAt,place);
+      if(generation!==walkRequestGeneration || watch===null)return;
+      L.polyline(result.points,{color:'#10364e',weight:11,opacity:.90,
+        lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
+      L.polyline(result.points,{color:'#f5fcff',weight:6,opacity:1,
+        dashArray:'2 13',lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
+      L.polyline(result.points,{color:'#4da4ff',weight:3,opacity:1,
+        dashArray:'2 13',lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
+      walkingStats.textContent=W.distanceText(result.distance)+' · ca. '+
+        W.durationText(result.duration);
+      walkingNote.textContent='Fußweg entlang von Straßen und Wegen · Startposition beim Abruf. Kein Live-Abbiegeassistent; bei Standortwechsel „Neu berechnen“ tippen.';
+      map.closePopup();
+      following=false;refreshGPSFollowControl();
+      map.fitBounds(L.latLngBounds(result.points),{padding:[55,55],maxZoom:17});
+    }catch(e){
+      if(generation!==walkRequestGeneration)return;
+      if(controller.signal.aborted){
+        walkingStats.textContent='Fußweg konnte nicht rechtzeitig berechnet werden.';
+      }else{
+        walkingStats.textContent=e instanceof SyntaxError
+          ?'Der Routingdienst hat eine ungültige Antwort geliefert.'
+          :e.message||'Fußweg nicht verfügbar.';
+      }
+      walkingNote.textContent='Bitte später erneut versuchen oder „Google Maps“ verwenden. Es wird keine Luftlinie als echter Fußweg angezeigt.';
+    }finally{
+      clearTimeout(timeout);
+      if(generation===walkRequestGeneration){
+        walkController=null;
+        walkingRetry.disabled=false;
+      }
+    }
   }
   function placeMeta(p) {
     const parts = [];
@@ -160,7 +271,7 @@
       const metaText = placeMeta(p);
       if (metaText) popup.append(node('p',metaText,'place-meta'));
       appendPlaceTiming(popup,p);
-      popup.append(node('p',p.description), inPopup, route(p));
+      popup.append(node('p',p.description), inPopup, walkingButton(p), route(p));
       const marker = L.marker([p.lat,p.lng], { title:p.name, icon:L.divIcon({className:'pin',html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`,iconSize:[36,36],iconAnchor:[18,36]}) }).bindPopup(popup).addTo(pins);
       marker.on('popupopen', () => { following = false; });
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
@@ -168,7 +279,7 @@
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
       show.onclick = () => { following = false; map.setView([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
       const distance = node('span',metric(p),'distance');
-      actions.append(show,route(p),distance);
+      actions.append(show,walkingButton(p),route(p),distance);
       const assignRow=node('div',undefined,'plan-assign-row');
       const assignSelect=node('select',undefined,'place-plan-select');
       assignSelect.setAttribute('aria-label','Ort '+p.name+' einem Reiseabschnitt zuordnen');
@@ -587,6 +698,7 @@
   function selectPlan(id,options={}) {
     const plan=allPlans().find(p=>p.id===id);
     if(!plan)return false;
+    if(activePlanId!==id && walkDestination)clearWalkingRoute();
     activePlanId=id;
     journey=activeJourney();
     pauseGPSFollow();
@@ -697,7 +809,8 @@
   };
   function stopGPS(message = 'GPS ausgeschaltet. Standort wurde entfernt.') {
     if (watch !== null) navigator.geolocation.clearWatch(watch);
-    watch = null; position = null; following = false; stopCompass(); refreshGPSFollowControl();
+    clearWalkingRoute();
+    watch = null; position = null; positionUpdatedAt=0; following = false; stopCompass(); refreshGPSFollowControl();
     if (userDot) { map.removeLayer(userDot); userDot = null; }
     if (accuracy) { map.removeLayer(accuracy); accuracy = null; }
     $('gps').setAttribute('aria-pressed','false');
@@ -712,6 +825,7 @@
     watch = navigator.geolocation.watchPosition(result => {
       if (watch === null) return;
       position = {lat:result.coords.latitude,lng:result.coords.longitude};
+      positionUpdatedAt=Date.now();
       const ll = [position.lat,position.lng];
       if (!userDot) {
         accuracy = L.circle(ll,{radius:result.coords.accuracy,color:'#60a5fa',weight:1,fillOpacity:.08}).addTo(map);
@@ -764,6 +878,7 @@
   $('clear').onclick = () => {
     if (!confirm('Alle Empfehlungen von diesem Gerät entfernen?')) return;
     places = []; planAssignments=Object.create(null);
+    clearWalkingRoute();
     persist();persistPlanState();render();say('Empfehlungen entfernt. Reiseabschnitte bleiben erhalten.');
   };
   $('demo').onclick = () => {
