@@ -458,3 +458,37 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
  .install-card{margin:0 0 10px}
  .install-card summary{min-height:40px}
 }
+
+/* Optional true foot-path routing. The path is only rendered after an
+ * authenticated-by-user-interaction request to the FOSSGIS foot profile. */
+.walk-route-panel{position:absolute;z-index:650;bottom:130px;left:15px;
+  width:min(400px,calc(100% - 30px));max-height:min(340px,65%);overflow-y:auto;
+  padding:10px 12px 11px;border:1px solid #70c3c1;border-radius:13px;
+  background:#132a33f4;color:#e7f8f3;
+  box-shadow:0 9px 30px #071416ad;backdrop-filter:blur(6px)}
+.walk-route-panel[hidden]{display:none!important}
+.walk-route-heading{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.walk-route-heading strong{font-size:13px;line-height:1.3;overflow-wrap:anywhere}
+.walk-route-heading button{font-size:20px;line-height:1;min-height:32px;
+  min-width:35px;padding:2px 8px;border-radius:8px}
+.walk-route-panel p{font-size:11px;line-height:1.4;margin:7px 0;color:#d6e9e6}
+.walk-route-panel #walk-route-stats{font-size:15px;font-weight:750;color:#b0f6d8}
+.walk-route-actions{display:flex;gap:7px;margin:10px 0 3px}
+.walk-route-actions button,.walk-route-actions a{flex:1;font-size:11px;font-weight:700;
+  padding:7px 9px;min-height:36px;border:1px solid #568d83;border-radius:9px;
+  background:#214345;color:#e8fff8;text-align:center;text-decoration:none}
+.walk-route-actions a{display:flex;align-items:center;justify-content:center}
+.walk-route-panel .walk-route-credit{font-size:9px;color:#b0cbbe;margin:6px 0 0}
+.walk-route-credit a{color:#c0ebd8}
+.place-actions{flex-wrap:wrap}
+.place-actions .walk-start,.leaflet-popup-content .walk-start{
+  border-color:#5cbaa1;background:#225e4b;color:#dbffed;
+  font-size:11px;font-weight:700;min-height:35px;padding:6px 9px;border-radius:9px}
+.leaflet-popup-content .walk-start{margin:5px 7px 5px 0}
+.leaflet-popup-content .navigate{padding:8px 9px;font-size:11px}
+@media(max-width:760px){
+  .walk-route-panel{left:12px;bottom:131px;width:calc(100% - 24px);
+    padding:9px 11px;max-height:48%}
+  .place-actions button,.place-actions a{min-height:37px;padding:7px 9px}
+  .place-actions .distance{min-width:0}
+}
