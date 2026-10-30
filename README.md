@@ -41,6 +41,47 @@ Auf Smartphones wird die große Marken-Kopfzeile ausgeblendet, weil der Browser 
 
 Der Nagoya-Pilot zeigt in seiner **Etagenübersicht explizit 2F → 1F → 2F**: Shinkansen-Bahnsteig (2F), Verbindungsebene und JR-Transfer-Gates (1F), JR-Bahnsteig mit Gleis 11 (2F). Die zwei Bahnsteigebenen sind tatsächlich auf derselben Höhe, aber durch einen Weg über die untere Verbindungsebene verbunden. Die schematische Darstellung ist **kein GPS-genauer Fußweg** und verwendet keine erdachten Entfernungen; bahnhofseigene Wegweiser sind verbindlich. Die Vor-/Zurück-Buttons bleiben im Scroll-Dialog gut erreichbar.
 
+## Bidirektionale Ticketstatus-Synchronisierung (privater GitHub-Rückkanal)
+
+Die Live-Karte besitzt jetzt zwei getrennte, ausdrücklich optionale Verbindungen:
+
+1. **ChatGPT → Browser**: vorhandener RSA-OAEP-verschlüsselter GitHub-Pages-Eingang im öffentlichen Repository, Inhalte nur auf dem Gerät entschlüsselbar.
+2. **Browser → ChatGPT**: neuer Upload auf ein **separates PRIVATES GitHub-Repository** über einen gezielt für dieses Repository ausgestellten Fine-grained GitHub-Token (Contents: Read/Write). Der eingeloggte GitHub-Connector in ChatGPT kann anschließend die private Statusdatei lesen, sofern er Zugriff auf das neue Repo hat.
+
+**Warum getrennt?** Das bestehende Projekt `CobraChris/meine-livekarte` ist öffentlich. Ticketstatus und Reiseverlauf dürfen dort nicht als lesbare JSON-Datei landen. Die neue App verweigert deshalb den Upload, wenn GitHub das Ziel nicht ausdrücklich als `private: true` bestätigt.
+
+### Einmalige Vorbereitung durch den Besitzer des GitHub-Accounts
+
+1. Unter https://github.com/new ein **privates** Repository `meine-livekarte-private-sync` unter dem Konto `CobraChris` anlegen. Eine README-Datei beim Erstellen anlegen, damit das Repository einen Default-Branch besitzt.
+2. Unter https://github.com/settings/personal-access-tokens/new?name=Livekarte-Private-Sync&contents=write einen **Fine-grained personal access token** erstellen. Als Repositoryzugriff nur `CobraChris/meine-livekarte-private-sync` auswählen. Nur **Contents → Read and write** (Metadaten-Lesezugriff ist GitHub-Standard) freigeben und eine kurze Ablaufzeit wählen.
+3. Die Live-Karte in dem Browser öffnen, in dem bereits die RSA-Kopplung besteht. Den Bereich **🔒 ChatGPT-Synchronisierung → ↗ Status für ChatGPT bereitstellen** aufklappen. Repository-Namen und Token **nur dort** eintragen; **niemals den Token im Chat, in einem GitHub-Issue oder als URL übermitteln**.
+4. **Privat verbinden und hochladen** tippen. Nach erfolgreicher Prüfung veröffentlicht die App ausschließlich `livekarte/status/<device-id>.json` im *privaten* Repository. Du erhältst eine Erfolgsmeldung mit der Zahl der Fahrten.
+5. Im Chat kann der GitHub-Connector das private Dokument per `fetch_file` lesen. Wenn es zunächst nicht sichtbar ist, die GitHub-App/Connector-Berechtigung für das neue Repository erteilen. Die App überträgt Änderungen automatisch während derselben aktiven Browsersitzung; **bei neuem Seitenaufruf ist eine erneute Token-Eingabe nötig**.
+
+### Inhalt und Datenschutz
+
+Ein Dokument hat diese Struktur (Beispiel; **nicht** im öffentlichen Repo speichern):
+
+```json
+{"v":1,"device":"864d9d986ab66ddf2e836a26","tickets":[
+  {"plan":"ride-takayama","date":"30.10.2026","from":"Odawara",
+   "to":"Nagoya","departure":"10:11","status":"ready",
+   "source":"manual","updatedAt":1793332800000}
+]}
+```
+
+Synchronisiert werden **ausschließlich** Reisetag, Abschnittskennung, Start, Ziel, Abfahrtszeit, Ticketstatus, Herkunft und Änderungszeit. **Keine GPS-Positionen, gespeicherten Sehenswürdigkeiten, Buchungsnummern, Fahrkartenbilder, Passwörter oder QR-Codes.** Die vom Benutzer eingetragenen Ticketstatus werden nicht als durch die Bahngesellschaft unabhängig verifiziert dargestellt.
+
+Das Dokument liegt im *privaten* GitHub-Repo als lesbares JSON. Der GitHub-Betreiber und ausdrücklich berechtigte Repository-Zugriffsberechtigte können es lesen; der Rückkanal ist **nicht Ende-zu-Ende-verschlüsselt**, im Gegensatz zur Gegenrichtung. GitHub-Dateien werden über HTTPS transportiert. Es gibt eine lokale und remote Änderungszeit pro Fahrt; ältere Angaben überschreiben keine neueren, konkurrierende Schreibzugriffe werden per Git-Blob-SHA wiederholt.
+
+**GitHub-Schlüssel:** Wird nur während der aktiven Browsersitzung in JavaScript-Speicher gehalten, nicht in localStorage, IndexedDB, Repository, URL, ChatGPT oder Logs. Nach Neuladen oder „Rückkanal trennen“ ist eine erneute Anmeldung nötig. Ein kompromittierter Browser bzw. eingeschleuster Website-Code kann während dieser Sitzung trotzdem auf den aktiven Schlüssel zugreifen; nur kurze Tokenlaufzeit und genaue Repository-Begrenzung verwenden. Ein dauerhaftes, geräteübergreifendes OAuth-Login würde einen getrennten, authentifizierten Backend-/OAuth-Dienst erfordern.
+
+Die Rückübertragung ist eine **explizit vom Benutzer aktivierte Sitzung**, keine Fernsteuerung von ChatGPT. Die bereits vorhandene lokale Ticketauswahl und der verschlüsselte Eingang funktionieren ohne den neuen GitHub-Token weiter. Die App meldet Erfolg erst, wenn GitHub die Datei tatsächlich bestätigt.
+
+### Status im Chat abrufen
+
+Nach Einrichtung verwendet ChatGPT den vorhandenen verbundenen GitHub-Connector, um die Datei `livekarte/status/<device-id>.json` aus `CobraChris/meine-livekarte-private-sync` zu lesen. Dabei gilt: Statuswerte sind Benutzer-/ChatGPT-Eingaben und keine unabhängigen Buchungsnachweise. ChatGPT kann den GitHub-Stand bei einer späteren Chat-Anfrage aktualisiert lesen; es erhält keine automatische Hintergrund-Pushbenachrichtigung.
+
 ## Geschützte Direkt-Synchronisierung mit ChatGPT (optionaler Ausbau)
 
 Eine **einseitige, Ende-zu-Ende-verschlüsselte Inbox** erlaubt dem bereits verbundenen GitHub-Plugin in ChatGPT, bestätigte Ticketstatusänderungen für den Nutzer bereitzustellen, ohne jedes Mal einen Update-Link öffnen zu müssen.

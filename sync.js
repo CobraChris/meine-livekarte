@@ -49,6 +49,11 @@
     } finally { db.close(); }
   }
   const load=()=>dbAction('readonly',store=>store.get('active'));
+  // Safe public identifier only. Never expose the local private CryptoKey.
+  window.LivekarteGetDeviceId=async()=>{
+    const device=current||await load();
+    return device?.id||null;
+  };
   const save=value=>dbAction('readwrite',store=>store.put(value,'active'));
   const clear=()=>dbAction('readwrite',store=>store.delete('active'));
   let current=null, checking=false, interval=null;
