@@ -167,6 +167,9 @@
     walkDestination=place;
     walkingLayers.clearLayers();
     walkingPanel.hidden=false;
+    // A route launched from the list should become visible on the map immediately.
+    if(window.matchMedia?.('(max-width:760px)').matches)
+      $('map').scrollIntoView({behavior:'smooth',block:'start'});
     walkingTitle.textContent='🚶 '+place.name;
     walkingStats.textContent='Fußweg wird berechnet …';
     walkingNote.textContent='Start und Ziel werden einmalig an den FOSSGIS-Fußgänger-Routingdienst übermittelt.';
