@@ -32,7 +32,7 @@
 </section><button type="button" id="nagoya-guide-trigger" hidden aria-label="Umstieg in Nagoya anzeigen">🚆 <span>Nagoya · Umstieg 11</span></button><button id="recenter-gps" type="button" hidden aria-label="Wieder meinem GPS-Standort folgen" title="Wieder meinem GPS-Standort folgen">⌖</button><button id="expand-map" type="button" aria-pressed="false" aria-label="Karte im Vollbild anzeigen" title="Karte im Vollbild anzeigen">⛶</button><div class="map-actions"><button id="fit" type="button" title="Alle Orte" aria-label="Alle Orte">⤢ <span>Alle Orte</span></button><button id="gps" type="button" aria-pressed="false" aria-label="GPS einschalten" title="GPS einschalten">◎ <span>GPS einschalten</span></button></div><div id="status" role="status" aria-live="polite" hidden></div><div id="walk-route-panel" class="walk-route-panel" hidden role="region" aria-label="Fußweg zum ausgewählten Ziel">
   <div class="walk-route-heading">
     <strong id="walk-route-title">🚶 Fußweg</strong>
-    <button id="walk-route-close" type="button" title="Fußweg ausblenden" aria-label="Fußweg schließen">×</button>
+    <button id="walk-route-close" type="button" title="Nur Infofenster ausblenden – Weg bleibt sichtbar" aria-label="Fußweg-Information ausblenden, Route behalten">×</button>
   </div>
   <p id="walk-route-stats" aria-live="polite">Fußweg wird berechnet …</p>
   <p id="walk-route-note">GPS-Start und Ziel werden nur nach Antippen von „Fußweg anzeigen“ an den Routingdienst geschickt.</p>
@@ -40,8 +40,9 @@
     <button type="button" id="walk-route-retry">↻ Neu berechnen</button>
     <a id="walk-route-google" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">↗ Google Maps</a>
   </div>
+  <button type="button" id="walk-route-stop" class="walk-route-stop" aria-label="Fußweg beenden und Linien von der Karte entfernen">✕ Route beenden</button>
   <p class="walk-route-credit">Fußwegedaten © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> · Routing <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener noreferrer">FOSSGIS</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Kartenfehler melden</a></p>
-</div></section>
+</div><button id="walk-route-mini" class="walk-route-mini" type="button" hidden aria-label="Fußweg-Details anzeigen"><span id="walk-route-mini-text">🚶 Fußweg</span><span aria-hidden="true">⌃</span></button></section>
 <aside>
 <div class="eyebrow">DEIN PERSÖNLICHER REISEBEGLEITER</div><h1>Gute Orte.<br><span>Direkt vor dir.</span></h1><p class="intro">Sammle Empfehlungen von ChatGPT und entdecke sie auf deiner Karte.</p>
 <section id="plan-summary" class="plan-summary" hidden aria-live="polite"></section>

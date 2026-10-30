@@ -121,14 +121,32 @@
   const walkingTitle=$('walk-route-title'), walkingStats=$('walk-route-stats');
   const walkingNote=$('walk-route-note'), walkingRetry=$('walk-route-retry');
   const walkingLink=$('walk-route-google');
+  const walkingMini=$('walk-route-mini'), walkingMiniText=$('walk-route-mini-text');
+  const walkingStop=$('walk-route-stop');
+  // Closing the large info popup only collapses it. The actual Leaflet
+  // route remains visible until the user explicitly ends the route,
+  // changes the travel context or turns off GPS.
+  function hideWalkingDetails() {
+    walkingPanel.hidden=true;
+    walkingMini.hidden=!walkDestination;
+  }
+  function showWalkingDetails() {
+    if(!walkDestination)return;
+    walkingPanel.hidden=false;
+    walkingMini.hidden=true;
+  }
   function clearWalkingRoute() {
     walkRequestGeneration++;
     if(walkController)walkController.abort();
     walkController=null;walkDestination=null;
     walkingLayers.clearLayers();
     walkingPanel.hidden=true;
+    walkingMini.hidden=true;
+    walkingMiniText.textContent='';
   }
-  $('walk-route-close').onclick=clearWalkingRoute;
+  $('walk-route-close').onclick=hideWalkingDetails;
+  walkingMini.onclick=showWalkingDetails;
+  walkingStop.onclick=clearWalkingRoute;
   walkingRetry.onclick=()=>{
     if(walkDestination)void showWalkingRoute(walkDestination);
   };
@@ -166,7 +184,9 @@
     const generation=++walkRequestGeneration;
     walkDestination=place;
     walkingLayers.clearLayers();
-    walkingPanel.hidden=false;
+    showWalkingDetails();
+    walkingMini.setAttribute('aria-label','Fußwegdetails zu '+place.name+' anzeigen');
+    walkingMiniText.textContent='🚶 Route wird berechnet …';
     // A route launched from the list should become visible on the map immediately.
     if(window.matchMedia?.('(max-width:760px)').matches)
       $('map').scrollIntoView({behavior:'smooth',block:'start'});
@@ -200,6 +220,10 @@
         dashArray:'2 13',lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
       walkingStats.textContent=W.distanceText(result.distance)+' · ca. '+
         W.durationText(result.duration);
+      // Keep the collapsed summary synchronized even when the info panel
+      // was closed while the route request was still running.
+      walkingMiniText.textContent='🚶 '+W.distanceText(result.distance)+' · '+
+        W.durationText(result.duration);
       walkingNote.textContent='Fußweg entlang von Straßen und Wegen · Startposition beim Abruf. Kein Live-Abbiegeassistent; bei Standortwechsel „Neu berechnen“ tippen.';
       map.closePopup();
       following=false;refreshGPSFollowControl();
@@ -213,6 +237,7 @@
           ?'Der Routingdienst hat eine ungültige Antwort geliefert.'
           :e.message||'Fußweg nicht verfügbar.';
       }
+      walkingMiniText.textContent='🚶 Fußweg nicht verfügbar';
       walkingNote.textContent='Bitte später erneut versuchen oder „Google Maps“ verwenden. Es wird keine Luftlinie als echter Fußweg angezeigt.';
     }finally{
       clearTimeout(timeout);

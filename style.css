@@ -560,3 +560,36 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   background:#a4ecc9;border-color:#a4ecc9;color:#123326;
   border-radius:8px;
 }
+
+
+/* Closing walking info must not clear route polylines: the collapsed chip
+   allows reopening details, and a separate deliberate action ends the route. */
+.walk-route-mini{
+  position:absolute;z-index:750;left:12px;bottom:74px;
+  max-width:min(350px,calc(100% - 90px));
+  min-height:42px;padding:8px 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:#123b42ed;border:1px solid #8bdec8;
+  border-radius:11px;color:#dcfff3;font-size:12px;font-weight:750;
+  box-shadow:0 5px 17px #071a1d88;
+  backdrop-filter:blur(6px);
+}
+.walk-route-mini[hidden]{display:none!important}
+.walk-route-mini #walk-route-mini-text{
+  display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.walk-route-mini span:last-child{font-size:20px;line-height:1}
+.walk-route-stop{
+  display:block;width:100%;margin:6px 0 2px;
+  min-height:31px;padding:4px 8px;border-radius:8px;
+  background:transparent;border:1px solid #5e716b;
+  color:#f5c9bb;font-size:11px;font-weight:600;
+}
+.walk-route-stop:hover{background:#593e3b}
+@media(max-width:760px){
+  .walk-route-mini{left:10px;bottom:69px;max-width:calc(100% - 78px);min-height:44px}
+  .walk-route-panel #walk-route-note{
+    font-size:10px;line-height:1.4;margin:4px 0;
+  }
+  .walk-route-panel .walk-route-credit{font-size:8px}
+}
