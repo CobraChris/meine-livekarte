@@ -25,7 +25,7 @@
   </div>
   <p><strong>So gehst du vor:</strong> Nach der Ankunft aus Gōra auf dem Bahnsteig bleiben, den Schildern „2 / Odawara“ folgen und auf den Zug um 09:24 achten. Gleis 2 und 3 sind unterschiedliche Gleise hintereinander an einem durchgehenden Bahnsteig und ebenerdig erreichbar. <strong>Dein Ankunftsgleis ist nicht bestätigt;</strong> beachte deshalb die Anzeigen vor Ort.</p>
   <a href="https://www.hakonenavi.jp/international/en/station/yumoto" target="_blank" rel="noopener noreferrer">Offizielle Bahnhofsinformationen auf Englisch ↗</a>
-</section><button id="recenter-gps" type="button" hidden aria-label="Wieder meinem GPS-Standort folgen" title="Wieder meinem GPS-Standort folgen">⌖</button><button id="expand-map" type="button" aria-pressed="false" aria-label="Karte im Vollbild anzeigen" title="Karte im Vollbild anzeigen">⛶</button><div class="map-actions"><button id="fit" title="Alle Empfehlungen anzeigen">⤢ <span>Alle Orte</span></button><button id="gps" aria-pressed="false">◎ <span>GPS einschalten</span></button></div><div id="status" role="status" aria-live="polite">Bereit für deinen nächsten Lieblingsort.</div></section>
+</section><button type="button" id="nagoya-guide-trigger" hidden aria-label="Umstieg in Nagoya anzeigen">🚆 <span>Nagoya · Umstieg 11</span></button><button id="recenter-gps" type="button" hidden aria-label="Wieder meinem GPS-Standort folgen" title="Wieder meinem GPS-Standort folgen">⌖</button><button id="expand-map" type="button" aria-pressed="false" aria-label="Karte im Vollbild anzeigen" title="Karte im Vollbild anzeigen">⛶</button><div class="map-actions"><button id="fit" title="Alle Empfehlungen anzeigen">⤢ <span>Alle Orte</span></button><button id="gps" aria-pressed="false">◎ <span>GPS einschalten</span></button></div><div id="status" role="status" aria-live="polite">Bereit für deinen nächsten Lieblingsort.</div></section>
 <aside>
 <div class="eyebrow">DEIN PERSÖNLICHER REISEBEGLEITER</div><h1>Gute Orte.<br><span>Direkt vor dir.</span></h1><p class="intro">Sammle Empfehlungen von ChatGPT und entdecke sie auf deiner Karte.</p>
 <section id="plan-summary" class="plan-summary" hidden aria-live="polite"></section>
@@ -37,6 +37,39 @@
 <footer><span>◉ Dein Standort bleibt auf deinem Gerät.</span><button id="privacy" class="text-button">Datenschutz & Hilfe</button></footer>
 </aside>
 </main>
+<dialog id="nagoya-dialog" aria-labelledby="nagoya-dialog-title">
+  <div class="dialog-heading">
+    <h2 id="nagoya-dialog-title">Nagoya · Zum Hida 9</h2>
+    <button type="button" id="nagoya-close" aria-label="Bahnhofsmodus schließen">×</button>
+  </div>
+  <div class="ng-timetable">
+    <div><small>AN · 11:19</small><strong>Shinkansen</strong><span>Gleis 16/17 prüfen</span></div>
+    <div class="ng-transfer-time"><strong>24 Min.</strong><small>Umsteigen</small></div>
+    <div><small>AB · 11:43</small><strong>Hida 9</strong><span>Gleis 11 · Takayama</span></div>
+  </div>
+  <div class="ng-arrival-choice"><label for="nagoya-arrival-track">Tatsächliches Ankunftsgleis</label>
+    <select id="nagoya-arrival-track"><option value="">Noch unbekannt</option><option value="16">16</option><option value="17">17</option><option value="other">Anderes – Anzeige beachten</option></select>
+  </div>
+  <div class="ng-station-map" role="img" aria-label="Schematischer Etagenplan: von Shinkansen Gleis 16 oder 17 auf der Bahnsteigebene 2F hinunter zur Verbindungsebene 1F, durch die JR-Umsteigesperre und hinauf zum JR Gleis 11 auf 2F">
+    <div class="ng-floor"><span>2F · Shinkansen</span><strong>Gleis 16 / 17</strong></div>
+    <div class="ng-floor-path"><span>↓ Treppe / Lift</span><span>→ JR-Umsteigesperre</span><span>↑ Gleis 11</span></div>
+    <div class="ng-floor ng-floor-destination"><span>2F · JR-Linien</span><strong>Gleis 11 · Hida 9</strong></div>
+    <div class="ng-map-note">Schematisches Stockwerksmodell · keine Indoor-GPS-Position und kein vermessener Fußweg</div>
+  </div>
+  <div class="ng-step-box">
+    <div class="ng-step-top"><span id="nagoya-progress" aria-live="polite">Schritt 1 von 5</span><span id="nagoya-floor">2F · Bahnsteig</span></div>
+    <h3 id="nagoya-step-title">Ankommen</h3>
+    <p id="nagoya-step-action"></p>
+    <p class="ng-sign"><span>Auf Schildern suchen</span><strong id="nagoya-sign"></strong></p>
+    <p class="ng-caution" id="nagoya-step-caution"></p>
+  </div>
+  <div class="ng-step-buttons">
+    <button type="button" id="nagoya-prev">Zurück</button>
+    <button type="button" id="nagoya-next" class="primary">Nächster Schritt</button>
+  </div>
+  <p class="ng-safety">Die Bahnhofsanzeigen und Anweisungen des Personals haben Vorrang. GPS kann im Gebäude ungenau sein.</p>
+  <a class="ng-official" href="https://global.jr-central.co.jp/en/info/station/_img/nagoya.jpg" target="_blank" rel="noopener noreferrer">Offizielle JR-Central-Bahnhofsübersichten (Englisch) ↗</a>
+</dialog>
 <dialog id="plan-dialog"><form id="plan-form"><div class="dialog-heading"><h2>Neuen Reiseabschnitt erstellen</h2><button type="button" data-close aria-label="Schließen">×</button></div>
 <label for="plan-title">Name des Abschnitts</label><input type="text" id="plan-title" maxlength="60" required placeholder="z. B. Nikko entdecken">
 <label for="plan-type">Art</label><select id="plan-type"><option value="city">Ort / Aufenthalt</option><option value="journey">Reisetag / Fahrt</option></select>

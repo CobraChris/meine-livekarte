@@ -256,6 +256,52 @@
     transferCard.hidden = true;
   };
   map.on('zoomend moveend', updateStationTransfer);
+  // Nagoya station pilot: a manually stepped, source-grounded guide, not indoor GPS.
+  const nagoya = L.latLng(35.17073,136.88184);
+  const ng = C.stationGuides.nagoya;
+  const ngDialog = $('nagoya-dialog'), ngTrigger=$('nagoya-guide-trigger');
+  let ngStep=0;
+  try {ngStep=Math.max(0,Math.min(ng.steps.length-1,Number(localStorage.getItem('livekarte-nagoya-step-v1'))||0));}catch{}
+  function updateNagoyaTrigger() {
+    const hasNagoya = !!journey?.stops.some(s=>s.name.toLowerCase()==='nagoya');
+    ngTrigger.hidden = !hasNagoya || map.getZoom()<15 || !map.getBounds().contains(nagoya);
+  }
+  function renderNagoyaStep() {
+    const step=ng.steps[ngStep];
+    $('nagoya-progress').textContent='Schritt '+(ngStep+1)+' von '+ng.steps.length;
+    $('nagoya-floor').textContent=step.level;
+    $('nagoya-step-title').textContent=step.title;
+    $('nagoya-step-action').textContent=step.action;
+    $('nagoya-sign').textContent=step.sign;
+    $('nagoya-step-caution').textContent=step.caution;
+    $('nagoya-prev').disabled=ngStep===0;
+    $('nagoya-next').textContent=ngStep===ng.steps.length-1?'Fertig':'Nächster Schritt';
+  }
+  function openNagoyaGuide() {
+    // Never claim the user has moved indoors when only map/GPS data changed.
+    pauseGPSFollow();
+    if(map.getZoom()<16 || !map.getBounds().contains(nagoya))
+      map.setView(nagoya,16.75,{animate:false});
+    renderNagoyaStep();
+    if(!ngDialog.open) ngDialog.showModal();
+  }
+  function setNagoyaStep(n) {
+    ngStep=Math.max(0,Math.min(ng.steps.length-1,n));
+    try{localStorage.setItem('livekarte-nagoya-step-v1',String(ngStep));}catch{}
+    renderNagoyaStep();
+  }
+  ngTrigger.onclick=openNagoyaGuide;
+  $('nagoya-close').onclick=()=>ngDialog.close();
+  $('nagoya-prev').onclick=()=>setNagoyaStep(ngStep-1);
+  $('nagoya-next').onclick=()=>ngStep===ng.steps.length-1?ngDialog.close():setNagoyaStep(ngStep+1);
+  $('nagoya-arrival-track').onchange=()=>{
+    try{localStorage.setItem('livekarte-nagoya-arrival-v1',$('nagoya-arrival-track').value);}catch{}
+  };
+  try {
+    const saved=localStorage.getItem('livekarte-nagoya-arrival-v1')||'';
+    if([...$('nagoya-arrival-track').options].some(o=>o.value===saved))$('nagoya-arrival-track').value=saved;
+  }catch{}
+  map.on('moveend zoomend',updateNagoyaTrigger);
   function fitJourney() {
     if (!journey) return;
     const coords = journey.stops.flatMap(stop => [[stop.lat,stop.lng], ...stop.via]);
@@ -267,7 +313,7 @@
     const panel = $('journey-panel'), info = $('journey-info');
     info.replaceChildren();
     panel.hidden = !journey;
-    if (!journey) { updateStationTransfer(); return; }
+    if (!journey) { updateStationTransfer(); updateNagoyaTrigger(); return; }
     info.append(node('h2',journey.title),node('p',journey.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
     journey.stops.forEach((stop,i) => {
       if (i < journey.stops.length-1) {
@@ -291,6 +337,15 @@
         className:'trip-pin',html:label,iconSize:[30,30],iconAnchor:[15,15]
       })}).bindPopup(popup).addTo(journeyLayer);
       marker.on('popupopen',()=>{following=false;});
+      if(stop.name==='Nagoya' && journey.stops[i-1]?.leg?.includes('Hikari 637')) {
+        item.append(node('span','Umstieg: Hikari 637 → Hida 9 · Gleis 11','stop-note'));
+        const btn=node('button','Bahnhofsmodus · Gleis 11','transfer-details-button');
+        btn.onclick=e=>{e.stopPropagation();openNagoyaGuide();};
+        item.append(btn);
+        const details=node('button','Umstieg Nagoya öffnen','transfer-details-button');
+        details.onclick=()=>{marker.closePopup();openNagoyaGuide();};
+        popup.append(details);
+      }
       if (stop.name === 'Hakone-Yumoto') {
         const details = node('button','Umstieg im Detail anzeigen','transfer-details-button');
         details.onclick = () => {
@@ -313,6 +368,7 @@
     });
     info.append(node('p','Gestrichelte Linien verbinden Stationen nur schematisch – nicht entlang der tatsächlichen Gleise. Fahrpläne vor Abfahrt nochmals prüfen.','journey-warning'));
     updateStationTransfer();
+    updateNagoyaTrigger();
   }
   function renderPlanPicker() {
     const pick=$('plan-select'), info=$('plan-summary');

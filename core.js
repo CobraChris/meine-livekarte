@@ -86,6 +86,39 @@
     });
     return {title:trim(journey.title,120) || 'Mein Reiseplan',date:trim(journey.date,10),stops};
   }
+  // Indoor guide data: station topology is illustrative; no fabricated indoor coordinates.
+  // Current platform assignments are not live feeds; always confirm on departure boards.
+  const stationGuides = {
+    nagoya: Object.freeze({
+      station:'Nagoya',incoming:'Hikari 637',arrival:'11:19',
+      arrivalPlatforms:'16 / 17 (genaues Gleis prüfen)',
+      outbound:'Hida 9',departure:'11:43',departurePlatform:'11',
+      destination:'Takayama',transferMinutes:24,
+      mapUrl:'https://global.jr-central.co.jp/en/info/station/_img/nagoya.jpg',
+      steps:[
+        {short:'Aussteigen',title:'Am Shinkansen-Bahnsteig ankommen',
+          action:'Hikari 637 verlassen. Prüfe auf der Anzeige, ob du an Gleis 16 oder 17 angekommen bist.',
+          sign:'16 / 17 · Shinkansen',level:'2F · Bahnsteig',
+          caution:'Die Gleisangabe 16/17 ist eine übliche Zuordnung, nicht die bestätigte Gleisnummer dieses Zuges.'},
+        {short:'Eine Etage tiefer',title:'In die JR-Umsteigeebene hinuntergehen',
+          action:'Folge den Schildern „JR Lines“ bzw. „Transfer“ und nimm Treppe, Rolltreppe oder Lift eine Ebene hinunter.',
+          sign:'JR Lines / Transfer',level:'1F · Verbindungsebene',
+          caution:'Nicht den Ausgang zur Straße wählen.'},
+        {short:'Umsteigesperre',title:'Shinkansen-Umsteigesperre passieren',
+          action:'Gehe durch die Shinkansen-Transfer-Gates zu den konventionellen JR-Linien (在来線). Mit deinem Ticket-/IC-Typ den Anweisungen an der Sperre folgen.',
+          sign:'JR Lines / 乗換口',level:'1F · Umsteigesperre',
+          caution:'Die Ticketabwicklung hängt von deinem gebuchten Fahrschein ab. Bei Unsicherheit am besetzten Schalter fragen.'},
+        {short:'Gleis 11',title:'Zum Hida-Bahnsteig 11 gehen',
+          action:'Folge auf der JR-Seite den Schildern „11“ beziehungsweise „Limited Express Hida“. Fahre oder gehe zum Bahnsteig hinauf.',
+          sign:'11 / Hida / Takayama',level:'2F · JR-Bahnsteig',
+          caution:'Gleis 11 ist die reguläre Zuordnung. Kontrolliere unmittelbar vor dem Einsteigen die Anzeigetafel.'},
+        {short:'Einsteigen',title:'Hida 9 nach Takayama',
+          action:'Am richtigen Wagen bzw. an der passenden Markierung warten und in den Hida 9 einsteigen. Geplante Abfahrt 11:43 Uhr.',
+          sign:'Hida 9 · 11:43 · Takayama',level:'2F · Gleis 11',
+          caution:'Das ist keine Live-Auskunft. Bei Änderungen gilt die Bahnhofsanzeige.'}
+      ]
+    })
+  };
   // Small, non-sensitive trip presets allow short browser-friendly URLs.
   // Station-to-station waypoints are illustrative, not rail-grade geometry.
   const journeyPresets = {
@@ -157,7 +190,7 @@
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, planPresets, placePlanKey, placesForPlan, validCustomPlans };
+  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);
