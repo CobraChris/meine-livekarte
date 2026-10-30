@@ -436,3 +436,5 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .outbox-body #outbox-status.sync-warning{color:#ffd1c0}
 .outbox-actions{margin-top:11px}
 .outbox-actions button{flex:1;min-width:135px}
+
+.pin-hotel{background:#5b3f70!important;border-color:#dec6f2!important;color:#fff!important}
