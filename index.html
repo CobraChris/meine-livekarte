@@ -44,7 +44,15 @@
   </div>
   <button type="button" id="walk-route-stop" class="walk-route-stop" aria-label="Fußweg beenden und Linien von der Karte entfernen">✕ Route beenden</button>
   <p class="walk-route-credit">Fußwegedaten © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> · Routing <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener noreferrer">FOSSGIS</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Kartenfehler melden</a></p>
-</div><button id="walk-route-mini" class="walk-route-mini" type="button" hidden aria-label="Fußweg-Details anzeigen"><span id="walk-route-mini-text">🚶 Fußweg</span><span aria-hidden="true">⌃</span></button></section>
+</div><button id="walk-route-mini" class="walk-route-mini" type="button" hidden aria-label="Fußweg-Details anzeigen"><span id="walk-route-mini-text">🚶 Fußweg</span><span aria-hidden="true">⌃</span></button>
+<div id="tour-route-hud" class="tour-route-hud" hidden role="region" aria-label="Mehrziel-Rundgang auf der Karte">
+  <div class="tour-route-hud-text">
+    <strong id="tour-route-title">🚶 Rundgang</strong>
+    <span id="tour-route-metrics" aria-live="polite"></span>
+    <small id="tour-route-note"></small>
+  </div>
+  <button id="tour-route-close" type="button" title="Rundgang von der Karte entfernen" aria-label="Rundgang beenden">×</button>
+</div></section>
 <aside>
 <div class="eyebrow">DEIN PERSÖNLICHER REISEBEGLEITER</div><h1>Gute Orte.<br><span>Direkt vor dir.</span></h1><p class="intro">Sammle Empfehlungen von ChatGPT und entdecke sie auf deiner Karte.</p>
 <section id="plan-summary" class="plan-summary" hidden aria-live="polite"></section>
@@ -99,6 +107,25 @@
 </details>
 <section id="journey-panel" class="journey-panel" hidden aria-label="Dein Reiseplan"><div id="journey-info"></div><button type="button" id="remove-journey" class="text-button">Reiseplan entfernen</button></section>
 <div class="toolbar"><button class="primary" id="open-import">＋ Orte importieren</button><button id="share">↗ Teilen</button></div>
+<details id="tour-builder" class="tour-builder">
+  <summary>🚶 Rundgang planen <span id="tour-count">0/6 Ziele</span></summary>
+  <div class="tour-builder-body">
+    <p>Wähle unten bei deinen Orten <strong>„＋ Tour“</strong> (2–6 Ziele). Die Reihenfolge kannst du hier ändern. Die Tour startet an deinem aktuellen GPS-Standort.</p>
+    <ol id="tour-stops" class="tour-stops" aria-label="Ausgewählte Rundgang-Stopps"></ol>
+    <div class="tour-builder-actions">
+      <button id="tour-sort" type="button" title="Nächste Orte anhand der Luftlinie zuerst anordnen">Nach Nähe sortieren</button>
+      <button id="tour-clear" type="button">Auswahl leeren</button>
+    </div>
+    <button id="tour-calculate" class="primary tour-calculate" type="button" disabled>🚶 Rundgang berechnen</button>
+    <p id="tour-builder-status" role="status" aria-live="polite"></p>
+    <div id="tour-result" class="tour-result" hidden>
+      <strong id="tour-result-summary"></strong>
+      <p>Reine Gehzeit ohne Besichtigungen und Pausen. Wege und Öffnungszeiten vor Ort prüfen.</p>
+      <ol id="tour-result-legs" aria-label="Etappen der Rundgangroute"></ol>
+    </div>
+    <p class="tour-privacy">Ein Routing-Aufruf pro Berechnung an FOSSGIS, nur nach deinem Klick. Start und ausgewählte Ziele werden dorthin übertragen. Keine automatische Nachberechnung, keine Speicherung von GPS-Verläufen.</p>
+  </div>
+</details>
 <div class="list-heading"><h2>Orte in dieser Ansicht <span id="count">0</span></h2><button id="clear" class="text-button" title="Alle gespeicherten Orte löschen – auch aus anderen Abschnitten">Alle löschen</button></div>
 <div class="filters" aria-label="Kategoriefilter"><button data-filter="all" aria-pressed="true">Alle</button><button data-filter="restaurant" aria-pressed="false">♨ Essen</button><button data-filter="sight" aria-pressed="false">◇ Sehenswert</button><button data-filter="station" aria-pressed="false">▤ Bahnhof</button><button data-filter="hotel" aria-pressed="false">⌂ Hotel</button></div>
 <div id="places"></div><div id="empty"><div class="empty-icon">⌖</div><h3>Hier beginnt dein nächster Ausflug</h3><p>Füge deine Empfehlungen hinzu oder erkunde eine kleine Beispielroute durch Berlin.</p><button id="demo">Beispielorte entdecken →</button></div>

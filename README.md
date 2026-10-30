@@ -17,6 +17,20 @@ Die installierte PWA bleibt bei schon laufendem JavaScript normalerweise auf ihr
 
 **Bereits vor dieser Verbesserung geöffnete PWA:** Einmal aus der Android-Übersicht der zuletzt verwendeten Apps vollständig schließen und über das App-Symbol erneut öffnen; bisherige Browserdaten **nicht** löschen und die App **nicht** entkoppeln. Die neue Aktualisierungsaufforderung kann erst wirken, sobald die neue App-Version einmal geladen ist.
 
+## Rundgang mit mehreren Zielen
+
+Unter den Import-/Teilen-Schaltflächen befindet sich der **eingeklappte Rundgang-Planer**. Er ergänzt den bisher einzeln berechneten Fußweg, ohne die Karte dauerhaft mit großen Bedienelementen zu verdecken:
+
+1. Einen Reiseabschnitt wie **Takayama** oder **Kyoto** auswählen, dann bei **2 bis 6 gespeicherten Orten** auf **„＋ Tour“** tippen. In den Ortskarten wird die Auswahl als **„✓ Tour“** hervorgehoben. Ein Klick darauf entfernt diesen Ort wieder aus der Tour.
+2. **„🚶 Rundgang planen“** ausklappen. Die Reihenfolge mittels **↑/↓** manuell festlegen; optional **„Nach Nähe sortieren“** verwenden. Diese lokale Heuristik ordnet Orte anhand der **Luftlinie** vom GPS-Standort, sie behauptet ausdrücklich **keine optimalen Routing-Kosten**. Stopps und Besichtigungsdauern bleiben im Planer sichtbar.
+3. Auf **„🚶 Rundgang berechnen“** tippen. Nur dann werden die aktuelle GPS-Startposition und alle ausgewählten Ziele in **einer** FOSSGIS-OSRM-Fußweg-Anfrage übermittelt (`/routed-foot/route/v1/driving/`). OSRM verbindet **alle Punkte in der festgelegten Reihenfolge**. Die Antwort muss für alle Zwischenstopps passende Snap-Koordinaten, eine durchgehende GeoJSON-Geometrie und nachvollziehbare Etappen enthalten; sonst gibt es eine Fehlermeldung statt einer falschen Strecke.
+4. Die Karte zeigt den **gelb gestrichelten Gesamtrundgang** mit **durchnummerierten Zwischenstopps**. Der kompakte Karten-Chip zeigt Anzahl, echte Routingstrecke und reine Gehzeit; im Planer stehen die **Etappen mit Gehzeiten und Entfernungen**. Die Gehzeit umfasst **keine Besichtigungen, Pausen oder Warteschlangen**.
+5. **„×“ am Tour-Karten-Chip** beendet nur die Tour-Routenanzeige. Die gespeicherten Auswahl-/Reihenfolge-IDs bleiben erhalten; du kannst die Tour später neu berechnen, auch nach einem App-Neustart. **„Auswahl leeren“** entfernt nur diese Rundgangliste, nicht deine gespeicherten Orte.
+
+**Grenzen / Datenschutz:** Es handelt sich um eine geordnete Tour **vom aktuellen GPS-Standort bis zum letzten ausgewählten Ziel**, ohne automatische Rückfahrt zum Ausgangspunkt und ohne Abbiegesprache. Maximal sechs Ziele, maximal 12 km direkte Distanz zwischen zwei Stopps und maximal 25 km Gesamtluftlinie schützen vor absurd langen Wegen und zu großen Anfragen. Jede Route wird höchstens **einmal auf ausdrücklichen Knopfdruck** berechnet, mit einem gemeinsamen Mindestabstand von 1,2 Sekunden zwischen Einzel- und Tourrouten. **Die Auswahl/Stoppreihenfolge** wird ausschließlich im Browser gespeichert; **kein GPS-Startpunkt, kein Positionsverlauf und keine berechnete Routengeometrie** werden gespeichert oder via GitHub-Sync übertragen. FOSSGIS erhält die Start- und Zielkoordinaten der bewusst angefragten Tour und kann sie protokollieren. Die App prüft vor Anzeige sämtliche Snap-Distanzen; abgelegene Ziele, Inseln oder fehlende Fußwege können scheitern. Öffnungszeiten, Fahrtkosten und tatsächliche Sperrungen werden nicht live abgefragt. Ohne Internet keine neue Routenerstellung, aber bestehende Reisepläne bleiben nutzbar.
+
+**Kartenlizenz:** OpenStreetMap-Mitwirkende (Kartendaten); Berechnung durch FOSSGIS: https://routing.openstreetmap.de/about.html; Probleme an der Karte melden: https://www.openstreetmap.org/fixthemap. Die Kartendaten sind offen, die öffentliche Routing-Infrastruktur ist keine garantierte kommerzielle API.
+
 ## Aktive GPS-Fußwegnavigation (bewusst einschaltbar)
 
 Nach **„🚶 Fußweg anzeigen“** lässt sich im bestehenden Fußweg-Informationsfenster **„▶ GPS-Navigation starten“** wählen. Diese Funktion ist eine GPS-gestützte Kartenführung, **kein** turn-by-turn Navigator mit Straßennamen oder Sprachansagen.

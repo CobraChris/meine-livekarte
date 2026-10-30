@@ -617,3 +617,72 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .walk-route-mini.walk-off-route{background:#604429ed;border-color:#f0b56b;color:#fff2d7}
 .walk-route-mini.walk-arrived{background:#195841ed;border-color:#9ce6b8;color:#e4ffed}
 .walk-route-mini.walk-weak-gps{background:#354853ed;border-color:#94b4c7;color:#e4f0f8}
+
+
+/* Optional ordered multi-stop walking tour. Collapsed by default so the
+ * itinerary and live map retain their current mobile-first proportions. */
+.tour-builder{border:1px solid #446e66;border-radius:12px;
+  background:#192f35;margin:12px 0 17px;color:#e7f6ed}
+.tour-builder>summary{cursor:pointer;padding:10px 12px;
+  font-size:12px;font-weight:750;min-height:42px;list-style-position:inside}
+.tour-builder>summary span{margin-left:7px;font-size:10px;
+  color:#b2dbcb;font-weight:600}
+.tour-builder-body{padding:2px 12px 13px}
+.tour-builder-body>p{font-size:11px;line-height:1.5;color:#bed4cb;margin:7px 0 10px}
+.tour-stops{list-style:none;padding:0;margin:7px 0 11px;display:grid;gap:6px}
+.tour-stop{display:flex;gap:7px;align-items:center;min-height:44px;
+  padding:6px 7px;background:#112832;border-radius:9px;
+  border:1px solid #385c55}
+.tour-stop-number{width:24px;height:24px;flex-shrink:0;
+  display:grid;place-items:center;background:#ffda7c;
+  color:#213329;border-radius:50%;font-size:11px;font-weight:850}
+.tour-stop-name{flex:1;min-width:0;font-size:11px;font-weight:680;
+  line-height:1.35;overflow-wrap:anywhere}
+.tour-stop-name small{display:block;color:#a3bcb7;font-size:9px;font-weight:450}
+.tour-stop-controls{display:flex;flex-shrink:0;gap:4px}
+.tour-stop-controls button{min-height:34px;min-width:34px;padding:3px;
+  border-radius:7px;font-size:16px;background:#29434b}
+.tour-stops .tour-empty{color:#afc7c0;font-size:11px;padding:5px}
+.tour-builder-actions{display:flex;gap:7px;margin-bottom:8px}
+.tour-builder-actions button{flex:1;min-height:36px;padding:5px 8px;
+  font-size:11px;border-radius:8px}
+.tour-calculate{width:100%;min-height:42px;padding:8px 10px;
+  border-radius:9px;font-size:12px;font-weight:780}
+#tour-builder-status{font-size:10px;min-height:15px;margin:8px 0;color:#bfe9d3}
+.tour-result{border:1px solid #3e7764;border-radius:9px;padding:9px;
+  background:#132e32;margin:8px 0}
+.tour-result[hidden]{display:none!important}
+.tour-result strong{font-size:12px;color:#b4efd4}
+.tour-result p{font-size:10px;color:#b6ccbe;margin:6px 0}
+.tour-result ol{padding-left:18px;margin:6px 0;font-size:10px;
+  line-height:1.5;color:#dcebe7}
+.tour-result li{padding:3px 0}
+.tour-privacy{font-size:9px!important;color:#a1b8b4!important;margin:8px 0 0!important}
+.place-actions .tour-pick{min-height:35px;padding:6px 9px;
+  border:1px solid #658973;background:#274038;
+  color:#d2f1dd;font-size:11px;font-weight:720}
+.place-actions .tour-pick[aria-pressed="true"]{background:#3c674c;
+  border-color:#a0ddb4;color:#fff8e1}
+.tour-stop-marker{background:transparent;border:0}
+.tour-stop-marker span{width:29px;height:29px;display:grid;place-items:center;
+  color:#17332a;background:#ffdd80;border:2px solid white;
+  border-radius:50%;font-size:15px;font-weight:850;
+  box-shadow:0 2px 8px #00191c77}
+.tour-route-hud{position:absolute;z-index:750;
+  left:11px;bottom:70px;width:min(340px,calc(100% - 90px));
+  display:flex;gap:6px;align-items:flex-start;
+  background:#12313aef;border:1px solid #e7c778;
+  padding:9px 9px 9px 12px;border-radius:12px;color:#eff9e9;
+  box-shadow:0 5px 16px #07181da6;backdrop-filter:blur(6px)}
+.tour-route-hud[hidden]{display:none!important}
+.tour-route-hud-text{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+.tour-route-hud strong{font-size:11px;font-weight:750}
+.tour-route-hud span{font-size:11px;font-weight:650;color:#ffe7a7}
+.tour-route-hud small{font-size:9px;color:#b9d0c5;line-height:1.35}
+.tour-route-hud button{flex:none;min-width:32px;min-height:32px;
+  padding:0;font-size:20px;border-radius:8px;background:#23414a}
+@media(max-width:760px){
+  .tour-builder{margin:9px 0 14px}
+  .tour-builder>summary{min-height:43px;padding:10px}
+  .tour-route-hud{left:9px;bottom:67px;width:calc(100% - 83px)}
+}

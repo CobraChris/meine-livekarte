@@ -106,7 +106,10 @@
   tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
   const pins = L.layerGroup().addTo(map);
   const walkingLayers=L.layerGroup().addTo(map);
+  const tourLayers=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
+  let tourDrafts=Object.create(null),tourRoute=null,tourController=null,tourRequestGeneration=0;
+  let lastTourRequestedAt=0;
   let walkDestination=null,walkController=null,walkRequestGeneration=0;
   let lastWalkingRequestAt=0,positionUpdatedAt=0,positionAccuracy=null;
   const node = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
@@ -260,12 +263,13 @@
     let url;
     try{ url=W.requestUrl(position,place); }
     catch(e){say(e.message);return;}
-    const elapsed=Date.now()-lastWalkingRequestAt;
+    const elapsed=Date.now()-Math.max(lastWalkingRequestAt,lastTourRequestedAt);
     if(elapsed<1200){
       say('Bitte kurz warten, bevor du einen weiteren Fußweg berechnen lässt.');
       return;
     }
     lastWalkingRequestAt=Date.now(); // FOSSGIS: never more than 1 request/second.
+    if(tourRoute || tourController)clearTourRoute();
     if(walkController)walkController.abort();
     const controller=new AbortController();
     walkController=controller;
@@ -364,6 +368,214 @@
       }
     }
   }
+  // Multi-stop tours are opt-in and local: only the selected place identifiers
+  // (already saved on this device) persist across reloads, never GPS or route
+  // geometry. One FOSSGIS route request is made per deliberate calculation.
+  const tourBuilder=$('tour-builder');
+  const tourSelectedList=$('tour-stops');
+  const tourBuilderStatus=$('tour-builder-status');
+  const tourResult=$('tour-result');
+  const tourHud=$('tour-route-hud');
+  function tourSelection(){
+    const keys=Array.isArray(tourDrafts[activePlanId])?tourDrafts[activePlanId]:[];
+    const byKey=new Map(currentPlaces().map(p=>[C.placePlanKey(p),p]));
+    return [...new Set(keys)].map(k=>byKey.get(k)).filter(Boolean).slice(0,6);
+  }
+  function tourIsSelected(p){
+    return tourSelection().some(item=>C.placePlanKey(item)===C.placePlanKey(p));
+  }
+  function persistTourDrafts(){
+    try{
+      localStorage.setItem('livekarte-tour-drafts-v1',JSON.stringify(tourDrafts));
+    }catch{say('Rundgang-Auswahl konnte nicht gespeichert werden.');}
+  }
+  function clearTourRoute(){
+    ++tourRequestGeneration;
+    if(tourController)tourController.abort();
+    tourController=null;tourRoute=null;
+    tourLayers.clearLayers();
+    tourHud.hidden=true;
+    tourResult.hidden=true;
+    $('tour-calculate').disabled=tourSelection().length<2;
+  }
+  function setTourSelection(items){
+    clearTourRoute();
+    tourDrafts[activePlanId]=items.map(p=>C.placePlanKey(p)).slice(0,6);
+    persistTourDrafts();
+    render(); // Keep per-place selected states and numbered tour list synchronized.
+  }
+  function toggleTourPlace(place){
+    const selected=tourSelection(),key=C.placePlanKey(place);
+    const at=selected.findIndex(p=>C.placePlanKey(p)===key);
+    if(at<0 && selected.length>=6){
+      tourBuilder.open=true;
+      tourBuilderStatus.textContent='Maximal sechs Orte pro Rundgang. Entferne zuerst ein Ziel.';
+      return;
+    }
+    if(at>=0)selected.splice(at,1);
+    else selected.push(place);
+    setTourSelection(selected);
+    tourBuilder.open=true;
+    tourBuilderStatus.textContent=at>=0?'Ziel aus Rundgang entfernt.':'Ziel hinzugefügt. Reihenfolge unten anpassen.';
+    if(at<0 && selected.length===1)
+      tourBuilder.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+  function renderTourBuilder(){
+    const selected=tourSelection();
+    $('tour-count').textContent=selected.length+'/6 Ziele';
+    tourSelectedList.replaceChildren();
+    if(!selected.length){
+      tourSelectedList.append(node('li','Noch keine Ziele ausgewählt.','tour-empty'));
+    }
+    selected.forEach((place,index)=>{
+      const li=node('li',undefined,'tour-stop');
+      li.append(node('span',String(index+1),'tour-stop-number'));
+      const name=node('span',place.name,'tour-stop-name');
+      if(place.duration){
+        const dur=node('small','Besuch: '+place.duration);
+        name.append(dur);
+      }
+      li.append(name);
+      const controls=node('div',undefined,'tour-stop-controls');
+      for(const [label,direction] of [['↑',-1],['↓',1]]){
+        const btn=node('button',label);
+        btn.type='button';
+        btn.setAttribute('aria-label',place.name+' '+(direction<0?'nach oben':'nach unten'));
+        btn.disabled=index+direction<0||index+direction>=selected.length;
+        btn.onclick=()=>{
+          const reordered=selected.slice();
+          const other=index+direction;
+          [reordered[index],reordered[other]]=[reordered[other],reordered[index]];
+          setTourSelection(reordered);
+          tourBuilder.open=true;
+          tourBuilderStatus.textContent='Reihenfolge angepasst. Rundgang neu berechnen.';
+        };
+        controls.append(btn);
+      }
+      const remove=node('button','×');
+      remove.type='button';
+      remove.setAttribute('aria-label',place.name+' aus Rundgang entfernen');
+      remove.onclick=()=>toggleTourPlace(place);
+      controls.append(remove);
+      li.append(controls);
+      tourSelectedList.append(li);
+    });
+    $('tour-calculate').disabled=selected.length<2||!!tourController;
+    $('tour-clear').disabled=!selected.length;
+    $('tour-sort').disabled=selected.length<2;
+    if(!selected.length && !tourRoute)
+      tourBuilderStatus.textContent='Wähle zunächst zwei bis sechs Orte über „＋ Tour“.';
+  }
+  $('tour-clear').onclick=()=>{
+    setTourSelection([]);
+    tourBuilderStatus.textContent='Auswahl geleert. Deine gespeicherten Orte bleiben erhalten.';
+  };
+  $('tour-sort').onclick=()=>{
+    const selected=tourSelection();
+    if(!position||watch===null||Date.now()-positionUpdatedAt>60000){
+      tourBuilderStatus.textContent='Zum Sortieren bitte zuerst einen aktuellen GPS-Standort abwarten.';
+      return;
+    }
+    try{
+      setTourSelection(W.nearestTourOrder(position,selected));
+      tourBuilderStatus.textContent='Nahe Orte zuerst sortiert (nur nach Luftlinie, keine garantierte optimale Strecke).';
+    }catch(error){tourBuilderStatus.textContent=error.message;}
+  };
+  $('tour-route-close').onclick=()=>{
+    clearTourRoute();
+    tourBuilderStatus.textContent='Rundgang von der Karte entfernt. Deine Zielauswahl bleibt erhalten.';
+  };
+  $('tour-calculate').onclick=()=>{void calculateTour();};
+  async function calculateTour(){
+    const selected=tourSelection();
+    if(selected.length<2){tourBuilderStatus.textContent='Bitte mindestens zwei Orte auswählen.';return;}
+    if(!W){tourBuilderStatus.textContent='Rundgang-Modul nicht geladen. Bitte App aktualisieren.';return;}
+    if(watch===null||!position||Date.now()-positionUpdatedAt>60000){
+      tourBuilderStatus.textContent='Bitte GPS aktivieren und auf eine aktuelle Positionsmessung warten.';
+      return;
+    }
+    const from={...position},startPlanId=activePlanId;
+    let request;
+    try{request=W.tourRequestUrl(from,selected);}
+    catch(error){tourBuilderStatus.textContent=error.message;return;}
+    // Public FOSSGIS fair use: at most one deliberate request per 1.2 seconds
+    // across both single-destination navigation and multi-stop tours.
+    if(Date.now()-Math.max(lastTourRequestedAt,lastWalkingRequestAt)<1200){
+      tourBuilderStatus.textContent='Bitte kurz warten und den Rundgang danach erneut berechnen.';
+      return;
+    }
+    lastTourRequestedAt=Date.now();
+    clearWalkingRoute();
+    clearTourRoute();
+    const controller=new AbortController();
+    tourController=controller;
+    const generation=++tourRequestGeneration;
+    $('tour-calculate').disabled=true;
+    tourBuilderStatus.textContent='Rundgang wird entlang der Fußwege berechnet …';
+    tourBuilder.open=true;
+    let timeout;
+    try{
+      timeout=setTimeout(()=>controller.abort(),18000);
+      const response=await fetch(request,{
+        method:'GET',mode:'cors',credentials:'omit',referrerPolicy:'origin',
+        headers:{Accept:'application/json'},signal:controller.signal
+      });
+      if(!response.ok){
+        if(response.status===429)throw new Error('Routingdienst ausgelastet. Bitte später erneut versuchen.');
+        throw new Error('Routingdienst nicht erreichbar (HTTP '+response.status+').');
+      }
+      const raw=await response.text();
+      if(raw.length>2500000)throw new Error('Rundgangantwort ungewöhnlich groß.');
+      const result=W.parseTour(JSON.parse(raw),from,selected);
+      if(generation!==tourRequestGeneration||activePlanId!==startPlanId)return;
+      tourRoute={...result,stops:selected.map(p=>({...p})),start:from,planId:activePlanId};
+      L.polyline(result.points,{color:'#12313b',opacity:.9,weight:10,
+        lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
+      L.polyline(result.points,{color:'#ffdb74',opacity:1,weight:5,
+        dashArray:'4 12',lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
+      selected.forEach((place,i)=>{
+        const marker=L.marker([place.lat,place.lng],{
+          title:'Stopp '+(i+1)+': '+place.name,
+          icon:L.divIcon({className:'tour-stop-marker',
+            html:'<span>'+(i+1)+'</span>',iconSize:[30,38],iconAnchor:[15,34]})
+        });
+        marker.bindPopup(node('strong','Stopp '+(i+1)+': '+place.name));
+        marker.addTo(tourLayers);
+      });
+      const walkSummary=W.distanceText(result.distance)+' · ca. '+
+        W.durationText(result.duration)+' zu Fuß';
+      $('tour-route-title').textContent='🚶 Rundgang · '+selected.length+' Ziele';
+      $('tour-route-metrics').textContent=walkSummary;
+      $('tour-route-note').textContent='Start am GPS-Punkt bei Berechnung · keine automatische Aktualisierung';
+      tourHud.hidden=false;
+      $('tour-result-summary').textContent=walkSummary;
+      const legs=$('tour-result-legs');
+      legs.replaceChildren();
+      result.legs.forEach((leg,i)=>{
+        const label=(i?'Stopp '+i:'Standort')+' → '+selected[i].name+
+          ': '+W.distanceText(leg.distance)+' · '+W.durationText(leg.duration);
+        legs.append(node('li',label));
+      });
+      tourResult.hidden=false;
+      tourBuilderStatus.textContent='Rundgang auf der Karte eingezeichnet. Gelbe Ziffern zeigen die Stopps.';
+      following=false;refreshGPSFollowControl();
+      map.closePopup();
+      map.fitBounds(L.latLngBounds(result.points),{padding:[52,52],maxZoom:16});
+      $('map').scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(error){
+      if(generation!==tourRequestGeneration)return;
+      tourBuilderStatus.textContent=controller.signal.aborted
+        ?'Der Routingdienst hat zu lange gebraucht. Bitte erneut versuchen.'
+        :error instanceof SyntaxError?'Ungültige Routenantwort. Bitte später erneut versuchen.'
+        :error.message||'Rundgang derzeit nicht verfügbar.';
+    }finally{
+      clearTimeout(timeout);
+      if(generation===tourRequestGeneration){
+        tourController=null;
+        $('tour-calculate').disabled=tourSelection().length<2;
+      }
+    }
+  }
   function placeMeta(p) {
     const parts = [];
     if (p.priority) parts.push('Schulnote ' + p.priority);
@@ -424,7 +636,12 @@
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
       show.onclick = () => { following = false; map.setView([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
       const distance = node('span',metric(p),'distance');
-      actions.append(show,walkingButton(p),route(p),distance);
+      const tourButton=node('button',tourIsSelected(p)?'✓ Tour':'＋ Tour','tour-pick');
+      tourButton.type='button';
+      tourButton.setAttribute('aria-pressed',String(tourIsSelected(p)));
+      tourButton.title='Ort zu einem Rundgang hinzufügen oder entfernen';
+      tourButton.onclick=()=>toggleTourPlace(p);
+      actions.append(show,walkingButton(p),tourButton,route(p),distance);
       const assignRow=node('div',undefined,'plan-assign-row');
       const assignSelect=node('select',undefined,'place-plan-select');
       assignSelect.setAttribute('aria-label','Ort '+p.name+' einem Reiseabschnitt zuordnen');
@@ -450,6 +667,7 @@
       distanceDisplays.push({ place:p, inPopup, inList:distance });
     });
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
+    renderTourBuilder();
   }
   function persist() {
     try {
@@ -846,6 +1064,7 @@
     const plan=allPlans().find(p=>p.id===id);
     if(!plan)return false;
     if(activePlanId!==id && walkDestination)clearWalkingRoute();
+    if(activePlanId!==id)clearTourRoute();
     activePlanId=id;
     journey=activeJourney();
     pauseGPSFollow();
@@ -1066,6 +1285,9 @@
     if (!confirm('Alle Empfehlungen von diesem Gerät entfernen?')) return;
     places = []; planAssignments=Object.create(null);
     clearWalkingRoute();
+    clearTourRoute();
+    tourDrafts=Object.create(null);
+    persistTourDrafts();
     persist();persistPlanState();render();say('Empfehlungen entfernt. Reiseabschnitte bleiben erhalten.');
   };
   $('demo').onclick = () => {
@@ -1146,6 +1368,17 @@
     }
   }
   seedCuratedPlaces();
+  // Persist only chosen place identifiers, never the GPS start or a route.
+  try{
+    const raw=JSON.parse(localStorage.getItem('livekarte-tour-drafts-v1')||'{}');
+    if(raw&&typeof raw==='object'&&!Array.isArray(raw)){
+      for(const [planId,keys] of Object.entries(raw).slice(0,36)){
+        if(!allPlans().some(p=>p.id===planId)||!Array.isArray(keys))continue;
+        tourDrafts[planId]=[...new Set(keys.filter(k=>
+          typeof k==='string'&&k.length<=300))].slice(0,6);
+      }
+    }
+  }catch{say('Gespeicherte Rundgang-Auswahl konnte nicht geladen werden.');}
   try {
     const raw=JSON.parse(localStorage.getItem('livekarte-plan-journeys-v1')||'{}');
     if(raw && typeof raw==='object' && !Array.isArray(raw)) {
