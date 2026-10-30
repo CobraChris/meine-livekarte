@@ -20,12 +20,9 @@
       throw new Error('Das Ziel liegt über 30 km Luftlinie entfernt. Für längere Strecken bitte Google Maps verwenden.');
     const fmt=p=>p.lng.toFixed(6)+','+p.lat.toFixed(6);
     return ENDPOINT+fmt(from)+';'+fmt(to)+
-      '?overview=full&geometries=geojson&steps=false';
+      '?overview=full&geometries=geojson&steps=false&alternatives=true';
   }
-  function parse(data,from,to){
-    if(!data || data.code!=='Ok'||!Array.isArray(data.routes)||!data.routes[0])
-      throw new Error('Der Routingdienst hat keinen Fußweg gefunden.');
-    const route=data.routes[0];
+  function parseOne(route,from,to){
     if(!Number.isFinite(route.distance)||route.distance<0||route.distance>200000
        ||!Number.isFinite(route.duration)||route.duration<0||route.duration>172800)
       throw new Error('Der Routingdienst hat ungültige Entfernungs- oder Zeitangaben geliefert.');
@@ -42,9 +39,32 @@
     });
     const first={lat:points[0][0],lng:points[0][1]};
     const last={lat:points[points.length-1][0],lng:points[points.length-1][1]};
-    if(metres(first,from)>800 || metres(last,to)>800)
+    // Reject routes whose snapped start/end is far from the actual GPS/POI.
+    // For very short urban trips an 800 m snap can produce a nonsensical detour.
+    const snapLimit=metres(from,to)<2000?120:300;
+    if(metres(first,from)>snapLimit || metres(last,to)>snapLimit)
       throw new Error('Der gefundene Fußweg liegt zu weit vom Start oder Ziel entfernt.');
     return {points,distance:route.distance,duration:route.duration};
+  }
+  function parse(data,from,to){
+    if(!data || data.code!=='Ok'||!Array.isArray(data.routes)||!data.routes[0])
+      throw new Error('Der Routingdienst hat keinen Fußweg gefunden.');
+    // OSRM ranks by routing preference, which need not be shortest on foot.
+    // Prefer a genuinely shorter alternative as long as the estimated walk
+    // is not meaningfully slower. Malformed alternatives are ignored, never drawn.
+    const preferred=parseOne(data.routes[0],from,to);
+    let best=preferred, options=1;
+    for(const candidate of data.routes.slice(1,4)){
+      let alternative;
+      try{ alternative=parseOne(candidate,from,to); }catch{ continue; }
+      options++;
+      const acceptableTime=alternative.duration<=Math.max(
+        preferred.duration*1.25,preferred.duration+90
+      );
+      if(acceptableTime && alternative.distance+15<best.distance)
+        best=alternative;
+    }
+    return {...best,alternativesCompared:options,shorterAlternative:best!==preferred};
   }
   function distanceText(distance){
     if(!Number.isFinite(distance)||distance<0)throw new Error('Ungültige Gehstrecke.');
