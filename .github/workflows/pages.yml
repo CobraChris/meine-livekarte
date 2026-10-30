@@ -38,6 +38,8 @@ jobs:
           cp -r sync public/
           mkdir -p public/icons
           cp icons/livekarte.svg public/icons/
+      - name: Stamp deployed PWA version and cache-bust local assets
+        run: python3 scripts/stamp_pwa_version.py
       - name: Generate PNG PWA icons
         run: |
           python3 -m venv /tmp/livekarte-pwa-icons

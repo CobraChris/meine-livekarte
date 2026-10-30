@@ -492,3 +492,71 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .place-actions button,.place-actions a{min-height:37px;padding:7px 9px}
   .place-actions .distance{min-width:0}
 }
+
+
+/* Map-first mobile UX: retain accessible names while reducing two oversized
+ * horizontal map buttons to thumb-sized vertical map controls. */
+@media(max-width:760px){
+  .map-actions{
+    position:absolute;z-index:750;
+    left:auto;right:10px;bottom:68px;
+    width:44px;display:flex;flex-direction:column;
+    gap:9px;align-items:center;justify-content:flex-end;
+    flex-wrap:nowrap;
+  }
+  .map-actions button{
+    width:44px;height:44px;min-width:44px;min-height:44px;
+    padding:0;display:flex;align-items:center;justify-content:center;
+    border-radius:12px;
+    font-size:23px;font-weight:600;line-height:1;
+    border:1px solid #63817d99;
+    background:#11262bdc;
+    color:#d8eee7;
+    box-shadow:0 3px 12px #07151b66;
+    backdrop-filter:blur(4px);
+  }
+  .map-actions button[aria-pressed="true"]{
+    background:#235749e6;color:#dcffeb;
+    border-color:#88c5a6;
+  }
+  /* Visually hidden labels retain both accessible descriptions and
+   * app.js's lastElementChild.textContent state updates. */
+  .map-actions button span{
+    position:absolute!important;
+    width:1px!important;height:1px!important;
+    padding:0!important;margin:-1px!important;
+    overflow:hidden!important;clip:rect(0,0,0,0)!important;
+    white-space:nowrap!important;border:0!important;
+  }
+  /* Keep the routing HUD left of the GPS/fit buttons, not covering them. */
+  .walk-route-panel{
+    left:10px;bottom:66px;
+    width:calc(100% - 75px);
+    max-height:46%;
+    padding:9px 10px;
+  }
+}
+/* Keep large, text-heavy recommendation popups usable on phone screens.
+ * Prominent footpath action will be placed near the popup heading. */
+.leaflet-popup-content .popup-quick-actions{display:flex;flex-wrap:wrap;
+  gap:7px;align-items:center;margin:8px 0 7px}
+.leaflet-popup-content .popup-quick-actions .walk-start{
+  margin:0;min-height:37px;padding:7px 10px;flex:1;font-size:12px}
+.leaflet-popup-content .popup-quick-actions .navigate{
+  min-height:37px;padding:8px 9px;margin:0;font-size:11px;
+  display:flex;align-items:center;justify-content:center;
+}
+.app-update-banner[hidden]{display:none!important}
+.app-update-banner{
+  padding:9px 10px;margin:0 0 11px;display:flex;
+  align-items:center;justify-content:space-between;gap:9px;
+  border-radius:10px;border:1px solid #7da792;
+  background:#1b423b;color:#d8f8e6;
+  font-size:11px;font-weight:650;line-height:1.35
+}
+.app-update-banner button{
+  flex-shrink:0;min-height:34px;
+  padding:6px 9px;font-size:11px;font-weight:750;
+  background:#a4ecc9;border-color:#a4ecc9;color:#123326;
+  border-radius:8px;
+}

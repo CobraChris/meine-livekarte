@@ -50,6 +50,45 @@
   window.addEventListener('offline',showConnection);
   showConnection();
   display();
+  // GitHub Pages generates both files from the published commit SHA.
+  // A running standalone PWA may keep an older JS bundle until restarted;
+  // notify rather than forcibly reloading and risking unsaved user input.
+  const updateBanner=document.getElementById('app-update-banner');
+  const updateNow=document.getElementById('app-update-now');
+  let lastUpdateCheck=0;
+  async function checkForAppUpdate(){
+    if(!window.LivekarteAppBuild || !updateBanner || !updateNow ||
+       navigator.onLine===false)return;
+    try{
+      const response=await fetch('./app-version.json',{
+        cache:'no-store',credentials:'omit',mode:'same-origin'
+      });
+      if(!response.ok)return;
+      const info=await response.json();
+      if(typeof info?.build!=='string'||!/^[a-f0-9]{40}$/.test(info.build))return;
+      updateBanner.hidden=info.build===window.LivekarteAppBuild;
+    }catch{ /* No disruption during temporary connectivity problems. */ }
+  }
+  function requestUpdateCheck(){
+    const now=Date.now();
+    if(now-lastUpdateCheck<90000)return;
+    lastUpdateCheck=now;
+    void checkForAppUpdate();
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.getRegistration('./')
+        .then(reg=>reg?.update()).catch(()=>{});
+    }
+  }
+  if(updateNow)updateNow.addEventListener('click',()=>{
+    // A normal reload preserves localStorage, IndexedDB and the RSA private key.
+    window.location.reload();
+  });
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden)requestUpdateCheck();
+  });
+  window.addEventListener('focus',requestUpdateCheck);
+  window.addEventListener('online',requestUpdateCheck);
+  window.addEventListener('load',requestUpdateCheck);
   if('serviceWorker' in navigator && window.isSecureContext){
     window.addEventListener('load',()=>{
       navigator.serviceWorker.register('./sw.js',{
