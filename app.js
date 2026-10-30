@@ -108,7 +108,7 @@
   const walkingLayers=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
   let walkDestination=null,walkController=null,walkRequestGeneration=0;
-  let lastWalkingRequestAt=0,positionUpdatedAt=0;
+  let lastWalkingRequestAt=0,positionUpdatedAt=0,positionAccuracy=null;
   const node = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
   // The external Google walking link remains available as a full navigation fallback.
   function route(p) {
@@ -224,7 +224,15 @@
       // was closed while the route request was still running.
       walkingMiniText.textContent='🚶 '+W.distanceText(result.distance)+' · '+
         W.durationText(result.duration);
-      walkingNote.textContent='Fußweg entlang von Straßen und Wegen · Startposition beim Abruf. Kein Live-Abbiegeassistent; bei Standortwechsel „Neu berechnen“ tippen.';
+      const direct=W.metres(startedAt,place);
+      const detour=result.distance>direct*2.1 && direct>80
+        ? ' Hinweis: Ungewöhnlich langer Umweg. Zielpunkt und Weg in Google Maps gegenprüfen.' : '';
+      const gpsWarning=positionAccuracy>80
+        ? ' GPS ungenau (ca. '+Math.round(positionAccuracy)+' m); Startposition prüfen.' : '';
+      walkingNote.textContent=(result.shorterAlternative
+        ? 'Kürzere Fußweg-Alternative gewählt. ' : '')+
+        'Fußweg entlang von Straßen und Wegen · Startposition beim Abruf.'+
+        detour+gpsWarning+' Kein Live-Abbiegeassistent; bei Standortwechsel „Neu berechnen“ tippen.';
       map.closePopup();
       following=false;refreshGPSFollowControl();
       map.fitBounds(L.latLngBounds(result.points),{padding:[55,55],maxZoom:17});
@@ -840,49 +848,88 @@
   function stopGPS(message = 'GPS ausgeschaltet. Standort wurde entfernt.') {
     if (watch !== null) navigator.geolocation.clearWatch(watch);
     clearWalkingRoute();
-    watch = null; position = null; positionUpdatedAt=0; following = false; stopCompass(); refreshGPSFollowControl();
+    watch = null; position = null; positionUpdatedAt=0; positionAccuracy=null;
+    following = false; stopCompass(); refreshGPSFollowControl();
     if (userDot) { map.removeLayer(userDot); userDot = null; }
     if (accuracy) { map.removeLayer(accuracy); accuracy = null; }
     $('gps').setAttribute('aria-pressed','false');
     $('gps').title='GPS einschalten';$('gps').setAttribute('aria-label','GPS einschalten');
     $('gps').lastElementChild.textContent = 'GPS einschalten'; refreshDistances(); say(message);
   }
-  $('gps').onclick = () => {
-    if (watch !== null) { stopGPS(); return; }
-    if (!window.isSecureContext || !navigator.geolocation) { say('GPS benötigt HTTPS und einen Browser mit Standortunterstützung.'); return; }
-    following = true; refreshGPSFollowControl();
-    $('gps').setAttribute('aria-pressed','true'); $('gps').lastElementChild.textContent = 'GPS ausschalten'; say('Standort wird ermittelt …');
-    watch = navigator.geolocation.watchPosition(result => {
-      if (watch === null) return;
-      position = {lat:result.coords.latitude,lng:result.coords.longitude};
-      positionUpdatedAt=Date.now();
-      const ll = [position.lat,position.lng];
-      if (!userDot) {
-        accuracy = L.circle(ll,{radius:result.coords.accuracy,color:'#60a5fa',weight:1,fillOpacity:.08}).addTo(map);
-        userDot = L.marker(ll,{
-          zIndexOffset: 1000,
-          icon: L.divIcon({
-            className: 'gps-location-icon',
-            html: '<div class="gps-bearing" aria-hidden="true"></div><div class="gps-center-dot"></div>',
-            iconSize: [64,64], iconAnchor: [32,32]
-          })
-        }).addTo(map);
-        userDot.on('click', () => {
-          following = true; refreshGPSFollowControl(); centerOnGPS(userDot.getLatLng(),16);
-        });
-        renderHeading();
-      } else { userDot.setLatLng(ll); accuracy.setLatLng(ll).setRadius(result.coords.accuracy); }
-      if (following) centerOnGPS(ll,Math.max(map.getZoom(),15));
-      refreshGPSFollowControl();
-      refreshDistances();
-      say(`GPS aktiv · Genauigkeit ca. ${Math.round(result.coords.accuracy)} m${heading === null ? '' : ' · Richtungspfeil aktiv'}`);
-    }, error => {
-      if (watch === null) return;
-      const messages = {1:'Standortzugriff verweigert. Du kannst GPS in den Website-Einstellungen des Browsers erlauben.',2:'Standort derzeit nicht verfügbar. Bitte erneut versuchen.',3:'Standortabfrage hat zu lange gedauert. Bitte erneut versuchen.'};
-      stopGPS(messages[error.code] || 'GPS konnte nicht gestartet werden.');
-    }, {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-    startCompass();
+  // GPS auto-start is enabled by default. Only the user can opt out using
+  // "GPS ausschalten"; leaving/reopening the page does not reset that choice.
+  // Store the preference, NEVER the position, heading or location history.
+  const autoGPSAllowed=()=>{
+    try{return localStorage.getItem('livekarte-gps-autostart-v1')!=='off';}
+    catch{return true;}
   };
+  function setAutoGPSAllowed(enabled){
+    try{localStorage.setItem('livekarte-gps-autostart-v1',enabled?'on':'off');}
+    catch{/* Browsing without persistent storage still works. */}
+  }
+  function startGPS(automatic=false) {
+    if(watch!==null)return;
+    if (!window.isSecureContext || !navigator.geolocation) {
+      if(!automatic)say('GPS benötigt HTTPS und einen Browser mit Standortunterstützung.');
+      return;
+    }
+    following = true; refreshGPSFollowControl();
+    $('gps').setAttribute('aria-pressed','true');
+    $('gps').lastElementChild.textContent = 'GPS ausschalten';
+    say('Standort wird ermittelt …');
+    try{
+      watch = navigator.geolocation.watchPosition(result => {
+        if (watch === null) return;
+        position = {lat:result.coords.latitude,lng:result.coords.longitude};
+        positionUpdatedAt=Date.now();
+        positionAccuracy=result.coords.accuracy;
+        const ll = [position.lat,position.lng];
+        if (!userDot) {
+          accuracy = L.circle(ll,{radius:result.coords.accuracy,color:'#60a5fa',weight:1,fillOpacity:.08}).addTo(map);
+          userDot = L.marker(ll,{
+            zIndexOffset: 1000,
+            icon: L.divIcon({
+              className: 'gps-location-icon',
+              html: '<div class="gps-bearing" aria-hidden="true"></div><div class="gps-center-dot"></div>',
+              iconSize: [64,64], iconAnchor: [32,32]
+            })
+          }).addTo(map);
+          userDot.on('click', () => {
+            following = true; refreshGPSFollowControl(); centerOnGPS(userDot.getLatLng(),16);
+          });
+          renderHeading();
+        } else { userDot.setLatLng(ll); accuracy.setLatLng(ll).setRadius(result.coords.accuracy); }
+        if (following) centerOnGPS(ll,Math.max(map.getZoom(),15));
+        refreshGPSFollowControl();
+        refreshDistances();
+        say(`GPS aktiv · Genauigkeit ca. ${Math.round(result.coords.accuracy)} m${heading === null ? '' : ' · Richtungspfeil aktiv'}`);
+      }, error => {
+        if (watch === null) return;
+        const messages = {1:'Standortzugriff verweigert. Du kannst GPS in den Website-Einstellungen des Browsers erlauben.',2:'Standort derzeit nicht verfügbar. Bitte erneut versuchen.',3:'Standortabfrage hat zu lange gedauert. Bitte erneut versuchen.'};
+        stopGPS(messages[error.code] || 'GPS konnte nicht gestartet werden.');
+      }, {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+    }catch{stopGPS('GPS konnte nicht gestartet werden. Bitte Berechtigung prüfen.');return;}
+    // iOS compass permission must be requested by a deliberate gesture.
+    if(!automatic || typeof DeviceOrientationEvent==='undefined' ||
+       typeof DeviceOrientationEvent.requestPermission!=='function')startCompass();
+  }
+  $('gps').onclick = () => {
+    if(watch!==null){setAutoGPSAllowed(false);stopGPS();return;}
+    setAutoGPSAllowed(true);
+    startGPS(false);
+  };
+  async function autoStartGPS() {
+    if(!autoGPSAllowed() || !window.isSecureContext || !navigator.geolocation)return;
+    // Avoid prompting again when permission has already been denied.
+    // With "prompt", the OS may show its normal one-time permission dialog.
+    try{
+      if(navigator.permissions?.query){
+        const permission=await navigator.permissions.query({name:'geolocation'});
+        if(permission.state==='denied')return;
+      }
+    }catch{/* Permissions API unavailable: geolocation itself handles consent. */}
+    if(watch===null && autoGPSAllowed())startGPS(true);
+  }
   document.querySelectorAll('[data-filter]').forEach(b => { b.onclick = () => {
     filter = b.dataset.filter; document.querySelectorAll('[data-filter]').forEach(e => e.setAttribute('aria-pressed', String(e === b))); render();
   }; });
@@ -1023,4 +1070,6 @@
   if (!readTicketUpdate() && !readJourneyLink() && !readLink()) {
     selectPlan(activePlanId,{save:false,url:false,announce:false});
   }
+  // Wait until the saved view is initialized so GPS centering wins on launch.
+  void autoStartGPS();
 })();
