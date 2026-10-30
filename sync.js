@@ -169,7 +169,9 @@
           counts.invalid++;
           continue;
         }
-        const ok=window.LivekarteApplySyncedTicket(payload.ticket,payload.issuedAt);
+        let ok=false;
+        try {ok=window.LivekarteApplySyncedTicket(payload.ticket,payload.issuedAt);}
+        catch {ok=false;}
         if(ok===true){
           counts.accepted++;
           seen.add(message.id); // Only acknowledge VALID and accepted messages.
