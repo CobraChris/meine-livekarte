@@ -1,0 +1,40 @@
+{
+  "id": "/meine-livekarte/",
+  "name": "Meine Live-Karte",
+  "short_name": "Live-Karte",
+  "description": "Persönliche Reisepläne, Orte, Fahrkartenstatus und Live-Navigation.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
+  "background_color": "#101b22",
+  "theme_color": "#101b22",
+  "orientation": "any",
+  "lang": "de",
+  "categories": [
+    "travel",
+    "navigation"
+  ],
+  "icons": [
+    {
+      "src": "./icons/livekarte-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/livekarte-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/livekarte-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

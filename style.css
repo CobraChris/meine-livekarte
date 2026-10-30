@@ -438,3 +438,23 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .outbox-actions button{flex:1;min-width:135px}
 
 .pin-hotel{background:#5b3f70!important;border-color:#dec6f2!important;color:#fff!important}
+
+/* Installable Android PWA: compact invitation, no map overlays. */
+.install-card{margin:0 0 11px;border:1px solid #3c6659;border-radius:11px;background:#162d2d;color:#deeee7}
+.install-card[hidden],.install-card button[hidden],.offline-notice[hidden]{display:none!important}
+.install-card summary{min-height:39px;padding:9px 11px;cursor:pointer;
+  font-size:12px;font-weight:750;list-style-position:inside}
+.install-mini{font-weight:450;color:#a5d7b8;margin-left:4px;font-size:10px}
+.install-content{padding:0 12px 12px}
+.install-content p{margin:7px 0;font-size:11px;line-height:1.55;color:#c5d9d1}
+.install-content #install-app-status{margin:9px 0;background:#11292c;color:#c1f2db;
+  border-radius:8px;padding:8px 9px;overflow-wrap:anywhere}
+.install-content .install-hint{font-size:10px;color:#9eb6ad}
+.install-content #install-app-button{width:100%;min-height:42px;
+  background:#2f775b;color:#fff;border-color:#65b78e;font-weight:700}
+.offline-notice{margin:0 0 10px;padding:9px 11px;border:1px solid #a88853;
+  background:#352e22;border-radius:10px;color:#ffe3a9;font-size:11px;line-height:1.55}
+@media(max-width:760px){
+ .install-card{margin:0 0 10px}
+ .install-card summary{min-height:40px}
+}

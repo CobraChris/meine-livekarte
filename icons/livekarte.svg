@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Meine Live-Karte: gefaltete Karte mit C-förmiger Reiseroute">
+<defs>
+  <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#076052"/><stop offset=".53" stop-color="#053a36"/><stop offset="1" stop-color="#05262a"/></linearGradient>
+  <radialGradient id="light" cx=".26" cy=".14" r=".95"><stop stop-color="#0ca087" stop-opacity=".5"/><stop offset="1" stop-color="#06352e" stop-opacity="0"/></radialGradient>
+  <linearGradient id="mapL" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#56dca2"/><stop offset="1" stop-color="#087855"/></linearGradient>
+  <linearGradient id="mapM" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#08704d"/><stop offset="1" stop-color="#033c3a"/></linearGradient>
+  <linearGradient id="mapR" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#0b846c"/><stop offset="1" stop-color="#0c5664"/></linearGradient>
+  <linearGradient id="pin" x1="0" x2=".8" y1="0" y2="1"><stop stop-color="#fff19a"/><stop offset=".55" stop-color="#ffd45c"/><stop offset="1" stop-color="#eea929"/></linearGradient>
+  <clipPath id="mapClip"><path d="M78 145 Q78 125 98 113 L200 74 L300 113 L401 74 Q426 66 438 91 Q444 98 444 114 L444 360 Q444 378 426 386 L302 433 L200 396 L89 432 Q68 437 68 414 Z"/></clipPath>
+</defs>
+<!-- Full-bleed dark green for Android maskable safe area. -->
+<rect width="512" height="512" fill="#053631"/>
+<rect x="12" y="12" width="488" height="488" rx="92" fill="url(#bg)"/>
+<rect x="12" y="12" width="488" height="488" rx="92" fill="url(#light)"/>
+<!-- Map depth and mint outline. -->
+<path d="M79 153 L200 85 L300 124 L420 84 Q446 79 451 110 L452 376 L302 450 L200 413 L82 448 Q58 449 56 425 L56 166 Q57 160 79 153 Z" fill="#011f25" opacity=".35"/>
+<path d="M78 145 Q78 125 98 113 L200 74 L300 113 L401 74 Q426 66 438 91 Q444 98 444 114 L444 360 Q444 378 426 386 L302 433 L200 396 L89 432 Q68 437 68 414 Z" fill="#c1f5ce" stroke="#d5ffe0" stroke-width="6" stroke-linejoin="round"/>
+<g clip-path="url(#mapClip)">
+  <path d="M68 112 L200 74 L200 396 L68 438 Z" fill="url(#mapL)"/>
+  <path d="M200 74 L302 113 L302 433 L200 396 Z" fill="url(#mapM)"/>
+  <path d="M302 113 L444 73 L444 383 L302 433 Z" fill="url(#mapR)"/>
+  <path d="M55 253 Q119 204 154 227 Q180 244 201 221 L201 399 L69 438 Z" fill="#125f53" opacity=".8"/>
+  <path d="M196 196 Q256 150 305 212 Q361 257 438 193 L455 350 L302 433 L201 398 Z" fill="#21aa72" opacity=".75"/>
+  <path d="M297 340 Q333 306 376 307 Q411 303 459 267" fill="none" stroke="#83dbb4" stroke-width="7" opacity=".38"/>
+  <path d="M306 357 Q356 329 384 344 Q423 360 468 331" fill="none" stroke="#3ad5c3" stroke-width="39" opacity=".85"/>
+  <path d="M108 246 L151 181 L170 211 L187 199 L205 251 L156 225 L128 241 Z" fill="#c4f5cb" opacity=".94"/>
+  <path d="M111 244 L151 195 L165 222 L180 212 L195 246 L150 224 Z" fill="#44b48e"/>
+  <path d="M115 330 L135 297 L128 297 L145 272 L162 299 L153 299 L170 330 L153 330 L153 344 L135 344 L135 330 Z" fill="#97eb9a"/>
+  <path d="M200 74 L200 398 M302 113 L302 432" fill="none" stroke="#cfffe3" stroke-width="5" opacity=".55"/>
+</g>
+<!-- C monogram is the dashed route, open to the right between its two ends. -->
+<path d="M366 142 C248 115 178 158 178 252 C178 340 239 387 361 357" fill="none" stroke="#0c4d43" stroke-width="26" stroke-linecap="round" opacity=".55"/>
+<path d="M366 142 C248 115 178 158 178 252 C178 340 239 387 361 357" fill="none" stroke="#ffd44e" stroke-width="19" stroke-linecap="round" stroke-dasharray="17 27"/>
+<circle cx="361" cy="357" r="13" fill="#ffda5a"/><circle cx="361" cy="357" r="5" fill="#076351"/>
+<!-- Golden destination pin. -->
+<path d="M389 71 C344 71 318 104 318 142 C318 178 355 210 389 242 C424 207 460 172 460 142 C460 104 435 71 389 71 Z" fill="#03382f" opacity=".5" transform="translate(1 8)"/>
+<path d="M389 66 C344 66 318 99 318 137 C318 173 355 205 389 237 C424 202 460 167 460 137 C460 99 435 66 389 66 Z" fill="url(#pin)" stroke="#ffe28a" stroke-width="4"/>
+<circle cx="389" cy="134" r="25" fill="#06463a"/>
+<circle cx="389" cy="134" r="13" fill="#07342f"/>
+</svg>
