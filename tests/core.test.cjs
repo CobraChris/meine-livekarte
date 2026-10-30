@@ -390,7 +390,7 @@ test('journey ticket UI supports user and chat link state changes without overri
  assert.match(app,/function readTicketUpdate\(\)/);
  assert.match(app,/pendingTicketUpdate/);
  assert.match(app,/ticketUpdateDialog\.showModal\(\)/);
- assert.match(app,/ticketStatuses\[key\]=\{status,source:/);
+ assert.match(app,/ticketStatuses\[key\]=\{status,\s*source:/);
  assert.match(app,/livekarte-ticket-status-v1/);
  assert.match(app,/function ticketStatusFor/);
  assert.match(app,/const picker=node\('select',undefined,'ticket-choice'\)/);
