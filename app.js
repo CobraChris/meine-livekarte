@@ -350,12 +350,38 @@
       updatedAt:Number.isFinite(updatedAt)?updatedAt:Date.now()};
     try {
       localStorage.setItem('livekarte-ticket-status-v1',JSON.stringify(ticketStatuses));
+      window.dispatchEvent(new Event('livekarte:ticket-updated'));
       return true;
     }catch{
       say('Ticketstatus konnte nicht dauerhaft gespeichert werden. Browserspeicher prüfen.');
       return false;
     }
   }
+  // Export only the minimum trip-ticket fields to an explicitly selected
+  // PRIVATE GitHub repository. Never export GPS, saved places, QR codes,
+  // booking references, or any token from this map.
+  window.LivekarteExportTicketSnapshot=()=>{
+    const entries=[];
+    for(const plan of allPlans()){
+      if(plan.kind!=='journey')continue;
+      const trip=Object.hasOwn(planJourneys,plan.id)
+        ?planJourneys[plan.id]
+        :plan.id==='ride-takayama'
+          ?C.presetJourney('hakone-takayama-2026-10-30'):null;
+      if(!trip)continue;
+      for(let i=0;i<trip.stops.length-1;i++){
+        const stop=trip.stops[i],next=trip.stops[i+1];
+        if(!stop.departure)continue;
+        const saved=ticketStatuses[C.ticketLegKey(plan.id,trip,i)];
+        entries.push({plan:plan.id,date:trip.date,
+          from:stop.name,to:next.name,departure:stop.departure,
+          status:saved?.status||'unknown',
+          source:saved?.source||'manual',
+          updatedAt:saved?.updatedAt||0});
+      }
+    }
+    return entries;
+  };
   // Called solely by the optional encrypted inbox once an RSA-OAEP message
   // has been decrypted with this browser's nonextractable private key.
   // Older server messages NEVER overwrite more recent on-device choices.
