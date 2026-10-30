@@ -35,6 +35,19 @@ Berlin Hauptbahnhof;52.5251;13.3694;station;Zentraler Bahnhof
 
 JSON unterstützt auch `{ "places": [...] }`, einzelne Objekte, Markdown-Codeblöcke und `lon` als Alternative zu `lng`. Eingaben werden validiert und nur als Text angezeigt, niemals als HTML.
 
+## Nagoya als erster erweiterbarer Bahnhofs-Pilot (30.10.2026)
+
+Für den Reiseabschnitt **„30.10. Fahrt nach Takayama“** gibt es in Nagoya einen interaktiven deutschsprachigen **Bahnhofsmodus**, der ausdrücklich **ohne Indoor-GPS** funktioniert.
+
+- **Ankunft:** Hikari 637, geplant 11:19. Westwärts fahrende Shinkansen benutzen in Nagoya gewöhnlich Gleis 16 oder 17; das Gleis des individuellen Zuges ist nicht live bestätigt.
+- **Abfahrt:** Limited Express Hida 9, geplant 11:43 Richtung Takayama, regulär **Gleis 11**. Dies ist kein Echtzeit-Dienst; Bahnsteig auf der Anzeigetafel prüfen.
+- **Schritte:** (1) Shinkansen verlassen → (2) zum JR-Linien-Transfer eine Ebene hinunter → (3) JR-Umsteigesperre statt Bahnhofsausgang nutzen → (4) zum Gleis 11 hinauf → (5) Hida 9 besteigen.
+- Im Reiseplan **Nagoya** bzw. „Bahnhofsmodus · Gleis 11“ antippen oder, wenn die Karte Nagoya ab Zoomstufe 15 zeigt, die Schaltfläche **Nagoya · Umstieg 11** nutzen. Der dialogbasierte Wegweiser zeigt eine **deutsche, schematische Etagenübersicht**, den nächsten Schritt und die zu suchenden Schilder.
+- Der Nutzer kann das tatsächliche Ankunftsgleis **manuell** auswählen und mit **Zurück / Nächster Schritt** durch die Anleitung gehen. Der Fortschritt wird lokal im Browser gespeichert. Es wird nicht angenommen, dass GPS oder Kompass innerhalb des Bahnhofs zuverlässig genug für eine genaue Gleisposition ist.
+- **Originalplan auf Englisch:** https://global.jr-central.co.jp/en/info/station/_img/nagoya.jpg. Nur ergänzende Referenz; die deutsche Anleitung ist ohne Öffnen des Originalplans nutzbar.
+
+Der Bahnhofsmodus verwendet keine bezahlten APIs und zeichnet **keine erfundenen Indoor-Fußwege** auf die Karte. Treppen, Etagen, Tore und Bahnsteige werden als Ablauf dargestellt und bei künftigen Pilotstationen separat verifiziert. Die Live-Anzeigetafeln sowie Personalhinweise haben Vorrang.
+
 ## Reiseabschnitte: Fahrtage und Aufenthalte
 
 Oben auf der Karte gibt es einen **Reiseabschnitt-Wähler**, auch im Vollbildmodus:
