@@ -358,7 +358,8 @@
   }
   // Called solely by the optional encrypted inbox once an RSA-OAEP message
   // has been decrypted with this browser's nonextractable private key.
-  // Older server messages NEVER overwrite more recent on-device choices.  window.LivekarteApplySyncedTicket=(raw,issuedAt)=>{
+  // Older server messages NEVER overwrite more recent on-device choices.
+  window.LivekarteApplySyncedTicket=(raw,issuedAt)=>{
     try {
       const update=C.normalizeTicketUpdate(raw);
       if(!Number.isSafeInteger(issuedAt)||issuedAt<=0||issuedAt>Date.now()+600000)
@@ -707,7 +708,8 @@
       stopGPS(messages[error.code] || 'GPS konnte nicht gestartet werden.');
     }, {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
     startCompass();
-  };  document.querySelectorAll('[data-filter]').forEach(b => { b.onclick = () => {
+  };
+  document.querySelectorAll('[data-filter]').forEach(b => { b.onclick = () => {
     filter = b.dataset.filter; document.querySelectorAll('[data-filter]').forEach(e => e.setAttribute('aria-pressed', String(e === b))); render();
   }; });
   document.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => b.closest('dialog').close(); });
