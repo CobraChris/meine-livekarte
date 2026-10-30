@@ -106,7 +106,10 @@
   tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
   const pins = L.layerGroup().addTo(map);
   const walkingLayers=L.layerGroup().addTo(map);
+  const tourLayers=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
+  let tourDrafts=Object.create(null),tourRoute=null,tourController=null,tourRequestGeneration=0;
+  let lastTourRequestedAt=0;
   let walkDestination=null,walkController=null,walkRequestGeneration=0;
   let lastWalkingRequestAt=0,positionUpdatedAt=0,positionAccuracy=null;
   const node = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
@@ -260,6 +263,7 @@
     let url;
     try{ url=W.requestUrl(position,place); }
     catch(e){say(e.message);return;}
+    if(tourRoute || tourController)clearTourRoute();
     const elapsed=Date.now()-lastWalkingRequestAt;
     if(elapsed<1200){
       say('Bitte kurz warten, bevor du einen weiteren Fußweg berechnen lässt.');
@@ -424,7 +428,12 @@
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
       show.onclick = () => { following = false; map.setView([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
       const distance = node('span',metric(p),'distance');
-      actions.append(show,walkingButton(p),route(p),distance);
+      const tourButton=node('button',tourIsSelected(p)?'✓ Tour':'＋ Tour','tour-pick');
+      tourButton.type='button';
+      tourButton.setAttribute('aria-pressed',String(tourIsSelected(p)));
+      tourButton.title='Ort zu einem Rundgang hinzufügen oder entfernen';
+      tourButton.onclick=()=>toggleTourPlace(p);
+      actions.append(show,walkingButton(p),tourButton,route(p),distance);
       const assignRow=node('div',undefined,'plan-assign-row');
       const assignSelect=node('select',undefined,'place-plan-select');
       assignSelect.setAttribute('aria-label','Ort '+p.name+' einem Reiseabschnitt zuordnen');
@@ -450,6 +459,7 @@
       distanceDisplays.push({ place:p, inPopup, inList:distance });
     });
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
+    renderTourBuilder();
   }
   function persist() {
     try {
@@ -846,6 +856,7 @@
     const plan=allPlans().find(p=>p.id===id);
     if(!plan)return false;
     if(activePlanId!==id && walkDestination)clearWalkingRoute();
+    if(activePlanId!==id)clearTourRoute();
     activePlanId=id;
     journey=activeJourney();
     pauseGPSFollow();
@@ -1066,6 +1077,9 @@
     if (!confirm('Alle Empfehlungen von diesem Gerät entfernen?')) return;
     places = []; planAssignments=Object.create(null);
     clearWalkingRoute();
+    clearTourRoute();
+    tourDrafts=Object.create(null);
+    persistTourDrafts();
     persist();persistPlanState();render();say('Empfehlungen entfernt. Reiseabschnitte bleiben erhalten.');
   };
   $('demo').onclick = () => {
