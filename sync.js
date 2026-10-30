@@ -120,7 +120,9 @@
       const url=new URL('./sync/inbox/'+current.id+'.json',new URL('.',location.href));
       const response=await fetch(url.toString(),{cache:'no-store',credentials:'omit'});
       if(response.status===404){
-        if(showResult)setStatus('Noch kein synchronisiertes Postfach. Schicke zuerst den öffentlichen Kopplungscode an ChatGPT.');
+        if(showResult)setStatus(
+          'Postfach noch nicht über GitHub Pages erreichbar (HTTP 404). '+
+          'Falls es eben eingerichtet wurde, Seite später erneut laden.',true);
         return;
       }
       if(!response.ok)throw new Error('Postfach HTTP '+response.status);
@@ -131,33 +133,65 @@
           !Array.isArray(data.messages)||data.messages.length>100)
         throw new Error('Postfachformat ungültig.');
       const seen=seenIds();
-      let applied=0,ignored=0;
+      const counts={found:data.messages.length,already:0,new:0,decrypted:0,
+        accepted:0,invalid:0,rejected:0};
       for(const message of data.messages){
-        if(!message || typeof message.id!=='string'
-           || !/^[0-9a-z-]{8,80}$/.test(message.id)
-           || seen.has(message.id))continue;
+        // Reject malformed entries visibly; never acknowledge them as processed.
+        if(!message || typeof message.id!=='string' ||
+           !/^[0-9a-z-]{8,80}$/.test(message.id)){
+          counts.invalid++;
+          continue;
+        }
+        if(seen.has(message.id)){
+          counts.already++;
+          continue;
+        }
+        counts.new++;
+        let plain;
         try{
-          const plain=await crypto.subtle.decrypt({name:'RSA-OAEP'},current.privateKey,
-            base64ToBytes(message.ciphertext));
-          const payload=JSON.parse(new TextDecoder().decode(plain));
+          const ciphertext=base64ToBytes(message.ciphertext);
+          if(ciphertext.length!==384)throw new Error('Ungültige RSA-3072-Nachrichtenlänge.');
+          plain=await crypto.subtle.decrypt(
+            {name:'RSA-OAEP'},current.privateKey,ciphertext);
+          counts.decrypted++;
+        }catch{
+          counts.invalid++;
+          continue; // Important: retry if a corrected ciphertext is later published.
+        }
+        let payload;
+        try {
+          payload=JSON.parse(new TextDecoder().decode(plain));
           if(payload?.v!==1 || payload.id!==message.id ||
-             !Number.isFinite(payload.issuedAt) ||
-             payload.issuedAt<0 || payload.issuedAt>Date.now()+600000)
+             !Number.isSafeInteger(payload.issuedAt) ||
+             payload.issuedAt<=0 || payload.issuedAt>Date.now()+600000)
             throw new Error('Nachrichtenmetadaten ungültig.');
-          const ok=window.LivekarteApplySyncedTicket?.(payload.ticket,payload.issuedAt);
-          if(ok===true)applied++;
-          else ignored++;
-          seen.add(message.id);
-        }catch(e){
-          ignored++;
-          // A malformed message never changes the local ticket or private key.
+        }catch{
+          counts.invalid++;
+          continue;
+        }
+        const ok=window.LivekarteApplySyncedTicket(payload.ticket,payload.issuedAt);
+        if(ok===true){
+          counts.accepted++;
+          seen.add(message.id); // Only acknowledge VALID and accepted messages.
+        }else{
+          counts.rejected++;
+          // A route/date mismatch may become resolvable if the itinerary changes.
+          // Do not mark as seen: the user should be able to retry.
         }
       }
       markSeen(seen);
-      if(showResult || applied)setStatus(applied
-        ? '🔒 '+applied+' Ticketstatus-Update(s) sicher übernommen.'+
-          (ignored?' '+ignored+' nicht übernommen.':'')
-        : '🔒 Kein neues gültiges Ticketstatus-Update vorhanden.');
+      const trouble=counts.invalid+counts.rejected;
+      if(showResult || counts.accepted || trouble) {
+        const detail='Postfach erreichbar: '+counts.found+' Nachricht(en). '+
+          'Bereits verarbeitet: '+counts.already+
+          ' · Neu entschlüsselt: '+counts.decrypted+
+          ' · Akzeptiert: '+counts.accepted+
+          ' · Entschlüsselung/Format fehlgeschlagen: '+counts.invalid+
+          ' · Reiseplan passt nicht/Übernahme fehlgeschlagen: '+counts.rejected+'.';
+        setStatus((trouble?'⚠️ ':'🔒 ')+detail+
+          (trouble?' Fehlerhafte Nachrichten werden nicht als erledigt markiert.':
+          counts.accepted?' Ticketstatus kann bereits vorher grün gewesen sein.':''),!!trouble);
+      }
     }catch(e){
       if(showResult)setStatus('Synchronisierung nicht verfügbar: '+e.message,true);
     }finally{checking=false;}
