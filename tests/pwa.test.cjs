@@ -44,7 +44,8 @@ test('PWA install UI is optional; no browser storage reset or token persistence'
  assert.match(code,/display-mode: standalone/);
  assert.match(code,/install-app-button/);
  assert.match(code,/navigator\.onLine/);
- assert.doesNotMatch(code,/localStorage|indexedDB|caches\.delete/);
+ const executable=code.replace(/\/\*[\s\S]*?\*\//g,'').replace(/^\s*\/\/.*$/gm,'');
+ assert.doesNotMatch(executable,/localStorage|indexedDB|caches\.delete/);
  assert.doesNotMatch(code,/accessToken|github_pat_|GPS|geolocation/);
 });
 
