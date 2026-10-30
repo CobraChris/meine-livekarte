@@ -67,7 +67,7 @@
     remove.hidden=!ready;
     result.hidden=!ready;
     result.value=ready?pairingText(current):'';
-    if(ready)setStatus('🔒 Gerät gekoppelt (ID '+current.id+'). Verschlüsselte Updates werden beim Öffnen geprüft.');
+    if(ready)setStatus('🔒 Gerät vorbereitet (ID '+current.id+'). Sobald ChatGPT das Postfach eingerichtet hat, kommen Updates automatisch an.');
     else setStatus('Noch nicht gekoppelt. Der private Schlüssel bleibt ausschließlich in diesem Browser.');
   }
   async function setup() {
@@ -115,6 +115,8 @@
     if(checking || !current || document.visibilityState==='hidden')return;
     checking=true;
     try {
+      if(typeof window.LivekarteApplySyncedTicket!=='function')
+        throw new Error('Ticketmodul ist noch nicht geladen. Seite neu laden.');
       const url=new URL('./sync/inbox/'+current.id+'.json',new URL('.',location.href));
       const response=await fetch(url.toString(),{cache:'no-store',credentials:'omit'});
       if(response.status===404){
