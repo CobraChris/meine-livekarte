@@ -1,7 +1,7 @@
 'use strict';
 (() => {
   const $ = id => document.getElementById(id), C = MapCore;
-  const symbols = { restaurant: '♨', sight: '◇', station: '▤' };
+  const symbols = { restaurant: '♨', sight: '◇', station: '▤', hotel: '⌂' };
   let places = [], filter = 'all', position = null, watch = null, following = false, userDot, accuracy;
   let distanceDisplays = [];
   let customPlans = [], planAssignments = Object.create(null), planJourneys = Object.create(null);
@@ -820,7 +820,7 @@
         if(Array.isArray(value)) planAssignments[key]=value.filter(id=>allPlans().some(p=>p.id===id));
   } catch { say('Ortszuordnungen konnten nicht geladen werden.'); }
   function seedCuratedPlaces() {
-    const version='takayama-2026-v2';
+    const version='takayama-2026-v3';
     try {
       if (localStorage.getItem('livekarte-curated-places-version')===version) return;
       const preset=C.presetPlaces('town-takayama');
