@@ -593,3 +593,27 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   }
   .walk-route-panel .walk-route-credit{font-size:8px}
 }
+
+
+/* Explicit walking GPS navigation mode. The route itself remains on the map;
+   only the small existing route chip is visible while following GPS. */
+.walk-route-panel .walk-route-nav{
+  width:100%;min-height:41px;margin:6px 0 5px;padding:7px 10px;
+  border:1px solid #91d9ba;background:#2c7559;color:#f0fff4;
+  border-radius:9px;font-size:12px;font-weight:750;
+}
+.walk-route-panel .walk-route-nav[aria-pressed="true"]{
+  background:#31474b;border-color:#7e9c9d;color:#ecf4f3;
+}
+.walk-route-panel .walk-route-nav:disabled{opacity:.53}
+.walk-route-panel .walk-route-nav-state{
+  margin:2px 0 8px;padding:7px 8px;background:#17433a;
+  border-radius:7px;color:#c6f8db;font-size:10px;line-height:1.4;
+}
+.walk-route-panel .walk-route-nav-state[hidden]{display:none!important}
+.walk-route-panel .walk-route-nav-state.walk-route-warning{
+  background:#5a4425;color:#ffe8b3;
+}
+.walk-route-mini.walk-off-route{background:#604429ed;border-color:#f0b56b;color:#fff2d7}
+.walk-route-mini.walk-arrived{background:#195841ed;border-color:#9ce6b8;color:#e4ffed}
+.walk-route-mini.walk-weak-gps{background:#354853ed;border-color:#94b4c7;color:#e4f0f8}
