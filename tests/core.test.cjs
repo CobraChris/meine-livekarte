@@ -278,3 +278,40 @@ test('mobile workspace makes map and trip content primary, without a bulky picke
  assert.match(app,/\$\('add-plan'\)\.onclick=/);
  assert.match(app,/map\.on\('zoomstart'/);
 });
+
+test('Nagoya Hikari 637 to Hida 9 is a guided, non-GPS indoor transfer', () => {
+ const g=C.stationGuides.nagoya;
+ assert.equal(g.station,'Nagoya');
+ assert.equal(g.arrival,'11:19');
+ assert.equal(g.departure,'11:43');
+ assert.equal(g.departurePlatform,'11');
+ assert.equal(g.transferMinutes,24);
+ assert.equal(g.steps.length,5);
+ assert.match(g.steps[2].sign,/JR Lines/);
+ assert.match(g.steps[2].sign,/乗換口/);
+ assert.match(g.steps[3].sign,/11/);
+ assert.ok(g.steps.every(s=>s.title&&s.action&&s.sign&&s.level&&s.caution));
+ assert.match(g.steps[0].caution,/nicht die bestätigte Gleisnummer/);
+ assert.match(g.mapUrl,/global\.jr-central\.co\.jp\/en\/info\/station\/_img\/nagoya\.jpg/);
+});
+test('Nagoya guide is accessible from the travel day and never claims precise indoor GPS', () => {
+ const {readFileSync}=require('node:fs'),{join}=require('node:path');
+ const root=join(__dirname,'..');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ const css=readFileSync(join(root,'style.css'),'utf8');
+ assert.match(html,/id="nagoya-dialog"/);
+ assert.match(html,/id="nagoya-guide-trigger"[^>]*hidden/);
+ assert.match(html,/id="nagoya-arrival-track"/);
+ assert.match(html,/id="nagoya-prev"/);
+ assert.match(html,/id="nagoya-next"/);
+ assert.match(html,/keine Indoor-GPS-Position/);
+ assert.match(app,/stationGuides\.nagoya/);
+ assert.match(app,/nagoya\.steps\.length|ng\.steps\.length/);
+ assert.match(app,/map\.on\('moveend zoomend',updateNagoyaTrigger\)/);
+ assert.match(app,/pauseGPSFollow\(\);[\s\S]*?renderNagoyaStep\(\)/);
+ assert.match(app,/Bahnhofsmodus · Gleis 11/);
+ assert.match(app,/localStorage\.setItem\('livekarte-nagoya-step-v1'/);
+ assert.match(css,/#nagoya-guide-trigger\[hidden\]\{display:none\}/);
+ assert.match(css,/\.ng-station-map/);
+});
