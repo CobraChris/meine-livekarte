@@ -397,7 +397,7 @@ test('journey ticket UI supports user and chat link state changes without overri
  assert.match(app,/if \(i<journey\.stops\.length-1\)/);
  assert.match(app,/unresolved/);
  assert.match(app,/\$\('ticket-update-apply'\)\.onclick/);
- assert.match(app,/if\(!readTicketUpdate\(\) && !readJourneyLink\(\) && !readLink\(\)\)/);
+ assert.match(app,/if\s*\(!readTicketUpdate\(\) && !readJourneyLink\(\) && !readLink\(\)\)/);
  assert.match(app,/navigator\.geolocation\.watchPosition/);
  assert.match(css,/\.ticket-state-unknown/);
  assert.match(css,/\.ticket-state-ready/);
