@@ -76,12 +76,30 @@
       } catch { /* Browser denied sensor permission. */ }
     } else listen();
   }
-  const say = text => { $('status').textContent = text; };
+  let statusTimer = null;
+  const say = message => {
+    const status = $('status'), text = String(message || '');
+    clearTimeout(statusTimer);
+    // The GPS precision remains available on the GPS button without a
+    // permanent full-width toast obscuring the map.
+    if (/^GPS aktiv\b/.test(text)) {
+      $('gps').title = text;
+      $('gps').setAttribute('aria-label','GPS ausschalten · '+text);
+      return;
+    }
+    status.textContent=text;
+    status.hidden=!text;
+    // Errors persist; ordinary actions fade so the map remains unobstructed.
+    if(text && !/(?:nicht|ungültig|fehler|konnte|gesperrt|fehlgeschlagen|benötigt)/i.test(text))
+      statusTimer=setTimeout(()=>{status.textContent='';status.hidden=true;},4500);
+  };
   if (!window.L) { say('Die Kartenbibliothek konnte nicht geladen werden. Bitte Seite neu laden.'); return; }
   // No hard-coded home city. Without saved places, show a neutral world view until GPS is enabled.
   // Smooth two-finger zoom on mobile; smaller half-step zoom buttons. OSM raster tiles remain discrete.
   const map = L.map('map', { zoomControl: false, zoomSnap: 0, zoomDelta: 0.5 }).setView([25, 0], 2);
   L.control.zoom({ position:'topright' }).addTo(map);
+  // Keep the required OpenStreetMap map-data credit, omit optional Leaflet prefix.
+  map.attributionControl.setPrefix(false);
   const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>' }).addTo(map);
   let tileWarning = false;
   tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
@@ -382,7 +400,9 @@
     $('fit').lastElementChild.textContent=plan.kind==='journey' ? 'Route zeigen'
       : plan.kind==='city' ? 'Ziele zeigen' : 'Alle Orte';
     info.replaceChildren();
-    info.hidden=activePlanId==='all';
+    // No redundant description under the map for already-configured journeys
+    // or city browsing. Keep the warning for travel days still missing a route.
+    info.hidden=activePlanId==='all' || plan.kind==='city' || !!activeJourney();
     if (!info.hidden) {
       info.append(node('strong',plan.name));
       const note=plan.kind==='city'
@@ -509,7 +529,9 @@
     watch = null; position = null; following = false; stopCompass(); refreshGPSFollowControl();
     if (userDot) { map.removeLayer(userDot); userDot = null; }
     if (accuracy) { map.removeLayer(accuracy); accuracy = null; }
-    $('gps').setAttribute('aria-pressed','false'); $('gps').lastElementChild.textContent = 'GPS einschalten'; refreshDistances(); say(message);
+    $('gps').setAttribute('aria-pressed','false');
+    $('gps').title='GPS einschalten';$('gps').setAttribute('aria-label','GPS einschalten');
+    $('gps').lastElementChild.textContent = 'GPS einschalten'; refreshDistances(); say(message);
   }
   $('gps').onclick = () => {
     if (watch !== null) { stopGPS(); return; }

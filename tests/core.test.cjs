@@ -315,3 +315,38 @@ test('Nagoya guide is accessible from the travel day and never claims precise in
  assert.match(css,/#nagoya-guide-trigger\[hidden\]\{display:none\}/);
  assert.match(css,/\.ng-station-map/);
 });
+
+test('Nagoya floors are explicit 2F → 1F → 2F, without presenting a mapped indoor walking path', () => {
+ const {readFileSync}=require('node:fs');
+ const {join}=require('node:path');
+ const root=join(__dirname,'..');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ const paths=['2F · Shinkansen','1F · Verbindungsebene','2F · JR-Linien'];
+ const positions=paths.map(p=>html.indexOf(p));
+ assert.ok(positions.every(i=>i>0), 'all three floor levels are visible');
+ assert.ok(positions[0] < positions[1] && positions[1] < positions[2], 'floor order is correct');
+ assert.match(html,/ng-floor-transfer/);
+ assert.match(html,/Eine Etage hinunter/);
+ assert.match(html,/Eine Etage hinauf/);
+ assert.match(html,/JR-Umsteigesperre passieren/);
+ assert.match(html,/kein vermessener Fußweg/);
+});
+test('mobile uses map-first space, fades ordinary notices, and keeps OSM attribution', () => {
+ const {readFileSync}=require('node:fs');
+ const {join}=require('node:path');
+ const root=join(__dirname,'..');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ const css=readFileSync(join(root,'style.css'),'utf8');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ assert.match(css,/@media\(max-width:760px\)\{\s*header\{display:none\}/);
+ assert.match(html,/id="status"[^>]*hidden><\/div>/);
+ assert.doesNotMatch(html,/Bereit für deinen nächsten Lieblingsort/);
+ assert.match(css,/#status\[hidden\]\{display:none!important\}/);
+ assert.match(app,/statusTimer=setTimeout/);
+ assert.match(app,/if \(\/\^GPS aktiv/);
+ assert.match(app,/map\.attributionControl\.setPrefix\(false\)/);
+ assert.match(app,/activePlanId==='all' \|\| plan\.kind==='city' \|\| !!activeJourney\(\)/);
+ assert.match(app,/OpenStreetMap/);
+ assert.match(css,/\.leaflet-control-attribution/);
+ assert.match(css,/\.ng-step-buttons\{position:sticky/);
+});

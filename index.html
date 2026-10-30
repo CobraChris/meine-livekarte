@@ -25,7 +25,7 @@
   </div>
   <p><strong>So gehst du vor:</strong> Nach der Ankunft aus Gōra auf dem Bahnsteig bleiben, den Schildern „2 / Odawara“ folgen und auf den Zug um 09:24 achten. Gleis 2 und 3 sind unterschiedliche Gleise hintereinander an einem durchgehenden Bahnsteig und ebenerdig erreichbar. <strong>Dein Ankunftsgleis ist nicht bestätigt;</strong> beachte deshalb die Anzeigen vor Ort.</p>
   <a href="https://www.hakonenavi.jp/international/en/station/yumoto" target="_blank" rel="noopener noreferrer">Offizielle Bahnhofsinformationen auf Englisch ↗</a>
-</section><button type="button" id="nagoya-guide-trigger" hidden aria-label="Umstieg in Nagoya anzeigen">🚆 <span>Nagoya · Umstieg 11</span></button><button id="recenter-gps" type="button" hidden aria-label="Wieder meinem GPS-Standort folgen" title="Wieder meinem GPS-Standort folgen">⌖</button><button id="expand-map" type="button" aria-pressed="false" aria-label="Karte im Vollbild anzeigen" title="Karte im Vollbild anzeigen">⛶</button><div class="map-actions"><button id="fit" title="Alle Empfehlungen anzeigen">⤢ <span>Alle Orte</span></button><button id="gps" aria-pressed="false">◎ <span>GPS einschalten</span></button></div><div id="status" role="status" aria-live="polite">Bereit für deinen nächsten Lieblingsort.</div></section>
+</section><button type="button" id="nagoya-guide-trigger" hidden aria-label="Umstieg in Nagoya anzeigen">🚆 <span>Nagoya · Umstieg 11</span></button><button id="recenter-gps" type="button" hidden aria-label="Wieder meinem GPS-Standort folgen" title="Wieder meinem GPS-Standort folgen">⌖</button><button id="expand-map" type="button" aria-pressed="false" aria-label="Karte im Vollbild anzeigen" title="Karte im Vollbild anzeigen">⛶</button><div class="map-actions"><button id="fit" title="Alle Empfehlungen anzeigen">⤢ <span>Alle Orte</span></button><button id="gps" aria-pressed="false">◎ <span>GPS einschalten</span></button></div><div id="status" role="status" aria-live="polite" hidden></div></section>
 <aside>
 <div class="eyebrow">DEIN PERSÖNLICHER REISEBEGLEITER</div><h1>Gute Orte.<br><span>Direkt vor dir.</span></h1><p class="intro">Sammle Empfehlungen von ChatGPT und entdecke sie auf deiner Karte.</p>
 <section id="plan-summary" class="plan-summary" hidden aria-live="polite"></section>
@@ -52,9 +52,12 @@
   </div>
   <div class="ng-station-map" role="img" aria-label="Schematischer Etagenplan: von Shinkansen Gleis 16 oder 17 auf der Bahnsteigebene 2F hinunter zur Verbindungsebene 1F, durch die JR-Umsteigesperre und hinauf zum JR Gleis 11 auf 2F">
     <div class="ng-floor"><span>2F · Shinkansen</span><strong>Gleis 16 / 17</strong></div>
-    <div class="ng-floor-path"><span>↓ Treppe / Lift</span><span>→ JR-Umsteigesperre</span><span>↑ Gleis 11</span></div>
+    <div class="ng-vertical-step" aria-hidden="true"><span>↓</span> Eine Etage hinunter</div>
+    <div class="ng-floor ng-floor-transfer"><span>1F · Verbindungsebene</span><strong>JR Lines / Transfer</strong></div>
+    <div class="ng-transfer-gates">→ JR-Umsteigesperre passieren →</div>
+    <div class="ng-vertical-step" aria-hidden="true"><span>↑</span> Eine Etage hinauf</div>
     <div class="ng-floor ng-floor-destination"><span>2F · JR-Linien</span><strong>Gleis 11 · Hida 9</strong></div>
-    <div class="ng-map-note">Schematisches Stockwerksmodell · keine Indoor-GPS-Position und kein vermessener Fußweg</div>
+    <div class="ng-map-note">Schematisch · keine Indoor-GPS-Position und kein vermessener Fußweg.</div>
   </div>
   <div class="ng-step-box">
     <div class="ng-step-top"><span id="nagoya-progress" aria-live="polite">Schritt 1 von 5</span><span id="nagoya-floor">2F · Bahnsteig</span></div>
