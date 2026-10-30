@@ -35,6 +35,22 @@ Berlin Hauptbahnhof;52.5251;13.3694;station;Zentraler Bahnhof
 
 JSON unterstützt auch `{ "places": [...] }`, einzelne Objekte, Markdown-Codeblöcke und `lon` als Alternative zu `lng`. Eingaben werden validiert und nur als Text angezeigt, niemals als HTML.
 
+## Reiseabschnitte: Fahrtage und Aufenthalte
+
+Oben auf der Karte gibt es einen **Reiseabschnitt-Wähler**, auch im Vollbildmodus:
+
+- **Alle gespeicherten Orte:** zeigt alle bereits gespeicherten Empfehlungen aus bisherigen Versionen, ohne sie zu löschen
+- **30.10. – Fahrt nach Takayama:** die bestehende Hakone–Takayama-Zugroute mit Fahrplan und Hakone-Yumoto-Umstieg
+- **30.10.–02.11. – Takayama:** eigener Bereich für Sehenswürdigkeiten, Restaurants und andere Ziele vor Ort
+- **02.11. – Fahrt nach Kyoto:** vorbereiteter Fahrtag; **keine** erfundenen Uhrzeiten oder Strecken, bis eine konkrete Verbindung hinterlegt wurde
+- **Ab 02.11. – Kyoto:** eigener Bereich für die Stadterkundung
+
+Ein **＋** neben der Auswahl legt weitere Fahrt- oder Stadtbereiche an. Die gewählte Ansicht wird lokal gemerkt und über `?view=town-kyoto` etc. auch direkt geöffnet. Die Kamera fokussiert den jeweiligen Abschnitt. Manuelles Zoomen pausiert weiterhin GPS-Autozentrierung; der Live-Standort und Kompass arbeiten unabhängig.
+
+**Orte organisieren:** Wenn du Orte importierst, während eine bestimmte Ansicht aktiv ist, werden sie dieser zugeordnet. Unter den Karten der vorhandenen Orte kannst du die Zuordnung später ändern. Bereits gespeicherte Orte ohne Zuordnung findest du weiterhin in **Alle gespeicherten Orte**. Jeder Ort wird nur einmal im lokalen Gesamtspeicher geführt; die Ansicht ist ein Filter, kein eigenes mehrfaches Kopieren. „Leeren“ löscht alle Orte erst nach Bestätigung – beim bloßen Wechsel wird nie etwas gelöscht.
+
+Der Fahrplan einer Fahrt wird separat je Abschnitt verwaltet. Die bestehende Hakone–Takayama-Reise wird aus früheren Speicherständen übernommen. Künftige Reisepläne können über einen `#trip=`-Link in den gerade ausgewählten Fahrtabschnitt importiert werden; Stadttage verwenden ausschließlich Orts-Pins, keine schematischen Zuglinien. Die Funktion benötigt keine bezahlte Karten-API. Daten liegen weiterhin im Browser, nicht in einer Cloud-Datenbank.
+
 ## Reiseplan als Kartenlink
 
 Die Live-Karte unterstützt außerdem einen separaten Reiseplan über einen Link mit `#trip=`. **Hakone-Yumoto:** Ab Zoomstufe 17 erscheint ein kompakter, **schematischer** Umstiegshinweis. Ab Zoomstufe 18 zeigt die Karte eine **leichtgewichtige, am Bahnhofspunkt verankerte Gleisorientierung**: **Gleis 3 – Richtung Gōra**, **09:16 Ankunft aus Gōra – Ankunftsgleis vor Ort prüfen**, **Gleis 2 – 09:24 Richtung Odawara** und **8 Min. Umsteigezeit**. Es werden bewusst **keine zusätzlichen künstlichen Schienenlinien** mehr über die OSM-Gleise gemalt, weil keine verifizierten Einzelgleis-Geometrien vorliegen. Die Hinweise selbst bleiben schematisch, sind keine vermessenen Gleispunkte und zeigen keinen echten Fußweg. Die Karte enthält nun eine kurze **deutsche Umstiegshilfe**: im zusammenhängenden Bahnsteigbereich bleiben, Gleis 2 Richtung Odawara suchen (8 Minuten Umsteigezeit, nicht Gehzeit). Für die Details ist der **offizielle englischsprachige** Bahnhofsführer verlinkt statt ausschließlich die japanische Odakyu-Übersicht. Das konkrete Ankunftsgleis ist weiterhin nicht bestätigt. Die Bahnhofsunterlagen nennen Gleis 3 für die Richtung Gōra, bestätigen damit aber nicht, dass der Zug aus Gōra dort eintrifft. Ein vierter Bahnsteig wird zeitweise für Ankünfte genutzt.  Du kannst auch den Bahnhof in der Zeitleiste antippen oder im Marker-Popup „Umstieg im Detail anzeigen“ wählen. Das ist **keine gleisgenaue GPS-Navigation**, kein verifizierter Ankunftsgleis-Nachweis für genau diesen Zug und keine maßstäbliche Gleisgeometrie. Die tatsächliche Anzeigetafel am Bahnhof geht vor. Offizieller Lageplan: https://www.odakyu.jp/station/hakone_yumoto/.

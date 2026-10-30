@@ -121,12 +121,43 @@
     try { return normalizeJourney(JSON.parse(decodeURIComponent(hash.slice(6)))); }
     catch (e) { throw new Error('Reiseplan-Link ungültig: ' + e.message); }
   }
+  // Each section is independent. Saved places are never deleted when changing sections.
+  const planPresets = [
+    {id:'all',name:'Alle gespeicherten Orte',kind:'all'},
+    {id:'ride-takayama',name:'30.10. · Fahrt nach Takayama',kind:'journey'},
+    {id:'town-takayama',name:'30.10.–02.11. · Takayama',kind:'city',center:[36.141062,137.251454]},
+    {id:'ride-kyoto',name:'02.11. · Fahrt nach Kyoto',kind:'journey',center:[35.55,136.50]},
+    {id:'town-kyoto',name:'Ab 02.11. · Kyoto',kind:'city',center:[34.98535,135.75877]}
+  ];
+  function placePlanKey(place) {
+    return JSON.stringify([place.name,place.lat,place.lng]);
+  }
+  function placesForPlan(places,assignments,planId) {
+    if (planId === 'all') return places;
+    return places.filter(place => {
+      const tag=assignments?.[placePlanKey(place)];
+      return Array.isArray(tag) && tag.includes(planId);
+    });
+  }
+  function validCustomPlans(list) {
+    if (!Array.isArray(list) || list.length>30) throw new Error('Zu viele Reiseabschnitte.');
+    const seen = new Set(planPresets.map(p=>p.id));
+    return list.map(p=>{
+      if (!p || !/^custom-[0-9a-z-]{4,60}$/.test(String(p.id)) || seen.has(p.id)
+          || !['journey','city'].includes(p.kind)
+          || typeof p.name!=='string' || !p.name.trim()) throw new Error('Ungültiger Reiseabschnitt.');
+      seen.add(p.id);
+      const center=Array.isArray(p.center)&&p.center.length===2&&p.center.every(Number.isFinite)
+        && Math.abs(p.center[0])<=90&&Math.abs(p.center[1])<=180 ? p.center : null;
+      return {id:p.id,name:p.name.trim().slice(0,60),kind:p.kind,center};
+    });
+  }
   function distance(a, b) {
     const r = Math.PI / 180, dlat = (b.lat-a.lat)*r, dlng = (b.lng-a.lng)*r;
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney };
+  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, planPresets, placePlanKey, placesForPlan, validCustomPlans };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);

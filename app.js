@@ -4,6 +4,34 @@
   const symbols = { restaurant: '♨', sight: '◇', station: '▤' };
   let places = [], filter = 'all', position = null, watch = null, following = false, userDot, accuracy;
   let distanceDisplays = [];
+  let customPlans = [], planAssignments = Object.create(null), planJourneys = Object.create(null);
+  let activePlanId = 'all';
+  const allPlans = () => [...C.planPresets,...customPlans];
+  const currentPlan = () => allPlans().find(p=>p.id===activePlanId) || C.planPresets[0];
+  const currentPlaces = () => C.placesForPlan(places,planAssignments,activePlanId);
+  function assignToCurrentPlan(items) {
+    if (activePlanId === 'all') return;
+    items.forEach(p => {
+      const key=C.placePlanKey(p);
+      const list=Array.isArray(planAssignments[key]) ? planAssignments[key] : [];
+      planAssignments[key]=[...new Set([...list,activePlanId])];
+    });
+    persistPlanState();
+  }
+  function persistPlanState() {
+    try {
+      localStorage.setItem('livekarte-custom-plans-v1',JSON.stringify(customPlans));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(planAssignments));
+      localStorage.setItem('livekarte-plan-journeys-v1',JSON.stringify(planJourneys));
+      localStorage.setItem('livekarte-active-plan-v1',activePlanId);
+      return true;
+    } catch { say('Reiseabschnitte konnten nicht dauerhaft gespeichert werden.'); return false; }
+  }
+  function activeJourney() {
+    if (Object.prototype.hasOwnProperty.call(planJourneys,activePlanId)) return planJourneys[activePlanId];
+    return activePlanId === 'ride-takayama' ? C.presetJourney('hakone-takayama-2026-10-30') : null;
+  }
+
   let heading = null, visualHeading = null, compassGeneration = 0;
   function renderHeading() {
     const el = userDot?.getElement();
@@ -77,15 +105,24 @@
       inList.textContent = value;
     });
   }
-  function fit(items = places) {
+  function fit(items = currentPlaces()) {
     const visible = items.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
   function render() {
-    pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = []; $('count').textContent = places.length;
-    $('empty').hidden = places.length > 0; $('share').disabled = !places.length; $('clear').disabled = !places.length;
+    pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = [];
+    const planPlaces=currentPlaces();
+    $('count').textContent = planPlaces.length;
+    $('empty').hidden = planPlaces.length > 0;
+    $('demo').hidden = activePlanId !== 'all';
+    $('empty').querySelector('h3').textContent = activePlanId === 'all'
+      ? 'Hier beginnt dein nächster Ausflug' : 'Für diesen Abschnitt sind noch keine Orte gespeichert';
+    $('empty').querySelector('p').textContent = activePlanId === 'all'
+      ? 'Füge deine Empfehlungen hinzu oder erkunde eine kleine Beispielroute durch Berlin.'
+      : 'Importiere Ziele, während dieser Abschnitt ausgewählt ist. Deine anderen Ziele bleiben erhalten.';
+    $('share').disabled = !planPlaces.length; $('clear').disabled = !places.length;
     let shown = 0;
-    places.forEach(p => {
+    planPlaces.forEach(p => {
       if (filter !== 'all' && p.category !== filter) return;
       shown++;
       const inPopup = node('p',metric(p));
@@ -97,7 +134,27 @@
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
       show.onclick = () => { following = false; map.setView([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
       const distance = node('span',metric(p),'distance');
-      actions.append(show,route(p),distance); card.append(top,node('p',p.description),actions); $('places').append(card);
+      actions.append(show,route(p),distance);
+      const assignRow=node('div',undefined,'plan-assign-row');
+      const assignSelect=node('select',undefined,'place-plan-select');
+      assignSelect.setAttribute('aria-label','Ort '+p.name+' einem Reiseabschnitt zuordnen');
+      const tags=planAssignments[C.placePlanKey(p)] || [];
+      const options=[{id:'',name:'Keinem Abschnitt zugeordnet'},...allPlans().filter(section=>section.id!=='all')];
+      options.forEach(section=>{
+        const opt=node('option',section.name);
+        opt.value=section.id;
+        if (section.id=== (tags[0]||'')) opt.selected=true;
+        assignSelect.append(opt);
+      });
+      assignSelect.onchange=()=>{
+        const key=C.placePlanKey(p);
+        if(assignSelect.value) planAssignments[key]=[assignSelect.value];
+        else delete planAssignments[key];
+        persistPlanState(); render();
+        say('Zuordnung gespeichert. Alle Orte bleiben erhalten.');
+      };
+      assignRow.append(assignSelect);
+      card.append(top,node('p',p.description),actions,assignRow); $('places').append(card);
       distanceDisplays.push({ place:p, inPopup, inList:distance });
     });
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
@@ -124,6 +181,7 @@
       filter = 'all';
       document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === 'all')));
       const saved = persist();
+      assignToCurrentPlan(shared);
       render();
       following = false;
       if (shared.length) fit(shared); // Focus on the newly received recommendations, even if older places are far away.
@@ -256,6 +314,72 @@
     info.append(node('p','Gestrichelte Linien verbinden Stationen nur schematisch – nicht entlang der tatsächlichen Gleise. Fahrpläne vor Abfahrt nochmals prüfen.','journey-warning'));
     updateStationTransfer();
   }
+  function renderPlanPicker() {
+    const pick=$('plan-select'), info=$('plan-summary');
+    pick.replaceChildren();
+    allPlans().forEach(plan=>{
+      const opt=node('option',plan.name);
+      opt.value=plan.id;pick.append(opt);
+    });
+    pick.value=activePlanId;
+    const plan=currentPlan();
+    $('fit').lastElementChild.textContent=plan.kind==='journey' ? 'Route zeigen'
+      : plan.kind==='city' ? 'Ziele zeigen' : 'Alle Orte';
+    info.replaceChildren();
+    info.hidden=activePlanId==='all';
+    if (!info.hidden) {
+      info.append(node('strong',plan.name));
+      const note=plan.kind==='city'
+        ? 'Stadtansicht: hier kannst du Restaurants, Sehenswürdigkeiten und andere Ziele sammeln.'
+        : activeJourney()
+          ? 'Reisetag mit eingezeichneter Zugroute, Zeiten und Umstiegen.'
+          : 'Reisetag angelegt. Fahrzeiten und Strecke sind noch nicht hinterlegt – keine erfundenen Verbindungen.';
+      info.append(node('p',note));
+    }
+  }
+  function selectPlan(id,options={}) {
+    const plan=allPlans().find(p=>p.id===id);
+    if(!plan)return false;
+    activePlanId=id;
+    journey=activeJourney();
+    pauseGPSFollow();
+    renderPlanPicker();renderJourney();render();
+    if (options.focus!==false) {
+      if(journey) fitJourney();
+      else {
+        const matching=currentPlaces();
+        if(matching.length) fit(matching);
+        else if(plan.center) map.setView(plan.center,plan.kind==='city'?14:8);
+      }
+    }
+    if (options.save!==false) persistPlanState();
+    if(options.url!==false) {
+      const url=new URL(location.href);
+      url.searchParams.set('view',id);
+      history.replaceState(null,'',url.pathname+url.search+url.hash);
+    }
+    if(options.announce!==false) say('Abschnitt ausgewählt: '+plan.name);
+    return true;
+  }
+  $('plan-select').onchange=()=>selectPlan($('plan-select').value);
+  $('add-plan').onclick=()=>{
+    $('plan-error').textContent='';
+    $('plan-dialog').showModal();
+  };
+  $('plan-form').onsubmit=e=>{
+    e.preventDefault();
+    try {
+      const name=$('plan-title').value.trim().slice(0,60);
+      const kind=$('plan-type').value;
+      if(!name || !['city','journey'].includes(kind))throw Error('Name und Art fehlen.');
+      if(customPlans.length>=30)throw Error('Maximal 30 eigene Reiseabschnitte.');
+      const id='custom-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
+      const center=map.getCenter();
+      customPlans=C.validCustomPlans([...customPlans,{id,name,kind,center:[center.lat,center.lng]}]);
+      $('plan-dialog').close();$('plan-title').value='';
+      selectPlan(id);
+    }catch(error){$('plan-error').textContent=error.message;}
+  };
   function readJourneyLink() {
     const params = new URLSearchParams(location.search);
     const slug = params.get('trip');
@@ -264,25 +388,40 @@
     try {
       const decoded = slug ? C.presetJourney(slug) : C.decodeJourney(location.hash);
       if (!decoded) throw new Error('Unbekannter Reiseplan.');
+      // Existing Hakone→Takayama links select their travel day automatically.
+      // New custom long itinerary links attach to the currently active travel day.
+      const nextView=slug==='hakone-takayama-2026-10-30' ? 'ride-takayama'
+        : currentPlan().kind==='journey' ? activePlanId : 'ride-takayama';
+      activePlanId=nextView;
+      planJourneys[nextView]=decoded;
       journey=decoded;
       try {
-        localStorage.setItem('livekarte-journey-v1',JSON.stringify(journey));
+        persistPlanState();
         // Remove the consumed trip URL so clearing the itinerary stays cleared after reload.
         params.delete('trip');
+        params.set('view',nextView);
         const otherQuery=params.toString();
         history.replaceState(null,'',location.pathname+(otherQuery?'?'+otherQuery:'')+
           (hasLongLink?'':location.hash));
       } catch { say('Reiseplan geöffnet, konnte aber nicht dauerhaft gespeichert werden.'); }
-      renderJourney(); fitJourney();
-      say('Reiseplan auf der Karte geladen. Deine bisherigen Empfehlungen bleiben erhalten.');
+      renderPlanPicker();render();renderJourney();fitJourney();
+      say('Reiseplan in „'+currentPlan().name+'“ geladen. Andere Abschnitte bleiben erhalten.');
     } catch (e) { say('Reiseplan ungültig: '+e.message); }
     return true;
   }
   $('remove-journey').onclick = () => {
-    journey=null;try{localStorage.removeItem('livekarte-journey-v1');}catch{}
-    renderJourney();fit();say('Reiseplan entfernt. Empfehlungen bleiben erhalten.');
+    journey=null;
+    planJourneys[activePlanId]=null;
+    persistPlanState();
+    renderJourney();renderPlanPicker();
+    say('Nur der Reiseplan dieses Abschnitts wurde entfernt. Andere Abschnitte und Orte bleiben erhalten.');
   };
-  $('fit').onclick = () => { pauseGPSFollow(); fit(); };
+  $('fit').onclick = () => {
+    pauseGPSFollow();
+    if(journey) fitJourney();
+    else if(currentPlaces().length) fit();
+    else if(currentPlan().center) map.setView(currentPlan().center,currentPlan().kind==='city'?14:8);
+  };
   const recenterGPS = $('recenter-gps');
   let automaticGPSView = false;
   function refreshGPSFollowControl() {
@@ -355,7 +494,11 @@
     filter = b.dataset.filter; document.querySelectorAll('[data-filter]').forEach(e => e.setAttribute('aria-pressed', String(e === b))); render();
   }; });
   document.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => b.closest('dialog').close(); });
-  $('open-import').onclick = () => { $('import-error').textContent = ''; $('import-dialog').showModal(); };
+  $('open-import').onclick = () => {
+    $('import-error').textContent = '';
+    $('import-target').textContent = 'Speichern in: '+currentPlan().name;
+    $('import-dialog').showModal();
+  };
   $('privacy').onclick = () => $('help-dialog').showModal();
   $('import-form').onsubmit = event => {
     event.preventDefault();
@@ -364,13 +507,15 @@
       const before = places.length;
       places = C.merge(places, additions); filter = 'all';
       document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.filter === 'all')));
-      const saved = persist(); render(); following = false; fit(additions); $('import-dialog').close(); $('import-text').value = '';
+      const saved = persist(); assignToCurrentPlan(additions);
+      render(); following = false; fit(additions); $('import-dialog').close(); $('import-text').value = '';
       say(saved ? `${places.length - before} neue Orte hinzugefügt · ${places.length} insgesamt.` : 'Orte importiert, konnten aber nicht dauerhaft gespeichert werden.');
     } catch (e) { $('import-error').textContent = e.message; }
   };
   $('clear').onclick = () => {
     if (!confirm('Alle Empfehlungen von diesem Gerät entfernen?')) return;
-    places = []; persist(); render(); say('Empfehlungen entfernt.');
+    places = []; planAssignments=Object.create(null);
+    persist();persistPlanState();render();say('Empfehlungen entfernt. Reiseabschnitte bleiben erhalten.');
   };
   $('demo').onclick = () => {
     const sample = [
@@ -383,7 +528,10 @@
     } catch (e) { say(e.message); }
   };
   $('share').onclick = () => {
-    const url = new URL(location.href); url.search = ''; url.hash = C.encode(places);
+    const url = new URL(location.href);
+    url.search='';
+    if(activePlanId!=='all'&&!activePlanId.startsWith('custom-')) url.searchParams.set('view',activePlanId);
+    url.hash = C.encode(currentPlaces());
     if (url.href.length > 30000) { say('Zu viele Daten für einen Link. Bitte weniger oder kürzere Empfehlungen teilen.'); return; }
     $('share-url').value = url.href; $('share-dialog').showModal();
   };
@@ -412,11 +560,34 @@
   try { places = C.parse(localStorage.getItem('livekarte-places-v1') || '[]'); }
   catch { say('Gespeicherte Orte konnten nicht gelesen werden. Bitte erneut importieren.'); }
   try {
+    customPlans=C.validCustomPlans(JSON.parse(localStorage.getItem('livekarte-custom-plans-v1')||'[]'));
+  } catch { customPlans=[]; say('Eigene Reiseabschnitte konnten nicht geladen werden.'); }
+  try {
+    const raw=JSON.parse(localStorage.getItem('livekarte-plan-assignments-v1')||'{}');
+    if(raw && typeof raw==='object' && !Array.isArray(raw))
+      for(const [key,value] of Object.entries(raw).slice(0,250))
+        if(Array.isArray(value)) planAssignments[key]=value.filter(id=>allPlans().some(p=>p.id===id));
+  } catch { say('Ortszuordnungen konnten nicht geladen werden.'); }
+  try {
+    const raw=JSON.parse(localStorage.getItem('livekarte-plan-journeys-v1')||'{}');
+    if(raw && typeof raw==='object' && !Array.isArray(raw)) {
+      for(const [key,value] of Object.entries(raw).slice(0,35)) {
+        if(!allPlans().some(p=>p.id===key))continue;
+        planJourneys[key]=value===null?null:C.normalizeJourney(value);
+      }
+    }
     const savedTrip=localStorage.getItem('livekarte-journey-v1');
-    if(savedTrip) journey=C.normalizeJourney(JSON.parse(savedTrip));
+    if(savedTrip && !Object.prototype.hasOwnProperty.call(planJourneys,'ride-takayama'))
+      planJourneys['ride-takayama']=C.normalizeJourney(JSON.parse(savedTrip));
   } catch { say('Gespeicherter Reiseplan ist ungültig.'); }
-  render();renderJourney();
+  const queryView=new URLSearchParams(location.search).get('view');
+  const savedView=(()=>{try{return localStorage.getItem('livekarte-active-plan-v1')}catch{return null}})();
+  const requestedView=queryView||savedView||
+    (Object.prototype.hasOwnProperty.call(planJourneys,'ride-takayama')?'ride-takayama':'all');
+  activePlanId=allPlans().some(p=>p.id===requestedView)?requestedView:'all';
+  journey=activeJourney();
+  renderPlanPicker();renderJourney();render();
   if (!readJourneyLink() && !readLink()) {
-    if(journey) fitJourney(); else fit();
+    selectPlan(activePlanId,{save:false,url:false,announce:false});
   }
 })();
