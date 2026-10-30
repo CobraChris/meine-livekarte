@@ -271,8 +271,10 @@
       const metaText = placeMeta(p);
       if (metaText) popup.append(node('p',metaText,'place-meta'));
       appendPlaceTiming(popup,p);
-      popup.append(node('p',p.description), inPopup, walkingButton(p), route(p));
-      const marker = L.marker([p.lat,p.lng], { title:p.name, icon:L.divIcon({className:'pin',html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`,iconSize:[36,36],iconAnchor:[18,36]}) }).bindPopup(popup).addTo(pins);
+      const quickActions=node('div',undefined,'popup-quick-actions');
+      quickActions.append(walkingButton(p),route(p));
+      popup.append(quickActions,node('p',p.description),inPopup);
+      const marker = L.marker([p.lat,p.lng], { title:p.name, icon:L.divIcon({className:'pin',html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`,iconSize:[36,36],iconAnchor:[18,36]}) }).bindPopup(popup,{maxWidth:320,maxHeight:250,autoPan:true}).addTo(pins);
       marker.on('popupopen', () => { following = false; });
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
       title.append(node('div',C.categories[p.category], 'category'),node('h3',p.name)); top.append(node('span',symbols[p.category],'place-icon'), title);
@@ -681,6 +683,8 @@
     const plan=currentPlan();
     $('fit').lastElementChild.textContent=plan.kind==='journey' ? 'Route zeigen'
       : plan.kind==='city' ? 'Ziele zeigen' : 'Alle Orte';
+    $('fit').setAttribute('aria-label',$('fit').lastElementChild.textContent);
+    $('fit').title=$('fit').lastElementChild.textContent;
     info.replaceChildren();
     // No redundant description under the map for already-configured journeys
     // or city browsing. Keep the warning for travel days still missing a route.
