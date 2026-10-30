@@ -169,11 +169,11 @@
   function normalizeTicketUpdate(raw) {
     if(!raw || typeof raw!=='object' || Array.isArray(raw) || raw.v!==1
         || !/^[a-z0-9-]{2,70}$/.test(String(raw.plan||''))
-        || !/^\\d{2}\\.\\d{2}\\.\\d{4}$/.test(String(raw.date||''))
+        || !/^\d{2}\.\d{2}\.\d{4}$/.test(String(raw.date||''))
         || !['unknown','missing','booked','ready'].includes(raw.status)
         || typeof raw.from!=='string'||!raw.from.trim()||raw.from.length>100
         || typeof raw.to!=='string'||!raw.to.trim()||raw.to.length>100
-        || !/^(?:[01]\\d|2[0-3]):[0-5]\\d$/.test(String(raw.departure||'')))
+        || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(raw.departure||'')))
       throw new Error('Ticket-Update ungültig.');
     return {v:1,plan:raw.plan,date:raw.date,from:raw.from,
       to:raw.to,departure:raw.departure,status:raw.status};
