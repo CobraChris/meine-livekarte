@@ -263,13 +263,13 @@
     let url;
     try{ url=W.requestUrl(position,place); }
     catch(e){say(e.message);return;}
-    if(tourRoute || tourController)clearTourRoute();
-    const elapsed=Date.now()-lastWalkingRequestAt;
+    const elapsed=Date.now()-Math.max(lastWalkingRequestAt,lastTourRequestedAt);
     if(elapsed<1200){
       say('Bitte kurz warten, bevor du einen weiteren Fußweg berechnen lässt.');
       return;
     }
     lastWalkingRequestAt=Date.now(); // FOSSGIS: never more than 1 request/second.
+    if(tourRoute || tourController)clearTourRoute();
     if(walkController)walkController.abort();
     const controller=new AbortController();
     walkController=controller;
@@ -494,7 +494,7 @@
       tourBuilderStatus.textContent='Bitte GPS aktivieren und auf eine aktuelle Positionsmessung warten.';
       return;
     }
-    const from={...position};
+    const from={...position},startPlanId=activePlanId;
     let request;
     try{request=W.tourRequestUrl(from,selected);}
     catch(error){tourBuilderStatus.textContent=error.message;return;}
@@ -527,7 +527,7 @@
       const raw=await response.text();
       if(raw.length>2500000)throw new Error('Rundgangantwort ungewöhnlich groß.');
       const result=W.parseTour(JSON.parse(raw),from,selected);
-      if(generation!==tourRequestGeneration||activePlanId!==currentPlan().id)return;
+      if(generation!==tourRequestGeneration||activePlanId!==startPlanId)return;
       tourRoute={...result,stops:selected.map(p=>({...p})),start:from,planId:activePlanId};
       L.polyline(result.points,{color:'#12313b',opacity:.9,weight:10,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
@@ -1368,6 +1368,17 @@
     }
   }
   seedCuratedPlaces();
+  // Persist only chosen place identifiers, never the GPS start or a route.
+  try{
+    const raw=JSON.parse(localStorage.getItem('livekarte-tour-drafts-v1')||'{}');
+    if(raw&&typeof raw==='object'&&!Array.isArray(raw)){
+      for(const [planId,keys] of Object.entries(raw).slice(0,36)){
+        if(!allPlans().some(p=>p.id===planId)||!Array.isArray(keys))continue;
+        tourDrafts[planId]=[...new Set(keys.filter(k=>
+          typeof k==='string'&&k.length<=300))].slice(0,6);
+      }
+    }
+  }catch{say('Gespeicherte Rundgang-Auswahl konnte nicht geladen werden.');}
   try {
     const raw=JSON.parse(localStorage.getItem('livekarte-plan-journeys-v1')||'{}');
     if(raw && typeof raw==='object' && !Array.isArray(raw)) {
