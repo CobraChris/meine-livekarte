@@ -402,3 +402,57 @@ test('journey ticket UI supports user and chat link state changes without overri
  assert.match(css,/\.ticket-state-unknown/);
  assert.match(css,/\.ticket-state-ready/);
 });
+
+test('private ChatGPT pairing uses local nonextractable RSA and only encrypted public inbox', () => {
+ const {readFileSync}=require('node:fs'),{join}=require('node:path');
+ const root=join(__dirname,'..');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ const sync=readFileSync(join(root,'sync.js'),'utf8');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ const css=readFileSync(join(root,'style.css'),'utf8');
+ const workflow=readFileSync(join(root,'.github/workflows/pages.yml'),'utf8');
+ assert.match(html,/src="sync\.js"/);
+ for(const id of ['sync-panel','sync-generate','sync-pair-code','sync-copy',
+    'sync-check','sync-disconnect'])assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(sync,/indexedDB\.open\(storeName,1\)/);
+ assert.match(sync,/name:'RSA-OAEP',modulusLength:3072/);
+ assert.match(sync,/false,\['encrypt','decrypt'\]/);
+ assert.match(sync,/exportKey\('spki',keys\.publicKey\)/);
+ assert.doesNotMatch(sync,/exportKey\(['"]pkcs8['"]/);
+ assert.match(sync,/crypto\.subtle\.decrypt/);
+ assert.match(sync,/crypto\.subtle\.digest\('SHA-256'/);
+ assert.match(sync,/sync\/inbox/);
+ assert.match(sync,/cache:'no-store'/);
+ assert.match(sync,/fetch\(url\.toString\(\),\{cache:'no-store',credentials:'omit'\}\)/);
+ assert.match(sync,/seen\.add\(message\.id\)/);
+ assert.match(sync,/clearInterval\(interval\)/);
+ assert.match(app,/window\.LivekarteApplySyncedTicket=/);
+ assert.match(app,/ticketStatuses\[key\]\?\.updatedAt/);
+ assert.match(app,/encrypted-sync/);
+ assert.match(css,/\.sync-panel/);
+ assert.match(workflow,/cp index\.html style\.css core\.js app\.js sync\.js public\//);
+ assert.match(workflow,/cp -r sync public\//);
+ assert.match(workflow,/node --check sync\.js/);
+});
+test('WebCrypto RSA-OAEP 3072 pairing format can encrypt and decrypt a valid ticket event', async () => {
+ const {webcrypto}=require('node:crypto');
+ const subtle=webcrypto.subtle;
+ const pair=await subtle.generateKey(
+   {name:'RSA-OAEP',modulusLength:3072,
+    publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},
+   false,['encrypt','decrypt']);
+ assert.equal(pair.privateKey.extractable,false);
+ const publicBytes=new Uint8Array(await subtle.exportKey('spki',pair.publicKey));
+ const digest=new Uint8Array(await subtle.digest('SHA-256',publicBytes));
+ const device=[...digest.slice(0,12)].map(x=>x.toString(16).padStart(2,'0')).join('');
+ assert.match(device,/^[a-f0-9]{24}$/);
+ const ticket={v:1,plan:'ride-takayama',date:'30.10.2026',from:'Odawara',
+   to:'Nagoya',departure:'10:11',status:'ready'};
+ const message={v:1,id:'20261030-abcd1234',issuedAt:Date.now(),ticket};
+ const ciphertext=await subtle.encrypt({name:'RSA-OAEP'},pair.publicKey,
+   new TextEncoder().encode(JSON.stringify(message)));
+ const plaintext=await subtle.decrypt({name:'RSA-OAEP'},pair.privateKey,ciphertext);
+ const result=JSON.parse(new TextDecoder().decode(plaintext));
+ assert.deepEqual(C.normalizeTicketUpdate(result.ticket),ticket);
+ assert.equal(result.id,message.id);
+});
