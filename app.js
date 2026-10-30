@@ -280,6 +280,8 @@
   function openNagoyaGuide() {
     // Never claim the user has moved indoors when only map/GPS data changed.
     pauseGPSFollow();
+    if(map.getZoom()<16 || !map.getBounds().contains(nagoya))
+      map.setView(nagoya,16.75,{animate:false});
     renderNagoyaStep();
     if(!ngDialog.open) ngDialog.showModal();
   }
