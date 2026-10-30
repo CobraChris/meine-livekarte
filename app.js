@@ -268,12 +268,13 @@
       const inPopup = node('p',metric(p));
       const popup = node('div');
       popup.append(node('strong',p.name));
+      const quickActions=node('div',undefined,'popup-quick-actions');
+      quickActions.append(walkingButton(p),route(p));
+      popup.append(quickActions);
       const metaText = placeMeta(p);
       if (metaText) popup.append(node('p',metaText,'place-meta'));
       appendPlaceTiming(popup,p);
-      const quickActions=node('div',undefined,'popup-quick-actions');
-      quickActions.append(walkingButton(p),route(p));
-      popup.append(quickActions,node('p',p.description),inPopup);
+      popup.append(node('p',p.description),inPopup);
       const marker = L.marker([p.lat,p.lng], { title:p.name, icon:L.divIcon({className:'pin',html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`,iconSize:[36,36],iconAnchor:[18,36]}) }).bindPopup(popup,{maxWidth:320,maxHeight:250,autoPan:true}).addTo(pins);
       marker.on('popupopen', () => { following = false; });
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
