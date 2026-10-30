@@ -111,6 +111,12 @@
     a.href = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
     a.target = '_blank'; a.rel = 'noopener noreferrer'; return a;
   }
+  function placeMeta(p) {
+    const parts = [];
+    if (p.priority) parts.push('Schulnote ' + p.priority);
+    if (p.duration) parts.push('Dauer ' + p.duration);
+    return parts.join(' · ');
+  }
   function metric(p) {
     if (!position) return '';
     const d = C.distance(position, p);
@@ -145,7 +151,11 @@
       if (filter !== 'all' && p.category !== filter) return;
       shown++;
       const inPopup = node('p',metric(p));
-      const popup = node('div'); popup.append(node('strong',p.name), node('p',p.description), inPopup, route(p));
+      const popup = node('div');
+      popup.append(node('strong',p.name));
+      const metaText = placeMeta(p);
+      if (metaText) popup.append(node('p',metaText,'place-meta'));
+      popup.append(node('p',p.description), inPopup, route(p));
       const marker = L.marker([p.lat,p.lng], { title:p.name, icon:L.divIcon({className:'pin',html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`,iconSize:[36,36],iconAnchor:[18,36]}) }).bindPopup(popup).addTo(pins);
       marker.on('popupopen', () => { following = false; });
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
@@ -173,7 +183,8 @@
         say('Zuordnung gespeichert. Alle Orte bleiben erhalten.');
       };
       assignRow.append(assignSelect);
-      card.append(top,node('p',p.description),actions,assignRow); $('places').append(card);
+      if (metaText) card.append(node('p',metaText,'place-meta'));
+      card.append(node('p',p.description),actions,assignRow); $('places').append(card);
       distanceDisplays.push({ place:p, inPopup, inList:distance });
     });
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
@@ -778,6 +789,26 @@
       for(const [key,value] of Object.entries(raw).slice(0,250))
         if(Array.isArray(value)) planAssignments[key]=value.filter(id=>allPlans().some(p=>p.id===id));
   } catch { say('Ortszuordnungen konnten nicht geladen werden.'); }
+  function seedCuratedPlaces() {
+    const version='takayama-2026-v1';
+    try {
+      if (localStorage.getItem('livekarte-curated-places-version')===version) return;
+      const preset=C.presetPlaces('town-takayama');
+      if (!preset.length) return;
+      places=C.merge(places,preset);
+      preset.forEach(place=>{
+        const key=C.placePlanKey(place);
+        const tags=Array.isArray(planAssignments[key])?planAssignments[key]:[];
+        planAssignments[key]=[...new Set([...tags,'town-takayama'])];
+      });
+      localStorage.setItem('livekarte-curated-places-version',version);
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(planAssignments));
+      persist();
+    } catch {
+      say('Takayama-Empfehlungen konnten nicht automatisch ergänzt werden.');
+    }
+  }
+  seedCuratedPlaces();
   try {
     const raw=JSON.parse(localStorage.getItem('livekarte-plan-journeys-v1')||'{}');
     if(raw && typeof raw==='object' && !Array.isArray(raw)) {
