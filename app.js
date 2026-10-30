@@ -123,6 +123,88 @@
   const walkingLink=$('walk-route-google');
   const walkingMini=$('walk-route-mini'), walkingMiniText=$('walk-route-mini-text');
   const walkingStop=$('walk-route-stop');
+  const walkingNavButton=$('walk-route-nav'),walkingNavState=$('walk-route-nav-state');
+  let walkRouteData=null,walkingNavigation=null;
+  let offRouteReadings=0,nearGoalReadings=0;
+  const walkingDistanceLabel=data=>W.distanceText(data.distance)+' · '+W.durationText(data.duration);
+  function stopWalkingNavigation(){
+    const wasNavigating=!!walkingNavigation;
+    walkingNavigation=null;offRouteReadings=0;nearGoalReadings=0;
+    walkingNavButton.textContent='▶ GPS-Navigation starten';
+    walkingNavButton.setAttribute('aria-pressed','false');
+    walkingNavButton.disabled=!walkRouteData;
+    walkingNavState.hidden=true;
+    walkingNavState.textContent='';
+    walkingNavState.className='walk-route-nav-state';
+    walkingMini.classList.remove('walk-off-route','walk-arrived','walk-weak-gps');
+    if(walkRouteData && walkDestination){
+      walkingMiniText.textContent='🚶 '+walkingDistanceLabel(walkRouteData);
+      walkingStats.textContent=W.distanceText(walkRouteData.distance)+' · ca. '+
+        W.durationText(walkRouteData.duration);
+    }
+    // Stopping navigation does not deactivate GPS or erase the route.
+    if(wasNavigating){
+      following=false;refreshGPSFollowControl();
+    }
+  }
+  function updateWalkingNavigation(point,gpsAccuracy){
+    if(!walkingNavigation || !walkDestination)return;
+    let progress;
+    try{progress=W.navigationProgress(walkingNavigation,point,gpsAccuracy);}
+    catch{return;}
+    if(progress.status==='near-goal')nearGoalReadings++;
+    else nearGoalReadings=0;
+    if(progress.status==='off-route')offRouteReadings++;
+    else offRouteReadings=0;
+    const reached=nearGoalReadings>=2;
+    const deviated=offRouteReadings>=2;
+    walkingMini.classList.toggle('walk-off-route',deviated);
+    walkingMini.classList.toggle('walk-arrived',reached);
+    walkingMini.classList.toggle('walk-weak-gps',progress.status==='poor-gps');
+    walkingNavState.hidden=false;
+    const suffix=W.distanceText(progress.remainingMeters)+' · ca. '+
+      W.durationText(progress.remainingSeconds);
+    if(reached){
+      walkingMiniText.textContent='✓ Ziel erreicht';
+      walkingStats.textContent='Du bist am Ziel.';
+      walkingNavState.textContent='Ziel erreicht – GPS-Position nahe dem Zielpunkt.';
+    }else if(progress.status==='poor-gps'){
+      walkingMiniText.textContent='📍 GPS ungenau · Standort prüfen';
+      walkingStats.textContent='GPS-Genauigkeit unzureichend';
+      walkingNavState.textContent='Die aktuelle GPS-Messung ist zu ungenau. Bitte auf eine bessere Position warten.';
+    }else if(deviated){
+      walkingMiniText.textContent='⚠ Weg verlassen · neu berechnen';
+      walkingStats.textContent='Abseits der Route · '+suffix;
+      walkingNavState.textContent='Du bist vermutlich vom berechneten Weg abgewichen. Tippe „Neu berechnen“, wenn du eine andere Strecke brauchst.';
+    }else{
+      walkingMiniText.textContent='🚶 Noch '+W.distanceText(progress.remainingMeters)+
+        ' · '+W.durationText(progress.remainingSeconds);
+      walkingStats.textContent='Noch '+suffix;
+      walkingNavState.textContent='GPS-Navigation aktiv · '+Math.round(progress.progressFraction*100)+
+        '% des Weges zurückgelegt. Die Gehzeit ist eine Schätzung.';
+    }
+    walkingNavState.classList.toggle('walk-route-warning',
+      deviated||progress.status==='poor-gps');
+    // GPS progress is deliberately offline-only: no fetch, history or telemetry.
+  }
+  function startWalkingNavigation(){
+    if(!walkRouteData||!walkDestination||!W){
+      say('Bitte zuerst einen Fußweg berechnen.');return;
+    }
+    if(watch===null||!position||Date.now()-positionUpdatedAt>60000){
+      say('Für die Navigation wird ein aktueller GPS-Standort benötigt.');return;
+    }
+    try{walkingNavigation=W.prepareNavigation(walkRouteData);}
+    catch(e){say(e.message);return;}
+    offRouteReadings=0;nearGoalReadings=0;
+    walkingNavButton.textContent='■ GPS-Navigation stoppen';
+    walkingNavButton.setAttribute('aria-pressed','true');
+    walkingNavButton.disabled=false;
+    following=true;refreshGPSFollowControl();
+    centerOnGPS([position.lat,position.lng],Math.max(map.getZoom(),16));
+    updateWalkingNavigation(position,positionAccuracy);
+    hideWalkingDetails();
+  }
   // Closing the large info popup only collapses it. The actual Leaflet
   // route remains visible until the user explicitly ends the route,
   // changes the travel context or turns off GPS.
@@ -138,7 +220,9 @@
   function clearWalkingRoute() {
     walkRequestGeneration++;
     if(walkController)walkController.abort();
-    walkController=null;walkDestination=null;
+    stopWalkingNavigation();
+    walkController=null;walkDestination=null;walkRouteData=null;
+    walkingNavButton.disabled=true;
     walkingLayers.clearLayers();
     walkingPanel.hidden=true;
     walkingMini.hidden=true;
@@ -147,6 +231,10 @@
   $('walk-route-close').onclick=hideWalkingDetails;
   walkingMini.onclick=showWalkingDetails;
   walkingStop.onclick=clearWalkingRoute;
+  walkingNavButton.onclick=()=>{
+    if(walkingNavigation)stopWalkingNavigation();
+    else startWalkingNavigation();
+  };
   walkingRetry.onclick=()=>{
     if(walkDestination)void showWalkingRoute(walkDestination);
   };
@@ -182,6 +270,11 @@
     const controller=new AbortController();
     walkController=controller;
     const generation=++walkRequestGeneration;
+    const continueNavigation=!!walkingNavigation&&!!walkDestination&&
+      walkDestination.lat===place.lat&&walkDestination.lng===place.lng;
+    if(!continueNavigation)stopWalkingNavigation();
+    walkRouteData=null;
+    walkingNavButton.disabled=true;
     walkDestination=place;
     walkingLayers.clearLayers();
     showWalkingDetails();
@@ -213,6 +306,8 @@
       if(raw.length>2000000)throw new Error('Die Fußwegantwort war ungewöhnlich groß.');
       const result=W.parse(JSON.parse(raw),startedAt,place);
       if(generation!==walkRequestGeneration || watch===null)return;
+      walkRouteData=result;
+      walkingNavButton.disabled=false;
       L.polyline(result.points,{color:'#10364e',weight:11,opacity:.90,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
       L.polyline(result.points,{color:'#f5fcff',weight:6,opacity:1,
@@ -235,8 +330,19 @@
         'Fußweg entlang von Straßen und Wegen · Startposition beim Abruf.'+
         detour+gpsWarning+' Kein Live-Abbiegeassistent; bei Standortwechsel „Neu berechnen“ tippen.';
       map.closePopup();
-      following=false;refreshGPSFollowControl();
-      map.fitBounds(L.latLngBounds(result.points),{padding:[55,55],maxZoom:17});
+      if(continueNavigation){
+        // A deliberately requested recalculation keeps the current navigation
+        // active, while replacing all progress computations with the new path.
+        try{
+          walkingNavigation=W.prepareNavigation(result);
+          offRouteReadings=0;nearGoalReadings=0;
+          updateWalkingNavigation(position,positionAccuracy);
+          showWalkingDetails();
+        }catch(e){stopWalkingNavigation();say(e.message);}
+      }else{
+        following=false;refreshGPSFollowControl();
+        map.fitBounds(L.latLngBounds(result.points),{padding:[55,55],maxZoom:17});
+      }
     }catch(e){
       if(generation!==walkRequestGeneration)return;
       if(controller.signal.aborted){
@@ -247,6 +353,8 @@
           :e.message||'Fußweg nicht verfügbar.';
       }
       walkingMiniText.textContent='🚶 Fußweg nicht verfügbar';
+      if(walkingNavigation)stopWalkingNavigation();
+      walkingNavButton.disabled=true;
       walkingNote.textContent='Bitte später erneut versuchen oder „Google Maps“ verwenden. Es wird keine Luftlinie als echter Fußweg angezeigt.';
     }finally{
       clearTimeout(timeout);
@@ -884,6 +992,7 @@
         position = {lat:result.coords.latitude,lng:result.coords.longitude};
         positionUpdatedAt=Date.now();
         positionAccuracy=result.coords.accuracy;
+        updateWalkingNavigation(position,positionAccuracy);
         const ll = [position.lat,position.lng];
         if (!userDot) {
           accuracy = L.circle(ll,{radius:result.coords.accuracy,color:'#60a5fa',weight:1,fillOpacity:.08}).addTo(map);
