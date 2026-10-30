@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --check core.js && node --check app.js && node --test tests/*.test.cjs
+      - run: node --check core.js && node --check app.js && node --check sync.js && node --test tests/*.test.cjs
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: test
