@@ -331,10 +331,12 @@
   function ticketStatusFor(planId,trip,index) {
     return ticketStatuses[C.ticketLegKey(planId,trip,index)]?.status || 'unknown';
   }
-  function saveTicketStatus(planId,trip,index,status,source='manual') {
+  function saveTicketStatus(planId,trip,index,status,source='manual',updatedAt=Date.now()) {
     if(!Object.hasOwn(C.ticketStates,status))throw new Error('Unbekannter Ticketstatus.');
     const key=C.ticketLegKey(planId,trip,index);
-    ticketStatuses[key]={status,source:source==='chat-link'?'chat-link':'manual'};
+    ticketStatuses[key]={status,
+      source:['chat-link','encrypted-sync'].includes(source)?source:'manual',
+      updatedAt:Number.isFinite(updatedAt)?updatedAt:Date.now()};
     try {
       localStorage.setItem('livekarte-ticket-status-v1',JSON.stringify(ticketStatuses));
       return true;
@@ -343,6 +345,32 @@
       return false;
     }
   }
+  // Called solely by the optional encrypted inbox once an RSA-OAEP message
+  // has been decrypted with this browser's nonextractable private key.
+  // Older server messages NEVER overwrite more recent on-device choices.
+  window.LivekarteApplySyncedTicket=(raw,issuedAt)=>{
+    try {
+      const update=C.normalizeTicketUpdate(raw);
+      if(!Number.isSafeInteger(issuedAt)||issuedAt<=0||issuedAt>Date.now()+600000)
+        return false;
+      const plan=allPlans().find(p=>p.id===update.plan && p.kind==='journey');
+      if(!plan)return false;
+      const trip=Object.hasOwn(planJourneys,update.plan)?planJourneys[update.plan]
+        :update.plan==='ride-takayama'?C.presetJourney('hakone-takayama-2026-10-30'):null;
+      if(!trip || trip.date!==update.date)return false;
+      const index=trip.stops.findIndex((st,i)=>i<trip.stops.length-1 &&
+        st.name===update.from && st.departure===update.departure &&
+        trip.stops[i+1].name===update.to);
+      if(index<0)return false;
+      const key=C.ticketLegKey(update.plan,trip,index);
+      if((ticketStatuses[key]?.updatedAt||0)>=issuedAt)return true;
+      if(!saveTicketStatus(update.plan,trip,index,update.status,'encrypted-sync',issuedAt))
+        return false;
+      if(activePlanId===update.plan)renderJourney();
+      say('🔒 Ticketstatus synchronisiert: '+update.from+' → '+update.to+'.');
+      return true;
+    } catch {return false;}
+  };
   // A confirmation link is a proposal, NOT a booking certificate or a trusted API.
   const ticketUpdateDialog=$('ticket-update-dialog');
   let pendingTicketUpdate=null;
@@ -769,7 +797,8 @@
         if(key.length<=300 && value && typeof value==='object' &&
             Object.hasOwn(C.ticketStates,value.status))
           ticketStatuses[key]={status:value.status,
-            source:value.source==='chat-link'?'chat-link':'manual'};
+            source:['chat-link','encrypted-sync'].includes(value.source)?value.source:'manual',
+            updatedAt:Number.isSafeInteger(value.updatedAt)&&value.updatedAt>0?value.updatedAt:0};
       }
     }
   }catch{say('Ticketstatus konnte nicht geladen werden.');}
