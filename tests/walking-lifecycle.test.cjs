@@ -70,7 +70,7 @@ test('full route panel and minimized route chip remain separately accessible',()
  assert.match(app,/walkingMiniText\.textContent='🚶 Fußweg nicht verfügbar'/);
  assert.match(app,/showWalkingDetails\(\);\s*walkingMini\.setAttribute/);
  assert.match(app,/\$\('walk-route-close'\)\.onclick=hideWalkingDetails/);
- assert.match(app,/\$\('walk-route-stop'\)\.onclick=clearWalkingRoute/);
+ assert.match(app,/walkingStop\.onclick=clearWalkingRoute/);
 });
 
 test('other route lifecycle safeguards and privacy remain intact',()=>{
