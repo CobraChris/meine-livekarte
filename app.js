@@ -802,8 +802,8 @@
         planAssignments[key]=[...new Set([...tags,'town-takayama'])];
       });
       localStorage.setItem('livekarte-curated-places-version',version);
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(planAssignments));
       persist();
-      persistPlanState();
     } catch {
       say('Takayama-Empfehlungen konnten nicht automatisch ergänzt werden.');
     }
