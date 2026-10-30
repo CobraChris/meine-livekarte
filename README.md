@@ -1,5 +1,15 @@
 # Meine Live-Karte
 
+### Kompakte Kartensteuerung und App-Updates
+
+Auf Smartphones sind **Ziele/Route zeigen** und **GPS ein-/ausschalten** jetzt zwei kompakte **44 × 44 px große, senkrecht angeordnete Symbole** rechts unten auf der Karte. Die gut lesbaren Beschriftungen bleiben für Screenreader, Tooltips und die internen Zustände erhalten. Das vermeidet zwei große quer über die Karte laufende Buttons. Die Bedienung über den blauen Standortpunkt, den GPS-Folgen-Button und den Vollbildbutton bleibt unverändert.
+
+Ein Orts-Popup zeigt **„🚶 Fußweg anzeigen“** und **„↗ Google Maps“** direkt unter dem Ortsnamen, **vor** längeren Beschreibungen und Zeit-/Besuchshinweisen. Sehr lange Popups sind auf eine angemessene Höhe begrenzt und lassen sich intern scrollen.
+
+Die installierte PWA bleibt bei schon laufendem JavaScript normalerweise auf ihrem aktuellen Stand, bis sie neu geladen wird. Die GitHub-Pages-Veröffentlichung schreibt daher bei **jedem Deploy** dieselbe Commit-ID sowohl in `build-version.js` (aktuell geladene Version) als auch in `app-version.json` (neueste veröffentlichte Version). Versionierte CSS- und JS-Dateiadressen verhindern außerdem veraltete Browser-HTTP-Caches. Wenn ein neuer Stand verfügbar ist, bietet ein kleiner Hinweis unter der Karte **„↻ Aktualisieren“** an. Die Prüfung erfolgt beim Öffnen und nach Rückkehr in den Vordergrund; sie erzwingt keinen Neustart und löscht weder lokale Reisepläne noch IndexedDB-Geräteschlüssel. Der Service Worker nutzt weiter eine strenge App-Shell-Allowlist mit Network-first und Cache-Fallback, **keine** GitHub-Tokens oder Routen-/Kartenanfragen.
+
+**Bereits vor dieser Verbesserung geöffnete PWA:** Einmal aus der Android-Übersicht der zuletzt verwendeten Apps vollständig schließen und über das App-Symbol erneut öffnen; bisherige Browserdaten **nicht** löschen und die App **nicht** entkoppeln. Die neue Aktualisierungsaufforderung kann erst wirken, sobald die neue App-Version einmal geladen ist.
+
 ## Gepunkteten Fußweg direkt in der Karte anzeigen
 
 Aus einem gespeicherten Ort (im Marker-Popup oder in der Ortsliste) lässt sich **„🚶 Fußweg anzeigen“** wählen. Voraussetzung: GPS wurde ausdrücklich eingeschaltet und hat innerhalb der vergangenen 60 Sekunden eine gültige Positionsmessung geliefert.
