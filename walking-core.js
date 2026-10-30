@@ -139,7 +139,78 @@
       status:!reliable?'poor-gps':reached?'near-goal':offRoute?'off-route':'on-route'
     };
   }
-  const api={requestUrl,parse,metres,distanceText,durationText,prepareNavigation,navigationProgress};
+  const MAX_TOUR_STOPS=6;
+  function validateTour(from,stops){
+    if(!valid(from)||!Array.isArray(stops)||
+       stops.length<2||stops.length>MAX_TOUR_STOPS)
+      throw new Error('Bitte 2 bis 6 gültige Ziele für deinen Rundgang auswählen.');
+    let previous=from,totalDirect=0;
+    for(const stop of stops){
+      if(!valid(stop))throw new Error('Ein Ziel hat ungültige Koordinaten.');
+      const segment=metres(previous,stop);
+      if(segment>12000)throw new Error('Zwei Stopps sind über 12 km Luftlinie voneinander entfernt. Bitte eine lokale Tour planen.');
+      totalDirect+=segment;
+      previous=stop;
+    }
+    if(totalDirect>25000)throw new Error('Dieser Rundgang ist zu lang. Bitte weniger oder näher gelegene Ziele auswählen.');
+  }
+  function tourRequestUrl(from,stops){
+    validateTour(from,stops);
+    const fmt=p=>p.lng.toFixed(6)+','+p.lat.toFixed(6);
+    return ENDPOINT+[from,...stops].map(fmt).join(';')+
+      '?overview=full&geometries=geojson&steps=false&alternatives=false';
+  }
+  function parseTour(data,from,stops){
+    validateTour(from,stops);
+    if(!data||data.code!=='Ok'||!Array.isArray(data.routes)||!data.routes[0])
+      throw new Error('Der Routingdienst hat keinen durchgehenden Rundgang gefunden.');
+    const first=data.routes[0];
+    if(!Array.isArray(first.legs)||first.legs.length!==stops.length||
+       !Array.isArray(data.waypoints)||data.waypoints.length!==stops.length+1)
+      throw new Error('Die Fußwegantwort enthält nicht alle ausgewählten Stopps.');
+    // A server can snap a POI to a remote road or ferry. Reject suspicious
+    // snap locations instead of pretending the visitor reaches the POI.
+    const places=[from,...stops];
+    for(let i=0;i<places.length;i++){
+      const location=data.waypoints[i]?.location;
+      if(!Array.isArray(location)||location.length<2||
+         !Number.isFinite(location[0])||!Number.isFinite(location[1]))
+        throw new Error('Der Routingdienst hat einen ungültigen Zwischenstopp geliefert.');
+      const snap={lat:location[1],lng:location[0]};
+      if(metres(snap,places[i])>(i===0?120:150))
+        throw new Error('Ein Zwischenstopp liegt zu weit vom Fußweg entfernt. Bitte den Zielpunkt prüfen.');
+    }
+    const parsed=parseOne(first,from,stops.at(-1));
+    if(parsed.distance>40000||parsed.duration>43200)
+      throw new Error('Die Rundgangroute ist zu lang. Bitte einen kürzeren Rundgang planen.');
+    const legs=first.legs.map(leg=>{
+      if(!Number.isFinite(leg?.distance)||leg.distance<0||
+         !Number.isFinite(leg?.duration)||leg.duration<0)
+        throw new Error('Der Routingdienst hat ungültige Etappen geliefert.');
+      return {distance:leg.distance,duration:leg.duration};
+    });
+    const legSum=legs.reduce((sum,leg)=>sum+leg.distance,0);
+    if(Math.abs(legSum-parsed.distance)>Math.max(50,parsed.distance*.12))
+      throw new Error('Die gemeldeten Etappen passen nicht zur Gesamtroute.');
+    return {...parsed,legs};
+  }
+  // "Nahe Stopps zuerst" uses only direct geographic distances on-device.
+  // It is a quick starting suggestion, not a network-computed optimum.
+  function nearestTourOrder(from,stops){
+    validateTour(from,stops);
+    const remaining=stops.slice(),ordered=[];
+    let at=from;
+    while(remaining.length){
+      let closest=0;
+      for(let i=1;i<remaining.length;i++)
+        if(metres(at,remaining[i])<metres(at,remaining[closest]))closest=i;
+      const next=remaining.splice(closest,1)[0];
+      ordered.push(next);
+      at=next;
+    }
+    return ordered;
+  }
+  const api={requestUrl,parse,metres,distanceText,durationText,prepareNavigation,navigationProgress,tourRequestUrl,parseTour,nearestTourOrder};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LivekarteWalkingCore=api;
 })(globalThis);
