@@ -1,5 +1,17 @@
 # Meine Live-Karte
 
+## Gepunkteten Fußweg direkt in der Karte anzeigen
+
+Aus einem gespeicherten Ort (im Marker-Popup oder in der Ortsliste) lässt sich **„🚶 Fußweg anzeigen“** wählen. Voraussetzung: GPS wurde ausdrücklich eingeschaltet und hat innerhalb der vergangenen 60 Sekunden eine gültige Positionsmessung geliefert.
+
+- Die App fragt **nur beim Antippen** einmal eine **Fußgängerroutenberechnung** beim öffentlichen OSRM-Server von FOSSGIS an. Es wird ausdrücklich das `/routed-foot/`-Profil verwendet, nicht das Auto-Profil. Der `driving`-Abschnitt ist lediglich die API-Routenbezeichnung der OSRM-Instanz.
+- Die Antwort enthält OpenStreetMap-basierte Weggeometrie und Gehzeit/Entfernung. Diese werden **nicht erfunden und nicht als Luftlinie** angezeigt. Auf der Karte zeichnet die App den Weg blau-weiß gepunktet; die kompakte Infobox zeigt **Meter/Kilometer, ungefähre Gehzeit und Zielname**.
+- **„↻ Neu berechnen“** verwendet nach einem weiteren expliziten Tippen die neueste GPS-Messung. **Kein** automatisches Neuberechnen bei jedem GPS-Update; damit schont die App Privatsphäre, Akku und die öffentlichen Server. Nach GPS-Ausschalten, Wechsel des Reiseabschnitts oder Löschen der Orte wird die Route entfernt.
+- **„↗ Google Maps“** bleibt als Alternative für vollständige Sprach-/Abbiegenavigation verfügbar. Die gezeichnete Route stellt eine unverbindliche Wegeempfehlung dar; sie ist keine Echtzeit- oder Sicherheitsnavigation.
+- Der öffentliche Routingdienst wird auf maximal eine Anfrage je 1,2 Sekunden begrenzt. Der Anbieter FOSSGIS erlaubt leichte nichtkommerzielle Nutzung und verlangt Attribution, Link für Kartenfehler sowie faire Nutzung: https://routing.openstreetmap.de/about.html. Für stärkere Nutzung oder gewerbliche Skalierung muss der Routingdienst ersetzt beziehungsweise eigens betrieben werden.
+- **Datenschutz:** Anders als die normale Kartendarstellung sendet eine solche explizite Fußweganfrage die aktuelle GPS-Koordinate und die gewählte Zielkoordinate an `routing.openstreetmap.de`. Dieser Dienst verarbeitet die Route serverseitig und kann Anfragen protokollieren. Die App speichert die Route nicht dauerhaft, erstellt keine Standortverläufe, verschickt keine Anfragen bei jedem GPS-Schritt und gibt keine GitHub-Tokens oder Ticketinformationen an FOSSGIS weiter.
+- **Offline:** Externes Fußwegrouting erfordert Internet. Der installierte Service Worker speichert ausschließlich `walking-core.js` als lokalen Programmcode, niemals Routinganfragen oder Ergebnisrouten. Wenn FOSSGIS nicht erreichbar ist, gibt es eine Fehlermeldung und die Google-Maps-Alternative – **keine falsche Gerade zum Ziel**.
+
 ## Als Android-App installieren (PWA)
 
 Die bestehende GitHub-Pages-Live-Karte ist als **Progressive Web App (PWA)** installierbar: eigenes dunkelgrün-goldenes Kartensymbol mit **C-förmiger Reiseroute**, App-Name **„Meine Live-Karte“**, Start vom Android-Homescreen und eigenständiges Fenster ohne Browser-Adressleiste. Es wird **keine APK und kein Google-Play-Konto** benötigt. Der Web-App-Ursprung bleibt `https://cobrachris.github.io/meine-livekarte/`.
