@@ -117,6 +117,10 @@
     if (p.duration) parts.push('Dauer ' + p.duration);
     return parts.join(' · ');
   }
+  function appendPlaceTiming(target,p) {
+    if (p.schedule) target.append(node('p','🗓 '+p.schedule,'place-schedule'));
+    if (p.note) target.append(node('p','💡 '+p.note,'place-note'));
+  }
   function metric(p) {
     if (!position) return '';
     const d = C.distance(position, p);
@@ -155,6 +159,7 @@
       popup.append(node('strong',p.name));
       const metaText = placeMeta(p);
       if (metaText) popup.append(node('p',metaText,'place-meta'));
+      appendPlaceTiming(popup,p);
       popup.append(node('p',p.description), inPopup, route(p));
       const marker = L.marker([p.lat,p.lng], { title:p.name, icon:L.divIcon({className:'pin',html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`,iconSize:[36,36],iconAnchor:[18,36]}) }).bindPopup(popup).addTo(pins);
       marker.on('popupopen', () => { following = false; });
@@ -184,6 +189,7 @@
       };
       assignRow.append(assignSelect);
       if (metaText) card.append(node('p',metaText,'place-meta'));
+      appendPlaceTiming(card,p);
       card.append(node('p',p.description),actions,assignRow); $('places').append(card);
       distanceDisplays.push({ place:p, inPopup, inList:distance });
     });
@@ -790,11 +796,16 @@
         if(Array.isArray(value)) planAssignments[key]=value.filter(id=>allPlans().some(p=>p.id===id));
   } catch { say('Ortszuordnungen konnten nicht geladen werden.'); }
   function seedCuratedPlaces() {
-    const version='takayama-2026-v1';
+    const version='takayama-2026-v2';
     try {
       if (localStorage.getItem('livekarte-curated-places-version')===version) return;
       const preset=C.presetPlaces('town-takayama');
       if (!preset.length) return;
+      const presetByKey=new Map(preset.map(place=>[C.placePlanKey(place),place]));
+      places=places.map(place=>{
+        const curated=presetByKey.get(C.placePlanKey(place));
+        return curated ? {...place,...curated} : place;
+      });
       places=C.merge(places,preset);
       preset.forEach(place=>{
         const key=C.placePlanKey(place);

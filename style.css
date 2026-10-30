@@ -409,3 +409,11 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 /* Curated place metadata: compact priority and duration line. */
 .place-meta{margin:5px 0 3px;color:#b8f1d2;font-size:11px;font-weight:750;line-height:1.35}
 .leaflet-popup-content .place-meta{color:#315f4f;font-size:11px;margin:4px 0}
+
+/* Time-aware city planning metadata. */
+.place-schedule{margin:7px 0 3px;padding:6px 8px;border-radius:7px;
+  background:#183c35;color:#c9f3de;font-size:11px;font-weight:750;line-height:1.4}
+.place-note{margin:4px 0 7px;padding-left:8px;border-left:2px solid #d6a85d;
+  color:#e7d4ad;font-size:11px;line-height:1.45}
+.leaflet-popup-content .place-schedule{background:#e8f3ed;color:#245541}
+.leaflet-popup-content .place-note{color:#735c2e;border-left-color:#b58a39}
