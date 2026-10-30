@@ -456,3 +456,32 @@ test('WebCrypto RSA-OAEP 3072 pairing format can encrypt and decrypt a valid tic
  assert.deepEqual(C.normalizeTicketUpdate(result.ticket),ticket);
  assert.equal(result.id,message.id);
 });
+
+test('sync inbox diagnostics distinguish missing, received, decrypted, accepted and failures', () => {
+ const {readFileSync}=require('node:fs'),{join}=require('node:path');
+ const root=join(__dirname,'..');
+ const sync=readFileSync(join(root,'sync.js'),'utf8');
+ for(const phrase of [
+  'Postfach erreichbar:',
+  'Bereits verarbeitet:',
+  'Neu entschlüsselt:',
+  'Akzeptiert:',
+  'Entschlüsselung/Format fehlgeschlagen:',
+  'Reiseplan passt nicht/Übernahme fehlgeschlagen:',
+  'Postfach noch nicht über GitHub Pages erreichbar (HTTP 404)'
+ ]) assert.ok(sync.includes(phrase),phrase);
+ assert.match(sync,/ciphertext\.length!==384/);
+ assert.match(sync,/counts\.invalid\+\+/);
+ assert.match(sync,/counts\.rejected\+\+/);
+ assert.match(sync,/counts\.already\+\+/);
+ assert.match(sync,/counts\.decrypted\+\+/);
+ assert.match(sync,/counts\.accepted\+\+/);
+ assert.match(sync,/if\(ok===true\)\{\s*counts\.accepted\+\+;\s*seen\.add\(message\.id\)/);
+ const badDecrypt=sync.slice(sync.indexOf('plain=await crypto.subtle.decrypt'),sync.indexOf('let payload;',sync.indexOf('plain=await crypto.subtle.decrypt')));
+ assert.match(badDecrypt,/counts\.invalid\+\+;\s*continue/);
+ assert.doesNotMatch(badDecrypt,/seen\.add/);
+ const badPayload=sync.slice(sync.indexOf('let payload;'),sync.indexOf('let ok=false;',sync.indexOf('let payload;')));
+ assert.doesNotMatch(badPayload,/seen\.add/);
+ const rejected=sync.slice(sync.indexOf('counts.rejected++;'),sync.indexOf('markSeen(seen);'));
+ assert.doesNotMatch(rejected,/seen\.add/);
+});
