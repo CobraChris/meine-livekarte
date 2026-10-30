@@ -257,3 +257,24 @@ test('section picker and import flow do not erase existing places or GPS trackin
  assert.match(app,/selectPlan\(activePlanId/);
  assert.match(app,/function activeJourney\(\)/);
 });
+
+test('mobile workspace makes map and trip content primary, without a bulky picker panel', () => {
+ const {readFileSync} = require('node:fs');
+ const {join} = require('node:path');
+ const root=join(__dirname,'..');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ const css=readFileSync(join(root,'style.css'),'utf8');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ assert.doesNotMatch(html,/class="map-label"/);
+ assert.match(html,/class="plan-picker"/);
+ assert.match(html,/<label for="plan-select">Reiseabschnitt<\/label>/);
+ assert.match(html,/<select id="plan-select"/);
+ assert.match(html,/id="add-plan"/);
+ assert.match(css,/\.plan-picker label\{position:absolute;width:1px/);
+ assert.match(css,/aside > \.eyebrow,aside > h1,aside > \.intro\{display:none\}/);
+ assert.match(css,/\.workspace\{height:64dvh;min-height:370px\}/);
+ assert.match(css,/\.station-transfer-inset\{top:64px\}/);
+ assert.match(app,/\$\('plan-select'\)\.onchange=\(\)=>selectPlan/);
+ assert.match(app,/\$\('add-plan'\)\.onclick=/);
+ assert.match(app,/map\.on\('zoomstart'/);
+});
