@@ -350,3 +350,55 @@ test('mobile uses map-first space, fades ordinary notices, and keeps OSM attribu
  assert.match(css,/\.leaflet-control-attribution/);
  assert.match(css,/\.ng-step-buttons\{position:sticky/);
 });
+
+test('ticket readiness starts unknown and uses stable exact-date leg identity', () => {
+ const trip=C.presetJourney('hakone-takayama-2026-10-30');
+ assert.equal(C.ticketStates.unknown,'Ungeklärt');
+ assert.equal(C.ticketStates.ready,'Vorhanden');
+ assert.deepEqual(JSON.parse(C.ticketLegKey('ride-takayama',trip,2)),
+   ['ride-takayama','30.10.2026','Odawara','10:11','Nagoya']);
+ assert.notEqual(C.ticketLegKey('ride-takayama',trip,2),C.ticketLegKey('ride-takayama',trip,3));
+ assert.throws(()=>C.ticketLegKey('ride-takayama',trip,4));
+});
+test('ChatGPT ticket update link validates only non-sensitive leg data and status', () => {
+ const update={v:1,plan:'ride-takayama',date:'30.10.2026',from:'Odawara',
+   to:'Nagoya',departure:'10:11',status:'ready'};
+ const hash=C.encodeTicketUpdate(update);
+ assert.ok(hash.startsWith('#ticket='));
+ assert.deepEqual(C.decodeTicketUpdate(hash),update);
+ assert.equal(C.decodeTicketUpdate('#trip=abc'),null);
+ assert.throws(()=>C.decodeTicketUpdate('#ticket=%ZZ'));
+ assert.throws(()=>C.decodeTicketUpdate('#ticket='+encodeURIComponent(JSON.stringify({...update,status:'invalid'}))));
+ assert.throws(()=>C.encodeTicketUpdate({...update,date:'tomorrow'}));
+ assert.throws(()=>C.encodeTicketUpdate({...update,departure:'25:80'}));
+ assert.throws(()=>C.encodeTicketUpdate({...update,plan:'../../foo'}));
+ assert.throws(()=>C.decodeTicketUpdate('#ticket='+'x'.repeat(1601)));
+ // A link can propose a "ready" state; it contains no QR code, ticket number, name or proof.
+ assert.deepEqual(Object.keys(C.decodeTicketUpdate(hash)).sort(),
+   ['date','departure','from','plan','status','to','v']);
+});
+test('journey ticket UI supports user and chat link state changes without overriding route/GPS', () => {
+ const {readFileSync}=require('node:fs'),{join}=require('node:path');
+ const root=join(__dirname,'..');
+ const app=readFileSync(join(root,'app.js'),'utf8');
+ const html=readFileSync(join(root,'index.html'),'utf8');
+ const css=readFileSync(join(root,'style.css'),'utf8');
+ assert.match(html,/id="ticket-update-dialog"/);
+ assert.match(html,/id="ticket-update-apply"/);
+ assert.match(html,/id="ticket-update-cancel"/);
+ assert.match(html,/keine unabhängige Buchungsprüfung/);
+ assert.match(app,/function readTicketUpdate\(\)/);
+ assert.match(app,/pendingTicketUpdate/);
+ assert.match(app,/ticketUpdateDialog\.showModal\(\)/);
+ assert.match(app,/ticketStatuses\[key\]=\{status,source:/);
+ assert.match(app,/livekarte-ticket-status-v1/);
+ assert.match(app,/function ticketStatusFor/);
+ assert.match(app,/const picker=node\('select',undefined,'ticket-choice'\)/);
+ assert.match(app,/if \(i<journey\.stops\.length-1\)/);
+ assert.match(app,/unresolved/);
+ assert.match(app,/\$\('ticket-update-apply'\)\.onclick/);
+ assert.match(app,/if\(!readTicketUpdate\(\) && !readJourneyLink\(\) && !readLink\(\)\)/);
+ assert.match(app,/navigator\.geolocation\.watchPosition/);
+ assert.match(css,/\.ticket-state-unknown/);
+ assert.match(css,/\.ticket-state-ready/);
+});
