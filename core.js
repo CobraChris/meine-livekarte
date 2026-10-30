@@ -12,7 +12,14 @@
       const aliases = { restaurant:'restaurant', restaurants:'restaurant', sight:'sight', sehenswürdigkeit:'sight', station:'station', bahnhof:'station' };
       const category = aliases[String(p.category || 'sight').toLowerCase()];
       if (!category) throw new Error(`Ort ${i + 1}: Unbekannte Kategorie.`);
-      return { name: p.name.trim().slice(0, 120), lat, lng, category, description: String(p.description || '').slice(0, 1000) };
+      const priority = String(p.priority || '').trim().slice(0, 10);
+      const duration = String(p.duration || '').trim().slice(0, 40);
+      return {
+        name: p.name.trim().slice(0, 120), lat, lng, category,
+        description: String(p.description || '').slice(0, 1000),
+        ...(priority ? {priority} : {}),
+        ...(duration ? {duration} : {})
+      };
     });
   }
   function parse(text) {
@@ -187,6 +194,43 @@
     try {return normalizeTicketUpdate(JSON.parse(decodeURIComponent(hash.slice(8))));}
     catch(e) {throw new Error('Ticket-Link ungültig: '+e.message);}
   }
+  // Curated city presets. They are ordinary place records and are only seeded
+  // once into local browser storage, so users can still edit or clear them.
+  const townPlacePresets = {
+    'town-takayama': [
+      {name:'Sanmachi-Suji / historische Altstadt',lat:36.14088,lng:137.25966,category:'sight',priority:'1',duration:'1–2 Std.',
+        description:'Historischer Kern Takayamas mit traditionellen Holzhäusern, kleinen Läden, Cafés und Sake-Brauereien. Für den ersten Rundgang in Takayama höchste Priorität.'},
+      {name:'Shirakawa-go (Ogimachi)',lat:36.2573,lng:136.9068,category:'sight',priority:'1',duration:'5–7 Std. inkl. Bus',
+        description:'UNESCO-Bergdorf mit Gasshō-Zukuri-Häusern. Tagesausflug ab Takayama; deutlich weiter außerhalb als die übrigen Ziele.'},
+      {name:'Hida-no-Sato / Hida Folk Village',lat:36.13167,lng:137.2357,category:'sight',priority:'1-',duration:'45–90 Min.',
+        description:'Freilichtmuseum mit über 30 historischen Häusern aus der Hida-Region. An eurem Wochenende besonders interessant bei der Herbstbeleuchtung.'},
+      {name:'Takayama Jinya',lat:36.13964,lng:137.25764,category:'sight',priority:'2',duration:'45–60 Min.',
+        description:'Erhaltener Verwaltungssitz aus der Edo-Zeit mit Tatami-Räumen, Gerichtsräumen und historischem Reisspeicher.'},
+      {name:'Miyagawa Morning Market',lat:36.14469,lng:137.25785,category:'sight',priority:'2',duration:'30–60 Min.',
+        description:'Morgenmarkt entlang des Miyagawa mit lokalen Lebensmitteln, Snacks, Süßigkeiten, Handwerk und Souvenirs.'},
+      {name:'Nakabashi Bridge',lat:36.14,lng:137.25922,category:'sight',priority:'2-',duration:'10–20 Min.',
+        description:'Markante rote Brücke über den Miyagawa direkt bei Altstadt und Takayama Jinya. Eher kurzer Fotostopp als eigener Ausflug.'},
+      {name:'Yoshijima Heritage House',lat:36.14664,lng:137.25843,category:'sight',priority:'3+',duration:'30–45 Min.',
+        description:'Traditionelles Kaufmannshaus und schönes Beispiel für Hida-Holzarchitektur. Optional, wenn euch Architektur besonders interessiert.'},
+      {name:'Kusakabe Folk Museum',lat:36.14644,lng:137.25846,category:'sight',priority:'3',duration:'30–45 Min.',
+        description:'Historisches Kaufmannshaus mit traditioneller Architektur und Alltags-/Handwerksobjekten. Ähnliche Kategorie wie Yoshijima.'},
+      {name:'Higashiyama Walking Course',lat:36.1507482,lng:137.2586221,category:'sight',priority:'3',duration:'1,5–2 Std.',
+        description:'Ruhiger Spazierweg durch Tempelviertel, Wald und ehemalige Burgbereiche. Rund vier Kilometer; eher Atmosphäre als einzelnes Highlight.'},
+      {name:'Jinya-mae Morning Market',lat:36.13955,lng:137.2575,category:'sight',priority:'3',duration:'20–30 Min.',
+        description:'Kleiner zweiter Morgenmarkt direkt vor Takayama Jinya. Sinnvoll nur, wenn ihr ihn ohnehin mit Jinya kombiniert.'},
+      {name:'Takayama Matsuri Yatai Kaikan',lat:36.14842,lng:137.26016,category:'sight',priority:'3-4',duration:'30–45 Min.',
+        description:'Ausstellung der reich verzierten Festwagen des Takayama Matsuri. Vor allem interessant, wenn euch das Festivalthema reizt.'},
+      {name:'Shiroyama Park',lat:36.13739,lng:137.26251,category:'sight',priority:'4',duration:'45–60 Min.',
+        description:'Bewaldeter ehemaliger Burghügel mit Spazierwegen und wenigen erhaltenen Resten der Burg. Bei knapper Zeit verzichtbar.'},
+      {name:'Takayama Station',lat:36.14113,lng:137.25129,category:'station',
+        description:'JR-Bahnhof in Takayama; Ausgangspunkt für Busse, Altstadt und die Weiterreise.'}
+    ]
+  };
+  function presetPlaces(planId) {
+    return Object.prototype.hasOwnProperty.call(townPlacePresets,planId)
+      ? normalize(townPlacePresets[planId]) : [];
+  }
+
   // Each section is independent. Saved places are never deleted when changing sections.
   const planPresets = [
     {id:'all',name:'Alle gespeicherten Orte',kind:'all'},
@@ -223,7 +267,7 @@
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides, ticketStates, ticketLegKey, normalizeTicketUpdate, encodeTicketUpdate, decodeTicketUpdate };
+  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, presetPlaces, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides, ticketStates, ticketLegKey, normalizeTicketUpdate, encodeTicketUpdate, decodeTicketUpdate };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);
