@@ -94,7 +94,7 @@
       arrivalPlatforms:'16 / 17 (genaues Gleis prüfen)',
       outbound:'Hida 9',departure:'11:43',departurePlatform:'11',
       destination:'Takayama',transferMinutes:24,
-      mapUrl:'https://global.jr-central.co.jp/en/info/station/',
+      mapUrl:'https://global.jr-central.co.jp/en/info/station/_img/nagoya.jpg',
       steps:[
         {short:'Aussteigen',title:'Am Shinkansen-Bahnsteig ankommen',
           action:'Hikari 637 verlassen. Prüfe auf der Anzeige, ob du an Gleis 16 oder 17 angekommen bist.',
