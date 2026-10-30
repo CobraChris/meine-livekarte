@@ -17,6 +17,20 @@ Die installierte PWA bleibt bei schon laufendem JavaScript normalerweise auf ihr
 
 **Bereits vor dieser Verbesserung geöffnete PWA:** Einmal aus der Android-Übersicht der zuletzt verwendeten Apps vollständig schließen und über das App-Symbol erneut öffnen; bisherige Browserdaten **nicht** löschen und die App **nicht** entkoppeln. Die neue Aktualisierungsaufforderung kann erst wirken, sobald die neue App-Version einmal geladen ist.
 
+## Aktive GPS-Fußwegnavigation (bewusst einschaltbar)
+
+Nach **„🚶 Fußweg anzeigen“** lässt sich im bestehenden Fußweg-Informationsfenster **„▶ GPS-Navigation starten“** wählen. Diese Funktion ist eine GPS-gestützte Kartenführung, **kein** turn-by-turn Navigator mit Straßennamen oder Sprachansagen.
+
+- Die große Fußweg-Infobox klappt zur **kleinen, weiterhin antippbaren Routenanzeige** zusammen. Sie zeigt **verbleibende Meter und geschätzte Gehminuten**.
+- Solange der Benutzer die Karte nicht selbst verschiebt, folgt die Karte laufend dem blauen GPS-Punkt. Manuelles Verschieben/Zoomen unterbricht nur das automatische Zentrieren; das bestehende **⌖**-Symbol stellt die GPS-Folgefunktion wieder her. **GPS ausschalten** entfernt wie bisher die Route.
+- Das Fortschrittsmodell liegt lokal in `walking-core.js`. Es projiziert den GPS-Punkt auf die bereits vorhandene, echte OSRM-Fußweg-Geometrie und berechnet die verbleibenden Meter/Minuten als **Schätzwerte** entlang dieser Route. Die berechnete Gehzeit ist keine live gemessene Geschwindigkeit. Dafür sind **keine zusätzlichen Netzwerkanfragen, GPS-Verläufe oder Schlüssel erforderlich**.
+- Nach **zwei aufeinanderfolgenden, ausreichend präzisen GPS-Messungen** mit mindestens ca. 40 Metern seitlicher Abweichung (GPS-Genauigkeit berücksichtigt) zeigt der kompakte Chip **„⚠ Weg verlassen · neu berechnen“** an. Tippen öffnet die Info und **„↻ Neu berechnen“** startet *nur auf ausdrücklichen Wunsch* eine neue Anfrage an den öffentlichen FOSSGIS-Dienst. Gehen oder GPS-Ereignisse lösen niemals selbst Netzwerkanfragen aus.
+- Bei schlechter Genauigkeit (über ca. 60 m) wird **„GPS ungenau“** angezeigt; aus einer schlechten Messung wird weder ein Verlassen der Route noch eine sichere Zielankunft abgeleitet. Bei zwei guten Messungen innerhalb von etwa 22 Metern vom Zielpunkt erscheint **„✓ Ziel erreicht“**. Beide Schwellwerte sind Orientierungshilfen, keine Sicherheits- oder Buchungsnachweise.
+- Mit **„■ GPS-Navigation stoppen“** wird ausschließlich die Live-Führung beendet; die gepunktete Route bleibt stehen. Das vorher vorhandene **„✕ Route beenden“** entfernt Route und Navigation bewusst vollständig. Die externe Google-Maps-Navigation bleibt verfügbar, wenn Sprach-/Abbiegehinweise benötigt werden.
+- Bei einem aktualisierten/reberechneten Fußweg zum gleichen Ziel bleibt die manuell gestartete GPS-Navigation aktiv und verwendet danach die neue Geometrie. Ein ganz anderes Ziel benötigt eine erneute bewusste Aktivierung der Navigation.
+
+**Datenschutz & Offline:** Die laufenden GPS-Messungen werden für diesen Modus lokal im Speicher verarbeitet, nicht gespeichert oder synchronisiert. Nur die explizite Funktion **„Fußweg anzeigen“/„Neu berechnen“** sendet Start und Ziel an FOSSGIS. Ohne Netzwerk kann eine *bereits berechnete und noch geöffnete* Route weiter anhand von GPS verfolgt werden, sofern das Gerät GPS und die App weiter zulässt. Es wird kein Offline-Routing versprochen; die Kartengrundlage kann ohne Netz fehlen. Eine installierte PWA im Hintergrund kann vom Betriebssystem angehalten werden und ist kein Ersatz für eine dafür ausgelegte Navigations-App.
+
 ## Gepunkteten Fußweg direkt in der Karte anzeigen
 
 Aus einem gespeicherten Ort (im Marker-Popup oder in der Ortsliste) lässt sich **„🚶 Fußweg anzeigen“** wählen. Voraussetzung: GPS ist aktiv (standardmäßig automatisch beim Öffnen, sofern nicht manuell deaktiviert) und hat innerhalb der vergangenen 60 Sekunden eine gültige Positionsmessung geliefert.

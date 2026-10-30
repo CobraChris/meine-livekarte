@@ -14,7 +14,10 @@ test('closing walking info keeps rendered route while separate End route removes
  assert.ok(from>=0 && to>from);
  const lifecycle=app.slice(from,to);
  const elements={};
- const $=id=>elements[id]||(elements[id]={hidden:false,textContent:'',onclick:null});
+ const $=id=>elements[id]||(elements[id]={
+   hidden:false,textContent:'',onclick:null,disabled:false,
+   setAttribute(){},classList:{toggle(){},remove(){}}
+ });
  const walkingPanel={hidden:false};
  const walkingRetry=$('walk-route-retry');
  const walkingLayers={clears:0,clearLayers(){this.clears++;}};

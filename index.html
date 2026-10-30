@@ -36,6 +36,8 @@
   </div>
   <p id="walk-route-stats" aria-live="polite">Fußweg wird berechnet …</p>
   <p id="walk-route-note">GPS-Start und Ziel werden nur nach Antippen von „Fußweg anzeigen“ an den Routingdienst geschickt.</p>
+  <button type="button" id="walk-route-nav" class="walk-route-nav" aria-pressed="false" disabled>▶ GPS-Navigation starten</button>
+  <p id="walk-route-nav-state" class="walk-route-nav-state" role="status" aria-live="polite" hidden></p>
   <div class="walk-route-actions">
     <button type="button" id="walk-route-retry">↻ Neu berechnen</button>
     <a id="walk-route-google" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">↗ Google Maps</a>

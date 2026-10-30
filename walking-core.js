@@ -77,7 +77,69 @@
     return minutes<60?minutes+' Min.':Math.floor(minutes/60)+' Std.'+
       (minutes%60?' '+(minutes%60)+' Min.':'');
   }
-  const api={requestUrl,parse,metres,distanceText,durationText};
+  // Prepare a snapped footpath for GPS progress tracking without network calls.
+  // Computations are deliberately stateless: no coordinates/history are stored.
+  function prepareNavigation(route){
+    if(!route||!Array.isArray(route.points)||route.points.length<2||
+       route.points.length>16000 || !Number.isFinite(route.distance)||
+       route.distance<=0||route.distance>200000||
+       !Number.isFinite(route.duration)||route.duration<=0||route.duration>172800)
+      throw new Error('Die Fußwegroute ist für die GPS-Führung ungültig.');
+    const cumulative=[0];
+    for(let i=1;i<route.points.length;i++){
+      const a=route.points[i-1],b=route.points[i];
+      if(!Array.isArray(a)||!Array.isArray(b)||
+         a.length!==2||b.length!==2||
+         !valid({lat:a[0],lng:a[1]})||
+         !valid({lat:b[0],lng:b[1]}))
+        throw new Error('Die Route enthält ungültige Wegpunkte.');
+      cumulative.push(cumulative[i-1]+metres(
+        {lat:a[0],lng:a[1]},{lat:b[0],lng:b[1]}));
+    }
+    const length=cumulative[cumulative.length-1];
+    if(length<1)throw new Error('Fußweg ohne erkennbare Strecke.');
+    return {points:route.points,cumulative,length,
+      routeDistance:route.distance,routeDuration:route.duration,
+      destination:{lat:route.points.at(-1)[0],lng:route.points.at(-1)[1]}};
+  }
+  function navigationProgress(nav,point,accuracy){
+    if(!nav || !Array.isArray(nav.points)||nav.points.length<2 ||
+       !Array.isArray(nav.cumulative)||!Number.isFinite(nav.length)||nav.length<=0 ||
+       !valid(point))throw new Error('Keine gültigen GPS-Positionsdaten.');
+    const mPerDegree=111194.93,r=Math.PI/180;
+    let nearest=Infinity,along=0;
+    // Project the GPS coordinate onto the nearest footpath segment.
+    // A normal small urban route has tens/hundreds of segments; this is
+    // offline in-memory math and NEVER requests or transmits GPS coordinates.
+    for(let i=0;i<nav.points.length-1;i++){
+      const [latA,lngA]=nav.points[i], [latB,lngB]=nav.points[i+1];
+      const lonScale=mPerDegree*Math.cos((latA+latB+point.lat)/3*r);
+      const dx=(lngB-lngA)*lonScale,dy=(latB-latA)*mPerDegree;
+      const px=(point.lng-lngA)*lonScale,py=(point.lat-latA)*mPerDegree;
+      const sq=dx*dx+dy*dy;
+      const fraction=sq>0?Math.max(0,Math.min(1,(px*dx+py*dy)/sq)):0;
+      const lateral=Math.hypot(px-fraction*dx,py-fraction*dy);
+      if(lateral<nearest){
+        nearest=lateral;
+        along=nav.cumulative[i]+(nav.cumulative[i+1]-nav.cumulative[i])*fraction;
+      }
+    }
+    const proportion=Math.max(0,Math.min(1,(nav.length-along)/nav.length));
+    const meters=nav.routeDistance*proportion;
+    const seconds=nav.routeDuration*proportion;
+    const destinationMeters=metres(point,nav.destination);
+    const validAccuracy=Number.isFinite(accuracy)&&accuracy>=0?accuracy:Infinity;
+    const reliable=validAccuracy<=60;
+    const reached=reliable && validAccuracy<=25 && destinationMeters<=22;
+    const offRoute=reliable && nearest>Math.max(40,validAccuracy*2.2) && !reached;
+    return {
+      remainingMeters:meters,remainingSeconds:seconds,
+      destinationMeters,offRouteMeters:nearest,accuracy:validAccuracy,
+      progressFraction:1-proportion,
+      status:!reliable?'poor-gps':reached?'near-goal':offRoute?'off-route':'on-route'
+    };
+  }
+  const api={requestUrl,parse,metres,distanceText,durationText,prepareNavigation,navigationProgress};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LivekarteWalkingCore=api;
 })(globalThis);
