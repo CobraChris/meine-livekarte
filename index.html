@@ -6,7 +6,7 @@
 <meta name="description" content="Deine Orte, deine Wege. Empfehlungen sammeln, teilen und unterwegs entdecken.">
 <title>Meine Live-Karte · Orte entdecken</title>
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -40,6 +40,25 @@
       <button type="button" id="sync-check" hidden>Jetzt synchronisieren</button>
       <button type="button" id="sync-disconnect" hidden>Dieses Gerät entkoppeln</button>
     </div>
+    <details id="outbox-panel" class="outbox-panel">
+      <summary>↗ Status für ChatGPT bereitstellen <span class="sync-mini">privates GitHub-Repository</span></summary>
+      <div class="outbox-body">
+        <p><strong>Nur Ticketstatus, Strecke und Datum.</strong> Keine GPS-Daten, Tickets, QR-Codes oder Buchungsnummern. Die Daten gehören in ein separates <strong>privates</strong> GitHub-Repository, nicht in den öffentlichen Quellcode dieser App.</p>
+        <p><a href="https://github.com/new" target="_blank" rel="noopener noreferrer">1. Privates GitHub-Repository erstellen</a> (Name: <code>meine-livekarte-private-sync</code>, Sichtbarkeit: <strong>Private</strong>).</p>
+        <p><a href="https://github.com/settings/personal-access-tokens/new?name=Livekarte-Private-Sync&amp;contents=write" target="_blank" rel="noopener noreferrer">2. Fine-grained GitHub-Token erstellen</a>: Nur das private Repository auswählen, Berechtigung <strong>Contents → Read and write</strong>, möglichst kurze Laufzeit. Den Token ausschließlich hier im Browser eingeben, niemals in ChatGPT.</p>
+        <label for="outbox-repo">Privates Repository (Benutzer/Repository)</label>
+        <input id="outbox-repo" type="text" maxlength="140" autocapitalize="none" spellcheck="false" autocomplete="off" placeholder="CobraChris/meine-livekarte-private-sync">
+        <label for="outbox-token">Fine-grained GitHub-Token (nur diese Browsersitzung)</label>
+        <input id="outbox-token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="github_pat_…">
+        <div class="sync-controls outbox-actions">
+          <button id="outbox-connect" type="button">Privat verbinden und hochladen</button>
+          <button id="outbox-upload" type="button" hidden>Jetzt hochladen</button>
+          <button id="outbox-disconnect" type="button" hidden>Rückkanal trennen</button>
+        </div>
+        <p id="outbox-status" role="status" aria-live="polite">Rückkanal noch nicht eingerichtet.</p>
+        <p class="sync-help">Die App prüft vor jedem ersten Upload, dass das Repository wirklich <strong>privat</strong> ist. Ein Token wird weder in localStorage noch in GitHub Pages gespeichert. Statusänderungen werden automatisch übertragen, solange diese Seite geöffnet und die GitHub-Verbindung aktiv ist. Nach dem Neuladen ist eine erneute Anmeldung nötig. Ein kompromittierter Browser kann einen während der Sitzung aktiven Token missbrauchen.</p>
+      </div>
+    </details>
     <p class="sync-help">Einmal den <strong>öffentlichen</strong> Code an ChatGPT senden. Nur dein Gerät kann die verschlüsselten Updates lesen. Dein privater Schlüssel bleibt in diesem Browser. Die Verbindung empfängt Ticketstatus-Updates, synchronisiert noch keine Buchungsdokumente und benötigt eine offene/neu geladene Webseite. Bei gelöschten Browserdaten geht der Schlüssel verloren.</p>
   </div>
 </details>
