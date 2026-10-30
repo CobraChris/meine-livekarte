@@ -1,5 +1,31 @@
 # Meine Live-Karte
 
+## Als Android-App installieren (PWA)
+
+Die bestehende GitHub-Pages-Live-Karte ist als **Progressive Web App (PWA)** installierbar: eigenes dunkelgrün-goldenes Kartensymbol mit **C-förmiger Reiseroute**, App-Name **„Meine Live-Karte“**, Start vom Android-Homescreen und eigenständiges Fenster ohne Browser-Adressleiste. Es wird **keine APK und kein Google-Play-Konto** benötigt. Der Web-App-Ursprung bleibt `https://cobrachris.github.io/meine-livekarte/`.
+
+### Installation auf Android
+
+1. Die Live-Karte möglichst im Browser öffnen, in dem die bisherige Geräte-Kopplung besteht (beispielsweise Chrome oder Samsung Internet).
+2. Unterhalb der Karte den kleinen Bereich **„📲 Live-Karte als App installieren“** aufklappen. Falls der Browser einen programmatischen Installationsdialog bereitstellt, wird die Schaltfläche **„Jetzt als App installieren“** sichtbar.
+3. Sonst über das Browsermenü **⋮ → App installieren** beziehungsweise **Zum Startbildschirm hinzufügen** wählen (Bezeichnung hängt vom Browser ab).
+4. Auf dem Startbildschirm die neue **Live-Karte** öffnen. Die PWA verwendet das eigene `manifest.json` und die aus `icons/livekarte.svg` erzeugten PNG-Icons in 192, 512 und 512 Pixel Maskable.
+
+**Vorsicht beim Browserwechsel:** Bei derselben Browser-/App-Profil-Partition werden gespeicherte Reisepläne, Orte, Ticketstatus und die nicht exportierbare private RSA-Kopplung aus IndexedDB weiterverwendet. Das ist bei einem Browserwechsel oder isolierten Installationsprofil **nicht garantiert**. Bestehende Browserdaten nicht löschen, nicht unnötig entkoppeln und einen neuen öffentlichen Kopplungscode nur bei tatsächlichem Schlüsselwechsel an ChatGPT senden. Ein separat angelegter Homescreen-Shortcut ist nicht immer gleich einer installierten PWA.
+
+### Offline-Funktion und Sicherheit
+
+Der Service Worker `sw.js` cachet *ausschließlich* die App-Oberfläche, die lokal eingebundenen Skripte, Leaflet und die Icons (Network-first mit Offline-Fallback). Bereits gespeicherte Reisepläne, Ziele und Fahrkartenstatus liegen weiterhin im Browser-Speicher des jeweiligen Profils.
+
+- **Online:** Programmdateien werden stets zuerst aktuell vom Netzwerk geladen. Änderungen an den Reiseplänen und Ticketstatus bleiben vom Service-Worker-Cache getrennt.
+- **Offline:** App-Shell und lokale Daten sind verfügbar, sofern sie zuvor erfolgreich geladen wurden. **OpenStreetMap-Hintergrundkacheln werden absichtlich nicht offline gespeichert**, daher kann die Kartenfläche ohne Internet leer erscheinen. Routenlinien und gespeicherte Ziele sind unter Umständen ohne Kartenhintergrund sichtbar. Google-Maps-Navigation und GitHub-Synchronisierung benötigen Internet.
+- **Privatsphäre:** GitHub-Token, unverschlüsselte GitHub-Statusdokumente, das verschlüsselte `sync/inbox`-Postfach, GPS-Koordinaten, API-Anfragen, andere Domains und OSM-Kacheln stehen **nicht** auf der Service-Worker-Cache-Liste. Der Service Worker greift nur GET-Anfragen des eigenen App-Ursprungs aus einer festen Liste ab. Der Token für den privaten GitHub-Rückkanal bleibt weiterhin ausschließlich in der laufenden Browsersitzung und muss nach einem echten Neuladen neu eingegeben werden.
+- **Aktualisierungen:** Eine Browser-Neuladung lädt bei vorhandener Verbindung die aktuelle App. Offline verwendet das System den zuletzt erfolgreich installierten Programmstand. Falls die Browserdaten gelöscht werden, können lokale Daten und der RSA-Privatschlüssel verloren gehen.
+
+### PWA-Icon-Build auf GitHub Pages
+
+Die editierbare Icon-Vorlage ist `icons/livekarte.svg`. Die GitHub-Actions-Veröffentlichung installiert **CairoSVG 2.8.2 in einer temporären Python-Umgebung**, erstellt mit `scripts/build_pwa_icons.py` die drei benötigten PNG-Dateien und veröffentlicht sie mit Manifest, Service Worker, JavaScript und CSS. Es gibt **keine Laufzeitabhängigkeit von CairoSVG**. Tests überprüfen Manifest, notwendige Dateien und das strikte Cache-Verhalten. Ohne eine erfolgreiche Pages-Veröffentlichung sind Installierbarkeit und Icons noch nicht live nachgewiesen.
+
 Mobile, statische Leaflet-Karte mit OpenStreetMap, Dark Mode und Empfehlungen aus ChatGPT. Ohne Backend, Registrierung, Build-Schritt oder API-Schlüssel.
 
 ## Verwenden
