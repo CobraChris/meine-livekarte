@@ -1,7 +1,7 @@
 /* Pure import and sharing helpers; also usable in Node tests. */
 (function (root) {
   'use strict';
-  const categories = { restaurant: 'Restaurant', sight: 'Sehenswürdigkeit', station: 'Bahnhof' };
+  const categories = { restaurant: 'Restaurant', sight: 'Sehenswürdigkeit', station: 'Bahnhof', hotel: 'Hotel' };
   function normalize(items) {
     if (!Array.isArray(items) || items.length > 200) throw new Error('Bitte eine Liste mit maximal 200 Orten verwenden.');
     return items.map((p, i) => {
@@ -9,7 +9,7 @@
       const number = v => (typeof v === 'number' || (typeof v === 'string' && v.trim())) ? Number(v) : NaN;
       const lat = number(p.lat), lng = number(p.lng ?? p.lon);
       if (typeof p.name !== 'string' || !p.name.trim() || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new Error(`Ort ${i + 1}: Name oder Koordinaten fehlen bzw. sind ungültig.`);
-      const aliases = { restaurant:'restaurant', restaurants:'restaurant', sight:'sight', sehenswürdigkeit:'sight', station:'station', bahnhof:'station' };
+      const aliases = { restaurant:'restaurant', restaurants:'restaurant', sight:'sight', sehenswürdigkeit:'sight', station:'station', bahnhof:'station', hotel:'hotel', hotels:'hotel' };
       const category = aliases[String(p.category || 'sight').toLowerCase()];
       if (!category) throw new Error(`Ort ${i + 1}: Unbekannte Kategorie.`);
       const priority = String(p.priority || '').trim().slice(0, 10);
@@ -250,6 +250,10 @@
         schedule:'Nur Reserveprogramm',
         note:'Bei eurem Zeitbudget würde ich ihn zugunsten der höher priorisierten Ziele streichen.',
         description:'Bewaldeter ehemaliger Burghügel mit Spazierwegen und wenigen erhaltenen Resten der Burg. Bei knapper Zeit verzichtbar.'},
+      {name:'THE MACHIYA HOTEL TAKAYAMA',lat:36.13834,lng:137.25542,category:'hotel',
+        schedule:'Basis · 30.10.–02.11. · Check-in ab 15:00',
+        note:'Euer Hotel in Takayama. Für Tagespläne als Start-/Endpunkt verwenden; morgens nicht vor 09:00 starten.',
+        description:'3-50 Hachikenmachi, Takayama. Zentrale Lage zwischen Takayama Station, Jinya und Altstadt.'},
       {name:'Takayama Station',lat:36.14113,lng:137.25129,category:'station',
         schedule:'Ankunft Tag 1 · 30.10. · 14:14',
         description:'JR-Bahnhof in Takayama; Ausgangspunkt für Busse, Altstadt und die Weiterreise.'}
