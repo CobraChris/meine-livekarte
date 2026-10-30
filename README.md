@@ -41,6 +41,20 @@ Auf Smartphones wird die große Marken-Kopfzeile ausgeblendet, weil der Browser 
 
 Der Nagoya-Pilot zeigt in seiner **Etagenübersicht explizit 2F → 1F → 2F**: Shinkansen-Bahnsteig (2F), Verbindungsebene und JR-Transfer-Gates (1F), JR-Bahnsteig mit Gleis 11 (2F). Die zwei Bahnsteigebenen sind tatsächlich auf derselben Höhe, aber durch einen Weg über die untere Verbindungsebene verbunden. Die schematische Darstellung ist **kein GPS-genauer Fußweg** und verwendet keine erdachten Entfernungen; bahnhofseigene Wegweiser sind verbindlich. Die Vor-/Zurück-Buttons bleiben im Scroll-Dialog gut erreichbar.
 
+## Geschützte Direkt-Synchronisierung mit ChatGPT (optionaler Ausbau)
+
+Eine **einseitige, Ende-zu-Ende-verschlüsselte Inbox** erlaubt dem bereits verbundenen GitHub-Plugin in ChatGPT, bestätigte Ticketstatusänderungen für den Nutzer bereitzustellen, ohne jedes Mal einen Update-Link öffnen zu müssen.
+
+- In der App **🔒 ChatGPT-Synchronisierung** aufklappen und **„Geschützte Verbindung vorbereiten“** wählen. Die App erzeugt ein **RSA-OAEP-3072/SHA-256**-Schlüsselpaar im Browser. Der **private, nicht exportierbare Schlüssel** wird lokal in **IndexedDB** gespeichert.
+- **„Öffentlichen Kopplungscode kopieren“** und an ChatGPT senden. Der Code enthält nur Version, abgeleitete Geräte-ID und öffentlichen SPKI-Schlüssel. **Niemals private Schlüssel, Passwörter oder Tickets im Chat senden.**
+- ChatGPT legt, **nach Prüfung der Buchung**, verschlüsselte Nachrichten unter `sync/inbox/<device-id>.json` über die bereits autorisierte GitHub-Verbindung ab. GitHub Pages stellt diese Datei bereit; der Browser holt sie beim Öffnen, Wiederanzeigen und alle 90 Sekunden (nur bei geöffneter App).
+- Jeder Status wird ausschließlich nach lokaler Entschlüsselung auf die **exakte** Zugverbindung (Reisetag, Start, Ziel, Abfahrtszeit) angewendet. Ältere Updates überschreiben nicht den neueren manuellen Status. Es werden nur Ticketstatuswerte übertragen – **keine Buchungscodes, Ticket-QR-Codes, Adressen oder Namen**.
+- Weder Backend noch API-Token im öffentlichen Web-Code nötig. Die öffentliche GitHub-Seite enthält nur **Ciphertext**, die Geräte-ID und Nachrichtenzeitpunkte. Das Repository selbst ist **nicht privat**; die Nachrichtengeheimhaltung beruht auf der Verschlüsselung. Zugang zur Publikation haben nur legitim schreibberechtigte Repository-Nutzer/verbundene GitHub-Tools.
+- Es handelt sich **nicht** um eine OAuth-basierte Vollintegration. Statusänderungen aus der App werden nicht zum ChatGPT-Konto zurückgesendet. Verschiedene Browser brauchen eigene Kopplung. Ein gelöschter Browserschlüssel lässt sich nicht wiederherstellen. Bei geschlossener Website werden keine Push-Nachrichten empfangen.
+- Der bisherige Bestätigungslink-Workflow bleibt als Fallback. Falls der Nutzer keine Kopplung möchte, ist alles wie bisher verwendbar.
+
+Details und Verschlüsselungsformat: [sync/README.md](sync/README.md). Das lokale Hilfsskript `scripts/encrypt_ticket_update.py` erzeugt RSA-verschlüsselte Inbox-Ereignisse aus dem **öffentlichen** Kopplungscode (Python-Paket `cryptography`). Der Connector schreibt ausschließlich die resultierende Ciphertext-JSON-Datei.
+
 ## Ticketstatus pro Zugfahrt: manuell und aus dem Chat (30.10.2026)
 
 Die Reiseübersicht zeigt jetzt **pro Teilstrecke** (nicht nur pro Bahnhof) einen lokalen Ticketstatus. Default ist ausnahmslos **❗ Ungeklärt**: ein angelegter Fahrplan, ein Aufenthalt im Zug oder ein gespeicherter Routenlink sind niemals ein Nachweis, dass auch alle benötigten Tickets, Reservierungen oder Zuschläge vorliegen.
