@@ -18,36 +18,6 @@ jobs:
         with:
           node-version: '24'
       - run: node --check core.js && node --check walking-core.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --check pwa.js && node --check sw.js && node --test tests/*.test.cjs
-      - name: Temporary one-request 4-point Takayama FOSSGIS foot CORS/leg smoke check
-        continue-on-error: true
-        run: |
-          python3 - <<'PY'
-          import urllib.request
-          import json
-          url=('https://routing.openstreetmap.de/routed-foot/route/v1/driving/'
-               '137.255000,36.140000;137.257640,36.139640;'
-               '137.259220,36.140000;137.259660,36.140880'
-               '?overview=full&geometries=geojson&steps=false&alternatives=false')
-          request=urllib.request.Request(url,headers={
-            'Accept':'application/json',
-            'Origin':'https://cobrachris.github.io',
-            'Referer':'https://cobrachris.github.io/meine-livekarte/',
-            'User-Agent':'MeineLivekarte/1.0 (+https://cobrachris.github.io/meine-livekarte/)'
-          })
-          with urllib.request.urlopen(request,timeout=18) as response:
-            data=json.load(response)
-            print('OSRM:',data.get('code'))
-            print('CORS:',response.headers.get('Access-Control-Allow-Origin'))
-            print('Waypoints:',len(data.get('waypoints',[])))
-            legs=data.get('routes',[{}])[0].get('legs',[])
-            print('Legs:',len(legs))
-            print('Distance:',data.get('routes',[{}])[0].get('distance'))
-            assert data.get('code')=='Ok'
-            assert len(data.get('waypoints',[]))==4
-            assert len(legs)==3
-            assert data['routes'][0]['geometry']['type']=='LineString'
-            assert response.headers.get('Access-Control-Allow-Origin') in ('*','https://cobrachris.github.io')
-          PY
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: test
