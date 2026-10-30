@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --check core.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --test tests/*.test.cjs
+      - run: node --check core.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --check pwa.js && node --check sw.js && node --test tests/*.test.cjs
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: test
@@ -33,9 +33,17 @@ jobs:
       - name: Prepare public files only
         run: |
           mkdir public
-          cp index.html style.css core.js app.js sync.js outbox-core.js sync-out.js public/
+          cp index.html style.css core.js app.js sync.js outbox-core.js sync-out.js pwa.js sw.js manifest.json public/
           cp -r vendor public/
           cp -r sync public/
+          mkdir -p public/icons
+          cp icons/livekarte.svg public/icons/
+      - name: Generate PNG PWA icons
+        run: |
+          python3 -m venv /tmp/livekarte-pwa-icons
+          /tmp/livekarte-pwa-icons/bin/python -m pip install --disable-pip-version-check -q CairoSVG==2.8.2
+          /tmp/livekarte-pwa-icons/bin/python scripts/build_pwa_icons.py
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
