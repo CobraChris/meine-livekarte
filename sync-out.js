@@ -85,6 +85,7 @@
     if(working){queued=true;return;}
     working=true;upload.disabled=true;
     const startingVersion=dirtyVersion;
+    let published=false;
     try{
       const device=await window.LivekarteGetDeviceId?.();
       if(!device)throw new Error('Zuerst die bestehende verschlüsselte Geräte-Kopplung vorbereiten.');
@@ -109,14 +110,17 @@
       }
       if(!success)throw new Error('GitHub-Konflikt beim Speichern. Bitte erneut synchronisieren.');
       uploadedVersion=startingVersion;
+      published=true;
       try{localStorage.setItem(configKey,connectedRepo);}catch{}
     }catch(e){
       note('⚠ '+e.message,true);
     }finally{
       working=false;upload.disabled=false;
-      if(queued||dirtyVersion!==uploadedVersion){
+      // A failed write must not trigger an endless retry loop.
+      // Retry only after an explicit button click or a new local change.
+      if(published && (queued||dirtyVersion!==uploadedVersion)){
         queued=false;scheduleUpload();
-      }
+      }else queued=false;
     }
   }
   function scheduleUpload(){
