@@ -6,6 +6,7 @@
   let distanceDisplays = [];
   let customPlans = [], planAssignments = Object.create(null), planJourneys = Object.create(null);
   let activePlanId = 'all';
+  let ticketStatuses=Object.create(null); // local-only; nothing is stored in the public repository.
   const allPlans = () => [...C.planPresets,...customPlans];
   const currentPlan = () => allPlans().find(p=>p.id===activePlanId) || C.planPresets[0];
   const currentPlaces = () => C.placesForPlan(places,planAssignments,activePlanId);
@@ -326,6 +327,73 @@
     following = false;
     if (coords.length) map.fitBounds(coords, {padding:[38,38],maxZoom:13});
   }
+  const ticketSymbols={unknown:'❗',missing:'⛔',booked:'◔',ready:'✓'};
+  function ticketStatusFor(planId,trip,index) {
+    return ticketStatuses[C.ticketLegKey(planId,trip,index)]?.status || 'unknown';
+  }
+  function saveTicketStatus(planId,trip,index,status,source='manual') {
+    if(!Object.hasOwn(C.ticketStates,status))throw new Error('Unbekannter Ticketstatus.');
+    const key=C.ticketLegKey(planId,trip,index);
+    ticketStatuses[key]={status,source:source==='chat-link'?'chat-link':'manual'};
+    try {
+      localStorage.setItem('livekarte-ticket-status-v1',JSON.stringify(ticketStatuses));
+      return true;
+    }catch{
+      say('Ticketstatus konnte nicht dauerhaft gespeichert werden. Browserspeicher prüfen.');
+      return false;
+    }
+  }
+  // A confirmation link is a proposal, NOT a booking certificate or a trusted API.
+  const ticketUpdateDialog=$('ticket-update-dialog');
+  let pendingTicketUpdate=null;
+  function clearTicketImportHash() {
+    if(location.hash.startsWith('#ticket='))
+      history.replaceState(null,'',location.pathname+location.search);
+  }
+  function dismissTicketUpdate() {
+    pendingTicketUpdate=null;
+    ticketUpdateDialog.close();
+    clearTicketImportHash();
+  }
+  function readTicketUpdate() {
+    if(!location.hash.startsWith('#ticket='))return false;
+    try {
+      const update=C.decodeTicketUpdate(location.hash);
+      const plan=allPlans().find(p=>p.id===update.plan && p.kind==='journey');
+      if(!plan)throw new Error('Dieser Reiseabschnitt ist hier nicht vorhanden.');
+      const trip=Object.hasOwn(planJourneys,update.plan) ? planJourneys[update.plan]
+        : update.plan==='ride-takayama' ? C.presetJourney('hakone-takayama-2026-10-30') : null;
+      if(!trip || trip.date!==update.date)throw new Error('Datum bzw. Fahrt stimmt nicht mit dem Reiseplan überein.');
+      const index=trip.stops.findIndex((stop,i)=>i<trip.stops.length-1 &&
+        stop.name===update.from && stop.departure===update.departure &&
+        trip.stops[i+1].name===update.to);
+      if(index<0)throw new Error('Diese Zugverbindung existiert nicht im aktuellen Reiseplan.');
+      pendingTicketUpdate={update,trip,index};
+      $('ticket-update-route').textContent=update.from+' → '+update.to+
+        ' · '+update.date+' · '+update.departure;
+      $('ticket-update-proposed').textContent='Vorgeschlagener Status: '+
+        ticketSymbols[update.status]+' '+C.ticketStates[update.status];
+      if(!ticketUpdateDialog.open)ticketUpdateDialog.showModal();
+    }catch(e){
+      clearTicketImportHash();
+      say('Ticketstatus-Link nicht übernommen: '+e.message);
+    }
+    return true;
+  }
+  $('ticket-update-close').onclick=dismissTicketUpdate;
+  $('ticket-update-cancel').onclick=dismissTicketUpdate;
+  ticketUpdateDialog.addEventListener('close',()=>{
+    if(pendingTicketUpdate){pendingTicketUpdate=null;clearTicketImportHash();}
+  });
+  $('ticket-update-apply').onclick=()=>{
+    if(!pendingTicketUpdate)return;
+    const {update,trip,index}=pendingTicketUpdate;
+    const saved=saveTicketStatus(update.plan,trip,index,update.status,'chat-link');
+    dismissTicketUpdate();
+    if(activePlanId!==update.plan) selectPlan(update.plan);
+    else renderJourney();
+    if(saved)say('Ticketstatus für '+update.from+' → '+update.to+' übernommen.');
+  };
   function renderJourney() {
     journeyLayer.clearLayers();
     const panel = $('journey-panel'), info = $('journey-info');
@@ -333,6 +401,13 @@
     panel.hidden = !journey;
     if (!journey) { updateStationTransfer(); updateNagoyaTrigger(); return; }
     info.append(node('h2',journey.title),node('p',journey.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
+    const totalLegs=journey.stops.length-1;
+    const unresolved=journey.stops.slice(0,-1).filter((_,i)=>ticketStatusFor(activePlanId,journey,i)!=='ready').length;
+    const summary=node('div',unresolved
+      ? '❗ '+unresolved+' von '+totalLegs+' Fahrtickets noch nicht als vollständig bestätigt'
+      : '✓ Alle '+totalLegs+' Fahrtickets als vorhanden markiert',
+      'ticket-summary'+(unresolved?' ticket-summary-warn':' ticket-summary-ready'));
+    info.append(summary);
     journey.stops.forEach((stop,i) => {
       if (i < journey.stops.length-1) {
         const next = journey.stops[i+1];
@@ -345,6 +420,33 @@
       item.append(node('span',times,'times'),node('strong',(i+1)+'. '+stop.name));
       if (stop.description) item.append(node('span',stop.description,'stop-note'));
       if (stop.leg) item.append(node('span','Weiter: '+stop.leg,'leg'));
+      if (i<journey.stops.length-1) {
+        const state=ticketStatusFor(activePlanId,journey,i);
+        const ticketRow=node('div',undefined,'ticket-row ticket-state-'+state);
+        const badge=node('span',ticketSymbols[state]+' '+C.ticketStates[state],'ticket-badge');
+        badge.setAttribute('aria-live','polite');
+        const ticketLabel=node('label','Ticket','ticket-label');
+        const picker=node('select',undefined,'ticket-choice');
+        const pickerId='ticket-'+i;
+        picker.id=pickerId;
+        ticketLabel.htmlFor=pickerId;
+        picker.setAttribute('aria-label','Ticketstatus '+stop.name+' nach '+journey.stops[i+1].name);
+        for(const [key,text] of Object.entries(C.ticketStates)){
+          const opt=node('option',ticketSymbols[key]+' '+text);
+          opt.value=key;picker.append(opt);
+        }
+        picker.value=state;
+        picker.addEventListener('click',e=>e.stopPropagation());
+        picker.addEventListener('change',e=>{
+          e.stopPropagation();
+          const saved=saveTicketStatus(activePlanId,journey,i,picker.value);
+          renderJourney();
+          if(saved)say('Ticketstatus aktualisiert: '+stop.name+' → '+journey.stops[i+1].name);
+        });
+        ticketRow.addEventListener('click',e=>e.stopPropagation());
+        ticketRow.append(ticketLabel,badge,picker);
+        item.append(ticketRow);
+      }
       info.append(item);
       const popup = node('div');
       popup.append(node('strong',(i+1)+'. '+stop.name),node('p',times),node('p',stop.description),node('p',stop.leg ? 'Weiter: '+stop.leg : 'Ankunft'));
@@ -632,7 +734,9 @@
   expand.onclick = () => toggleExpanded();
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && expanded) toggleExpanded(false); });
   window.addEventListener('resize', () => map.invalidateSize());
-  window.addEventListener('hashchange',()=>{ if (!readJourneyLink()) readLink(); });
+  window.addEventListener('hashchange',()=>{
+    if(!readTicketUpdate() && !readJourneyLink()) readLink();
+  });
   window.addEventListener('pagehide',() => { if (watch !== null) stopGPS(); });
   // Load saved recommendations and journey independently. A journey never replaces pins.
   try { places = C.parse(localStorage.getItem('livekarte-places-v1') || '[]'); }
@@ -658,6 +762,17 @@
     if(savedTrip && !Object.prototype.hasOwnProperty.call(planJourneys,'ride-takayama'))
       planJourneys['ride-takayama']=C.normalizeJourney(JSON.parse(savedTrip));
   } catch { say('Gespeicherter Reiseplan ist ungültig.'); }
+  try {
+    const raw=JSON.parse(localStorage.getItem('livekarte-ticket-status-v1')||'{}');
+    if(raw && typeof raw==='object' && !Array.isArray(raw)){
+      for(const [key,value] of Object.entries(raw).slice(0,120)){
+        if(key.length<=300 && value && typeof value==='object' &&
+            Object.hasOwn(C.ticketStates,value.status))
+          ticketStatuses[key]={status:value.status,
+            source:value.source==='chat-link'?'chat-link':'manual'};
+      }
+    }
+  }catch{say('Ticketstatus konnte nicht geladen werden.');}
   const queryView=new URLSearchParams(location.search).get('view');
   const savedView=(()=>{try{return localStorage.getItem('livekarte-active-plan-v1')}catch{return null}})();
   const requestedView=queryView||savedView||
@@ -665,7 +780,7 @@
   activePlanId=allPlans().some(p=>p.id===requestedView)?requestedView:'all';
   journey=activeJourney();
   renderPlanPicker();renderJourney();render();
-  if (!readJourneyLink() && !readLink()) {
+  if (!readTicketUpdate() && !readJourneyLink() && !readLink()) {
     selectPlan(activePlanId,{save:false,url:false,announce:false});
   }
 })();
