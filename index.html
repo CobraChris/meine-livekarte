@@ -6,7 +6,7 @@
 <meta name="description" content="Deine Orte, deine Wege. Empfehlungen sammeln, teilen und unterwegs entdecken.">
 <title>Meine Live-Karte · Orte entdecken</title>
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="app.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -29,6 +29,20 @@
 <aside>
 <div class="eyebrow">DEIN PERSÖNLICHER REISEBEGLEITER</div><h1>Gute Orte.<br><span>Direkt vor dir.</span></h1><p class="intro">Sammle Empfehlungen von ChatGPT und entdecke sie auf deiner Karte.</p>
 <section id="plan-summary" class="plan-summary" hidden aria-live="polite"></section>
+<details id="sync-panel" class="sync-panel">
+  <summary>🔒 ChatGPT-Synchronisierung <span class="sync-mini">verschlüsselt · optional</span></summary>
+  <div class="sync-body">
+    <p id="sync-status" aria-live="polite">Verbindung wird geprüft …</p>
+    <button type="button" id="sync-generate">Geschützte Verbindung vorbereiten</button>
+    <textarea id="sync-pair-code" rows="4" readonly hidden aria-label="Öffentlicher Kopplungscode"></textarea>
+    <div class="sync-controls">
+      <button type="button" id="sync-copy" hidden>Öffentlichen Kopplungscode kopieren</button>
+      <button type="button" id="sync-check" hidden>Jetzt synchronisieren</button>
+      <button type="button" id="sync-disconnect" hidden>Dieses Gerät entkoppeln</button>
+    </div>
+    <p class="sync-help">Einmal den <strong>öffentlichen</strong> Code an ChatGPT senden. Nur dein Gerät kann die verschlüsselten Updates lesen. Dein privater Schlüssel bleibt in diesem Browser. Die Verbindung empfängt Ticketstatus-Updates, synchronisiert noch keine Buchungsdokumente und benötigt eine offene/neu geladene Webseite. Bei gelöschten Browserdaten geht der Schlüssel verloren.</p>
+  </div>
+</details>
 <section id="journey-panel" class="journey-panel" hidden aria-label="Dein Reiseplan"><div id="journey-info"></div><button type="button" id="remove-journey" class="text-button">Reiseplan entfernen</button></section>
 <div class="toolbar"><button class="primary" id="open-import">＋ Orte importieren</button><button id="share">↗ Teilen</button></div>
 <div class="list-heading"><h2>Orte in dieser Ansicht <span id="count">0</span></h2><button id="clear" class="text-button" title="Alle gespeicherten Orte löschen – auch aus anderen Abschnitten">Alle löschen</button></div>
