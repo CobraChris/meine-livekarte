@@ -154,7 +154,7 @@ test('routing privacy, existing GPS follow controls and PWA deployment remain in
  assert.match(app,/function startWalkingNavigation\(\)/);
  assert.match(app,/function stopWalkingNavigation\(\)/);
  assert.match(app,/if\s*\(following\)\s*centerOnGPS/);
- assert.match(app,/map\.on\('dragstart',pauseGPSFollow\)/);
+ assert.match(app,/map\.on\('dragstart',\s*pauseGPSFollow\)/);
  assert.match(app,/GPS-Navigation aktiv/);
  assert.doesNotMatch(app.slice(app.indexOf('function updateWalkingNavigation('),
    app.indexOf('function startWalkingNavigation(')),/fetch\(|localStorage|indexedDB|routing\.openstreetmap\.de/);
