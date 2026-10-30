@@ -351,3 +351,34 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .ng-floor span{font-size:11px}
   .ng-floor strong{font-size:12px}
 }
+
+/* Ticket readiness belongs to each journey leg, never to a station as a whole.
+   Default = unknown and visually red until explicitly confirmed. */
+.ticket-summary{font:700 11px/1.4 system-ui,sans-serif;margin:0 0 13px;
+  padding:8px 9px;border-radius:8px}
+.ticket-summary-warn{background:#462a2b;border:1px solid #aa6f6d;color:#ffd5cc}
+.ticket-summary-ready{background:#1f4034;border:1px solid #5b9d80;color:#b7f1d1}
+.ticket-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  margin:8px 0 6px;padding:6px 7px;border-radius:9px;
+  background:#132b34;border:1px solid #44636c;cursor:default}
+.ticket-label{font-size:11px;letter-spacing:0;color:#aebfc3;margin:0}
+.ticket-badge{font:750 11px/1.3 system-ui,sans-serif;white-space:nowrap}
+.ticket-choice{margin-left:auto;min-height:35px;max-width:min(200px,100%);
+  padding:5px 7px;background:#152d35;color:#e7f5ed;
+  border:1px solid #526c72;border-radius:8px;font:11px system-ui}
+.ticket-state-unknown,.ticket-state-missing{border-color:#915b56;background:#342627}
+.ticket-state-unknown .ticket-badge,.ticket-state-missing .ticket-badge{color:#ffb9ae}
+.ticket-state-booked{border-color:#9e8753;background:#3b3325}
+.ticket-state-booked .ticket-badge{color:#ffde9a}
+.ticket-state-ready{border-color:#5b987c;background:#1b3730}
+.ticket-state-ready .ticket-badge{color:#adf3cd}
+.ticket-update-route{font-weight:750;color:#e6f6ef!important}
+.ticket-update-buttons{display:flex;gap:8px;margin-top:17px}
+.ticket-update-buttons button{flex:1}
+.ticket-update-buttons .primary{width:auto;flex:1.4}
+@media(max-width:760px){
+  .ticket-row{gap:5px;padding:6px}
+  .ticket-label{font-size:10px}
+  .ticket-badge{font-size:10px}
+  .ticket-choice{font-size:10px;max-width:52%;min-height:39px}
+}

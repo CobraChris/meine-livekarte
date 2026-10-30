@@ -154,6 +154,39 @@
     try { return normalizeJourney(JSON.parse(decodeURIComponent(hash.slice(6)))); }
     catch (e) { throw new Error('Reiseplan-Link ungültig: ' + e.message); }
   }
+  // Travel ticket readiness is separate from the route and never derived from
+  // a timetable or a claimed booking. Incoming links are only proposals.
+  const ticketStates=Object.freeze({
+    unknown:'Ungeklärt',missing:'Noch kaufen',
+    booked:'Gebucht · prüfen',ready:'Vorhanden'
+  });
+  function ticketLegKey(planId,journey,index) {
+    if(typeof planId!=='string' || !planId || !journey?.stops || !Number.isInteger(index)
+        || index<0 || index>=journey.stops.length-1)throw new Error('Fahrt nicht gefunden.');
+    const from=journey.stops[index],to=journey.stops[index+1];
+    return JSON.stringify([planId,journey.date,from.name,from.departure,to.name]);
+  }
+  function normalizeTicketUpdate(raw) {
+    if(!raw || typeof raw!=='object' || Array.isArray(raw) || raw.v!==1
+        || !/^[a-z0-9-]{2,70}$/.test(String(raw.plan||''))
+        || !/^\d{2}\.\d{2}\.\d{4}$/.test(String(raw.date||''))
+        || !['unknown','missing','booked','ready'].includes(raw.status)
+        || typeof raw.from!=='string'||!raw.from.trim()||raw.from.length>100
+        || typeof raw.to!=='string'||!raw.to.trim()||raw.to.length>100
+        || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(raw.departure||'')))
+      throw new Error('Ticket-Update ungültig.');
+    return {v:1,plan:raw.plan,date:raw.date,from:raw.from,
+      to:raw.to,departure:raw.departure,status:raw.status};
+  }
+  function encodeTicketUpdate(raw) {
+    return '#ticket='+encodeURIComponent(JSON.stringify(normalizeTicketUpdate(raw)));
+  }
+  function decodeTicketUpdate(hash) {
+    if(!hash.startsWith('#ticket='))return null;
+    if(hash.length>1600)throw new Error('Ticket-Link ist zu lang.');
+    try {return normalizeTicketUpdate(JSON.parse(decodeURIComponent(hash.slice(8))));}
+    catch(e) {throw new Error('Ticket-Link ungültig: '+e.message);}
+  }
   // Each section is independent. Saved places are never deleted when changing sections.
   const planPresets = [
     {id:'all',name:'Alle gespeicherten Orte',kind:'all'},
@@ -190,7 +223,7 @@
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides };
+  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides, ticketStates, ticketLegKey, normalizeTicketUpdate, encodeTicketUpdate, decodeTicketUpdate };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);

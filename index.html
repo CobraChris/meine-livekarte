@@ -37,6 +37,13 @@
 <footer><span>◉ Dein Standort bleibt auf deinem Gerät.</span><button id="privacy" class="text-button">Datenschutz & Hilfe</button></footer>
 </aside>
 </main>
+<dialog id="ticket-update-dialog" aria-labelledby="ticket-update-title">
+ <div class="dialog-heading"><h2 id="ticket-update-title">Ticketstatus übernehmen?</h2><button type="button" id="ticket-update-close" aria-label="Schließen">×</button></div>
+ <p id="ticket-update-route" class="ticket-update-route"></p>
+ <p id="ticket-update-proposed"></p>
+ <p class="hint">Diese Information kommt aus dem geöffneten Link und ist keine unabhängige Buchungsprüfung. Übernimm sie nur, wenn die Fahrkarte tatsächlich vorhanden bzw. die Buchung bestätigt ist. Ticketnummern und QR-Codes werden nicht übertragen.</p>
+ <div class="ticket-update-buttons"><button type="button" id="ticket-update-cancel">Nicht übernehmen</button><button type="button" id="ticket-update-apply" class="primary">Status übernehmen</button></div>
+</dialog>
 <dialog id="nagoya-dialog" aria-labelledby="nagoya-dialog-title">
   <div class="dialog-heading">
     <h2 id="nagoya-dialog-title">Nagoya · Zum Hida 9</h2>

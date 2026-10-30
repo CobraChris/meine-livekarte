@@ -41,6 +41,25 @@ Auf Smartphones wird die große Marken-Kopfzeile ausgeblendet, weil der Browser 
 
 Der Nagoya-Pilot zeigt in seiner **Etagenübersicht explizit 2F → 1F → 2F**: Shinkansen-Bahnsteig (2F), Verbindungsebene und JR-Transfer-Gates (1F), JR-Bahnsteig mit Gleis 11 (2F). Die zwei Bahnsteigebenen sind tatsächlich auf derselben Höhe, aber durch einen Weg über die untere Verbindungsebene verbunden. Die schematische Darstellung ist **kein GPS-genauer Fußweg** und verwendet keine erdachten Entfernungen; bahnhofseigene Wegweiser sind verbindlich. Die Vor-/Zurück-Buttons bleiben im Scroll-Dialog gut erreichbar.
 
+## Ticketstatus pro Zugfahrt: manuell und aus dem Chat (30.10.2026)
+
+Die Reiseübersicht zeigt jetzt **pro Teilstrecke** (nicht nur pro Bahnhof) einen lokalen Ticketstatus. Default ist ausnahmslos **❗ Ungeklärt**: ein angelegter Fahrplan, ein Aufenthalt im Zug oder ein gespeicherter Routenlink sind niemals ein Nachweis, dass auch alle benötigten Tickets, Reservierungen oder Zuschläge vorliegen.
+
+- **❗ Ungeklärt (rot)** · ob alle Fahrscheine vorhanden sind, wurde noch nicht bestätigt
+- **⛔ Noch kaufen (rot)** · benötigte Fahrkarten fehlen
+- **◔ Gebucht · prüfen (gelb)** · Buchung bekannt, Ausgabe/QR, Gültigkeit, Zuschläge oder Reservierungen noch nicht überprüft
+- **✓ Vorhanden (grün)** · nach konkreter Bestätigung ist der vollständige für die Fahrt nötige Fahrschein vorhanden
+
+Die Statusauswahl ist direkt in jedem Abschnitt der Zug-Zeitleiste. Die Einstellungen werden **nur im selben Browser** als `livekarte-ticket-status-v1` gespeichert. Ein roter Abschnitt wird nicht automatisch grün, nur weil ein Zug im Plan steht.
+
+**Aktualisierung durch ChatGPT ohne Backend:** Wenn ChatGPT anhand der Unterhaltung ausreichend sicher weiß, dass die nötigen Fahrkarten tatsächlich vollständig vorhanden sind, kann es einen Update-Link mit einem `#ticket=`-Fragment erzeugen. Beispiel:
+
+`https://cobrachris.github.io/meine-livekarte/?view=ride-takayama#ticket=%7B%22v%22%3A1%2C%22plan%22%3A%22ride-takayama%22%2C%22date%22%3A%2230.10.2026%22%2C%22from%22%3A%22Odawara%22%2C%22to%22%3A%22Nagoya%22%2C%22departure%22%3A%2210%3A11%22%2C%22status%22%3A%22ready%22%7D`
+
+Dieser konkrete Link bezieht sich **nur** auf Odawara → Nagoya mit dem Hikari 637 am 30.10.2026 um 10:11. Andere Teilstrecken bleiben ungeklärt. Das URL-Fragment enthält keine Buchungsnummer, keine personenbezogenen Daten und keinen QR-Code. Die App validiert Datum, Abschnitt und die exakte Teilstrecke, zeigt dann einen **Bestätigungsdialog** mit dem vorgeschlagenen Status und verändert den lokalen Stand erst nach explizitem Antippen von „Status übernehmen“. Linkdaten sind keine unabhängige Buchungsverifikation! Ein bloßer Link darf den Nutzer nicht irreführend als „buchungsbestätigt“ markieren.
+
+**Wichtig:** ChatGPT hat keinen direkten Zugriff auf `localStorage` im privaten Browser. Solange die Website ohne Benutzerkonto/Backend betrieben wird, ist dieser **Bestätigungslink** der technisch sichere Weg, wie ChatGPT einen Status an den Browser übertragen kann. Der Link muss im selben Browser geöffnet werden, in dem die Live-Karte ihre Daten speichert. In-App-Browser und Chrome können getrennte Speicher besitzen. Für echte automatische geräteübergreifende Synchronisierung wäre später eine authentifizierte Datenablage nötig.
+
 ## Nagoya als erster erweiterbarer Bahnhofs-Pilot (30.10.2026)
 
 Für den Reiseabschnitt **„30.10. Fahrt nach Takayama“** gibt es in Nagoya einen interaktiven deutschsprachigen **Bahnhofsmodus**, der ausdrücklich **ohne Indoor-GPS** funktioniert.
