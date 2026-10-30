@@ -18,7 +18,7 @@ test('walking requests only use FOSSGIS OSRM FOOT profile, no tokens or third-pa
  const url=R.requestUrl(from,to);
  assert.match(url,/^https:\/\/routing\.openstreetmap\.de\/routed-foot\/route\/v1\/driving\//);
  assert.ok(url.includes('137.252000,36.141000;137.259000,36.145000'));
- assert.match(url,/overview=full&geometries=geojson&steps=false/);
+ assert.match(url,/overview=full&geometries=geojson&steps=false&alternatives=true/);
  assert.doesNotMatch(url,/token|access_token|key=|maps\.google/i);
  assert.ok(R.metres(from,to)>600);
  assert.ok(R.metres(from,to)<1500);
@@ -44,6 +44,38 @@ test('OSRM GeoJSON path and route metrics are validated before rendering any lin
  assert.throws(()=>R.parse({code:'Ok',routes:[{...route.routes[0],geometry:{type:'LineString',coordinates:[[0,0],[0,0]]}}]},from,to),/zu weit/);
  assert.throws(()=>R.parse({code:'Ok',routes:[{...route.routes[0],geometry:{type:'Point',coordinates:[]}}]},from,to),/geometrie/i);
  assert.throws(()=>R.parse({code:'Ok',routes:[{...route.routes[0],geometry:{type:'LineString',coordinates:[[137,36],['NaN',36]]}}]},from,to),/Wegpunkt/);
+});
+
+test('shorter walking alternatives are preferred only when valid and not significantly slower',()=>{
+ const fastest=route.routes[0];
+ const shorter={...fastest,distance:640,duration:750};
+ const data={code:'Ok',routes:[fastest,shorter]};
+ const choice=R.parse(data,from,to);
+ assert.equal(choice.distance,640);
+ assert.equal(choice.shorterAlternative,true);
+ assert.equal(choice.alternativesCompared,2);
+ const tooSlow=R.parse({code:'Ok',routes:[fastest,{...shorter,duration:1200}]},from,to);
+ assert.equal(tooSlow.distance,fastest.distance);
+ assert.equal(tooSlow.shorterAlternative,false);
+ const invalid=R.parse({code:'Ok',routes:[fastest,{...shorter,
+   geometry:{type:'LineString',coordinates:[[0,0],[0,0]]}}]},from,to);
+ assert.equal(invalid.distance,fastest.distance);
+ assert.equal(invalid.alternativesCompared,1);
+ assert.throws(()=>R.parse({code:'Ok',routes:[{...fastest,
+   geometry:{type:'LineString',coordinates:[[137.252,36.146],[137.259,36.145]]}}]},from,to),
+   /zu weit/);
+});
+
+test('GPS centers automatically at launch and respects manual opt-out without storing coordinates',()=>{
+ const code=read('app.js'),html=read('index.html');
+ assert.match(code,/function autoStartGPS\(\)/);
+ assert.match(code,/void autoStartGPS\(\)/);
+ assert.match(code,/navigator\.permissions\.query\(\{name:'geolocation'\}\)/);
+ assert.match(code,/livekarte-gps-autostart-v1/);
+ assert.match(code,/if\(watch!==null\)\{setAutoGPSAllowed\(false\);stopGPS\(\);return;\}/);
+ assert.match(code,/setAutoGPSAllowed\(true\);\s*startGPS\(false\)/);
+ assert.match(code,/if \(following\) centerOnGPS/);
+ assert.match(html,/Beim Öffnen startet GPS automatisch/);
 });
 
 test('walking user interface is explicit opt in and leaves external Google Maps navigation available',()=>{
