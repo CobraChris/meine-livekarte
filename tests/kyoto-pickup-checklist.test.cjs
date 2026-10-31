@@ -42,7 +42,7 @@ test('only Takayama and Kyoto journey views show task, with safe local progress'
  assert.match(logic,/localStorage\.setItem\('livekarte-kyoto-qr-pickedup-v1','1'\)/);
  assert.match(logic,/ticketStatuses=nextTickets/);
  assert.match(logic,/window\.dispatchEvent\(new Event\('livekarte:ticket-updated'\)\)/);
- assert.match(app,/renderKyotoPickup\(\);\s*journeyLayer\.clearLayers\(\)/);
+ assert.match(app,/renderKyotoPickup\(\);\s*renderNextAction\(\);\s*journeyLayer\.clearLayers\(\)/);
  assert.match(app,/kyotoPickupDone=localStorage\.getItem\('livekarte-kyoto-qr-pickedup-v1'\)==='1'/);
  assert.doesNotMatch(logic,/fetch\(|navigator\.geolocation|QRcodeValue|passphrase|bookingReference/);
 });
@@ -66,6 +66,6 @@ test('mobile checklist has numbered steps, clear task action and no map popup ch
  assert.match(css,/\.kyoto-pickup-status button:disabled/);
  assert.match(css,/\.kyoto-pickup\.is-complete/);
  assert.match(css,/@media\(max-width:390px\)/);
- assert.match(read('sw.js'),/livekarte-shell-pwa-v20/);
+ assert.match(read('sw.js'),/livekarte-shell-pwa-v21/);
  assert.match(app,/function enablePopupMapDrag\(marker,surface\)/);
 });

@@ -758,6 +758,7 @@
     renderDayPlanSummary();
     $('tour-calculate').disabled=tourSelection().length<2;
     $('tour-optimize').disabled=tourSelection().length<2;
+    renderNextAction();
   }
   function setTourSelection(items){
     clearTourRoute();
@@ -1025,6 +1026,7 @@
     tourLiveNext.hidden=true;
     tourLiveRetry.hidden=true;
     if(wasFollowing){following=false;refreshGPSFollowControl();}
+    renderNextAction();
   }
   function updateTourNavigation(point,gpsAccuracy){
     if(!tourNavigation||tourNavigation.paused||!tourRoute)return;
@@ -1074,6 +1076,7 @@
     following=true;refreshGPSFollowControl();
     centerOnGPS([position.lat,position.lng],Math.max(16,map.getZoom()));
     updateTourNavigation(position,positionAccuracy);
+    renderNextAction();
   }
   tourLiveToggle.onclick=()=>{
     if(!tourNavigation){startTourNavigation();return;}
@@ -1107,6 +1110,7 @@
       tourLiveProgress.textContent='Alle Ziele erledigt.';
       tourLiveMessage.textContent='Die Route bleibt auf der Karte. Du kannst sie erneut starten.';
       tourLiveToggle.textContent='↺ Tour erneut starten';
+      renderNextAction();
       return;
     }
     tourNavigation.stage++;
@@ -1123,6 +1127,7 @@
       tourLiveProgress.textContent='Standort wird ermittelt …';
     }
     tourLiveRetry.hidden=true;
+    renderNextAction();
   };
   tourLiveRetry.onclick=()=>{void calculateTour(false,true);};
   $('tour-route-close').onclick=()=>{
@@ -1227,6 +1232,7 @@
         :optimized
         ?'Reihenfolge anhand echter Fußwege optimiert und gespeichert. Gelbe Ziffern zeigen die neuen Stopps.'
         :'Rundgang auf der Karte eingezeichnet. Gelbe Ziffern zeigen die Stopps.';
+      renderNextAction();
       following=false;refreshGPSFollowControl();
       map.closePopup();
       map.fitBounds(L.latLngBounds(result.points),{padding:[52,52],maxZoom:16});
@@ -1538,6 +1544,7 @@
     });
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
     renderTourBuilder();
+    renderNextAction();
   }
   function persist() {
     try {
@@ -1577,6 +1584,180 @@
   }
   // A journey is an optional separate overlay; saved recommendations remain untouched.
   const journeyLayer = L.layerGroup().addTo(map);
+  const NS=window.NextStepCore;
+  const nextActionSection=$('next-action');
+  const nextActionComplete=$('next-action-complete');
+  const nextActionDetails=$('next-action-details');
+  const nextActionMap=$('next-action-map');
+  const nextActionFeedback=$('next-action-feedback');
+  const nextActionList=$('next-action-list');
+  let nextActionDone=Object.create(null);
+  let nextActionCurrent=null;
+  // Manual, per-device progress only. Never store GPS, QR, ticket codes or
+  // inferred arrival data; ticket pickup and rail stages use canonical state.
+  function storeNextAction(id,done){
+    const next={...nextActionDone};
+    if(done)next[id]=true;else delete next[id];
+    try{
+      localStorage.setItem('livekarte-next-actions-v1',JSON.stringify(next));
+      nextActionDone=next;
+      return true;
+    }catch{
+      nextActionFeedback.textContent='Aufgabe konnte nicht gespeichert werden. Browserspeicher prüfen.';
+      return false;
+    }
+  }
+  function travelTaskContext(){
+    const trip=activeJourney()||C.presetJourney('takayama-kyoto-2026-11-01');
+    const railDone={};
+    if(trip?.stops?.length===3&&trip.stops[0].name==='Takayama'&&
+      trip.stops[0].departure==='11:35'&&trip.stops[1].name==='Nagoya'&&
+      trip.stops[1].departure==='14:26'&&trip.stops[2].name==='Kyoto Station'){
+      for(let i=0;i<2;i++){
+        railDone[i]=tripStageDone[C.ticketLegKey('ride-kyoto',trip,i)]===true;
+      }
+    }
+    return {railDone,trip};
+  }
+  function showNextActionDetails(task){
+    if(task.details==='pickup'){
+      if(!['town-takayama','ride-kyoto'].includes(activePlanId))
+        selectPlan('ride-kyoto');
+      $('kyoto-pickup-steps-details').open=true;
+      $('kyoto-pickup').scrollIntoView({behavior:'smooth',block:'start'});
+    }else if(task.details==='rail'){
+      if(activePlanId!=='ride-kyoto')selectPlan('ride-kyoto');
+      $('kyoto-rail-infographic').scrollIntoView({behavior:'smooth',block:'start'});
+    }else if(task.details==='tour'){
+      const tourPanel=$('tour-builder');
+      tourPanel.open=true;
+      tourPanel.scrollIntoView({behavior:'smooth',block:'start'});
+    }else{
+      if(activePlanId!=='town-kyoto')selectPlan('town-kyoto');
+      const overview=$('kyoto-overview');
+      const sections=overview.querySelectorAll('details.kyoto-day');
+      const day=NS.localDate()==='2026-11-02'?1:0;
+      if(sections[day])sections[day].open=true;
+      overview.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  }
+  function setActionDone(task,done){
+    if(!task)return;
+    if(task.source==='pickup'){
+      $('kyoto-pickup').scrollIntoView({behavior:'smooth',block:'start'});
+      $('kyoto-pickup-steps-details').open=true;
+      nextActionFeedback.textContent='Abholung bitte nur über den Bestätigungsbutton im Ticketabschnitt als erledigt markieren.';
+      return;
+    }
+    if(task.source.startsWith('rail:')){
+      const {trip}=travelTaskContext();
+      const index=Number(task.source.slice(5));
+      if(!trip||trip.stops?.[index]?.name!== (index===0?'Takayama':'Nagoya') ||
+        (index===0?trip.stops[index].departure!=='11:35':
+          trip.stops[index].departure!=='14:26')){
+        nextActionFeedback.textContent='Die Zugverbindung wurde verändert. Bitte zuerst den Reiseplan prüfen.';
+        return;
+      }
+      // Only mark a ridden train done; undo returns to the prior booked state.
+      if(setRailLegStage('ride-kyoto',trip,index,done?'done':'booked'))
+        renderNextAction();
+      return;
+    }
+    if(storeNextAction(task.id,done))renderNextAction();
+  }
+  function renderNextAction(){
+    const today=NS.localDate();
+    const view=activePlanId;
+    let result=NS.choose(view,today,{
+      pickupDone:kyotoPickupDone,
+      manualDone:nextActionDone,
+      railDone:travelTaskContext().railDone
+    });
+    // An uncollected train ticket always outranks an optional walking tour.
+    const criticalPickup=result.next?.source==='pickup'&&!kyotoPickupDone;
+    const tourIsActive=!criticalPickup&&!!(tourNavigation&&tourRoute&&tourRoute.planId===view);
+    const selectedTour=!criticalPickup&&!tourIsActive&&tourRoute?.planId===view&&
+      tourRoute?.stops?.length>=2;
+    nextActionSection.hidden=!result.total&&!tourIsActive&&!selectedTour;
+    if(nextActionSection.hidden)return;
+    const count=$('next-action-count');
+    const time=$('next-action-time'),name=$('next-action-name'),
+      description=$('next-action-description'),date=$('next-action-date');
+    const all=$('next-action-all');
+    nextActionList.replaceChildren();
+    if(tourIsActive||selectedTour){
+      const current=tourIsActive
+        ?tourRoute.stops[tourNavigation.stage]
+        :tourRoute.stops[0];
+      if(!current)return;
+      result={entries:[],doneCount:tourIsActive?tourNavigation.stage:0,
+        total:tourRoute.stops.length,
+        next:{
+          id:'tour:current',source:'tour',details:'tour',place:current,
+          time:tourIsActive?'Stopp '+(tourNavigation.stage+1)+' von '+tourRoute.stops.length:'Bereit zum Start',
+          title:tourIsActive?'Weiter zu: '+current.name:'Rundgang starten',
+          note:tourIsActive
+            ?'GPS-Navigation und „Nächster Stopp“ auf der Karte bedienen. Keine automatische Aufgabenbestätigung.'
+            :'Deine berechnete Tour mit '+tourRoute.stops.length+' Stopps ist bereit.'
+        },dateLabel:'🚶 AKTUELLER RUNDGANG'};
+    }
+    count.textContent=result.doneCount+'/'+result.total+' erledigt';
+    date.textContent=result.dateLabel;
+    const task=result.next;
+    nextActionCurrent=task;
+    all.hidden=!result.entries.length;
+    nextActionList.replaceChildren();
+    for(const item of result.entries){
+      const li=node('li',undefined,'next-action-list-item');
+      const left=node('div',undefined,'next-action-list-text');
+      left.append(node('span',item.done?'✓ '+item.time:item.time,'next-action-list-time'));
+      left.append(node('strong',item.title));
+      li.classList.toggle('is-complete',item.done);
+      li.append(left);
+      if(item.done&&item.source!=='pickup'){
+        const undo=node('button','Rückgängig');
+        undo.type='button';
+        undo.setAttribute('aria-label',item.title+' zurücksetzen');
+        undo.onclick=()=>setActionDone(item,false);
+        li.append(undo);
+      }else if(item.source==='pickup'&&item.done){
+        li.append(node('span','Bestätigt','next-action-list-done'));
+      }
+      nextActionList.append(li);
+    }
+    if(!task){
+      time.textContent='✓ Alle Schritte';
+      name.textContent='Alle geplanten Aufgaben erledigt';
+      description.textContent='Manuell bestätigt. Fahrpläne und Öffnungszeiten weiterhin vor Ort prüfen.';
+      nextActionComplete.hidden=true;nextActionDetails.hidden=true;nextActionMap.hidden=true;
+      nextActionFeedback.textContent='Du kannst einzelne Schritte unten wieder zurücksetzen.';
+      return;
+    }
+    time.textContent=task.time;
+    name.textContent=task.title;
+    description.textContent=task.note;
+    nextActionComplete.hidden=task.source==='tour';
+    nextActionComplete.textContent=task.source==='pickup'?'✓ Abholung bestätigen':'✓ Erledigt';
+    nextActionComplete.onclick=()=>setActionDone(task,true);
+    nextActionDetails.hidden=false;
+    nextActionDetails.textContent=task.details==='tour'?'Zur Tour-Navigation':'Details ansehen';
+    nextActionDetails.onclick=()=>showNextActionDetails(task);
+    const target=task.place;
+    nextActionMap.hidden=!(target&&Number.isFinite(target.lat)&&Number.isFinite(target.lng));
+    if(!nextActionMap.hidden){
+      nextActionMap.href='https://www.google.com/maps/dir/?api=1&destination='+
+        encodeURIComponent(target.lat+','+target.lng)+'&travelmode=walking';
+      nextActionMap.setAttribute('aria-label','Weg zu '+target.name+' in Google Maps');
+    }
+    nextActionFeedback.textContent=task.source==='pickup'
+      ?'Die QR-Abholung wird erst nach deiner ausdrücklichen Bestätigung als erledigt markiert.'
+      :'Nichts wird aufgrund der Uhrzeit oder GPS-Position automatisch als erledigt markiert.';
+  }
+  // A resumed app recalculates local calendar context, without network traffic.
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible')renderNextAction();
+  });
+  window.addEventListener('focus',renderNextAction);
   const kyotoOverview=$('kyoto-overview');
   function renderKyotoOverview(){
     kyotoOverview.hidden=!['ride-kyoto','town-kyoto'].includes(activePlanId);
@@ -2074,6 +2255,7 @@
   };
   function renderJourney() {
     renderKyotoPickup();
+    renderNextAction();
     journeyLayer.clearLayers();
     const panel = $('journey-panel'), info = $('journey-info');
     info.replaceChildren();
@@ -2653,6 +2835,15 @@
         if(key.length<=300&&done===true)tripStageDone[key]=true;
     }
   }catch{say('Gespeicherte Reisefortschritte konnten nicht geladen werden.');}
+  // Explicit, optional on-device acknowledgements for itinerary and visits.
+  try{
+    const saved=JSON.parse(localStorage.getItem('livekarte-next-actions-v1')||'{}');
+    if(saved&&typeof saved==='object'&&!Array.isArray(saved)){
+      for(const [key,done] of Object.entries(saved).slice(0,100))
+        if(/^kyoto:(?:prepare|transfer|hotel|gion|ponto|kiyomizu|sannenzaka|fushimi)$/.test(key)&&done===true)
+          nextActionDone[key]=true;
+    }
+  }catch{say('Gespeicherte Reiseaufgaben konnten nicht geladen werden.');}
   // Restore only explicit local timing preferences, never GPS or route data.
   try{
     const raw=JSON.parse(localStorage.getItem('livekarte-day-plans-v1')||'{}');

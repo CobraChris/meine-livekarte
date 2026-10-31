@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -88,6 +88,30 @@
   </div>
 </details>
 
+<section id="next-action" class="next-action" hidden aria-labelledby="next-action-title">
+  <div class="next-action-heading">
+    <div><span class="next-action-kicker">🧭 REISEASSISTENT</span><h2 id="next-action-title">Was jetzt?</h2></div>
+    <span id="next-action-count" class="next-action-count" aria-live="polite">0/0 erledigt</span>
+  </div>
+  <p id="next-action-date" class="next-action-date"></p>
+  <div class="next-action-current">
+    <span class="next-action-eyebrow">NÄCHSTER OFFENER SCHRITT</span>
+    <p id="next-action-time" class="next-action-time"></p>
+    <strong id="next-action-name"></strong>
+    <p id="next-action-description"></p>
+    <div class="next-action-buttons">
+      <button type="button" class="next-action-primary" id="next-action-complete">✓ Erledigt</button>
+      <button type="button" id="next-action-details">Details ansehen</button>
+      <a id="next-action-map" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps">↗ Weg zum Ort</a>
+    </div>
+  </div>
+  <p id="next-action-feedback" class="next-action-feedback" role="status" aria-live="polite">Aufgaben werden nur durch dich als erledigt markiert.</p>
+  <details id="next-action-all" class="next-action-all">
+    <summary>Alle Schritte dieses Tages anzeigen</summary>
+    <ol id="next-action-list"></ol>
+  </details>
+  <p class="next-action-privacy">Planzeiten, keine Live-Verbindungen. Kein automatischer Aufgabenabschluss und keine zusätzlichen GPS- oder Routinganfragen. „Weg zum Ort“ öffnet Google Maps erst nach deinem Tipp.</p>
+</section>
 <section id="kyoto-pickup" class="kyoto-pickup" hidden aria-labelledby="kyoto-pickup-title">
   <div class="kyoto-pickup-heading">
     <span class="kyoto-pickup-eyebrow">⚠ VOR DER ABFAHRT · SO. 01.11.</span>

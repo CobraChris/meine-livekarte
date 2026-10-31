@@ -75,7 +75,7 @@ test('Kyoto city plan has legible expandable timeline, compact metrics and hones
  assert.match(css,/\.kyoto-day-timeline/);
  assert.match(css,/\.kyoto-day-stats/);
  assert.match(css,/@media\(max-width:390px\)/);
- assert.match(read('sw.js'),/livekarte-shell-pwa-v20/);
+ assert.match(read('sw.js'),/livekarte-shell-pwa-v21/);
 });
 
 test('completed journey markers are only locally restored and do not enter public sync snapshots',()=>{
