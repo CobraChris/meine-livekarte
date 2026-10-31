@@ -758,6 +758,7 @@
     renderDayPlanSummary();
     $('tour-calculate').disabled=tourSelection().length<2;
     $('tour-optimize').disabled=tourSelection().length<2;
+    renderNextAction();
   }
   function setTourSelection(items){
     clearTourRoute();
@@ -1025,6 +1026,7 @@
     tourLiveNext.hidden=true;
     tourLiveRetry.hidden=true;
     if(wasFollowing){following=false;refreshGPSFollowControl();}
+    renderNextAction();
   }
   function updateTourNavigation(point,gpsAccuracy){
     if(!tourNavigation||tourNavigation.paused||!tourRoute)return;
@@ -1074,6 +1076,7 @@
     following=true;refreshGPSFollowControl();
     centerOnGPS([position.lat,position.lng],Math.max(16,map.getZoom()));
     updateTourNavigation(position,positionAccuracy);
+    renderNextAction();
   }
   tourLiveToggle.onclick=()=>{
     if(!tourNavigation){startTourNavigation();return;}
@@ -1107,6 +1110,7 @@
       tourLiveProgress.textContent='Alle Ziele erledigt.';
       tourLiveMessage.textContent='Die Route bleibt auf der Karte. Du kannst sie erneut starten.';
       tourLiveToggle.textContent='↺ Tour erneut starten';
+      renderNextAction();
       return;
     }
     tourNavigation.stage++;
@@ -1123,6 +1127,7 @@
       tourLiveProgress.textContent='Standort wird ermittelt …';
     }
     tourLiveRetry.hidden=true;
+    renderNextAction();
   };
   tourLiveRetry.onclick=()=>{void calculateTour(false,true);};
   $('tour-route-close').onclick=()=>{
@@ -1227,6 +1232,7 @@
         :optimized
         ?'Reihenfolge anhand echter Fußwege optimiert und gespeichert. Gelbe Ziffern zeigen die neuen Stopps.'
         :'Rundgang auf der Karte eingezeichnet. Gelbe Ziffern zeigen die Stopps.';
+      renderNextAction();
       following=false;refreshGPSFollowControl();
       map.closePopup();
       map.fitBounds(L.latLngBounds(result.points),{padding:[52,52],maxZoom:16});
@@ -1578,6 +1584,7 @@
   }
   // A journey is an optional separate overlay; saved recommendations remain untouched.
   const journeyLayer = L.layerGroup().addTo(map);
+  const NS=window.NextStepCore;
   const nextActionSection=$('next-action');
   const nextActionComplete=$('next-action-complete');
   const nextActionDetails=$('next-action-details');
