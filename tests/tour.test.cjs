@@ -168,7 +168,7 @@ test('multistop builder is optional, compact and has reorder/removal/accessibili
 
 test('tour sends GPS only on explicit calculation and does not save routes or location history',()=>{
  const app=read('app.js');
- const start=app.indexOf('  async function calculateTour(optimized=false){');
+ const start=app.indexOf('  async function calculateTour(optimized=false,remaining=false){');
  const end=app.indexOf('  function placeMeta(p)',start);
  assert.ok(start>=0 && end>start);
  const block=app.slice(start,end);
