@@ -841,3 +841,30 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .tour-map-tools #map-save-place{min-height:36px}
   #map-place-dialog{padding:14px;max-height:85dvh}
 }
+
+
+/* Saved pin editor: compact, explicit edit and deliberate single-item delete. */
+#edit-place-dialog{width:min(460px,calc(100% - 24px));padding:17px 18px}
+#edit-place-dialog form{display:grid;gap:7px}
+#edit-place-dialog .dialog-heading h2{font-size:18px;margin:0}
+#edit-place-dialog label{font-size:12px;margin:4px 0 0;color:#e4f3ec}
+#edit-place-dialog input,#edit-place-dialog select,#edit-place-dialog textarea{
+  box-sizing:border-box;width:100%;min-height:42px;padding:9px 11px;
+  background:#152f36;color:#f2fff7;border:1px solid #5b7c7a;
+  border-radius:9px;font-family:inherit;font-size:14px}
+#edit-place-dialog textarea{min-height:65px;resize:vertical}
+#edit-place-dialog #edit-place-error{font-size:12px;color:#ffb4a9;margin:0}
+#edit-place-dialog #edit-place-error:empty{display:none}
+#edit-place-dialog .edit-place-location{padding:7px;border:1px solid #42615d;
+  border-radius:7px;font-size:11px;color:#bcefe4;margin:3px 0}
+#edit-place-dialog .hint{font-size:10px;line-height:1.5;color:#b0d1c2;margin:2px 0}
+#edit-place-dialog .edit-place-danger{
+  padding:9px 10px;min-height:42px;border:1px solid #be7b72;
+  border-radius:9px;color:#ffddda;background:#48292d;font-weight:700}
+.place-actions .place-edit,
+.leaflet-popup-content .popup-quick-actions .place-edit{
+  min-height:35px;padding:6px 10px;border:1px solid #7c9e95;
+  border-radius:8px;background:#2c4a4e;color:#e1f6ee;font-weight:700}
+@media(max-width:760px){
+ #edit-place-dialog{padding:14px;max-height:87dvh}
+}
