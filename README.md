@@ -1,3 +1,9 @@
+## Nagoya am 01.11.: Hida 8 → Nozomi 71 (31.10.2026)
+
+Für den Sonntag, 01.11.2026 enthält die Live-Karte eine eigene **🚄 Umstiegshilfe Nagoya** für die verifizierte Reise Takayama → Nagoya → Kyoto. Sie ist im Bereich **„Was jetzt?“** beim Schritt „In Nagoya umsteigen“, in der Kyoto-Zug-Infografik und beim vergrößerten Nagoya-Kartenbereich erreichbar. Fünf **manuell durchklickbare Schritte** zeigen Aussteigen, Wechsel zur Verbindungsebene, Shinkansen-Umsteigesperre, Gleis und Einsteigen. Zeiten **Hida 8 an 14:04**, **Nozomi 71 ab 14:26** (22 Minuten), **Gleis 4 → 17**, **Wagen 4 / 8D + 8E** sind **Plan-/Buchungsangaben, keine Live-Gleisauskunft**. Japanische Beschilderung: **新幹線** (Shinkansen), **のりかえ口** (Umsteigesperre). Die schematische 2F–1F–2F-Anzeige ist kein Indoor-GPS. Beim Umstieg nicht den normalen Ausgang nehmen; Papiertickets bereithalten, bei Unklarheit JR-Personal fragen. Offizielle JR-Central-Karte: https://global.jr-central.co.jp/en/info/station/_img/nagoya.jpg. Hinweise zur Ticketnutzung: https://global.jr-central.co.jp/en/tickets/use/.
+
+Die bisherige Umstiegshilfe **Hikari 637 → Hida 9** vom 30.10. bleibt unverändert und wird nicht mit Kyoto verwechselt. Die neue Hilfe erscheint nur, wenn der Kyoto-Fahrplan exakt zur bestätigten Route passt. Sie benötigt keine API, kein GPS, keine neuen Datenberechtigungen und keinen zweiten Ticketstatus.
+
 ## Japanische Zielkarte „🇯🇵 Dem Fahrer zeigen“ (31.10.2026)
 
 Für in der Kyoto-Reise bereits verzeichnete Ziele gibt es nun **„🇯🇵 Dem Fahrer zeigen“** direkt im Karten-Popup und in der Orteliste, außerdem beim passenden „Was jetzt?“-Schritt und beim Hoteltransfer am 01.11. Ein mobiles, gut lesbares Fenster zeigt dem Taxifahrer den **japanischen Zielnamen in großer Schrift** und „こちらまでお願いします。“. **Nur für das Tomoya Residence Hotel** gibt es auch eine **offiziell bestätigte japanische Postanschrift und Telefonnummer**:
