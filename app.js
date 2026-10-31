@@ -8,6 +8,7 @@
   let activePlanId = 'all';
   let ticketStatuses=Object.create(null); // local-only; nothing is stored in the public repository.
   const tripStageDone=Object.create(null); // separate manually completed rides; never ticket proof.
+  let kyotoPickupDone=false; // Explicitly confirmed paper ticket handover only.
   const allPlans = () => [...C.planPresets,...customPlans];
   const currentPlan = () => allPlans().find(p=>p.id===activePlanId) || C.planPresets[0];
   const currentPlaces = () => C.placesForPlan(places,planAssignments,activePlanId);
@@ -1992,7 +1993,66 @@
       'kyoto-rail-footnote'));
     kyotoRailInfographic.append(node('small','„Erledigt“ beschreibt nur die durch dich bestätigte Fahrt. Die Ticketdetails bleiben separat und können über die verschlüsselte Synchronisierung aktualisiert werden.','kyoto-rail-disclaimer'));
   }
+  // Explicit departure action shared by Takayama city and Kyoto travel views.
+  // No QR/booking code is stored or transmitted; only a local boolean and
+  // ticket-status readiness after the traveller confirms all paper tickets.
+  const kyotoPickupPanel=$('kyoto-pickup');
+  const kyotoPickupConfirm=$('kyoto-pickup-confirm');
+  const kyotoPickupFeedback=$('kyoto-pickup-feedback');
+  function renderKyotoPickup(){
+    kyotoPickupPanel.hidden=!['town-takayama','ride-kyoto'].includes(activePlanId);
+    kyotoPickupPanel.classList.toggle('is-complete',kyotoPickupDone);
+    kyotoPickupConfirm.disabled=kyotoPickupDone;
+    kyotoPickupConfirm.textContent=kyotoPickupDone
+      ?'✓ Papier-Tickets für beide Züge abgeholt'
+      :'✓ Beide Teilstrecken: Tickets abgeholt';
+    kyotoPickupFeedback.textContent=kyotoPickupDone
+      ?'Abholung auf diesem Gerät als erledigt gespeichert. Beide Zugtickets als vorhanden markiert.'
+      :'Noch offen: Abholung der Papier-Tickets vor der Abfahrt um 11:35.';
+    $('kyoto-pickup-subtitle').textContent=kyotoPickupDone
+      ?'Erledigt: Abholung bestätigt. Bitte die Tickets für beide Personen mitnehmen.'
+      :'Klook-Buchung bestätigt · die Papiertickets müssen vor der Fahrt abgeholt werden.';
+  }
+  kyotoPickupConfirm.onclick=()=>{
+    if(kyotoPickupDone)return;
+    if(!confirm('Sind alle Papiertickets für beide Personen UND für Hida 8 und Nozomi 71 tatsächlich abgeholt und kontrolliert?'))return;
+    const trip=Object.hasOwn(planJourneys,'ride-kyoto')
+      ?planJourneys['ride-kyoto']
+      :C.presetJourney('takayama-kyoto-2026-11-01');
+    const expected=[['Takayama','11:35','Nagoya'],['Nagoya','14:26','Kyoto Station']];
+    const indices=expected.map(([from,departure,to])=>trip?.stops?.findIndex((stop,i)=>
+      i<trip.stops.length-1&&stop.name===from&&stop.departure===departure&&
+      trip.stops[i+1].name===to));
+    if(indices.some(index=>index<0||!Number.isInteger(index))){
+      kyotoPickupFeedback.textContent='Die Zugverbindung wurde verändert. Bitte erst die aktuelle Klook-Buchung abgleichen.';
+      return;
+    }
+    const previousTicketData=localStorage.getItem('livekarte-ticket-status-v1');
+    const nextTickets={...ticketStatuses};
+    const now=Date.now();
+    for(const index of indices){
+      const key=C.ticketLegKey('ride-kyoto',trip,index);
+      nextTickets[key]={status:'ready',source:'manual',updatedAt:now};
+    }
+    try{
+      localStorage.setItem('livekarte-ticket-status-v1',JSON.stringify(nextTickets));
+      localStorage.setItem('livekarte-kyoto-qr-pickedup-v1','1');
+    }catch{
+      try{
+        if(previousTicketData===null)localStorage.removeItem('livekarte-ticket-status-v1');
+        else localStorage.setItem('livekarte-ticket-status-v1',previousTicketData);
+      }catch{}
+      kyotoPickupFeedback.textContent='Konnte die Bestätigung nicht speichern. Bitte freien Browserspeicher prüfen.';
+      return;
+    }
+    ticketStatuses=nextTickets;
+    kyotoPickupDone=true;
+    window.dispatchEvent(new Event('livekarte:ticket-updated'));
+    renderJourney();
+    say('✓ Beide Klook-Ticketstrecken als abgeholt und vorhanden markiert.');
+  };
   function renderJourney() {
+    renderKyotoPickup();
     journeyLayer.clearLayers();
     const panel = $('journey-panel'), info = $('journey-info');
     info.replaceChildren();
@@ -2560,6 +2620,10 @@
       }
     }
   }catch{say('Bestätigter Kyoto-Ticketstatus konnte nicht vorbelegt werden.');}
+  // Never mark the pickup done without a real explicit confirmation.
+  try{
+    kyotoPickupDone=localStorage.getItem('livekarte-kyoto-qr-pickedup-v1')==='1';
+  }catch{}
   // Travel progress is explicit and separate from ticket readiness/proof.
   try{
     const saved=JSON.parse(localStorage.getItem('livekarte-trip-progress-v1')||'{}');
