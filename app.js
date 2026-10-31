@@ -109,6 +109,8 @@
   const tourLayers=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
   let tourDrafts=Object.create(null),tourRoute=null,tourController=null,tourRequestGeneration=0;
+  let tourNavigation=null; // In-memory only; never persist GPS, current step or route.
+
   let lastTourRequestedAt=0;
   let walkDestination=null,walkController=null,walkRequestGeneration=0;
   let lastWalkingRequestAt=0,positionUpdatedAt=0,positionAccuracy=null;
@@ -390,6 +392,7 @@
     }catch{say('Rundgang-Auswahl konnte nicht gespeichert werden.');}
   }
   function clearTourRoute(){
+    stopTourNavigation();
     ++tourRequestGeneration;
     if(tourController)tourController.abort();
     tourController=null;tourRoute=null;
@@ -472,15 +475,139 @@
     tourBuilderStatus.textContent='Auswahl geleert. Deine gespeicherten Orte bleiben erhalten.';
   };
   $('tour-optimize').onclick=()=>{void calculateTour(true);};
+  // Live tour uses only the existing full-route geometry and individual leg
+  // metrics; live GPS updates NEVER contact a routing server or store a track.
+  const tourLiveState=$('tour-live-state');
+  const tourLiveStep=$('tour-live-step');
+  const tourLiveProgress=$('tour-live-progress');
+  const tourLiveMessage=$('tour-live-message');
+  const tourLiveToggle=$('tour-live-toggle');
+  const tourLiveNext=$('tour-live-next');
+  const tourLiveRetry=$('tour-live-retry');
+  function stopTourNavigation(){
+    const wasFollowing=!!tourNavigation&&!tourNavigation.paused;
+    tourNavigation=null;
+    tourLiveState.hidden=true;
+    tourLiveStep.textContent='';
+    tourLiveProgress.textContent='';
+    tourLiveMessage.textContent='';
+    tourLiveToggle.textContent='▶ Tour starten';
+    tourLiveToggle.setAttribute('aria-pressed','false');
+    tourLiveNext.hidden=true;
+    tourLiveRetry.hidden=true;
+    if(wasFollowing){following=false;refreshGPSFollowControl();}
+  }
+  function updateTourNavigation(point,gpsAccuracy){
+    if(!tourNavigation||tourNavigation.paused||!tourRoute)return;
+    const state=tourNavigation;
+    const place=tourRoute.stops[state.stage];
+    if(!place)return;
+    let progress;
+    try{progress=W.tourLegProgress(state.nav,tourRoute.legs,
+      state.stage,place,point,gpsAccuracy);}
+    catch{tourLiveMessage.textContent='GPS-Fortschritt derzeit nicht verfügbar.';return;}
+    state.nearReadings=progress.status==='near-goal'?state.nearReadings+1:0;
+    state.offReadings=progress.status==='off-route'?state.offReadings+1:0;
+    if(state.nearReadings>=2)state.arrived=true;
+    const offRoute=state.offReadings>=2;
+    tourLiveStep.textContent='Stopp '+(state.stage+1)+' von '+tourRoute.stops.length+
+      ' · '+place.name;
+    tourLiveProgress.textContent=state.arrived?'✓ Ziel erreicht':
+      progress.status==='poor-gps'?'📍 GPS ungenau':
+      'Noch '+W.distanceText(progress.remainingMeters)+' · '+
+      W.durationText(progress.remainingSeconds);
+    tourLiveMessage.textContent=state.arrived
+      ?'Nach deinem Besuch auf „Nächster Stopp“ tippen.':
+      progress.status==='poor-gps'
+        ?'Auf eine genauere GPS-Messung warten. Manuelles Weitergehen ist möglich.'
+      :offRoute
+        ?'⚠ Vermutlich vom Fußweg abgewichen. Restweg bei Bedarf neu berechnen.'
+      :'GPS-Führung aktiv · keine automatische Neuberechnung.';
+    tourLiveRetry.hidden=!offRoute;
+    tourLiveNext.textContent=state.stage===tourRoute.stops.length-1
+      ?'✓ Tour abschließen':'Nächster Stopp →';
+  }
+  function startTourNavigation(){
+    if(!tourRoute||!W){say('Bitte zuerst einen Rundgang berechnen.');return;}
+    if(watch===null||!position||Date.now()-positionUpdatedAt>60000){
+      tourLiveMessage.textContent='Bitte GPS einschalten und einen aktuellen Standort abwarten.';
+      tourLiveState.hidden=false;return;
+    }
+    try{
+      const nav=W.prepareNavigation(tourRoute);
+      tourNavigation={nav,stage:0,nearReadings:0,offReadings:0,arrived:false,paused:false};
+    }catch(e){say('GPS-Rundgang nicht verfügbar: '+e.message);return;}
+    tourLiveState.hidden=false;
+    tourLiveNext.hidden=false;
+    tourLiveRetry.hidden=true;
+    tourLiveToggle.textContent='Ⅱ Tour pausieren';
+    tourLiveToggle.setAttribute('aria-pressed','true');
+    following=true;refreshGPSFollowControl();
+    centerOnGPS([position.lat,position.lng],Math.max(16,map.getZoom()));
+    updateTourNavigation(position,positionAccuracy);
+  }
+  tourLiveToggle.onclick=()=>{
+    if(!tourNavigation){startTourNavigation();return;}
+    if(tourNavigation.paused){
+      if(watch===null||!position||Date.now()-positionUpdatedAt>60000){
+        tourLiveMessage.textContent='Zum Fortsetzen wird ein aktueller GPS-Standort benötigt.';
+        return;
+      }
+      tourNavigation.paused=false;
+      tourNavigation.nearReadings=0;tourNavigation.offReadings=0;
+      tourLiveToggle.textContent='Ⅱ Tour pausieren';
+      tourLiveToggle.setAttribute('aria-pressed','true');
+      following=true;refreshGPSFollowControl();
+      centerOnGPS([position.lat,position.lng],Math.max(16,map.getZoom()));
+      updateTourNavigation(position,positionAccuracy);
+    }else{
+      tourNavigation.paused=true;
+      tourLiveToggle.textContent='▶ Tour fortsetzen';
+      tourLiveToggle.setAttribute('aria-pressed','false');
+      tourLiveMessage.textContent='Pausiert · die Route bleibt sichtbar.';
+      tourLiveRetry.hidden=true;
+      following=false;refreshGPSFollowControl();
+    }
+  };
+  tourLiveNext.onclick=()=>{
+    if(!tourNavigation||!tourRoute)return;
+    if(tourNavigation.stage>=tourRoute.stops.length-1){
+      stopTourNavigation();
+      tourLiveState.hidden=false;
+      tourLiveStep.textContent='✓ Rundgang abgeschlossen';
+      tourLiveProgress.textContent='Alle Ziele erledigt.';
+      tourLiveMessage.textContent='Die Route bleibt auf der Karte. Du kannst sie erneut starten.';
+      tourLiveToggle.textContent='↺ Tour erneut starten';
+      return;
+    }
+    tourNavigation.stage++;
+    tourNavigation.nearReadings=0;
+    tourNavigation.offReadings=0;
+    tourNavigation.arrived=false;
+    tourNavigation.paused=false;
+    tourLiveToggle.textContent='Ⅱ Tour pausieren';
+    tourLiveToggle.setAttribute('aria-pressed','true');
+    if(position&&Date.now()-positionUpdatedAt<60000)
+      updateTourNavigation(position,positionAccuracy);
+    else{
+      tourLiveStep.textContent='Stopp '+(tourNavigation.stage+1)+' von '+tourRoute.stops.length;
+      tourLiveProgress.textContent='Standort wird ermittelt …';
+    }
+    tourLiveRetry.hidden=true;
+  };
+  tourLiveRetry.onclick=()=>{void calculateTour(false,true);};
   $('tour-route-close').onclick=()=>{
     clearTourRoute();
     tourBuilderStatus.textContent='Rundgang von der Karte entfernt. Deine Zielauswahl bleibt erhalten.';
   };
   $('tour-calculate').onclick=()=>{void calculateTour();};
-  async function calculateTour(optimized=false){
+  async function calculateTour(optimized=false,remaining=false){
     if(tourController)return;
-    const selected=tourSelection();
-    if(selected.length<2){tourBuilderStatus.textContent='Bitte mindestens zwei Orte auswählen.';return;}
+    const selected=remaining&&tourNavigation&&tourRoute
+      ?tourRoute.stops.slice(tourNavigation.stage):tourSelection();
+    if(selected.length<(remaining?1:2)){
+      tourBuilderStatus.textContent='Bitte mindestens zwei Orte auswählen.';return;
+    }
     if(!W){tourBuilderStatus.textContent='Rundgang-Modul nicht geladen. Bitte App aktualisieren.';return;}
     if(watch===null||!position||Date.now()-positionUpdatedAt>60000){
       tourBuilderStatus.textContent='Bitte GPS aktivieren und auf eine aktuelle Positionsmessung warten.';
@@ -488,7 +615,8 @@
     }
     const from={...position},startPlanId=activePlanId;
     let request;
-    try{request=optimized?W.optimizedTourRequestUrl(from,selected):W.tourRequestUrl(from,selected);}
+    try{request=selected.length===1?W.requestUrl(from,selected[0]):
+      optimized?W.optimizedTourRequestUrl(from,selected):W.tourRequestUrl(from,selected);}
     catch(error){tourBuilderStatus.textContent=error.message;return;}
     // Public FOSSGIS fair use: at most one deliberate request per 1.2 seconds
     // across both single-destination navigation and multi-stop tours.
@@ -522,7 +650,10 @@
       const raw=await response.text();
       if(raw.length>2500000)throw new Error('Rundgangantwort ungewöhnlich groß.');
       const data=JSON.parse(raw);
-      const result=optimized?W.parseOptimizedTour(data,from,selected):W.parseTour(data,from,selected);
+      const result=selected.length===1
+        ?(()=>{const single=W.parse(data,from,selected[0]);
+          return {...single,legs:[{distance:single.distance,duration:single.duration}]};})()
+        :optimized?W.parseOptimizedTour(data,from,selected):W.parseTour(data,from,selected);
       if(generation!==tourRequestGeneration||activePlanId!==startPlanId)return;
       const ordered=optimized?result.orderedStops:selected;
       if(optimized){
@@ -560,7 +691,9 @@
         legs.append(node('li',label));
       });
       tourResult.hidden=false;
-      tourBuilderStatus.textContent=optimized
+      tourBuilderStatus.textContent=remaining
+        ?'Restweg ab deiner aktuellen Position berechnet. GPS-Führung bei Bedarf erneut starten.'
+        :optimized
         ?'Reihenfolge anhand echter Fußwege optimiert und gespeichert. Gelbe Ziffern zeigen die neuen Stopps.'
         :'Rundgang auf der Karte eingezeichnet. Gelbe Ziffern zeigen die Stopps.';
       following=false;refreshGPSFollowControl();
@@ -1182,6 +1315,7 @@
   function stopGPS(message = 'GPS ausgeschaltet. Standort wurde entfernt.') {
     if (watch !== null) navigator.geolocation.clearWatch(watch);
     clearWalkingRoute();
+    stopTourNavigation();
     watch = null; position = null; positionUpdatedAt=0; positionAccuracy=null;
     following = false; stopCompass(); refreshGPSFollowControl();
     if (userDot) { map.removeLayer(userDot); userDot = null; }
@@ -1218,6 +1352,7 @@
         positionUpdatedAt=Date.now();
         positionAccuracy=result.coords.accuracy;
         updateWalkingNavigation(position,positionAccuracy);
+        updateTourNavigation(position,positionAccuracy);
         const ll = [position.lat,position.lng];
         if (!userDot) {
           accuracy = L.circle(ll,{radius:result.coords.accuracy,color:'#60a5fa',weight:1,fillOpacity:.08}).addTo(map);

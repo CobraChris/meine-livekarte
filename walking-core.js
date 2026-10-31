@@ -200,6 +200,32 @@
       throw new Error('Die gemeldeten Etappen passen nicht zur Gesamtroute.');
     return {...parsed,legs};
   }
+  // Progress toward the current tour stop uses only the in-memory already
+  // calculated route, its OSRM legs and the current GPS fix. Never fetch here.
+  function tourLegProgress(nav,legs,stage,target,point,accuracy){
+    if(!Array.isArray(legs)||legs.length<1||
+       !Number.isInteger(stage)||stage<0||stage>=legs.length||!valid(target))
+      throw new Error('Die aktuelle Rundgang-Etappe ist ungültig.');
+    const full=navigationProgress(nav,point,accuracy);
+    const leg=legs[stage];
+    if(!Number.isFinite(leg?.distance)||leg.distance<=0||
+       !Number.isFinite(leg?.duration)||leg.duration<0)
+      throw new Error('Ungültige Etappenwerte für die GPS-Navigation.');
+    const prior=legs.slice(0,stage).reduce((n,item)=>n+item.distance,0);
+    const elapsed=Math.min(leg.distance,Math.max(0,
+      nav.routeDistance*full.progressFraction-prior));
+    const remaining=Math.max(0,leg.distance-elapsed);
+    const validAccuracy=Number.isFinite(accuracy)&&accuracy>=0?accuracy:Infinity;
+    const destinationMeters=metres(point,target);
+    const arrived=validAccuracy<=25&&destinationMeters<=22;
+    const status=full.status==='poor-gps'?'poor-gps'
+      :arrived?'near-goal'
+      :full.status==='off-route'?'off-route':'on-route';
+    return {status,remainingMeters:remaining,
+      remainingSeconds:leg.duration*(remaining/leg.distance),
+      progressFraction:elapsed/leg.distance,offRouteMeters:full.offRouteMeters,
+      destinationMeters,accuracy:validAccuracy};
+  }
   // A single OSRM Trip request returns both an optimized open foot tour and
   // its geometry/legs. GPS is only submitted after an explicit user click.
   // The source remains GPS; the last selected destination is not fixed.
@@ -252,7 +278,7 @@
     }
     return ordered;
   }
-  const api={requestUrl,parse,metres,distanceText,durationText,prepareNavigation,navigationProgress,tourRequestUrl,parseTour,nearestTourOrder,optimizedTourRequestUrl,parseOptimizedTour};
+  const api={requestUrl,parse,metres,distanceText,durationText,prepareNavigation,navigationProgress,tourRequestUrl,parseTour,nearestTourOrder,optimizedTourRequestUrl,parseOptimizedTour,tourLegProgress};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LivekarteWalkingCore=api;
 })(globalThis);

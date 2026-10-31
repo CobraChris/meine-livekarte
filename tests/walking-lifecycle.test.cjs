@@ -78,7 +78,7 @@ test('full route panel and minimized route chip remain separately accessible',()
 
 test('other route lifecycle safeguards and privacy remain intact',()=>{
  const app=read('app.js'),sw=read('sw.js'),core=read('walking-core.js');
- assert.match(app,/clearWalkingRoute\(\);\s*watch = null; position = null/);
+ assert.match(app,/clearWalkingRoute\(\);\s*stopTourNavigation\(\);\s*watch = null; position = null/);
  assert.match(app,/if\(activePlanId!==id && walkDestination\)clearWalkingRoute\(\)/);
  assert.match(app,/if\(generation!==walkRequestGeneration \|\| watch===null\)return/);
  assert.match(app,/walkingLayers\.clearLayers\(\)/);

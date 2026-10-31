@@ -168,7 +168,7 @@ test('multistop builder is optional, compact and has reorder/removal/accessibili
 
 test('tour sends GPS only on explicit calculation and does not save routes or location history',()=>{
  const app=read('app.js');
- const start=app.indexOf('  async function calculateTour(optimized=false){');
+ const start=app.indexOf('  async function calculateTour(optimized=false,remaining=false){');
  const end=app.indexOf('  function placeMeta(p)',start);
  assert.ok(start>=0 && end>start);
  const block=app.slice(start,end);
@@ -198,7 +198,7 @@ test('tour keeps normal routes and railway views safe; updated PWA shell is offl
  assert.match(app,/if\(activePlanId!==id && walkDestination\)clearWalkingRoute\(\)/);
  assert.match(app,/clearTourRoute\(\);\s*tourDrafts=Object\.create\(null\)/);
  assert.match(app,/clearWalkingRoute\(\);\s*clearTourRoute\(\);/);
- assert.match(sw,/livekarte-shell-pwa-v7/);
+ assert.match(sw,/livekarte-shell-pwa-v8/);
  assert.doesNotMatch(sw,/routed-foot|routing\.openstreetmap\.de/);
  assert.match(html,/src="walking-core\.js"/);
  assert.match(html,/id="walk-route-nav"/);

@@ -3,7 +3,7 @@
  * private repositories or authenticated requests are ever cached here.
  */
 'use strict';
-const CACHE_NAME='livekarte-shell-pwa-v7';
+const CACHE_NAME='livekarte-shell-pwa-v8';
 const SHELL_FILES=[
   'index.html','style.css','core.js','walking-core.js','app.js','sync.js',
   'outbox-core.js','sync-out.js','build-version.js','pwa.js','manifest.json',
