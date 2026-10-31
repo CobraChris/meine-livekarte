@@ -133,7 +133,8 @@
   // Small, non-sensitive trip presets allow short browser-friendly URLs.
   // Station-to-station waypoints are illustrative, not rail-grade geometry.
   const journeyPresets = {
-    // Published timetable, departure/arrival times are planned, NOT booked tickets.
+    // Timetable plus user-confirmed booking details for the 01.11.2026 itinerary.
+    // No booking codes, QR codes or ticket images are stored here.
     // Rail map geometry between these stations is schematic (not track geometry).
     'takayama-kyoto-2026-11-01': {
       title:'Takayama → Kyoto · Hida 8 / Nozomi 71',
