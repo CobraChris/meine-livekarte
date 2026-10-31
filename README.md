@@ -17,6 +17,14 @@ Die installierte PWA bleibt bei schon laufendem JavaScript normalerweise auf ihr
 
 **Bereits vor dieser Verbesserung geöffnete PWA:** Einmal aus der Android-Übersicht der zuletzt verwendeten Apps vollständig schließen und über das App-Symbol erneut öffnen; bisherige Browserdaten **nicht** löschen und die App **nicht** entkoppeln. Die neue Aktualisierungsaufforderung kann erst wirken, sobald die neue App-Version einmal geladen ist.
 
+## Intelligenter Tagesplan (31.10.2026)
+
+Nach einer Rundgangberechnung den Bereich **„🗓 Intelligenter Tagesplan“** öffnen. Der Plan nutzt **nur die bereits vom FOSSGIS-Fußwegdienst berechneten Etappen** und benötigt keine zusätzlichen Netzwerkaufrufe. Standard-Startzeit ist **10:30 Uhr**, anpassbar. Besuchsdauern werden aus vorhandenen Ortsangaben (z. B. „45–90 Min.“ als nachvollziehbarer Mittelwert) geschätzt und können einzeln geändert werden. Sind keine Dauern hinterlegt, wird **45 Min. ausdrücklich als Vorschlag** angezeigt. Zusätzliche Puffer sowie eine optionale Mittagspause zwischen 11:30 und 14:30 nach einem Stopp können eingestellt werden.
+
+**Öffnungszeiten werden niemals erfunden oder aus unstrukturierten Notizen als verifiziert angenommen.** Pro ausgewähltem Ort gibt es freiwillige Felder „Öffnet“ und „Schließt“, die der Nutzer für den konkreten Besuchstag selbst überprüft und einträgt. Der Rechner berücksichtigt frühes Eintreffen durch Wartezeit und warnt vor verspäteter Ankunft oder Besuchsende nach Schließung. Ohne Angaben steht explizit „Öffnungszeiten nicht hinterlegt“. Freie Hinweise (z. B. spätere Beleuchtung) erscheinen im Ablauf, werden aber nicht in automatische Restriktionen umgedeutet.
+
+Der Plan zeigt **Ankunft, tatsächliche Besuchszeit, Wege, Wartezeiten, Puffer, Mittagspause und voraussichtliches Tagesende**. Einstellungen, selbst eingetragene Dauern und Tagesöffnungsfenster werden pro Reiseabschnitt und Ziel **nur lokal** im Browser gespeichert. GPS-Koordinaten, Routengeometrie und Aufenthaltsverlauf werden nicht gespeichert. Bei einer geänderten Reihenfolge oder neu berechneter Route wird der Zeitplan passend neu erstellt; ohne Route zeigt die App ausdrücklich an, dass keine verlässlichen Fußwegzeiten verfügbar sind. Die Tageszeiten sind Schätzungen, keine Echtzeitnavigation oder automatische Prüfung aktueller Öffnungszeiten.
+
 ## Live-Rundgang mit GPS-Etappen (31.10.2026)
 
 Nach dem Berechnen einer Mehrziel-Fußroute auf der Karte **„▶ Tour starten“** drücken. Der kompakte Karten-HUD zeigt dann **Stopp X von Y**, den Namen des nächsten Ziels sowie geschätzte Restentfernung/-gehzeit. Die GPS-Position wird gegen die bereits einmalig abgerufene Route abgeglichen – **ohne Netzwerkabruf bei GPS-Updates**. Die Kartenansicht folgt der Position, bis man sie manuell verschiebt; über den GPS-Zentrierknopf lässt sich das Folgen fortsetzen.

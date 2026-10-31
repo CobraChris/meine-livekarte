@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --check core.js && node --check walking-core.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --check pwa.js && node --check sw.js && node --test tests/*.test.cjs
+      - run: node --check core.js && node --check walking-core.js && node --check day-plan-core.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --check pwa.js && node --check sw.js && node --test tests/*.test.cjs
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: test
@@ -33,7 +33,7 @@ jobs:
       - name: Prepare public files only
         run: |
           mkdir public
-          cp index.html style.css core.js walking-core.js app.js sync.js outbox-core.js sync-out.js pwa.js sw.js manifest.json public/
+          cp index.html style.css core.js walking-core.js day-plan-core.js app.js sync.js outbox-core.js sync-out.js pwa.js sw.js manifest.json public/
           cp -r vendor public/
           cp -r sync public/
           mkdir -p public/icons

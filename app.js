@@ -108,6 +108,8 @@
   const walkingLayers=L.layerGroup().addTo(map);
   const tourLayers=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
+  const D=window.LivekarteDayPlan;
+  let dayPlans=Object.create(null);
   let tourDrafts=Object.create(null),tourRoute=null,tourController=null,tourRequestGeneration=0;
   let tourNavigation=null; // In-memory only; never persist GPS, current step or route.
 
@@ -399,6 +401,7 @@
     tourLayers.clearLayers();
     tourHud.hidden=true;
     tourResult.hidden=true;
+    renderDayPlanSummary();
     $('tour-calculate').disabled=tourSelection().length<2;
     $('tour-optimize').disabled=tourSelection().length<2;
   }
@@ -469,7 +472,178 @@
     $('tour-optimize').disabled=selected.length<2||!!tourController;
     if(!selected.length && !tourRoute)
       tourBuilderStatus.textContent='Wähle zunächst zwei bis sechs Orte über „＋ Tour“.';
+    renderDayPlanControls();
   }
+  // Day schedule reuses only the already calculated OSRM route legs.
+  // Store solely explicitly chosen settings, never GPS or route geometry.
+  const dayPlanState=$('day-plan-state');
+  const dayPlanAlert=$('day-plan-alert');
+  const dayPlanOutput=$('day-plan-output');
+  const dayPlanTimeline=$('day-plan-timeline');
+  const dayStopSettings=$('day-stop-settings');
+  function dayPlanPrefs(){
+    if(!dayPlans[activePlanId]){
+      dayPlans[activePlanId]={
+        start:'10:30',buffer:10,lunch:45,stops:Object.create(null)
+      };
+    }
+    return dayPlans[activePlanId];
+  }
+  function persistDayPlans(){
+    try{localStorage.setItem('livekarte-day-plans-v1',JSON.stringify(dayPlans));}
+    catch{dayPlanAlert.textContent='Tagesplan-Einstellungen konnten nicht gespeichert werden.';}
+  }
+  function dayPlanStops(){
+    return tourRoute?.planId===activePlanId?tourRoute.stops:tourSelection();
+  }
+  function dayStopPrefs(place){
+    const pref=dayPlanPrefs(),key=C.placePlanKey(place);
+    if(!pref.stops[key])pref.stops[key]=Object.create(null);
+    return pref.stops[key];
+  }
+  function dayVisitMinutes(place){
+    const custom=dayStopPrefs(place).minutes;
+    return Number.isInteger(custom)&&custom>=5&&custom<=480
+      ?custom:(D?.visitMinutes(place.duration)??45);
+  }
+  function renderDayPlanSummary(){
+    if(!D)return;
+    const pref=dayPlanPrefs();
+    const matching=tourRoute?.planId===activePlanId&&tourRoute.legs?.length===tourRoute.stops.length;
+    if(!matching){
+      dayPlanOutput.hidden=true;
+      dayPlanState.textContent='Route fehlt';
+      dayPlanAlert.textContent='Bitte zuerst den Rundgang berechnen oder optimieren. Ohne echte Gehzeiten ist kein belastbarer Tagesplan möglich.';
+      return;
+    }
+    const stops=tourRoute.stops;
+    try{
+      const schedule=D.build({
+        start:pref.start,stops,legs:tourRoute.legs,
+        visits:stops.map(p=>dayVisitMinutes(p)),
+        windows:stops.map(p=>{
+          const opts=dayStopPrefs(p);
+          return {open:opts.open||'',close:opts.close||''};
+        }),
+        buffer:pref.buffer,lunch:pref.lunch
+      });
+      dayPlanOutput.hidden=false;
+      const end=D.clockText(schedule.end);
+      dayPlanState.textContent=D.clockText(schedule.start)+'–'+end;
+      $('day-plan-summary').textContent='🗓 '+D.clockText(schedule.start)+' bis '+end+
+        ' · '+schedule.walkingMinutes+' Min. Gehzeit · '+
+        schedule.visitingMinutes+' Min. Besichtigung';
+      dayPlanTimeline.replaceChildren();
+      schedule.items.forEach(item=>{
+        const li=node('li',undefined,'day-timeline-item');
+        const heading=node('strong','Stopp '+item.index+' · '+item.name);
+        const walking=node('p',D.clockText(item.depart)+'–'+D.clockText(item.arrival)+
+          ' 🚶 Fußweg '+W.distanceText(item.legMeters)+' · '+item.legMinutes+' Min.');
+        const visit=node('p',D.clockText(item.visitStart)+'–'+D.clockText(item.visitEnd)+
+          ' 🏛 Besichtigung '+item.visitMinutes+' Min.');
+        li.append(heading,walking);
+        if(item.wait)li.append(node('p','⏳ '+item.wait+' Min. bis zur eingetragenen Öffnungszeit warten','day-wait'));
+        li.append(visit);
+        if(item.hoursKnown){
+          li.append(node('small','Öffnungsfenster (deine Eingabe): '+
+            D.clockText(item.opening)+'–'+D.clockText(item.closing)));
+        }else li.append(node('small','Öffnungszeiten nicht hinterlegt – vor Ort prüfen.'));
+        if(item.windowWarning)li.append(node('p','⚠ '+item.windowWarning,'day-warning'));
+        if(item.schedule)li.append(node('small','🗓 Hinweis: '+item.schedule));
+        if(item.note)li.append(node('small','💡 '+item.note));
+        if(item.lunchAfter)li.append(node('p','🍽 '+item.lunchAfter+' Min. Mittagspause nach diesem Stopp'));
+        if(item.bufferAfter)li.append(node('p','＋ '+item.bufferAfter+' Min. Zeitpuffer nach diesem Stopp'));
+        dayPlanTimeline.append(li);
+      });
+      const warnings=$('day-plan-warnings');
+      warnings.replaceChildren();
+      if(schedule.unknownHours){
+        warnings.append(node('p','⚠ Für '+schedule.unknownHours+
+          ' von '+stops.length+' Zielen sind keine Öffnungszeiten eingetragen.','day-warning'));
+      }
+      if(pref.lunch>0&&!schedule.lunchScheduled){
+        warnings.append(node('p','Hinweis: Die Mittagspause passt nicht nach einem Stopp ins Zeitfenster 11:30–14:30.','day-warning'));
+      }
+      for(const message of schedule.warnings)warnings.append(node('p','⚠ '+message,'day-warning'));
+      dayPlanAlert.textContent='Zeitplan mit echten Fußwegetappen erstellt · alle Zeiten sind Schätzwerte.';
+    }catch(e){
+      dayPlanOutput.hidden=true;
+      dayPlanState.textContent='Angaben prüfen';
+      dayPlanAlert.textContent=e.message||'Tagesplan konnte nicht berechnet werden.';
+    }
+  }
+  function renderDayPlanControls(){
+    if(!D)return;
+    const pref=dayPlanPrefs();
+    $('day-start').value=pref.start;
+    $('day-buffer').value=String(pref.buffer);
+    $('day-lunch').value=String(pref.lunch);
+    dayStopSettings.replaceChildren();
+    const stops=dayPlanStops();
+    stops.forEach((place,i)=>{
+      const settings=dayStopPrefs(place);
+      const row=node('div',undefined,'day-stop-row');
+      const title=node('strong',(i+1)+'. '+place.name);
+      const fields=node('div',undefined,'day-stop-fields');
+      const createField=(caption,type,value,onchange)=>{
+        const label=node('label',caption);
+        const input=node('input');
+        input.type=type;
+        input.value=value;
+        if(type==='number'){
+          input.min='5';input.max='480';input.step='5';
+          input.inputMode='numeric';
+        }
+        input.onchange=()=>onchange(input);
+        label.append(input);
+        fields.append(label);
+      };
+      const known=D.visitMinutes(place.duration);
+      createField('Besuch (Min.)','number',String(dayVisitMinutes(place)),input=>{
+        const value=Number(input.value);
+        if(!Number.isInteger(value)||value<5||value>480){
+          dayPlanAlert.textContent='Besuchsdauer bitte zwischen 5 und 480 Minuten eingeben.';
+          return;
+        }
+        settings.minutes=value;
+        persistDayPlans();
+        renderDayPlanSummary();
+      });
+      createField('Öffnet','time',settings.open||'',input=>{
+        settings.open=input.value;
+        persistDayPlans();
+        renderDayPlanSummary();
+      });
+      createField('Schließt','time',settings.close||'',input=>{
+        settings.close=input.value;
+        persistDayPlans();
+        renderDayPlanSummary();
+      });
+      row.append(title);
+      row.append(node('small',known===null
+        ?'45 Min. als Schätzung vorbelegt – bitte anpassen.'
+        :'Übernommen aus Besuchsdauer: '+place.duration+'. Mittelwert bei Zeitspanne.'));
+      row.append(fields);
+      dayStopSettings.append(row);
+    });
+    renderDayPlanSummary();
+  }
+  $('day-start').onchange=()=>{
+    const time=$('day-start').value;
+    try{D.minuteOf(time);}catch(e){dayPlanAlert.textContent=e.message;return;}
+    dayPlanPrefs().start=time;
+    persistDayPlans();
+    renderDayPlanSummary();
+  };
+  $('day-buffer').onchange=()=>{
+    dayPlanPrefs().buffer=Number($('day-buffer').value);
+    persistDayPlans();renderDayPlanSummary();
+  };
+  $('day-lunch').onchange=()=>{
+    dayPlanPrefs().lunch=Number($('day-lunch').value);
+    persistDayPlans();renderDayPlanSummary();
+  };
+  $('day-plan-refresh').onclick=()=>renderDayPlanSummary();
   $('tour-clear').onclick=()=>{
     setTourSelection([]);
     tourBuilderStatus.textContent='Auswahl geleert. Deine gespeicherten Orte bleiben erhalten.';
@@ -691,6 +865,7 @@
         legs.append(node('li',label));
       });
       tourResult.hidden=false;
+      renderDayPlanControls();
       tourBuilderStatus.textContent=remaining
         ?'Restweg ab deiner aktuellen Position berechnet. GPS-Führung bei Bedarf erneut starten.'
         :optimized
@@ -1428,7 +1603,9 @@
     clearWalkingRoute();
     clearTourRoute();
     tourDrafts=Object.create(null);
+    dayPlans=Object.create(null);
     persistTourDrafts();
+    persistDayPlans();
     persist();persistPlanState();render();say('Empfehlungen entfernt. Reiseabschnitte bleiben erhalten.');
   };
   $('demo').onclick = () => {
@@ -1544,6 +1721,37 @@
       }
     }
   }catch{say('Ticketstatus konnte nicht geladen werden.');}
+  // Restore only explicit local timing preferences, never GPS or route data.
+  try{
+    const raw=JSON.parse(localStorage.getItem('livekarte-day-plans-v1')||'{}');
+    if(raw&&typeof raw==='object'&&!Array.isArray(raw)){
+      for(const [planId,value] of Object.entries(raw).slice(0,36)){
+        if(!allPlans().some(plan=>plan.id===planId)||
+           !value||typeof value!=='object'||Array.isArray(value))continue;
+        const settings={
+          start:'10:30',buffer:10,lunch:45,stops:Object.create(null)
+        };
+        try{D.minuteOf(value.start);settings.start=value.start;}catch{}
+        if([0,5,10,15,20,30].includes(value.buffer))settings.buffer=value.buffer;
+        if([0,30,45,60].includes(value.lunch))settings.lunch=value.lunch;
+        if(value.stops&&typeof value.stops==='object'&&!Array.isArray(value.stops)){
+          for(const [key,entry] of Object.entries(value.stops).slice(0,120)){
+            if(key.length>300||!entry||typeof entry!=='object'||Array.isArray(entry))continue;
+            const clean=Object.create(null);
+            if(Number.isInteger(entry.minutes)&&entry.minutes>=5&&entry.minutes<=480)
+              clean.minutes=entry.minutes;
+            for(const field of ['open','close']){
+              if(typeof entry[field]==='string'&&entry[field].length<=5){
+                try{D.minuteOf(entry[field]);clean[field]=entry[field];}catch{}
+              }
+            }
+            settings.stops[key]=clean;
+          }
+        }
+        dayPlans[planId]=settings;
+      }
+    }
+  }catch{say('Tagesplan-Einstellungen konnten nicht gelesen werden.');}
   const queryView=new URLSearchParams(location.search).get('view');
   const savedView=(()=>{try{return localStorage.getItem('livekarte-active-plan-v1')}catch{return null}})();
   const requestedView=queryView||savedView||
