@@ -128,6 +128,7 @@
     <button id="kyoto-pickup-confirm" type="button">✓ Beide Teilstrecken: Tickets abgeholt</button>
     <p id="kyoto-pickup-feedback" role="status" aria-live="polite">Noch offen: Abholung der Papier-Tickets.</p>
   </div>
+  <button id="kyoto-pickup-help" class="kyoto-pickup-help" type="button" hidden>🇯🇵 Hilfe am JR-Schalter zeigen</button>
   <details class="kyoto-pickup-more" id="kyoto-pickup-steps-details">
     <summary>4 Schritte zur Ticketabholung ansehen</summary>
     <ol class="kyoto-pickup-steps">
@@ -280,6 +281,24 @@
 <footer><span>◉ Dein Standort bleibt auf deinem Gerät.</span><button id="privacy" class="text-button">Datenschutz & Hilfe</button></footer>
 </aside>
 </main>
+
+<dialog id="ticket-help-dialog" class="ticket-help-dialog" aria-labelledby="ticket-help-title">
+  <div class="ticket-help-heading">
+    <h2 id="ticket-help-title">🇯🇵 JR-Ticketabholung · Personal zeigen</h2>
+    <button id="ticket-help-close" type="button" aria-label="Japanische JR-Hilfe schließen">×</button>
+  </div>
+  <p class="ticket-help-intro">Wenn der Klook-QR-Code nicht funktioniert: Diese Nachricht dem JR-Personal zeigen und den eigenen Klook-Voucher mit dem echten QR-Code separat öffnen.</p>
+  <div class="ticket-help-jp" lang="ja">
+    <p class="ticket-help-request">すみません。Klookで11月1日の列車の切符を2人分予約しました。</p>
+    <p>予約のQRコードとバウチャーがあります。紙の切符の受け取り方法を教えていただけますか？</p>
+    <p>① 特急ひだ8号：高山駅 11:35発 → 名古屋駅 14:04着（2号車・10C／10D）</p>
+    <p>② のぞみ71号：名古屋駅 14:26発 → 京都駅 15:00着（4号車・8D／8E）</p>
+    <p>2人分、両方の列車の切符を受け取りたいです。どの券売機または窓口で手続きできますか？</p>
+  </div>
+  <p class="ticket-help-note">Reiseangaben laut deiner hinterlegten Klook-Buchung, keine Prüfung durch JR oder Klook. Die konkrete Abholart steht im Voucher; ein beliebiger QR-Automat kann ungeeignet sein.</p>
+  <button id="ticket-help-copy" class="ticket-help-copy" type="button">⧉ Japanischen Text kopieren</button>
+  <p id="ticket-help-feedback" class="ticket-help-feedback" role="status" aria-live="polite"></p>
+</dialog>
 <dialog id="japanese-driver-dialog" class="japanese-driver-dialog" aria-labelledby="japanese-driver-title">
   <div class="japanese-driver-heading">
     <span>🇯🇵 TAXI · ZIEL ZEIGEN</span>
