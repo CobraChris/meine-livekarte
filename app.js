@@ -407,7 +407,7 @@
     const available=!!(tourRoute&&tourRoute.planId===activePlanId&&R);
     discoverySearch.disabled=!available||!!discoveryController;
     if(!R)discoveryStatus.textContent='Entdeckungsmodul nicht geladen. Bitte App aktualisieren.';
-    else if(available&&discoveries.length===0)
+    else if(available&&discoveryStatus.textContent.startsWith('Bitte zuerst'))
       discoveryStatus.textContent='Rundgang bereit · starte die Suche für neue Sehenswürdigkeiten.';
     else if(!available)
       discoveryStatus.textContent='Bitte zuerst eine Fußroute berechnen oder optimieren.';
