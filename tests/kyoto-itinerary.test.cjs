@@ -12,7 +12,7 @@ test('the latest plan sets Takayama → Kyoto on 01 Nov and city to 07 Nov',()=>
  assert.match(plans.find(p=>p.id==='town-takayama').name,/30\.10\.–01\.11/);
  assert.doesNotMatch(plans.find(p=>p.id==='ride-kyoto').name,/02\.11/);
 });
-test('Kyoto rail itinerary is schematic and explicitly leaves ticket readiness unknown',()=>{
+test('Kyoto rail itinerary keeps schematic geometry and includes user-confirmed booking details',()=>{
  const trip=C.presetJourney('takayama-kyoto-2026-11-01');
  assert.equal(trip.title,'Takayama → Kyoto · Hida 8 / Nozomi 71');
  assert.equal(trip.date,'01.11.2026');
@@ -24,10 +24,17 @@ test('Kyoto rail itinerary is schematic and explicitly leaves ticket readiness u
  assert.match(trip.stops[0].leg,/Hida 8/);
  assert.match(trip.stops[1].leg,/Nozomi 71/);
  assert.match(trip.stops[1].description,/22 Min/);
+ assert.match(trip.stops[0].description,/Klook-Buchung bestätigt/);
+ assert.match(trip.stops[0].description,/Wagen 2, Sitze 10C\/10D/);
+ assert.match(trip.stops[1].description,/Gleis 4/);
+ assert.match(trip.stops[1].description,/Gleis 17/);
+ assert.match(trip.stops[1].description,/Wagen 4, Sitze 8D\/8E/);
+ assert.match(trip.stops[2].description,/Gleis 13/);
  assert.match(trip.stops[2].description,/Karasuma Oike/);
- assert.match(trip.stops[2].description,/Schätzung/);
  assert.match(app,/activePlanId === 'ride-kyoto' \? C\.presetJourney\('takayama-kyoto-2026-11-01'\)/);
  assert.doesNotMatch(app.slice(app.indexOf('  function activeJourney()'),app.indexOf('  let heading')),/ready|confirmed/);
+ assert.match(app,/livekarte-ticket-confirmation-kyoto-2026-11-01-v1/);
+ assert.match(app,/status:'booked',source:'chat-link'/);
 });
 test('Kyoto city presets provide actual mapped places for the arrival and following day',()=>{
  const places=C.presetPlaces('town-kyoto');
@@ -60,8 +67,9 @@ test('Kyoto stops are seeded for existing users without modifying their current 
 test('both rail trip and city view show the dated program, without invented reservations',()=>{
  for(const marker of [
   'id="kyoto-overview"','01.11. · Anreise','02.11. · Higashiyama',
-  '11:35–14:04','14:26–15:00','15:30–16:15',
-  'Kiyomizu-dera','Sannenzaka','Fushimi Inari','Ticketbestätigung'])
+  '11:35–14:04','14:26–15:00','ca. 15:15–15:35',
+  'Papier-Tickets abholen','Gleis 4 → Gleis 17',
+  'Kiyomizu-dera','Sannenzaka','Fushimi Inari','Zugtickets für 01.11. bestätigt'])
    assert.ok(html.includes(marker),'missing '+marker);
  assert.match(app,/kyotoOverview\.hidden=!\['ride-kyoto','town-kyoto'\]\.includes\(activePlanId\)/);
  assert.match(app,/renderPlanPicker\(\);renderJourney\(\);renderKyotoOverview\(\);render\(\)/);
