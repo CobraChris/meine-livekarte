@@ -115,6 +115,7 @@
   let dayPlans=Object.create(null);
   let tourDrafts=Object.create(null),tourRoute=null,tourController=null,tourRequestGeneration=0;
   let tourNavigation=null; // In-memory only; never persist GPS, current step or route.
+  let mapTourPickMode=false; // UI only. Tap selected POI markers to toggle tour membership.
 
   let lastTourRequestedAt=0;
   let walkDestination=null,walkController=null,walkRequestGeneration=0;
@@ -564,6 +565,47 @@
       }
     }
   };
+  const mapTourModeButton=$('tour-map-mode');
+  const mapTourCounter=$('tour-map-counter');
+  const mapTourDone=$('tour-map-done');
+  const planMapPickButton=$('tour-pick-on-map');
+  function updateMapTourControls(){
+    const number=tourSelection().length;
+    mapTourModeButton.setAttribute('aria-pressed',String(mapTourPickMode));
+    mapTourModeButton.textContent=mapTourPickMode?'✓ Tour auswählen':'＋ Tour auf Karte';
+    mapTourModeButton.title=mapTourPickMode
+      ?'Auswahlmodus beenden – markierte Kartenpins zur Tour hinzufügen oder entfernen'
+      :'Markierungen direkt antippen und sofort zur Tour hinzufügen';
+    mapTourCounter.hidden=!mapTourPickMode;
+    mapTourDone.hidden=!mapTourPickMode;
+    mapTourCounter.textContent=number+'/6 Ziele · '+
+      (number===6?'Maximum erreicht':'Kartenpins antippen');
+    mapTourDone.textContent='Fertig'+(number?' · '+number:'');
+    planMapPickButton.textContent=mapTourPickMode?'✓ Kartenauswahl aktiv':'📍 Orte direkt auf Karte auswählen';
+    planMapPickButton.setAttribute('aria-pressed',String(mapTourPickMode));
+  }
+  function setMapTourPickMode(enabled,focusMap=false){
+    mapTourPickMode=!!enabled;
+    if(mapTourPickMode&&filter!=='all'){
+      filter='all';
+      document.querySelectorAll('[data-filter]').forEach(button=>
+        button.setAttribute('aria-pressed',String(button.dataset.filter==='all')));
+    }
+    map.closePopup();
+    render(); // Marker click handlers and visible number badges follow mode.
+    if(focusMap)$('map').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  mapTourModeButton.onclick=()=>setMapTourPickMode(!mapTourPickMode);
+  planMapPickButton.onclick=()=>setMapTourPickMode(true,true);
+  mapTourDone.onclick=()=>{
+    setMapTourPickMode(false);
+    tourBuilder.open=true;
+    const number=tourSelection().length;
+    tourBuilderStatus.textContent=number>=2
+      ?number+' Ziele gewählt. Jetzt Route optimieren oder Rundgang berechnen.'
+      :'Bitte mindestens zwei Ziele auf der Karte auswählen.';
+    tourBuilder.scrollIntoView({behavior:'smooth',block:'start'});
+  };
   function tourSelection(){
     const keys=Array.isArray(tourDrafts[activePlanId])?tourDrafts[activePlanId]:[];
     const byKey=new Map(currentPlaces().map(p=>[C.placePlanKey(p),p]));
@@ -596,7 +638,7 @@
     persistTourDrafts();
     render(); // Keep per-place selected states and numbered tour list synchronized.
   }
-  function toggleTourPlace(place){
+  function toggleTourPlace(place,fromMap=false){
     const selected=tourSelection(),key=C.placePlanKey(place);
     const at=selected.findIndex(p=>C.placePlanKey(p)===key);
     if(at<0 && selected.length>=6){
@@ -609,7 +651,7 @@
     setTourSelection(selected);
     tourBuilder.open=true;
     tourBuilderStatus.textContent=at>=0?'Ziel aus Rundgang entfernt.':'Ziel hinzugefügt. Reihenfolge unten anpassen.';
-    if(at<0 && selected.length===1)
+    if(!fromMap&&at<0&&selected.length===1)
       tourBuilder.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
   function renderTourBuilder(){
@@ -658,6 +700,7 @@
     if(!selected.length && !tourRoute)
       tourBuilderStatus.textContent='Wähle zunächst zwei bis sechs Orte über „＋ Tour“.';
     renderDayPlanControls();
+    updateMapTourControls();
   }
   // Day schedule reuses only the already calculated OSRM route legs.
   // Store solely explicitly chosen settings, never GPS or route geometry.
@@ -1123,14 +1166,38 @@
       const popup = node('div');
       popup.append(node('strong',p.name));
       const quickActions=node('div',undefined,'popup-quick-actions');
-      quickActions.append(walkingButton(p),route(p));
+      const popupTourButton=node('button',tourIsSelected(p)?'✓ In Tour':'＋ Tour','tour-pick');
+      popupTourButton.type='button';
+      popupTourButton.title='Ort direkt zum Rundgang hinzufügen oder entfernen';
+      popupTourButton.setAttribute('aria-pressed',String(tourIsSelected(p)));
+      popupTourButton.onclick=()=>toggleTourPlace(p);
+      quickActions.append(popupTourButton,walkingButton(p),route(p));
       popup.append(quickActions);
       const metaText = placeMeta(p);
       if (metaText) popup.append(node('p',metaText,'place-meta'));
       appendPlaceTiming(popup,p);
       popup.append(node('p',p.description),inPopup);
-      const marker = L.marker([p.lat,p.lng], { title:p.name, icon:L.divIcon({className:'pin',html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`,iconSize:[36,36],iconAnchor:[18,36]}) }).bindPopup(popup,{maxWidth:320,maxHeight:250,autoPan:true}).addTo(pins);
-      marker.on('popupopen', () => { following = false; });
+      const chosenIndex=tourSelection().findIndex(item=>
+        C.placePlanKey(item)===C.placePlanKey(p));
+      const badge=chosenIndex<0?'':'<b class="pin-tour-index" aria-hidden="true">'+
+        (chosenIndex+1)+'</b>';
+      const marker = L.marker([p.lat,p.lng], {
+        title:p.name+(mapTourPickMode
+          ?(chosenIndex<0?' zur Tour hinzufügen':' aus Tour entfernen'):''),
+        icon:L.divIcon({
+          className:'pin'+(chosenIndex>=0?' pin-tour-selected':'')+
+            (mapTourPickMode?' pin-tour-picking':''),
+          html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`+badge,
+          iconSize:[36,36],iconAnchor:[18,36]
+        })
+      }).addTo(pins);
+      if(mapTourPickMode){
+        // While picking, one marker tap selects immediately instead of opening a popup.
+        marker.on('click',()=>{following=false;toggleTourPlace(p,true);});
+      }else{
+        marker.bindPopup(popup,{maxWidth:320,maxHeight:250,autoPan:true});
+        marker.on('popupopen', () => { following = false; });
+      }
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
       title.append(node('div',C.categories[p.category], 'category'),node('h3',p.name)); top.append(node('span',symbols[p.category],'place-icon'), title);
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
@@ -1565,6 +1632,7 @@
     if(!plan)return false;
     if(activePlanId!==id && walkDestination)clearWalkingRoute();
     if(activePlanId!==id)clearTourRoute();
+    if(activePlanId!==id)mapTourPickMode=false;
     activePlanId=id;
     journey=activeJourney();
     pauseGPSFollow();
