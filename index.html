@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -156,6 +156,25 @@
           <div id="day-plan-warnings"></div>
         </section>
         <p class="day-plan-note">Uhrzeiten sind Planwerte, keine Buchungs- oder Öffnungszeitgarantie. Hinweise aus den Ortskarten bleiben sichtbar, werden aber nicht automatisch als Öffnungszeiten interpretiert. Alle Eingaben bleiben nur auf deinem Gerät; GPS-Start und Routenverlauf werden nicht gespeichert.</p>
+      </div>
+    </details>
+    <details id="route-discovery" class="route-discovery">
+      <summary>◇ Entlang der Route entdecken <span id="route-discovery-count">Neue Orte finden</span></summary>
+      <div class="route-discovery-body">
+        <p>Finde Museen, Aussichtspunkte, Denkmäler und andere in OpenStreetMap erfasste Sehenswürdigkeiten nahe deinem Fußweg. Erst nach deinem Klick werden die Grenzen des Routengebiets an Overpass übertragen (einschließlich der Umgebung deines GPS-Startpunkts).</p>
+        <div class="route-discovery-controls">
+          <label for="route-discovery-radius">Entfernung vom Weg
+            <select id="route-discovery-radius">
+              <option value="100">100 m</option>
+              <option value="150" selected>150 m</option>
+              <option value="250">250 m</option>
+            </select>
+          </label>
+          <button id="route-discovery-search" type="button" disabled>◇ Sehenswürdigkeiten suchen</button>
+        </div>
+        <p id="route-discovery-status" role="status" aria-live="polite">Bitte zuerst eine Fußroute berechnen oder optimieren.</p>
+        <div id="route-discovery-results" class="route-discovery-results" aria-label="Entdeckte Sehenswürdigkeiten"></div>
+        <p class="route-discovery-note">OpenStreetMap ist nicht vollständig und prüft keine Öffnungszeiten. Die Entfernung ist der ungefähre seitliche Abstand zum Fußweg, kein berechneter Umweg. Gefundene Orte werden zunächst nur angezeigt. Erst „Speichern“ oder „＋ Tour“ übernimmt einen Ort; anschließend ist die Route neu zu berechnen.</p>
       </div>
     </details>
     <p class="tour-privacy">Ein Routing-Aufruf pro Berechnung oder Optimierung an FOSSGIS, nur nach deinem Klick. Start und ausgewählte Ziele werden dorthin übertragen. Keine automatische Nachberechnung, keine Speicherung von GPS-Verläufen.</p>
