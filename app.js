@@ -7,6 +7,7 @@
   let customPlans = [], planAssignments = Object.create(null), planJourneys = Object.create(null);
   let activePlanId = 'all';
   let ticketStatuses=Object.create(null); // local-only; nothing is stored in the public repository.
+  const tripStageDone=Object.create(null); // separate manually completed rides; never ticket proof.
   const allPlans = () => [...C.planPresets,...customPlans];
   const currentPlan = () => allPlans().find(p=>p.id===activePlanId) || C.planPresets[0];
   const currentPlaces = () => C.placesForPlan(places,planAssignments,activePlanId);
@@ -1691,6 +1692,7 @@
     if (coords.length) map.fitBounds(coords, {padding:[38,38],maxZoom:13});
   }
   const ticketSymbols={unknown:'❗',missing:'⛔',booked:'◔',ready:'✓'};
+  const kyotoRailInfographic=$('kyoto-rail-infographic');
   function ticketStatusFor(planId,trip,index) {
     return ticketStatuses[C.ticketLegKey(planId,trip,index)]?.status || 'unknown';
   }
@@ -1717,7 +1719,9 @@
       if(plan.kind!=='journey')continue;
       const trip=Object.hasOwn(planJourneys,plan.id)?planJourneys[plan.id]
         :plan.id==='ride-takayama'
-          ?C.presetJourney('hakone-takayama-2026-10-30'):null;
+          ?C.presetJourney('hakone-takayama-2026-10-30')
+          :plan.id==='ride-kyoto'
+            ?C.presetJourney('takayama-kyoto-2026-11-01'):null;
       if(!trip)continue;
       for(let i=0;i<trip.stops.length-1;i++){
         const stop=trip.stops[i],next=trip.stops[i+1];
@@ -1743,7 +1747,8 @@
       const plan=allPlans().find(p=>p.id===update.plan && p.kind==='journey');
       if(!plan)return false;
       const trip=Object.hasOwn(planJourneys,update.plan)?planJourneys[update.plan]
-        :update.plan==='ride-takayama'?C.presetJourney('hakone-takayama-2026-10-30'):null;
+        :update.plan==='ride-takayama'?C.presetJourney('hakone-takayama-2026-10-30')
+        :update.plan==='ride-kyoto'?C.presetJourney('takayama-kyoto-2026-11-01'):null;
       if(!trip || trip.date!==update.date)return false;
       const index=trip.stops.findIndex((st,i)=>i<trip.stops.length-1 &&
         st.name===update.from && st.departure===update.departure &&
@@ -1777,7 +1782,8 @@
       const plan=allPlans().find(p=>p.id===update.plan && p.kind==='journey');
       if(!plan)throw new Error('Dieser Reiseabschnitt ist hier nicht vorhanden.');
       const trip=Object.hasOwn(planJourneys,update.plan) ? planJourneys[update.plan]
-        : update.plan==='ride-takayama' ? C.presetJourney('hakone-takayama-2026-10-30') : null;
+        : update.plan==='ride-takayama' ? C.presetJourney('hakone-takayama-2026-10-30')
+        : update.plan==='ride-kyoto' ? C.presetJourney('takayama-kyoto-2026-11-01') : null;
       if(!trip || trip.date!==update.date)throw new Error('Datum bzw. Fahrt stimmt nicht mit dem Reiseplan überein.');
       const index=trip.stops.findIndex((stop,i)=>i<trip.stops.length-1 &&
         stop.name===update.from && stop.departure===update.departure &&
@@ -1809,12 +1815,167 @@
     else renderJourney();
     if(saved)say('Ticketstatus für '+update.from+' → '+update.to+' übernommen.');
   };
+  // Infographic uses a simple travel-progress surface while preserving the
+  // four existing ticket-readiness states and their encrypted-sync semantics.
+  function railLegStage(planId,trip,index){
+    const key=C.ticketLegKey(planId,trip,index);
+    if(tripStageDone[key]===true)return 'done';
+    return ['booked','ready'].includes(ticketStatusFor(planId,trip,index))?'booked':'planned';
+  }
+  function setRailLegStage(planId,trip,index,stage){
+    if(!['planned','booked','done'].includes(stage))return false;
+    const key=C.ticketLegKey(planId,trip,index);
+    if(stage!=='done'){
+      const ticketState=ticketStatusFor(planId,trip,index);
+      const nextTicket=stage==='planned'?'unknown':
+        ticketState==='ready'?'ready':'booked';
+      if(nextTicket!==ticketState&&!saveTicketStatus(planId,trip,index,nextTicket))
+        return false;
+    }
+    const next={...tripStageDone};
+    if(stage==='done')next[key]=true;
+    else delete next[key];
+    try{
+      localStorage.setItem('livekarte-trip-progress-v1',JSON.stringify(next));
+      // Never use the completed-trip indicator as evidence of a booked ticket.
+      if(stage==='done')tripStageDone[key]=true;
+      else delete tripStageDone[key];
+      renderJourney();
+      return true;
+    }catch{
+      say('Reisestatus konnte nicht gespeichert werden. Bitte Browserspeicher prüfen.');
+      return false;
+    }
+  }
+  function renderKyotoRailInfographic(){
+    const visible=activePlanId==='ride-kyoto'&&!!journey;
+    kyotoRailInfographic.hidden=!visible;
+    kyotoRailInfographic.replaceChildren();
+    if(!visible)return;
+    const trip=journey,stops=trip.stops;
+    const title=node('div',undefined,'kyoto-rail-heading');
+    title.append(node('span','🚄 DEINE ZUGREISE · 01.11.2026','kyoto-eyebrow'));
+    title.append(node('h2','Takayama → Kyoto'));
+    title.append(node('p','Fahrplanzeiten, keine automatische Ticketprüfung.','kyoto-rail-subtitle'));
+    kyotoRailInfographic.append(title);
+    if(stops.length<2)return;
+    const last=stops[stops.length-1],first=stops[0];
+    const kpis=node('div',undefined,'kyoto-kpis');
+    const minutes=t=>{
+      if(!t)return null;
+      const [hours,mins]=t.split(':').map(Number);
+      return hours*60+mins;
+    };
+    const departure=minutes(first.departure),arrival=minutes(last.arrival);
+    const total=departure!==null&&arrival!==null?(arrival-departure+1440)%1440:null;
+    const stats=[
+      [total===null?'–':Math.floor(total/60)+' h '+String(total%60).padStart(2,'0')+' m','Gesamtzeit'],
+      [String(Math.max(0,stops.length-2)),'Umstieg'],
+      [last.arrival||'–','Ankunft']
+    ];
+    for(const [value,label] of stats){
+      const stat=node('div',undefined,'kyoto-kpi');
+      stat.append(node('strong',value),node('small',label));
+      kpis.append(stat);
+    }
+    kyotoRailInfographic.append(kpis);
+    const line=node('div',undefined,'kyoto-rail-line');
+    const origin=node('div',undefined,'kyoto-rail-station');
+    origin.append(node('span',first.departure||'–','kyoto-rail-time'));
+    const originBody=node('div',undefined,'kyoto-rail-stop-body');
+    originBody.append(node('strong',first.name),node('small','Abfahrt · Bahnhofsanzeige prüfen'));
+    origin.append(originBody);
+    line.append(origin);
+    for(let i=0;i<stops.length-1;i++){
+      const from=stops[i],to=stops[i+1];
+      const state=railLegStage(activePlanId,trip,i);
+      const ticketState=ticketStatusFor(activePlanId,trip,i);
+      const leg=node('div',undefined,'kyoto-rail-leg kyoto-rail-leg-'+state);
+      const detail=node('div',undefined,'kyoto-rail-leg-header');
+      detail.append(node('span',i===0?'🚆':'🚄','kyoto-train-icon'));
+      const main=node('div',undefined,'kyoto-rail-leg-name');
+      main.append(node('strong',i===0?'Limited Express Hida 8':'Shinkansen Nozomi 71'));
+      main.append(node('small',(from.departure||'–')+'–'+(to.arrival||'–')+' · '+from.name+' → '+to.name));
+      detail.append(main);
+      const status=node('span',state==='done'?'✓ Erledigt':state==='booked'?'◔ Gebucht':'○ Geplant','kyoto-phase-badge');
+      detail.append(status);
+      leg.append(detail);
+      const statusLabel=node('div','Reisephase selbst festlegen','kyoto-phase-caption');
+      const stageButtons=node('div',undefined,'kyoto-stage-buttons');
+      stageButtons.setAttribute('role','group');
+      stageButtons.setAttribute('aria-label','Reisephase '+from.name+' nach '+to.name);
+      const choices=[['planned','Geplant'],['booked','Gebucht'],['done','Erledigt']];
+      for(const [value,label] of choices){
+        const button=node('button',label,'kyoto-stage-button');
+        button.type='button';
+        button.setAttribute('aria-pressed',String(state===value));
+        button.classList.toggle('is-active',state===value);
+        button.onclick=()=>{
+          if(value!==state){
+            setRailLegStage(activePlanId,trip,i,value);
+          }
+        };
+        stageButtons.append(button);
+      }
+      leg.append(statusLabel,stageButtons);
+      if(state==='done'){
+        leg.append(node('small','Fahrt manuell als abgeschlossen markiert – kein Ticketnachweis.','kyoto-ticket-caveat'));
+      }
+      const details=node('details',undefined,'kyoto-ticket-details');
+      details.append(node('summary','🎟 Ticketdetails · '+C.ticketStates[ticketState]));
+      const wrap=node('div',undefined,'kyoto-ticket-detail-body');
+      const ticketLabel=node('label','Status der Fahrkarte: ','kyoto-ticket-label');
+      const picker=node('select',undefined,'kyoto-ticket-picker');
+      picker.setAttribute('aria-label','Ticketstatus '+from.name+' nach '+to.name);
+      for(const [key,label] of Object.entries(C.ticketStates)){
+        const option=node('option',ticketSymbols[key]+' '+label);
+        option.value=key;picker.append(option);
+      }
+      picker.value=ticketState;
+      picker.onchange=()=>{
+        if(saveTicketStatus(activePlanId,trip,i,picker.value)){
+          renderJourney();
+          say('Ticketstatus aktualisiert: '+from.name+' → '+to.name);
+        }else picker.value=ticketState;
+      };
+      ticketLabel.append(picker);
+      wrap.append(ticketLabel,node('small','Diese Angabe stammt aus deiner Eingabe oder der optionalen Synchronisierung, nicht aus einer Buchungsprüfung.'));
+      details.append(wrap);leg.append(details);
+      line.append(leg);
+      if(i<stops.length-2){
+        const transfer=node('div',undefined,'kyoto-rail-transfer');
+        const toNext=stops[i+1].departure;
+        const arriving=to.arrival;
+        const diff=minutes(toNext)!==null&&minutes(arriving)!==null
+          ?(minutes(toNext)-minutes(arriving)+1440)%1440:null;
+        transfer.append(node('span','🔄','kyoto-transfer-icon'));
+        const transferText=node('div');
+        transferText.append(node('strong','Umstieg in '+to.name));
+        transferText.append(node('small',(diff===null?'Zeit vor Ort prüfen':diff+' Min. Umsteigezeit')+
+          ' · Gleis am Bahnhof prüfen'));
+        transfer.append(transferText);
+        line.append(transfer);
+      }
+    }
+    const final=node('div',undefined,'kyoto-rail-station kyoto-rail-destination');
+    final.append(node('span',last.arrival||'–','kyoto-rail-time'));
+    const lastBody=node('div',undefined,'kyoto-rail-stop-body');
+    lastBody.append(node('strong',last.name),node('small','Danach Karasuma-Linie oder Taxi zum Hotel'));
+    final.append(lastBody);line.append(final);
+    kyotoRailInfographic.append(line);
+    const unknown=stops.slice(0,-1).filter((_,i)=>!['booked','ready'].includes(ticketStatusFor(activePlanId,trip,i))).length;
+    kyotoRailInfographic.append(node('p',unknown
+      ?'🎟 Für '+unknown+' von '+(stops.length-1)+' Strecken ist eine Buchung bzw. Fahrkarte noch nicht als vorhanden markiert.'
+      :'🎟 Alle Teilstrecken sind als gebucht oder mit vorhandenem Ticket markiert. Das ist keine unabhängige Buchungsprüfung.',
+      'kyoto-rail-footnote'));
+    kyotoRailInfographic.append(node('small','„Erledigt“ beschreibt nur die durch dich bestätigte Fahrt. Die Ticketdetails bleiben separat und können über die verschlüsselte Synchronisierung aktualisiert werden.','kyoto-rail-disclaimer'));
+  }
   function renderJourney() {
     journeyLayer.clearLayers();
     const panel = $('journey-panel'), info = $('journey-info');
     info.replaceChildren();
-    panel.hidden = !journey;
-    if (!journey) { updateStationTransfer(); updateNagoyaTrigger(); return; }
+    panel.hidden = !journey || activePlanId==='ride-kyoto';
+    if (!journey) { renderKyotoRailInfographic();updateStationTransfer(); updateNagoyaTrigger(); return; }
     info.append(node('h2',journey.title),node('p',journey.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
     const totalLegs=journey.stops.length-1;
     const unresolved=journey.stops.slice(0,-1).filter((_,i)=>ticketStatusFor(activePlanId,journey,i)!=='ready').length;
@@ -1902,6 +2063,7 @@
       });
     });
     info.append(node('p','Gestrichelte Linien verbinden Stationen nur schematisch – nicht entlang der tatsächlichen Gleise. Fahrpläne vor Abfahrt nochmals prüfen.','journey-warning'));
+    renderKyotoRailInfographic();
     updateStationTransfer();
     updateNagoyaTrigger();
   }
@@ -2345,6 +2507,14 @@
       }
     }
   }catch{say('Ticketstatus konnte nicht geladen werden.');}
+  // Travel progress is explicit and separate from ticket readiness/proof.
+  try{
+    const saved=JSON.parse(localStorage.getItem('livekarte-trip-progress-v1')||'{}');
+    if(saved&&typeof saved==='object'&&!Array.isArray(saved)){
+      for(const [key,done] of Object.entries(saved).slice(0,120))
+        if(key.length<=300&&done===true)tripStageDone[key]=true;
+    }
+  }catch{say('Gespeicherte Reisefortschritte konnten nicht geladen werden.');}
   // Restore only explicit local timing preferences, never GPS or route data.
   try{
     const raw=JSON.parse(localStorage.getItem('livekarte-day-plans-v1')||'{}');
