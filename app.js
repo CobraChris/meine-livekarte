@@ -108,6 +108,8 @@
   const walkingLayers=L.layerGroup().addTo(map);
   const tourLayers=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
+  const D=window.LivekarteDayPlan;
+  let dayPlans=Object.create(null);
   let tourDrafts=Object.create(null),tourRoute=null,tourController=null,tourRequestGeneration=0;
   let tourNavigation=null; // In-memory only; never persist GPS, current step or route.
 
@@ -399,6 +401,7 @@
     tourLayers.clearLayers();
     tourHud.hidden=true;
     tourResult.hidden=true;
+    renderDayPlanSummary();
     $('tour-calculate').disabled=tourSelection().length<2;
     $('tour-optimize').disabled=tourSelection().length<2;
   }
@@ -469,6 +472,7 @@
     $('tour-optimize').disabled=selected.length<2||!!tourController;
     if(!selected.length && !tourRoute)
       tourBuilderStatus.textContent='Wähle zunächst zwei bis sechs Orte über „＋ Tour“.';
+    renderDayPlanControls();
   }
   $('tour-clear').onclick=()=>{
     setTourSelection([]);
@@ -691,6 +695,7 @@
         legs.append(node('li',label));
       });
       tourResult.hidden=false;
+      renderDayPlanControls();
       tourBuilderStatus.textContent=remaining
         ?'Restweg ab deiner aktuellen Position berechnet. GPS-Führung bei Bedarf erneut starten.'
         :optimized
@@ -1428,7 +1433,9 @@
     clearWalkingRoute();
     clearTourRoute();
     tourDrafts=Object.create(null);
+    dayPlans=Object.create(null);
     persistTourDrafts();
+    persistDayPlans();
     persist();persistPlanState();render();say('Empfehlungen entfernt. Reiseabschnitte bleiben erhalten.');
   };
   $('demo').onclick = () => {
