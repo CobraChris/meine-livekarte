@@ -47,6 +47,12 @@ Im Rundgang-Planer steht neben „Auswahl leeren“ jetzt **„✨ Route durch K
 
 Die gefundene Reihenfolge wird für den aktiven Reiseabschnitt als Orts-IDs lokal gespeichert und im Planer, auf der Karte und in der Etappenliste übernommen. Standort und Routengeometrie werden nicht gespeichert. Mit ↑/↓ und **„🚶 Rundgang berechnen“** bleibt eine manuelle Reihenfolge jederzeit möglich. Falls der Optimierungsdienst die Anfrage nicht unterstützt oder keine zusammenhängende Route findet, wird eine verständliche Meldung angezeigt; die bisherige Auswahl bleibt erhalten. Die Sicherheitschecks für Ortsnähe, Wegpunkte und Etappen sowie das FOSSGIS-Limit von maximal einer Anfrage pro Sekunde gelten weiterhin.
 
+## Gespeicherte Orte bearbeiten und einzeln löschen (31.10.2026)
+
+Tippe auf einen Marker in der Karte oder öffne seinen Listeneintrag und wähle **„✎ Bearbeiten“**. Im Dialog kannst du **Name, Kategorie, eigene Notiz und Beschreibung** korrigieren. Der geografische Markerstandort bleibt dabei absichtlich unverändert. **„🗑 Diesen Ort löschen“** entfernt nach einer ausdrücklichen Rückfrage nur diesen einen Marker; **„Alle löschen“** ist nicht mehr nötig, um Testeinträge zu entfernen.
+
+Umbenennen migriert die alten Ortsschlüssel in sämtlichen Reiseabschnitten, Rundgang-Entwürfen und persönlichen Tagesplan-Einstellungen, ohne andere Punkte zu verändern. Löschen entfernt gezielt die entsprechenden Referenzen. Betroffene aktuell berechnete Routen werden verworfen, damit keine veraltete Route angezeigt wird. Unabhängige Routen bleiben erhalten. Alle Änderungen geschehen **ausschließlich lokal auf dem Gerät**, ohne neue Netzwerk- oder GPS-Abfragen; vor dem Speichern wird auf ungültige oder doppelte Ortsnamen an derselben Position geprüft. Ein Speicherfehler führt nicht zur absichtlichen Löschung der bisherigen Daten.
+
 ## Neuen Lieblingsort direkt auf der Karte merken (31.10.2026)
 
 In der Kartenleiste gibt es **„📌 Ort merken“**. Ein Tipp aktiviert den Platzierungsmodus; tippe auf eine freie Stelle der Karte und trage im kompakten Dialog **Name, Kategorie (Essen, Sehenswürdigkeit, Bahnhof oder Hotel) und optional eine Notiz** ein. Eine vorläufige blaue Markierung zeigt die gewählte Position, bevor sie gespeichert wird. Im Dialog kannst du alternativ **deinen aktuellen GPS-Punkt** übernehmen (nur bei aktivem und ausreichend frischem GPS). Auf Touch-Geräten kann auch ein langer Druck auf eine freie Kartenstelle den Dialog öffnen. **Abbrechen** speichert nichts.
