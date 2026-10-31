@@ -2333,7 +2333,7 @@
   ticketHelpDialog.addEventListener('close',()=>{ticketHelpFeedback.textContent='';});
   $('ticket-help-copy').onclick=async()=>{
     const text=[...ticketHelpDialog.querySelectorAll('.ticket-help-jp p')]
-      .map(p=>p.textContent.trim()).join('\\n');
+      .map(p=>p.textContent.trim()).join('\n');
     try{
       if(!navigator.clipboard?.writeText)throw new Error('clipboard unavailable');
       await navigator.clipboard.writeText(text);
