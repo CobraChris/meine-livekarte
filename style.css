@@ -681,6 +681,17 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .tour-route-hud small{font-size:9px;color:#b9d0c5;line-height:1.35}
 .tour-route-hud button{flex:none;min-width:32px;min-height:32px;
   padding:0;font-size:20px;border-radius:8px;background:#23414a}
+.tour-live-state{display:grid;gap:2px;margin-top:4px;border-top:1px solid #476268;padding-top:6px}
+.tour-live-state[hidden]{display:none!important}
+.tour-live-state strong{font-size:11px;color:#fff2bc}
+.tour-live-state span{font-size:11px;color:#defbe8}
+.tour-live-state small{font-size:9px;color:#ccdfd9;line-height:1.35}
+.tour-live-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.tour-live-actions button{min-height:32px;min-width:auto;flex:1;
+  padding:5px 8px;font-size:10px;font-weight:700;background:#31575a}
+.tour-live-actions button:disabled{opacity:.5}
+.tour-live-actions button[hidden]{display:none!important}
+.tour-navigation-help{font-size:10px!important;color:#b5d7c7!important;line-height:1.4!important}
 @media(max-width:760px){
   .tour-builder{margin:9px 0 14px}
   .tour-builder>summary{min-height:43px;padding:10px}
