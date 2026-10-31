@@ -49,7 +49,7 @@ test('PWA can display non-destructive update prompt and reload after user action
   assert.match(pwa,/window\.addEventListener\('focus',requestUpdateCheck\)/);
   assert.match(pwa,/window\.addEventListener\('load',requestUpdateCheck\)/);
   assert.doesNotMatch(pwa,/localStorage\.clear\(|indexedDB\.deleteDatabase\(|deleteItem\(/);
-  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v9'/);
+  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v10'/);
   assert.match(sw,/'build-version\.js'/);
   assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
   assert.doesNotMatch(sw,/app-version\.json/);
@@ -70,7 +70,7 @@ test('GitHub publish script stamps unique current SHA on every app asset and pro
     const assetTags=[
       ['href','style.css'],['href','vendor/leaflet.css'],
       ['src','vendor/leaflet.js'],['src','core.js'],
-      ['src','walking-core.js'],['src','day-plan-core.js'],['src','app.js'],
+      ['src','walking-core.js'],['src','day-plan-core.js'],['src','route-discovery.js'],['src','app.js'],
       ['src','sync.js'],['src','outbox-core.js'],
       ['src','sync-out.js'],['src','build-version.js'],['src','pwa.js']
     ];
