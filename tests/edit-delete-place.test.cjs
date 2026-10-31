@@ -124,7 +124,7 @@ test('editor migrates local stores and clears only affected routes, without netw
  assert.match(part,/if\(onWalkingRoute\)clearWalkingRoute\(\)/);
  assert.match(part,/for\(const \[key,value\] of Object\.entries\(previousValues\)\)/);
  assert.doesNotMatch(part,/fetch\(|navigator\.geolocation|routing\.openstreetmap/);
- assert.match(sw,/livekarte-shell-pwa-v19/);
+ assert.match(sw,/livekarte-shell-pwa-v20/);
  assert.match(app,/function render\(\)/);
  assert.match(app,/function setMapTourPickMode\(/);
 });
