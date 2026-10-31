@@ -34,6 +34,8 @@ assets = [
     ("src", "walking-core.js"),
     ("src", "day-plan-core.js"),
     ("src", "route-discovery.js"),
+    ("src", "next-step-core.js"),
+    ("src", "japanese-destination.js"),
     ("src", "app.js"),
     ("src", "sync.js"),
     ("src", "outbox-core.js"),
@@ -43,7 +45,15 @@ assets = [
 ]
 html_path = public / "index.html"
 html = html_path.read_text(encoding="utf-8")
+# Fail deployment rather than silently publishing HTML that loads a missing
+# first-party module. All local scripts must also be content-versioned.
+script_sources = re.findall(r'<script\b[^>]*\bsrc="([^"]+)"', html)
+missing_stamps = [src for src in script_sources if ("src", src) not in assets]
+if missing_stamps:
+    raise RuntimeError(f"Unstamped HTML scripts: {', '.join(missing_stamps)}")
 for attr, asset in assets:
+    if not (public / asset).is_file():
+        raise RuntimeError(f"Missing Pages artifact asset: {asset}")
     needle = f'{attr}="{asset}"'
     if html.count(needle) != 1:
         raise RuntimeError(f"Expected exactly one {needle} in index.html")

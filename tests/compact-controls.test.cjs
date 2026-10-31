@@ -73,12 +73,18 @@ test('GitHub publish script stamps unique current SHA on every app asset and pro
     const assetTags=[
       ['href','style.css'],['href','vendor/leaflet.css'],
       ['src','vendor/leaflet.js'],['src','core.js'],
-      ['src','walking-core.js'],['src','day-plan-core.js'],['src','route-discovery.js'],['src','app.js'],
+      ['src','walking-core.js'],['src','day-plan-core.js'],['src','route-discovery.js'],
+      ['src','next-step-core.js'],['src','japanese-destination.js'],['src','app.js'],
       ['src','sync.js'],['src','outbox-core.js'],
       ['src','sync-out.js'],['src','build-version.js'],['src','pwa.js']
     ];
     const html=assetTags.map(([k,v])=>'<script '+k+'="'+v+'"></script>').join('\n');
     fs.writeFileSync(path.join(dir,'public/index.html'),html);
+    for(const [,asset] of assetTags){
+      const target=path.join(dir,'public',asset);
+      fs.mkdirSync(path.dirname(target),{recursive:true});
+      fs.writeFileSync(target,'');
+    }
     cp.execFileSync('python3',[path.join(dir,'scripts/stamp_pwa_version.py')],{
       env:{...process.env,GITHUB_SHA:sha}
     });
