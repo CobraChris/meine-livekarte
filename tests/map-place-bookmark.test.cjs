@@ -78,6 +78,6 @@ test('feature stays outside tour-picker and uses offline shell without new netwo
  assert.match(html,/id="tour-map-mode"/);
  assert.match(html,/id="tour-optimize"/);
  const sw=read('sw.js');
- assert.match(sw,/livekarte-shell-pwa-v16/);
+ assert.match(sw,/livekarte-shell-pwa-v17/);
  assert.doesNotMatch(sw,/gps|overpass-api\.de|routed-foot/);
 });

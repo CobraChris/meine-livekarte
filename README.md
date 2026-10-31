@@ -274,15 +274,29 @@ Für den Reiseabschnitt **„30.10. Fahrt nach Takayama“** gibt es in Nagoya e
 
 Der Bahnhofsmodus verwendet keine bezahlten APIs und zeichnet **keine erfundenen Indoor-Fußwege** auf die Karte. Treppen, Etagen, Tore und Bahnsteige werden als Ablauf dargestellt und bei künftigen Pilotstationen separat verifiziert. Die Live-Anzeigetafeln sowie Personalhinweise haben Vorrang.
 
+## Kyoto-Reise am 01.11.2026 – abgestimmter Stand (31.10.2026)
+
+Der Platzhalter „02.11. · Fahrt nach Kyoto“ wurde auf den zuletzt vereinbarten Fahrtag **01.11.2026** korrigiert.
+
+- Takayama 11:35 → Nagoya 14:04, Limited Express **Hida 8**
+- 22 Minuten Umstieg in Nagoya (14:04–14:26), tatsächliches Gleis vor Ort prüfen
+- Nagoya 14:26 → Kyoto 15:00, Tokaido-Shinkansen **Nozomi 71** (Nummer/Tickets abgleichen)
+- Danach mit der Karasuma-Linie zur Station **Karasuma Oike**, Ausgang 1, ca. 7 Minuten zum **Tomoya Residence Hotel**. Hotelankunft ca. 15:30–16:15 (nur Planung).
+- 01.11. abends: **Gion Shirakawa, Tatsumi-Brücke, Ponto-chō** zum Essen, optional Kamo-Fluss.
+- 02.11.: **Kiyomizu-dera 09:45–11:15; Sannenzaka/Ninenzaka inklusive Mittagessen 11:15–13:30; Fushimi Inari 15:15–17:15**.
+- 03.–06.11.: Einzel-Tagesplanung offen, keine erfundenen Termine. 07.11.: Weiterfahrt nach Nikko separat planen.
+
+Die Ansicht „01.11. · Fahrt nach Kyoto“ stellt den **schematischen Reiseweg und die zeitliche Übersicht** dar. In „01.–07.11. · Kyoto“ sind die besprochenen Hotel-/Bahnhofs-/Sehenswürdigkeiten als Marker mit Tagesangaben hinterlegt. Ein einmaliger lokaler Import ergänzt die Pins auch bei bestehenden Installationen, ohne private Orte, Routen, Tour-Entwürfe und Ticketstatus zu überschreiben. Nur die Planzeiten sind hinterlegt; keine Ticketbuchung wird als bestätigt ausgegeben.
+
 ## Reiseabschnitte: Fahrtage und Aufenthalte
 
 Oben auf der Karte gibt es einen **Reiseabschnitt-Wähler**, auch im Vollbildmodus:
 
 - **Alle gespeicherten Orte:** zeigt alle bereits gespeicherten Empfehlungen aus bisherigen Versionen, ohne sie zu löschen
 - **30.10. – Fahrt nach Takayama:** die bestehende Hakone–Takayama-Zugroute mit Fahrplan und Hakone-Yumoto-Umstieg
-- **30.10.–02.11. – Takayama:** eigener Bereich für Sehenswürdigkeiten, Restaurants und andere Ziele vor Ort
-- **02.11. – Fahrt nach Kyoto:** vorbereiteter Fahrtag; **keine** erfundenen Uhrzeiten oder Strecken, bis eine konkrete Verbindung hinterlegt wurde
-- **Ab 02.11. – Kyoto:** eigener Bereich für die Stadterkundung
+- **30.10.–01.11. – Takayama:** eigener Bereich für Sehenswürdigkeiten, Restaurants und andere Ziele vor Ort
+- **01.11. – Fahrt nach Kyoto:** Hida 8 / Nozomi 71 nach dem abgestimmten Fahrplan, Tickets nicht automatisch bestätigt
+- **01.–07.11. – Kyoto:** Hotel, Sehenswürdigkeiten und Tagesprogramm ab 01.11.
 
 Ein **＋** neben der Auswahl legt weitere Fahrt- oder Stadtbereiche an. Die gewählte Ansicht wird lokal gemerkt und über `?view=town-kyoto` etc. auch direkt geöffnet. Die Kamera fokussiert den jeweiligen Abschnitt. Manuelles Zoomen pausiert weiterhin GPS-Autozentrierung; der Live-Standort und Kompass arbeiten unabhängig.
 

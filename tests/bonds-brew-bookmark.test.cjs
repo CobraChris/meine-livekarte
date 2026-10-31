@@ -20,7 +20,7 @@ test('Bonds Brew marker has verified position, category and personal note',()=>{
 
 test('existing installed app adds only the bookmark, once, locally',()=>{
  const start=app.indexOf('  function seedBondsBrewBookmark(){');
- const end=app.indexOf('  // Persist only chosen place identifiers',start);
+ const end=app.indexOf('  seedBondsBrewBookmark();',start)+'  seedBondsBrewBookmark();'.length;
  assert.ok(start>=0&&end>start,'Expected one-off additive local migration');
  const block=app.slice(start,end);
  assert.match(block,/livekarte-bonds-brew-takayama-20261031-v1/);
