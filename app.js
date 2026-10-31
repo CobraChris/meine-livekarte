@@ -2310,9 +2310,42 @@
   const kyotoPickupPanel=$('kyoto-pickup');
   const kyotoPickupConfirm=$('kyoto-pickup-confirm');
   const kyotoPickupFeedback=$('kyoto-pickup-feedback');
+  const ticketHelpButton=$('kyoto-pickup-help');
+  const ticketHelpDialog=$('ticket-help-dialog');
+  const ticketHelpFeedback=$('ticket-help-feedback');
+  // This static Japanese card must only describe the unchanged, confirmed
+  // 01.11. train itinerary. Never cache or display any Klook QR or booking ID.
+  function canShowTicketHelp(){
+    const trip=Object.hasOwn(planJourneys,'ride-kyoto')
+      ?planJourneys['ride-kyoto']
+      :C.presetJourney('takayama-kyoto-2026-11-01');
+    return C.isNagoyaKyotoTrip(trip);
+  }
+  ticketHelpButton.onclick=()=>{
+    if(!canShowTicketHelp()){
+      kyotoPickupFeedback.textContent='Reiseplan verändert. Bitte die Klook-Buchung zuerst abgleichen.';
+      return;
+    }
+    ticketHelpFeedback.textContent='';
+    if(!ticketHelpDialog.open)ticketHelpDialog.showModal();
+  };
+  $('ticket-help-close').onclick=()=>ticketHelpDialog.close();
+  ticketHelpDialog.addEventListener('close',()=>{ticketHelpFeedback.textContent='';});
+  $('ticket-help-copy').onclick=async()=>{
+    const text=[...ticketHelpDialog.querySelectorAll('.ticket-help-jp p')]
+      .map(p=>p.textContent.trim()).join('\\n');
+    try{
+      if(!navigator.clipboard?.writeText)throw new Error('clipboard unavailable');
+      await navigator.clipboard.writeText(text);
+      ticketHelpFeedback.textContent='✓ Japanischer Text kopiert.';
+    }catch{
+      ticketHelpFeedback.textContent='Kopieren nicht verfügbar. Den japanischen Text lange drücken und markieren.';
+    }
+  };
   function renderKyotoPickup(){
     kyotoPickupPanel.hidden=!['town-takayama','ride-kyoto'].includes(activePlanId);
     kyotoPickupPanel.classList.toggle('is-complete',kyotoPickupDone);
+    ticketHelpButton.hidden=kyotoPickupDone||!canShowTicketHelp();
     $('kyoto-pickup-state').textContent=kyotoPickupDone
       ?'✅ Papiertickets: abgeholt (selbst bestätigt)'
       :'⚠ Papiertickets: noch abholen';
