@@ -108,6 +108,7 @@
   const walkingLayers=L.layerGroup().addTo(map);
   const tourLayers=L.layerGroup().addTo(map);
   const discoveryLayers=L.layerGroup().addTo(map);
+  const mapPlacePreview=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
   const D=window.LivekarteDayPlan;
   const R=window.LivekarteRouteDiscovery;
@@ -116,11 +117,132 @@
   let tourDrafts=Object.create(null),tourRoute=null,tourController=null,tourRequestGeneration=0;
   let tourNavigation=null; // In-memory only; never persist GPS, current step or route.
   let mapTourPickMode=false; // UI only. Tap selected POI markers to toggle tour membership.
+  let mapPlacePicking=false,mapPlacePoint=null; // UI only; never store until user confirms.
 
   let lastTourRequestedAt=0;
   let walkDestination=null,walkController=null,walkRequestGeneration=0;
   let lastWalkingRequestAt=0,positionUpdatedAt=0,positionAccuracy=null;
   const node = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
+  // The map coordinates and any GPS are not stored until "Ort dauerhaft speichern".
+  const mapPlaceDialog=$('map-place-dialog');
+  const mapPlaceForm=$('map-place-form');
+  const mapPlaceButton=$('map-save-place');
+  const mapPlaceHint=$('map-save-place-hint');
+  const mapPlaceError=$('map-place-error');
+  function updateMapPlaceButton(){
+    mapPlaceButton.setAttribute('aria-pressed',String(mapPlacePicking));
+    mapPlaceButton.textContent=mapPlacePicking?'✕ Markierung abbrechen':'📌 Ort merken';
+    mapPlaceHint.hidden=!mapPlacePicking;
+  }
+  function setMapPlacePicking(value){
+    mapPlacePicking=!!value;
+    if(mapPlacePicking){
+      pauseGPSFollow();
+      if(mapTourPickMode)setMapTourPickMode(false);
+      map.closePopup();
+    }
+    updateMapPlaceButton();
+  }
+  function showMapPlacePreview(point){
+    const lat=Number(point?.lat),lng=Number(point?.lng);
+    if(!Number.isFinite(lat)||Math.abs(lat)>90||
+       !Number.isFinite(lng)||Math.abs(lng)>180)
+      throw new Error('Ungültiger Kartenpunkt. Bitte erneut auswählen.');
+    mapPlacePoint={lat,lng};
+    mapPlacePreview.clearLayers();
+    L.circleMarker([lat,lng],{radius:10,color:'#ffffff',weight:2,
+      fillColor:'#70d3ec',fillOpacity:.85,interactive:false}).addTo(mapPlacePreview);
+    $('map-place-coordinates').textContent='📍 Markierung: '+
+      lat.toFixed(6)+', '+lng.toFixed(6);
+  }
+  function openMapPlaceDialog(point){
+    if(mapPlaceDialog.open)return;
+    try{showMapPlacePreview(point);}catch(e){say(e.message);return;}
+    setMapPlacePicking(false);
+    mapPlaceForm.reset();
+    mapPlaceError.textContent='';
+    $('map-place-category').value='restaurant';
+    $('map-place-target').textContent='Speichern in: '+currentPlan().name;
+    pauseGPSFollow();
+    mapPlaceDialog.showModal();
+    $('map-place-name').focus();
+  }
+  mapPlaceButton.onclick=()=>setMapPlacePicking(!mapPlacePicking);
+  $('map-place-cancel').onclick=()=>mapPlaceDialog.close();
+  mapPlaceDialog.addEventListener('close',()=>{
+    mapPlacePoint=null;
+    mapPlacePreview.clearLayers();
+    mapPlaceError.textContent='';
+    setMapPlacePicking(false);
+  });
+  map.on('click',event=>{
+    if(!mapPlacePicking)return;
+    const target=event.originalEvent?.target;
+    if(target?.closest?.('.leaflet-marker-icon,.leaflet-control'))return;
+    openMapPlaceDialog(event.latlng);
+  });
+  map.on('contextmenu',event=>{
+    if(mapTourPickMode||mapPlaceDialog.open)return;
+    const target=event.originalEvent?.target;
+    if(target?.closest?.('.leaflet-marker-icon,.leaflet-control'))return;
+    event.originalEvent?.preventDefault?.();
+    openMapPlaceDialog(event.latlng);
+  });
+  $('map-place-use-gps').onclick=()=>{
+    if(watch===null||!position||Date.now()-positionUpdatedAt>60000){
+      mapPlaceError.textContent='Bitte GPS aktivieren und einen aktuellen Standort abwarten.';
+      return;
+    }
+    if(!Number.isFinite(positionAccuracy)||positionAccuracy>60){
+      mapPlaceError.textContent='GPS ist ungenau. Bitte einen Punkt auf der Karte wählen.';
+      return;
+    }
+    showMapPlacePreview(position);
+    mapPlaceError.textContent='GPS-Punkt übernommen. Prüfe die Position vor dem Speichern.';
+  };
+  mapPlaceForm.onsubmit=event=>{
+    event.preventDefault();
+    if(!mapPlacePoint)return;
+    const name=$('map-place-name').value.trim();
+    const category=$('map-place-category').value;
+    const note=$('map-place-note').value.trim();
+    if(!name){
+      mapPlaceError.textContent='Bitte einen Namen eingeben.';
+      return;
+    }
+    let bookmark;
+    try{
+      bookmark=C.normalize([{name,lat:mapPlacePoint.lat,lng:mapPlacePoint.lng,
+        category,note,description:'Persönlich auf der Karte markiert.'}])[0];
+      if(places.some(item=>item.name.toLocaleLowerCase('de-DE')===
+        bookmark.name.toLocaleLowerCase('de-DE')&&C.distance(item,bookmark)<45)){
+        mapPlaceError.textContent='Ein Ort mit diesem Namen ist hier bereits gespeichert.';
+        return;
+      }
+      const nextPlaces=C.merge(places,[bookmark]);
+      // Store both the place and its current-section assignment; do not
+      // modify tour drafts, routes, GPS location history or day plans.
+      const previousPlaces=places;
+      places=nextPlaces;
+      if(!persist()){
+        places=previousPlaces;
+        mapPlaceError.textContent='Speichern fehlgeschlagen. Bitte Speicherplatz prüfen.';
+        return;
+      }
+      if(activePlanId!=='all')assignToCurrentPlan([bookmark]);
+      filter='all';
+      document.querySelectorAll('[data-filter]').forEach(button=>
+        button.setAttribute('aria-pressed',String(button.dataset.filter==='all')));
+      const savedPoint={...mapPlacePoint};
+      mapPlaceDialog.close();
+      render();
+      following=false;refreshGPSFollowControl();
+      map.setView([savedPoint.lat,savedPoint.lng],Math.max(map.getZoom(),16));
+      say('📌 '+bookmark.name+' gespeichert · '+currentPlan().name+'.');
+    }catch(e){
+      mapPlaceError.textContent=e.message||'Der Ort konnte nicht gespeichert werden.';
+    }
+  };
   // The external Google walking link remains available as a full navigation fallback.
   function route(p) {
     const a = node('a', '↗ Google Maps', 'navigate');
@@ -586,6 +708,7 @@
   }
   function setMapTourPickMode(enabled,focusMap=false){
     mapTourPickMode=!!enabled;
+    if(mapTourPickMode&&mapPlacePicking)setMapPlacePicking(false);
     if(mapTourPickMode)pauseGPSFollow();
     if(mapTourPickMode&&filter!=='all'){
       filter='all';
@@ -1634,6 +1757,7 @@
     if(activePlanId!==id && walkDestination)clearWalkingRoute();
     if(activePlanId!==id)clearTourRoute();
     if(activePlanId!==id)mapTourPickMode=false;
+    if(activePlanId!==id)setMapPlacePicking(false);
     activePlanId=id;
     journey=activeJourney();
     pauseGPSFollow();
