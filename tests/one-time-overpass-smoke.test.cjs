@@ -4,7 +4,7 @@ const R=require('../route-discovery.js');
 test('ONE-TIME Overpass POI corridor: one bounded POST query in Takayama',async()=>{
   const points=[[36.1399,137.2502],[36.1403,137.2506],[36.1408,137.2511]];
   const query=R.query(points,150);
-  const url=new URL(R.ENDPOINT);
+  const url=new URL('https://overpass.private.coffee/api/interpreter');
   url.searchParams.set('data',query);
   const response=await fetch(url,{
     headers:{'Accept':'application/json'},
