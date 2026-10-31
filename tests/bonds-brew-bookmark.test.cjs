@@ -31,7 +31,7 @@ test('existing installed app adds only the bookmark, once, locally',()=>{
  assert.match(block,/seedBondsBrewBookmark\(\)/);
  assert.doesNotMatch(block,/tourDrafts|tourRoute|fetch\(|geolocation|GPS/);
  const item=C.presetPlaces('town-takayama').find(p=>p.name==='Bonds Brew beer craft');
- const old={name:'Ein gespeichertes Restaurant',lat:36.14,lng:137.25,category:'restaurant'};
+ const old={name:'Ein gespeichertes Restaurant',lat:36.14,lng:137.25,category:'restaurant',description:''};
  assert.deepEqual(C.merge([old],[item])[0],old);
  assert.equal(C.merge([old,item],[item]).length,2);
 });
