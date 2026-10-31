@@ -30,7 +30,8 @@
   }
   function activeJourney() {
     if (Object.prototype.hasOwnProperty.call(planJourneys,activePlanId)) return planJourneys[activePlanId];
-    return activePlanId === 'ride-takayama' ? C.presetJourney('hakone-takayama-2026-10-30') : null;
+    return activePlanId === 'ride-takayama' ? C.presetJourney('hakone-takayama-2026-10-30')
+      : activePlanId === 'ride-kyoto' ? C.presetJourney('takayama-kyoto-2026-11-01') : null;
   }
 
   let heading = null, visualHeading = null, compassGeneration = 0;
@@ -1574,6 +1575,10 @@
   }
   // A journey is an optional separate overlay; saved recommendations remain untouched.
   const journeyLayer = L.layerGroup().addTo(map);
+  const kyotoOverview=$('kyoto-overview');
+  function renderKyotoOverview(){
+    kyotoOverview.hidden=!['ride-kyoto','town-kyoto'].includes(activePlanId);
+  }
   let journey = null;
   const transferCard = $('station-transfer');
   let transferDismissed = false;
@@ -1937,7 +1942,7 @@
     activePlanId=id;
     journey=activeJourney();
     pauseGPSFollow();
-    renderPlanPicker();renderJourney();render();
+    renderPlanPicker();renderJourney();renderKyotoOverview();render();
     if (options.focus!==false) {
       if(journey) fitJourney();
       else {
@@ -2265,6 +2270,46 @@
     }
   }
   seedBondsBrewBookmark();
+  // Add Kyoto plans to already installed apps once, WITHOUT replacing personal
+  // markers, user-edited travel itineraries, tour drafts or ticket statuses.
+  function seedKyotoPlaces(){
+    const version='livekarte-kyoto-2026-11-01-v1';
+    try{
+      if(localStorage.getItem(version)==='1')return;
+      const preset=C.presetPlaces('town-kyoto');
+      if(!preset.length)return;
+      const additions=[];
+      const matching=[];
+      for(const suggested of preset){
+        const found=places.find(existing=>
+          C.placePlanKey(existing)===C.placePlanKey(suggested)||
+          (existing.name.toLocaleLowerCase('de-DE')===
+           suggested.name.toLocaleLowerCase('de-DE')&&C.distance(existing,suggested)<75));
+        if(found)matching.push({suggested,place:found});
+        else{additions.push(suggested);matching.push({suggested,place:suggested});}
+      }
+      const merged=C.merge(places,additions);
+      const nextAssignments=Object.assign(Object.create(null),planAssignments);
+      for(const {suggested,place} of matching){
+        const key=C.placePlanKey(place);
+        const old=Array.isArray(nextAssignments[key])?nextAssignments[key]:[];
+        // Arrival-day places appear in both the rail itinerary view and
+        // the city view. 02.11. sights remain in city view only.
+        const onArrivalDay=suggested.category==='hotel'||suggested.category==='station'||
+          suggested.schedule?.startsWith('01.11.');
+        nextAssignments[key]=[...new Set([...old,'town-kyoto',
+          ...(onArrivalDay?['ride-kyoto']:[])])];
+      }
+      // Write before the version marker; no selected route or GPS saved here.
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(merged));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(nextAssignments));
+      localStorage.setItem(version,'1');
+      places=merged;planAssignments=nextAssignments;
+    }catch{
+      say('Kyoto-Orte konnten nicht automatisch ergänzt werden. Bitte Speicherplatz prüfen.');
+    }
+  }
+  seedKyotoPlaces();
   // Persist only chosen place identifiers, never the GPS start or a route.
   try{
     const raw=JSON.parse(localStorage.getItem('livekarte-tour-drafts-v1')||'{}');
@@ -2337,7 +2382,7 @@
     (Object.prototype.hasOwnProperty.call(planJourneys,'ride-takayama')?'ride-takayama':'all');
   activePlanId=allPlans().some(p=>p.id===requestedView)?requestedView:'all';
   journey=activeJourney();
-  renderPlanPicker();renderJourney();render();
+  renderPlanPicker();renderJourney();renderKyotoOverview();render();
   if (!readTicketUpdate() && !readJourneyLink() && !readLink()) {
     selectPlan(activePlanId,{save:false,url:false,announce:false});
   }
