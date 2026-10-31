@@ -1173,3 +1173,31 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   #japanese-driver-dialog{padding:13px;max-height:90dvh}
   .japanese-driver-actions{grid-template-columns:1fr}
 }
+
+/* 01.11.: direction-specific Nagoya guidance shares the old visual language,
+   but never displays the Hida-9 instructions for the Kyoto-bound journey. */
+#nagoya-kyoto-guide-trigger{position:absolute;z-index:855;left:10px;top:66px;
+  min-height:41px;padding:7px 12px;border-radius:10px;background:#204a3e;
+  color:#e6fff3;border:1px solid #a4ecc9;font-size:12px;font-weight:750;
+  box-shadow:0 4px 14px #0016}
+#nagoya-kyoto-guide-trigger[hidden]{display:none}
+#nagoya-kyoto-dialog{width:min(540px,calc(100% - 24px));padding:17px 18px;
+  max-height:91dvh;border-radius:18px;border:1px solid #63877e}
+#nagoya-kyoto-dialog .dialog-heading h2{font-size:20px}
+#nagoya-kyoto-dialog .ng-safety{font-size:10px;line-height:1.4;margin:9px 0 3px}
+#nagoya-kyoto-dialog .ng-vertical-step{display:flex;align-items:center;gap:10px;
+  padding:5px 10px;color:#d2e7de;font-size:11px}
+#nagoya-kyoto-dialog .ng-vertical-step span{font-size:18px;color:#b9f6d2}
+#nagoya-kyoto-dialog .ng-transfer-gates{font-size:11px;text-align:center;
+  color:#b8edce;padding:5px 7px;border:1px dashed #699b84;border-radius:7px}
+#nagoya-kyoto-dialog .ng-kyoto-tickets{font-size:11px;line-height:1.5;
+  margin:11px 0;padding:9px;border:1px solid #8c9870;border-radius:9px}
+.kyoto-rail-transfer .kyoto-transfer-guide{min-height:38px;
+  border:1px solid #96ddc3;background:#204c42;color:#effff6;
+  border-radius:8px;font-size:12px;font-weight:750;padding:7px 11px;
+  text-align:left}
+@media(max-width:760px){
+  #nagoya-kyoto-dialog{width:calc(100% - 16px);max-height:94dvh;padding:14px;
+    border-radius:17px}
+  #nagoya-kyoto-dialog .dialog-heading h2{font-size:17px}
+}
