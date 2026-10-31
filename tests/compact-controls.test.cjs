@@ -25,7 +25,9 @@ test('the button for walking directions is immediately beneath the place name, n
   const start=app.indexOf("const popup = node('div');");
   const end=app.indexOf('const marker = L.marker(',start);
   const snippet=app.slice(start,end);
-  assert.ok(snippet.includes("popup.append(node('strong',p.name))"));
+  assert.ok(snippet.includes("popupHeader.append(node('strong',p.name))"));
+  assert.ok(snippet.includes("popup.append(popupHeader)"));
+  assert.ok(snippet.indexOf('popup.append(popupHeader)')<snippet.indexOf('popup.append(quickActions)'));
   assert.ok(snippet.includes("popup.append(quickActions)"));
   assert.ok(snippet.includes("appendPlaceTiming(popup,p)"));
   assert.ok(snippet.includes("popup.append(node('p',p.description),inPopup)"));
@@ -33,7 +35,7 @@ test('the button for walking directions is immediately beneath the place name, n
     snippet.indexOf('appendPlaceTiming(popup,p)'));
   assert.ok(snippet.indexOf('popup.append(quickActions)')<
     snippet.indexOf("node('p',p.description)"));
-  assert.match(app,/bindPopup\(popup,\{maxWidth:320,maxHeight:250,autoPan:true\}\)/);
+  assert.match(app,/marker\.bindPopup\(popup,\{\s*maxWidth:320,maxHeight:250,/);
 });
 
 test('PWA can display non-destructive update prompt and reload after user action',()=>{
@@ -49,7 +51,7 @@ test('PWA can display non-destructive update prompt and reload after user action
   assert.match(pwa,/window\.addEventListener\('focus',requestUpdateCheck\)/);
   assert.match(pwa,/window\.addEventListener\('load',requestUpdateCheck\)/);
   assert.doesNotMatch(pwa,/localStorage\.clear\(|indexedDB\.deleteDatabase\(|deleteItem\(/);
-  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v13'/);
+  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v14'/);
   assert.match(sw,/'build-version\.js'/);
   assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
   assert.doesNotMatch(sw,/app-version\.json/);

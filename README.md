@@ -1,3 +1,9 @@
+## Popups mit Abstand und verschiebbarer Karte (31.10.2026)
+
+Bei Ortsmarkern steht das Info-Popup jetzt **24 Pixel weiter oberhalb** des Pins, mit einem größeren Schutzabstand zum oberen Kartenrand. Dadurch bleibt die Marker-Nadel sichtbar. Das Popup bleibt technisch fest an genau diesem Ort verankert.
+
+Im Popup gibt es neben dem Titel einen kleinen Griff **„⠿ Ziehen“**. Halte ihn gedrückt und verschiebe den Finger: Die Karte wird passend darunter verschoben, sodass der Marker **gemeinsam mit seinem Popup** wandert. Ein frei losgelöstes Fenster, das einen falschen Ort suggerieren könnte, entsteht nicht. Buttons wie „＋ Tour“, „Fußweg anzeigen“, „Google Maps“, „Bearbeiten“ sowie das Schließen bleiben normal antippbar. Auf Tastaturen verschieben die Pfeiltasten bei fokussiertem Griff das Popup samt Karte in 36-Pixel-Schritten. Das Verschieben löst **keine GPS- oder Routing-Netzwerkanfrage** aus und ändert keine gespeicherten Orte.
+
 # Meine Live-Karte
 
 ### GPS automatisch beim Öffnen und kürzere Fußwege (30.10.2026)

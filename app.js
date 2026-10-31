@@ -1376,6 +1376,58 @@
     const visible = items.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
+  // A popup stays attached to its marker. Dragging its explicit handle
+  // pans the map underneath, rather than detaching the popup from the place.
+  // The normal map, popup buttons and close control retain their gestures.
+  function enablePopupMapDrag(handle,marker){
+    let pointerId=null,lastX=0,lastY=0;
+    const release=event=>{
+      if(pointerId===null||event.pointerId!==pointerId)return;
+      const id=pointerId;
+      pointerId=null;
+      handle.classList.remove('is-dragging');
+      if(handle.hasPointerCapture?.(id))handle.releasePointerCapture(id);
+    };
+    handle.addEventListener('pointerdown',event=>{
+      if((event.pointerType==='mouse'&&event.button!==0)||
+         !marker.isPopupOpen()||pointerId!==null)return;
+      event.preventDefault();
+      event.stopPropagation();
+      pauseGPSFollow();
+      pointerId=event.pointerId;
+      lastX=event.clientX;lastY=event.clientY;
+      handle.classList.add('is-dragging');
+      handle.setPointerCapture?.(pointerId);
+    });
+    handle.addEventListener('pointermove',event=>{
+      if(pointerId!==event.pointerId||!marker.isPopupOpen())return;
+      event.preventDefault();
+      event.stopPropagation();
+      const dx=event.clientX-lastX,dy=event.clientY-lastY;
+      lastX=event.clientX;lastY=event.clientY;
+      if(!Number.isFinite(dx)||!Number.isFinite(dy)||Math.abs(dx)>110||Math.abs(dy)>110)return;
+      // In Leaflet panBy uses map center displacement; negative deltas
+      // move the anchored marker+popup in the pointer's direction.
+      if(dx||dy)map.panBy([-dx,-dy],{animate:false});
+    });
+    handle.addEventListener('pointerup',release);
+    handle.addEventListener('pointercancel',release);
+    handle.addEventListener('lostpointercapture',release);
+    handle.addEventListener('keydown',event=>{
+      const shift={
+        ArrowLeft:[36,0],ArrowRight:[-36,0],
+        ArrowUp:[0,36],ArrowDown:[0,-36]
+      }[event.key];
+      if(!shift||!marker.isPopupOpen())return;
+      event.preventDefault();
+      event.stopPropagation();
+      pauseGPSFollow();
+      map.panBy(shift,{animate:false});
+    });
+    marker.on('popupclose',()=>{
+      if(pointerId!==null)release({pointerId});
+    });
+  }
   function render() {
     pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = [];
     const planPlaces=currentPlaces();
@@ -1394,7 +1446,14 @@
       shown++;
       const inPopup = node('p',metric(p));
       const popup = node('div');
-      popup.append(node('strong',p.name));
+      const popupHeader=node('div',undefined,'place-popup-header');
+      popupHeader.append(node('strong',p.name));
+      const dragHandle=node('button','⠿ Ziehen','place-popup-drag');
+      dragHandle.type='button';
+      dragHandle.title='Popup mit der Karte verschieben, ohne die Markierung zu verlieren';
+      dragHandle.setAttribute('aria-label','Popup verschieben: ziehen oder Pfeiltasten verwenden');
+      popupHeader.append(dragHandle);
+      popup.append(popupHeader);
       const quickActions=node('div',undefined,'popup-quick-actions');
       const popupTourButton=node('button',tourIsSelected(p)?'✓ In Tour':'＋ Tour','tour-pick');
       popupTourButton.type='button';
@@ -1429,7 +1488,14 @@
         // While picking, one marker tap selects immediately instead of opening a popup.
         marker.on('click',()=>{pauseGPSFollow();toggleTourPlace(p,true);});
       }else{
-        marker.bindPopup(popup,{maxWidth:320,maxHeight:250,autoPan:true});
+        marker.bindPopup(popup,{
+          maxWidth:320,maxHeight:250,
+          offset:L.point(0,-24), // Marker stays visible below the popup arrow.
+          autoPan:true,
+          autoPanPaddingTopLeft:L.point(18,76),
+          autoPanPaddingBottomRight:L.point(18,40)
+        });
+        enablePopupMapDrag(dragHandle,marker);
         marker.on('popupopen', () => { following = false; });
       }
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
