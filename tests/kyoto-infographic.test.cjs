@@ -64,9 +64,11 @@ test('Kyoto city plan has legible expandable timeline, compact metrics and hones
   'id="kyoto-overview"','class="kyoto-day-stats"',
   'So. 01.11. · Anreise und Gion-Abend',
   'Mo. 02.11. · Higashiyama und Fushimi Inari',
-  '11:35–14:04','14:26–15:00','15:30–16:15',
+  '11:35–14:04','14:26–15:00','ca. 15:15–15:35',
+  'Papier-Tickets abholen','Wagen 2 · Sitze 10C + 10D',
+  'Wagen 4 · Sitze 8D + 8E','Gleis 4 → Gleis 17',
   'Gion Shirakawa','Ponto-chō','Kiyomizu-dera','Fushimi Inari',
-  'keine Ticketbestätigung','Keine feste ÖPNV-Verbindung zugesichert',
+  'Zugtickets für 01.11. bestätigt','Keine feste ÖPNV-Verbindung zugesichert',
   '03.–06.11.'
  ];
  for(const fragment of expected)assert.ok(html.includes(fragment),fragment);
