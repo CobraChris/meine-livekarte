@@ -147,7 +147,7 @@ test('multistop builder is optional, compact and has reorder/removal/accessibili
  assert.match(html,/„＋ Tour“/);
  assert.match(html,/Rundgang berechnen/);
  assert.match(html,/Reine Gehzeit ohne Besichtigungen/);
- assert.match(app,/function toggleTourPlace\(place\)/);
+ assert.match(app,/function toggleTourPlace\(place,fromMap=false\)/);
  assert.match(app,/function renderTourBuilder\(\)/);
  assert.match(app,/function setTourSelection\(items\)/);
  assert.match(app,/C\.placePlanKey\(p\)/);
