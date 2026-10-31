@@ -536,8 +536,8 @@
         body:new URLSearchParams({data:query}),signal:controller.signal
       });
       if(!response.ok){
-        if([429,502,503,504].includes(response.status))
-          throw new Error('OpenStreetMap-Suche ist gerade ausgelastet. Bitte später erneut versuchen.');
+        if([406,429,502,503,504].includes(response.status))
+          throw new Error('Der öffentliche OpenStreetMap-Suchdienst lehnt die Anfrage gerade ab (HTTP '+response.status+'). Bitte später erneut versuchen. Deine Tour bleibt erhalten.');
         throw new Error('OpenStreetMap-Suche ist nicht erreichbar (HTTP '+response.status+').');
       }
       const text=await response.text();
