@@ -1243,6 +1243,112 @@
       }
     }
   }
+  // Editor edits only local recommendation data. Legacy place keys include
+  // the name, so rename/delete migrates per-plan drafts and day preferences.
+  const editPlaceDialog=$('edit-place-dialog');
+  const editPlaceForm=$('edit-place-form');
+  let editedPlaceKey=null;
+  function openPlaceEditor(place){
+    if(editPlaceDialog.open)return;
+    const key=C.placePlanKey(place);
+    if(!places.some(item=>C.placePlanKey(item)===key)){
+      say('Ort ist nicht mehr gespeichert.');return;
+    }
+    editedPlaceKey=key;
+    $('edit-place-name').value=place.name;
+    $('edit-place-category').value=place.category;
+    $('edit-place-note').value=place.note||'';
+    $('edit-place-description').value=place.description||'';
+    $('edit-place-location').textContent='📍 '+place.lat.toFixed(6)+', '+
+      place.lng.toFixed(6)+' · Position bleibt unverändert';
+    $('edit-place-error').textContent='';
+    map.closePopup();
+    editPlaceDialog.showModal();
+    $('edit-place-name').focus();
+  }
+  function commitPlaceEditor(changes){
+    if(editedPlaceKey===null)return false;
+    const oldKey=editedPlaceKey;
+    let next;
+    try{
+      next=C.changeSavedPlace(places,planAssignments,tourDrafts,dayPlans,oldKey,changes);
+    }catch(error){
+      $('edit-place-error').textContent=error.message;
+      return false;
+    }
+    const storageKeys={
+      places:'livekarte-places-v1',
+      assignments:'livekarte-plan-assignments-v1',
+      drafts:'livekarte-tour-drafts-v1',
+      days:'livekarte-day-plans-v1'
+    };
+    const previousValues=Object.create(null);
+    try{
+      for(const key of Object.values(storageKeys))
+        previousValues[key]=localStorage.getItem(key);
+      localStorage.setItem(storageKeys.places,JSON.stringify(next.places));
+      localStorage.setItem(storageKeys.assignments,JSON.stringify(next.assignments));
+      localStorage.setItem(storageKeys.drafts,JSON.stringify(next.drafts));
+      localStorage.setItem(storageKeys.days,JSON.stringify(next.dayPlans));
+    }catch{
+      // Best-effort rollback of any partially saved keys. Keep in-memory
+      // data unchanged so a quota/security error never silently erases pins.
+      for(const [key,value] of Object.entries(previousValues)){
+        try{
+          if(value===null)localStorage.removeItem(key);
+          else localStorage.setItem(key,value);
+        }catch{}
+      }
+      $('edit-place-error').textContent='Änderungen konnten nicht gespeichert werden. Bitte Speicherplatz prüfen.';
+      return false;
+    }
+    const wasInCurrentTour=Array.isArray(tourDrafts[activePlanId])&&
+      tourDrafts[activePlanId].includes(oldKey);
+    const onActiveRoute=tourRoute?.stops.some(item=>C.placePlanKey(item)===oldKey);
+    const onWalkingRoute=walkDestination&&C.placePlanKey(walkDestination)===oldKey;
+    places=next.places;
+    planAssignments=next.assignments;
+    tourDrafts=next.drafts;
+    dayPlans=next.dayPlans;
+    if(onWalkingRoute)clearWalkingRoute();
+    if(wasInCurrentTour||onActiveRoute)clearTourRoute();
+    editPlaceDialog.close();
+    // Selected category may have changed; display the edited marker on save.
+    if(next.updated&&filter!=='all'&&filter!==next.updated.category){
+      filter='all';
+      document.querySelectorAll('[data-filter]').forEach(button=>
+        button.setAttribute('aria-pressed',String(button.dataset.filter==='all')));
+    }
+    render();
+    const name=next.updated?.name||next.previous.name;
+    say(next.updated
+      ?'✓ '+name+' aktualisiert.'
+      :'🗑 '+name+' gelöscht. Andere Orte bleiben erhalten.');
+    return true;
+  }
+  $('edit-place-close').onclick=()=>editPlaceDialog.close();
+  editPlaceDialog.addEventListener('close',()=>{
+    editedPlaceKey=null;
+    $('edit-place-error').textContent='';
+  });
+  editPlaceForm.onsubmit=event=>{
+    event.preventDefault();
+    commitPlaceEditor({
+      name:$('edit-place-name').value.trim(),
+      category:$('edit-place-category').value,
+      note:$('edit-place-note').value.trim(),
+      description:$('edit-place-description').value.trim()
+    });
+  };
+  $('edit-place-delete').onclick=()=>{
+    if(editedPlaceKey===null)return;
+    const old=places.find(p=>C.placePlanKey(p)===editedPlaceKey);
+    if(!old)return;
+    if(confirm('„'+old.name+'“ wirklich aus deiner Karte löschen?'+
+      ' Der Ort wird auch aus gespeicherten Rundgängen entfernt.')){
+      commitPlaceEditor(null);
+    }
+  };
   function placeMeta(p) {
     const parts = [];
     if (p.priority) parts.push('Schulnote ' + p.priority);
@@ -1296,6 +1402,10 @@
       popupTourButton.setAttribute('aria-pressed',String(tourIsSelected(p)));
       popupTourButton.onclick=()=>toggleTourPlace(p,true);
       quickActions.append(popupTourButton,walkingButton(p),route(p));
+      const popupEditButton=node('button','✎ Bearbeiten','place-edit');
+      popupEditButton.type='button';
+      popupEditButton.onclick=()=>openPlaceEditor(p);
+      quickActions.append(popupEditButton);
       popup.append(quickActions);
       const metaText = placeMeta(p);
       if (metaText) popup.append(node('p',metaText,'place-meta'));
@@ -1333,6 +1443,10 @@
       tourButton.title='Ort zu einem Rundgang hinzufügen oder entfernen';
       tourButton.onclick=()=>toggleTourPlace(p);
       actions.append(show,walkingButton(p),tourButton,route(p),distance);
+      const editButton=node('button','✎ Bearbeiten','place-edit');
+      editButton.type='button';
+      editButton.onclick=()=>openPlaceEditor(p);
+      actions.append(editButton);
       const assignRow=node('div',undefined,'plan-assign-row');
       const assignSelect=node('select',undefined,'place-plan-select');
       assignSelect.setAttribute('aria-label','Ort '+p.name+' einem Reiseabschnitt zuordnen');
