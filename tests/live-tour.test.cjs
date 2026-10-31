@@ -85,6 +85,6 @@ test('GPS watch callbacks are offline-only and the tour state is not persisted',
  assert.match(app,/if\(activePlanId!==id\)clearTourRoute\(\)/);
  assert.match(app,/clearWalkingRoute\(\);\s*stopTourNavigation\(\);\s*watch = null/);
  const sw=read('sw.js');
- assert.match(sw,/livekarte-shell-pwa-v19/);
+ assert.match(sw,/livekarte-shell-pwa-v20/);
  assert.doesNotMatch(sw,/routed-foot|routing\.openstreetmap/);
 });

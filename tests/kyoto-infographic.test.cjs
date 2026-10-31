@@ -31,8 +31,8 @@ test('three simple travel phases do not turn a completed ride into unverified ti
  assert.match(logic,/if\(tripStageDone\[key\]===true\)return 'done'/);
  assert.match(logic,/return \['booked','ready'\]\.includes\(ticketStatusFor\(planId,trip,index\)\)\?'booked':'planned'/);
  assert.match(logic,/if\(!\['planned','booked','done'\]\.includes\(stage\)\)return false/);
- assert.match(logic,/const nextTicket=stage==='planned'\?'unknown'/);
- assert.match(logic,/ticketState==='ready'\?'ready':'booked'/);
+ assert.match(logic,/if\(stage==='planned'&&\['booked','ready'\]\.includes\(ticketState\)\)/);
+ assert.match(logic,/if\(stage==='booked'&&!\['booked','ready'\]\.includes\(ticketState\)/);
  assert.match(logic,/if\(stage==='done'\)next\[key\]=true/);
  assert.match(logic,/livekarte-trip-progress-v1/);
  assert.match(logic,/Reisephase selbst festlegen/);
@@ -75,7 +75,7 @@ test('Kyoto city plan has legible expandable timeline, compact metrics and hones
  assert.match(css,/\.kyoto-day-timeline/);
  assert.match(css,/\.kyoto-day-stats/);
  assert.match(css,/@media\(max-width:390px\)/);
- assert.match(read('sw.js'),/livekarte-shell-pwa-v19/);
+ assert.match(read('sw.js'),/livekarte-shell-pwa-v20/);
 });
 
 test('completed journey markers are only locally restored and do not enter public sync snapshots',()=>{
