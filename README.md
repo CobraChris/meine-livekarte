@@ -1,3 +1,7 @@
+## Popup mit dem Daumen verschieben (31.10.2026)
+
+Streiche direkt über die freie Fläche oder den Text eines Orts-Popups: die **Karte verschiebt sich zusammen mit dem am Ort verankerten Popup**. Der separate Griff „⠿ Ziehen“ bleibt erhalten. Buttons wie „＋ Tour“, „Google Maps“, „Bearbeiten“ und „Fußweg anzeigen“ bleiben klickbar. Bei überlangen Popup-Beschreibungen bleibt senkrechtes Scrollen über dem Text möglich. Standort und Route werden dabei nicht gespeichert oder erneut abgefragt.
+
 ## Popups mit Abstand und verschiebbarer Karte (31.10.2026)
 
 Bei Ortsmarkern steht das Info-Popup jetzt **24 Pixel weiter oberhalb** des Pins, mit einem größeren Schutzabstand zum oberen Kartenrand. Dadurch bleibt die Marker-Nadel sichtbar. Das Popup bleibt technisch fest an genau diesem Ort verankert.

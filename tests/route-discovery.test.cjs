@@ -90,7 +90,7 @@ test('no unexpected auto-search, unsafe server output or persistent GPS storage'
 test('offline shell and deploy include only static search code, never cached OSM API replies',()=>{
  const sw=read('sw.js'),workflow=read('.github/workflows/pages.yml');
  const stamp=read('scripts/stamp_pwa_version.py');
- assert.match(sw,/livekarte-shell-pwa-v14/);
+ assert.match(sw,/livekarte-shell-pwa-v15/);
  assert.match(sw,/'route-discovery\.js'/);
  assert.doesNotMatch(sw,/overpass-api\.de|interpreter|routed-foot/);
  assert.match(workflow,/node --check route-discovery\.js/);

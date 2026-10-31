@@ -22,7 +22,7 @@ test('map uses compact mobile controls while maintaining keyboard and screen-rea
 
 test('the button for walking directions is immediately beneath the place name, not below long descriptions',()=>{
   const app=read('app.js');
-  const start=app.indexOf("const popup = node('div');");
+  const start=app.indexOf("const popup = node('div',undefined,'place-popup-pan-surface');");
   const end=app.indexOf('const marker = L.marker(',start);
   const snippet=app.slice(start,end);
   assert.ok(snippet.includes("popupHeader.append(node('strong',p.name))"));
@@ -30,11 +30,12 @@ test('the button for walking directions is immediately beneath the place name, n
   assert.ok(snippet.indexOf('popup.append(popupHeader)')<snippet.indexOf('popup.append(quickActions)'));
   assert.ok(snippet.includes("popup.append(quickActions)"));
   assert.ok(snippet.includes("appendPlaceTiming(popup,p)"));
-  assert.ok(snippet.includes("popup.append(node('p',p.description),inPopup)"));
+  assert.ok(snippet.includes("const description=node('p',p.description,'place-popup-description')"));
+  assert.ok(snippet.includes("popup.append(description,inPopup)"));
   assert.ok(snippet.indexOf('popup.append(quickActions)')<
     snippet.indexOf('appendPlaceTiming(popup,p)'));
   assert.ok(snippet.indexOf('popup.append(quickActions)')<
-    snippet.indexOf("node('p',p.description)"));
+    snippet.indexOf("const description=node('p',p.description"));
   assert.match(app,/marker\.bindPopup\(popup,\{\s*maxWidth:320,maxHeight:250,/);
 });
 
@@ -51,7 +52,7 @@ test('PWA can display non-destructive update prompt and reload after user action
   assert.match(pwa,/window\.addEventListener\('focus',requestUpdateCheck\)/);
   assert.match(pwa,/window\.addEventListener\('load',requestUpdateCheck\)/);
   assert.doesNotMatch(pwa,/localStorage\.clear\(|indexedDB\.deleteDatabase\(|deleteItem\(/);
-  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v14'/);
+  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v15'/);
   assert.match(sw,/'build-version\.js'/);
   assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
   assert.doesNotMatch(sw,/app-version\.json/);

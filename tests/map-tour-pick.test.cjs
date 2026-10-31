@@ -73,7 +73,7 @@ test('selection overlay keeps the map in place, and finish returns to route plan
 
 test('normal map popups still support directions and also have a nearby tour button',()=>{
  const app=read('app.js');
- const begin=app.indexOf("      const popup = node('div');",app.indexOf('  function render()'));
+ const begin=app.indexOf("      const popup = node('div',undefined,'place-popup-pan-surface');",app.indexOf('  function render()'));
  const end=app.indexOf('      const chosenIndex=',begin);
  const popup=app.slice(begin,end);
  assert.match(popup,/popupTourButton=node\('button',tourIsSelected\(p\)\?'✓ In Tour':'＋ Tour','tour-pick'\)/);
@@ -85,7 +85,7 @@ test('normal map popups still support directions and also have a nearby tour but
 
 test('map picking is local-only and preserves previously deployed tour and offline shell',()=>{
  const app=read('app.js'),sw=read('sw.js'),html=read('index.html');
- assert.match(sw,/livekarte-shell-pwa-v14/);
+ assert.match(sw,/livekarte-shell-pwa-v15/);
  assert.doesNotMatch(sw,/routed-foot|overpass-api\.de/);
  assert.match(app,/const badge=chosenIndex<0/);
  assert.match(app,/function toggleTourPlace\(place,fromMap=false\)/);
