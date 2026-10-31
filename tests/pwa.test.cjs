@@ -124,8 +124,25 @@ test('GitHub Pages workflow builds PNGs and includes only needed public assets',
  assert.match(workflow,/node --check pwa\.js/);
  assert.match(workflow,/CairoSVG==2\.8\.2/);
  assert.match(workflow,/python scripts\/build_pwa_icons\.py/);
- assert.match(workflow,/cp index\.html style\.css core\.js(?: walking-core\.js)?(?: day-plan-core\.js)?(?: route-discovery\.js)? app\.js sync\.js outbox-core\.js sync-out\.js pwa\.js sw\.js manifest\.json public\//);
+ assert.match(workflow,/cp index\.html style\.css core\.js(?: walking-core\.js)?(?: day-plan-core\.js)?(?: route-discovery\.js)? next-step-core\.js japanese-destination\.js app\.js sync\.js outbox-core\.js sync-out\.js pwa\.js sw\.js manifest\.json public\//);
  assert.match(workflow,/cp icons\/livekarte\.svg public\/icons\//);
  assert.match(workflow,/cp -r sync public\//);
  assert.doesNotMatch(workflow,/cp -r scripts public/);
+});
+
+test('every first-party HTML script is copied to Pages and has a cache-busted version',()=>{
+ const html=read('index.html'),workflow=read('.github/workflows/pages.yml');
+ const stamper=read('scripts/stamp_pwa_version.py');
+ const copy=workflow.split('\n').find(line=>line.trim().startsWith('cp index.html '));
+ assert.ok(copy,'Missing static asset copy command');
+ const shipped=new Set(copy.trim().split(/\s+/).slice(1,-1));
+ const srcs=[...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map(match=>match[1]);
+ assert.ok(srcs.length>=10);
+ for(const src of srcs){
+   if(!src.startsWith('vendor/')&&src!=='build-version.js')
+     assert.ok(shipped.has(src),'HTML script missing in Pages: '+src);
+   assert.ok(stamper.includes('("src", "'+src+'")'),'HTML script missing in version stamper: '+src);
+ }
+ assert.match(stamper,/Missing Pages artifact asset/);
+ assert.match(stamper,/Unstamped HTML scripts/);
 });
