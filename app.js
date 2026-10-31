@@ -1828,10 +1828,14 @@
     const key=C.ticketLegKey(planId,trip,index);
     if(stage!=='done'){
       const ticketState=ticketStatusFor(planId,trip,index);
-      const nextTicket=stage==='planned'?'unknown':
-        ticketState==='ready'?'ready':'booked';
-      if(nextTicket!==ticketState&&!saveTicketStatus(planId,trip,index,nextTicket))
+      // A confirmed Klook booking must never be erased by moving a travel
+      // phase back to "Geplant". Ticket proof and journey progress are separate.
+      if(stage==='planned'&&['booked','ready'].includes(ticketState)){
+        say('Diese Fahrt ist bereits gebucht. „Geplant“ würde die bestätigte Buchung fälschlich zurücksetzen.');
         return false;
+      }
+      if(stage==='booked'&&!['booked','ready'].includes(ticketState)&&
+         !saveTicketStatus(planId,trip,index,'booked'))return false;
     }
     const next={...tripStageDone};
     if(stage==='done')next[key]=true;
@@ -1861,12 +1865,24 @@
     kyotoRailInfographic.append(title);
     const booking=node('div',undefined,'kyoto-booking-card');
     booking.append(
-      node('strong','✅ Beide Zugabschnitte gebucht','kyoto-booking-title'),
-      node('span','🎟 Vor Abfahrt in Takayama: Klook-QR-Code am Ticketautomaten scannen und Papier-Tickets ausgeben lassen.','kyoto-booking-row'),
+      node('strong','✅ Buchung: beide Zugabschnitte bestätigt','kyoto-booking-title'),
+      node('span',kyotoPickupDone
+        ?'✅ Papiertickets: abgeholt (von dir bestätigt)'
+        :'⚠ Papiertickets: noch am Bahnhof Takayama abholen','kyoto-booking-row kyoto-booking-pickup-state'),
+      node('span','🎟 Klook-QR-Code nach der Anleitung auf dem Voucher am geeigneten Automaten oder am JR-Ticketschalter verwenden.','kyoto-booking-row'),
       node('span','🚆 Hida 8 · Wagen 2 · Sitze 10C + 10D','kyoto-booking-row'),
       node('span','🚄 Nozomi 71 · Wagen 4 · Sitze 8D + 8E','kyoto-booking-row'),
       node('span','🧳 Koffer unter 160 cm Gesamtmaß · keine Übergepäckreservierung nötig','kyoto-booking-row')
     );
+    const pickupLink=node('button',kyotoPickupDone?'✓ Abholbestätigung ansehen':'☑ Ticketabholung – Anleitung ansehen',
+      'kyoto-booking-guide');
+    pickupLink.type='button';
+    pickupLink.onclick=()=>{
+      const details=$('kyoto-pickup-steps-details');
+      if(details&&!kyotoPickupDone)details.open=true;
+      $('kyoto-pickup').scrollIntoView({behavior:'smooth',block:'start'});
+    };
+    booking.append(pickupLink);
     kyotoRailInfographic.append(booking);
     if(stops.length<2)return;
     const last=stops[stops.length-1],first=stops[0];
@@ -1987,9 +2003,11 @@
     );
     kyotoRailInfographic.append(hotelTransfer);
     const unknown=stops.slice(0,-1).filter((_,i)=>!['booked','ready'].includes(ticketStatusFor(activePlanId,trip,i))).length;
-    kyotoRailInfographic.append(node('p',unknown
-      ?'🎟 Für '+unknown+' von '+(stops.length-1)+' Strecken ist der bestätigte Buchungsstatus lokal noch nicht übernommen.'
-      :'🎟 Beide Teilstrecken sind bestätigt gebucht. Die Papier-Tickets müssen vor Abfahrt noch abgeholt werden; danach kannst du den Status auf „Vorhanden“ setzen.',
+    kyotoRailInfographic.append(node('p',kyotoPickupDone
+      ?'✅ Papier-Tickets laut deiner eigenen Bestätigung abgeholt. Beide Zugtickets als „Vorhanden“ gespeichert.'
+      :unknown
+        ?'🎟 Für '+unknown+' von '+(stops.length-1)+' Strecken ist der bestätigte Buchungsstatus lokal noch nicht übernommen. Papiertickets bitte separat prüfen.'
+        :'⚠ Buchung für beide Teilstrecken bestätigt, aber die Papiertickets noch nicht abgeholt. Bitte vor der Abfahrt in Takayama erledigen.',
       'kyoto-rail-footnote'));
     kyotoRailInfographic.append(node('small','„Erledigt“ beschreibt nur die durch dich bestätigte Fahrt. Die Ticketdetails bleiben separat und können über die verschlüsselte Synchronisierung aktualisiert werden.','kyoto-rail-disclaimer'));
   }
@@ -2002,6 +2020,9 @@
   function renderKyotoPickup(){
     kyotoPickupPanel.hidden=!['town-takayama','ride-kyoto'].includes(activePlanId);
     kyotoPickupPanel.classList.toggle('is-complete',kyotoPickupDone);
+    $('kyoto-pickup-state').textContent=kyotoPickupDone
+      ?'✅ Papiertickets: abgeholt (selbst bestätigt)'
+      :'⚠ Papiertickets: noch abholen';
     kyotoPickupConfirm.disabled=kyotoPickupDone;
     kyotoPickupConfirm.textContent=kyotoPickupDone
       ?'✓ Papier-Tickets für beide Züge abgeholt'
