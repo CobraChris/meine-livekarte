@@ -1669,7 +1669,10 @@
     return {railDone,trip};
   }
   function showNextActionDetails(task){
-    if(task.details==='pickup'){
+    if(task.id==='kyoto:transfer'&&activePlanId==='ride-kyoto'&&
+      C.isNagoyaKyotoTrip(journey)){
+      openNagoyaKyotoGuide();
+    }else if(task.details==='pickup'){
       if(!['town-takayama','ride-kyoto'].includes(activePlanId))
         selectPlan('ride-kyoto');
       $('kyoto-pickup-steps-details').open=true;
@@ -1790,7 +1793,10 @@
     nextActionComplete.textContent=task.source==='pickup'?'✓ Abholung bestätigen':'✓ Erledigt';
     nextActionComplete.onclick=()=>setActionDone(task,true);
     nextActionDetails.hidden=false;
-    nextActionDetails.textContent=task.details==='tour'?'Zur Tour-Navigation':'Details ansehen';
+    nextActionDetails.textContent=task.id==='kyoto:transfer'&&
+      activePlanId==='ride-kyoto'&&C.isNagoyaKyotoTrip(journey)
+        ?'🚄 Umstiegshilfe öffnen'
+        :task.details==='tour'?'Zur Tour-Navigation':'Details ansehen';
     nextActionDetails.onclick=()=>showNextActionDetails(task);
     const target=task.place;
     nextActionMap.hidden=!(target&&Number.isFinite(target.lat)&&Number.isFinite(target.lng));
@@ -1880,9 +1886,15 @@
   const ngDialog = $('nagoya-dialog'), ngTrigger=$('nagoya-guide-trigger');
   let ngStep=0;
   try {ngStep=Math.max(0,Math.min(ng.steps.length-1,Number(localStorage.getItem('livekarte-nagoya-step-v1'))||0));}catch{}
+  const ngKyotoTrigger=$('nagoya-kyoto-guide-trigger');
   function updateNagoyaTrigger() {
-    const hasNagoya = !!journey?.stops.some(s=>s.name.toLowerCase()==='nagoya');
-    ngTrigger.hidden = !hasNagoya || map.getZoom()<15 || !map.getBounds().contains(nagoya);
+    const nearNagoya=map.getZoom()>=15&&map.getBounds().contains(nagoya);
+    const legacy=activePlanId==='ride-takayama'&&journey?.date==='30.10.2026'&&
+      journey.stops.some(s=>s.name==='Nagoya'&&s.departure==='11:43');
+    const kyoto=activePlanId==='ride-kyoto'&&C.isNagoyaKyotoTrip(journey);
+    // Only one direction-specific guide may be offered on the map.
+    ngTrigger.hidden=!legacy||!nearNagoya;
+    ngKyotoTrigger.hidden=!kyoto||!nearNagoya;
   }
   function renderNagoyaStep() {
     const step=ng.steps[ngStep];
@@ -1919,6 +1931,42 @@
     const saved=localStorage.getItem('livekarte-nagoya-arrival-v1')||'';
     if([...$('nagoya-arrival-track').options].some(o=>o.value===saved))$('nagoya-arrival-track').value=saved;
   }catch{}
+  // 01.11.2026: dedicated JR-to-Shinkansen guide, kept completely separate
+  // from the historical Hikari-to-Hida guide and its stored progress.
+  const ngKyoto=C.stationGuides.nagoyaKyoto;
+  const ngKyotoDialog=$('nagoya-kyoto-dialog');
+  let ngKyotoStep=0;
+  function renderNagoyaKyotoStep(){
+    const step=ngKyoto.steps[ngKyotoStep];
+    $('nagoya-kyoto-progress').textContent='Schritt '+(ngKyotoStep+1)+' von '+ngKyoto.steps.length;
+    $('nagoya-kyoto-floor').textContent=step.level;
+    $('nagoya-kyoto-step-title').textContent=step.title;
+    $('nagoya-kyoto-step-action').textContent=step.action;
+    $('nagoya-kyoto-sign').textContent=step.sign;
+    $('nagoya-kyoto-step-caution').textContent=step.caution;
+    $('nagoya-kyoto-prev').disabled=ngKyotoStep===0;
+    $('nagoya-kyoto-next').textContent=ngKyotoStep===ngKyoto.steps.length-1?'Fertig':'Nächster Schritt';
+  }
+  function openNagoyaKyotoGuide(){
+    if(activePlanId!=='ride-kyoto'||!C.isNagoyaKyotoTrip(journey)){
+      say('Der Zugplan wurde geändert. Bitte erst die aktuelle Verbindung prüfen.');
+      return;
+    }
+    ngKyotoStep=0;
+    renderNagoyaKyotoStep();
+    if(!ngKyotoDialog.open)ngKyotoDialog.showModal();
+  }
+  ngKyotoTrigger.onclick=openNagoyaKyotoGuide;
+  $('nagoya-kyoto-close').onclick=()=>ngKyotoDialog.close();
+  $('nagoya-kyoto-prev').onclick=()=>{
+    ngKyotoStep=Math.max(0,ngKyotoStep-1);
+    renderNagoyaKyotoStep();
+  };
+  $('nagoya-kyoto-next').onclick=()=>{
+    if(ngKyotoStep===ngKyoto.steps.length-1){ngKyotoDialog.close();return;}
+    ngKyotoStep++;
+    renderNagoyaKyotoStep();
+  };
   map.on('moveend zoomend',updateNagoyaTrigger);
   function fitJourney() {
     if (!journey) return;
@@ -2218,6 +2266,12 @@
         transferText.append(node('strong','Umstieg in '+to.name+' Station (Bahnhof)'));
         transferText.append(node('small',(diff===null?'Zeit vor Ort prüfen':diff+' Min. Umsteigezeit')+
           ' · Gleis 4 → Gleis 17 · Bahnhofsanzeige vor Ort hat Vorrang'));
+        if(C.isNagoyaKyotoTrip(trip)){
+          const guide=node('button','🚄 Umstieg Schritt für Schritt','kyoto-transfer-guide');
+          guide.type='button';
+          guide.onclick=openNagoyaKyotoGuide;
+          transferText.append(guide);
+        }
         transfer.append(transferText);
         line.append(transfer);
       }
