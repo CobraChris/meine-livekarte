@@ -1673,8 +1673,10 @@
       manualDone:nextActionDone,
       railDone:travelTaskContext().railDone
     });
-    const tourIsActive=!!(tourNavigation&&tourRoute&&tourRoute.planId===view);
-    const selectedTour=!tourIsActive&&tourRoute?.planId===view&&
+    // An uncollected train ticket always outranks an optional walking tour.
+    const criticalPickup=result.next?.source==='pickup'&&!kyotoPickupDone;
+    const tourIsActive=!criticalPickup&&!!(tourNavigation&&tourRoute&&tourRoute.planId===view);
+    const selectedTour=!criticalPickup&&!tourIsActive&&tourRoute?.planId===view&&
       tourRoute?.stops?.length>=2;
     nextActionSection.hidden=!result.total&&!tourIsActive&&!selectedTour;
     if(nextActionSection.hidden)return;
