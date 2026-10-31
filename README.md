@@ -17,6 +17,10 @@ Die installierte PWA bleibt bei schon laufendem JavaScript normalerweise auf ihr
 
 **Bereits vor dieser Verbesserung geöffnete PWA:** Einmal aus der Android-Übersicht der zuletzt verwendeten Apps vollständig schließen und über das App-Symbol erneut öffnen; bisherige Browserdaten **nicht** löschen und die App **nicht** entkoppeln. Die neue Aktualisierungsaufforderung kann erst wirken, sobald die neue App-Version einmal geladen ist.
 
+## Bonz Brew/Bonds Brew: persönlicher Food-Marker in Takayama (31.10.2026)
+
+Auf ausdrücklichen Wunsch wurde **Bonds Brew beer craft** (vom Nutzer „Bonz Brew“ genannt) als privater Karten-Merker in der Kategorie Restaurant ergänzt. Ort: 36.1426055 N, 137.2601207 E, Kamininomachi 67-1, Takayama. Der Ort wird nur für den Takayama-Reiseabschnitt über einen gezielten einmaligen lokalen Migrationsschritt in die gespeicherten Orte übernommen. Bereits ausgewählte Rundgänge bleiben unverändert. Auch bei schon installierter App wird nach dem Versionswechsel und Neustart der Marker lokal hinzugefügt. Das Importieren erzeugt keine GPS- oder Netzwerkabfrage. Name und Koordinaten stammen aus einer überprüften Google-Maps-Ortsseite, die Beschreibung von der offiziellen Shopseite.
+
 ## Sehenswürdigkeiten entlang eines Fußwegs entdecken (31.10.2026)
 
 Im bereits berechneten Rundgang steht der optionale Bereich **„◇ Entlang der Route entdecken“** bereit. Die App fragt **nur nach ausdrücklichem Klick** auf „Sehenswürdigkeiten suchen“ eine eng begrenzte OpenStreetMap-Overpass-Abfrage nach Museen, Kunstwerken, Aussichtspunkten, Denkmälern, Burgen und anderen benannten Sehenswürdigkeiten ab. Dabei wird **die Bounding Box des aktuellen Fußwegs einschließlich seiner GPS-Startumgebung** an `overpass-api.de` übermittelt, aber kein GPS-Verlauf. Es wird nie auf Standortaktualisierungen reagiert, automatisch nachgefragt oder die Abfrage offline gespeichert. Nur kompakte lokale Routen können durchsucht werden. Für die kostenlose Overpass-Instanz gibt es keine garantierte Verfügbarkeit.
