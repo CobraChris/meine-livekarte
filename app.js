@@ -586,6 +586,7 @@
   }
   function setMapTourPickMode(enabled,focusMap=false){
     mapTourPickMode=!!enabled;
+    if(mapTourPickMode)pauseGPSFollow();
     if(mapTourPickMode&&filter!=='all'){
       filter='all';
       document.querySelectorAll('[data-filter]').forEach(button=>
@@ -1170,7 +1171,7 @@
       popupTourButton.type='button';
       popupTourButton.title='Ort direkt zum Rundgang hinzufügen oder entfernen';
       popupTourButton.setAttribute('aria-pressed',String(tourIsSelected(p)));
-      popupTourButton.onclick=()=>toggleTourPlace(p);
+      popupTourButton.onclick=()=>toggleTourPlace(p,true);
       quickActions.append(popupTourButton,walkingButton(p),route(p));
       popup.append(quickActions);
       const metaText = placeMeta(p);
@@ -1193,7 +1194,7 @@
       }).addTo(pins);
       if(mapTourPickMode){
         // While picking, one marker tap selects immediately instead of opening a popup.
-        marker.on('click',()=>{following=false;toggleTourPlace(p,true);});
+        marker.on('click',()=>{pauseGPSFollow();toggleTourPlace(p,true);});
       }else{
         marker.bindPopup(popup,{maxWidth:320,maxHeight:250,autoPan:true});
         marker.on('popupopen', () => { following = false; });
