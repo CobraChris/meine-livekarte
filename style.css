@@ -904,3 +904,108 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .kyoto-overview li{font-size:11px;line-height:1.5;color:#e4f4ea}
 .kyoto-overview li strong{color:#fff1bc}
 .kyoto-overview .kyoto-plan-note{font-size:10px;color:#b3d2c6}
+
+
+/* Kyoto 01.11 rail infographic and 01–02.11 day timelines: compact on phones. */
+.kyoto-rail-infographic{
+  padding:16px 14px 13px;margin:0 0 14px;
+  color:#ecfff4;background:#142c33;border:1px solid #547b70;
+  border-radius:15px;box-shadow:0 4px 14px #0c272625;
+}
+.kyoto-rail-infographic[hidden]{display:none!important}
+.kyoto-eyebrow{display:block;font-size:10px;letter-spacing:.07em;
+  font-weight:850;color:#94e4bd}
+.kyoto-rail-heading h2{font-size:20px;line-height:1.2;margin:6px 0 3px;color:#f3fff7}
+.kyoto-rail-heading .kyoto-rail-subtitle{font-size:11px;color:#b8d3cc;
+  line-height:1.45;margin:4px 0 12px}
+.kyoto-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;margin:10px 0 17px}
+.kyoto-kpi{padding:11px 7px 9px;text-align:center;border:1px solid #53796e;
+  border-radius:10px;background:#203f42;min-width:0}
+.kyoto-kpi strong{display:block;color:#aff3ca;font-size:18px;line-height:1.2;
+  font-weight:850;white-space:nowrap}
+.kyoto-kpi small{display:block;font-size:10px;color:#c1d7cc;margin-top:4px}
+.kyoto-rail-line{border-left:2px dashed #6aa48f;margin:0 0 0 12px;
+  padding:0 0 4px 15px;display:grid;gap:11px}
+.kyoto-rail-station{position:relative;display:flex;gap:12px;
+  align-items:flex-start;padding:1px 0 5px}
+.kyoto-rail-station:before{content:"";position:absolute;left:-23px;top:8px;
+  width:11px;height:11px;border:2px solid #193333;border-radius:50%;background:#aaeacc}
+.kyoto-rail-time{font-size:14px;font-weight:850;color:#ffdf91;min-width:45px;tabular-nums:lining-nums}
+.kyoto-rail-stop-body{display:grid;gap:4px}
+.kyoto-rail-stop-body strong{font-size:13px}
+.kyoto-rail-stop-body small{font-size:10px;color:#b4d2c5;line-height:1.4}
+.kyoto-rail-leg{display:grid;gap:9px;padding:11px;
+  background:#1c393e;border:1px solid #466a69;border-radius:11px}
+.kyoto-rail-leg-header{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.kyoto-train-icon{font-size:20px}
+.kyoto-rail-leg-name{display:grid;gap:4px;flex:1;min-width:0}
+.kyoto-rail-leg-name strong{font-size:13px;line-height:1.35}
+.kyoto-rail-leg-name small{font-size:10px;color:#c7e1d6;line-height:1.4}
+.kyoto-phase-badge{border:1px solid #687d76;padding:4px 6px;
+  background:#273b3e;color:#d7e8df;border-radius:7px;
+  font-size:10px;font-weight:800;white-space:nowrap}
+.kyoto-rail-leg-booked .kyoto-phase-badge{background:#423926;color:#ffe0a3;border-color:#977a45}
+.kyoto-rail-leg-done .kyoto-phase-badge{background:#2b573e;color:#c8ffe0;border-color:#609b77}
+.kyoto-phase-caption{font-size:10px;color:#b9d5c7}
+.kyoto-stage-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.kyoto-stage-button{min-height:40px;padding:7px 4px;border-radius:8px;
+  border:1px solid #53726d;background:#263f43;color:#d4ece0;
+  font-size:11px;font-weight:750;min-width:0}
+.kyoto-stage-button.is-active{border-color:#a4edc6;background:#3c6959;color:white;
+  box-shadow:inset 0 0 0 1px #a9e9c1}
+.kyoto-rail-leg-booked .kyoto-stage-button.is-active{border-color:#deb878;background:#6e5935}
+.kyoto-ticket-caveat{font-size:10px;color:#c8dacf;line-height:1.4}
+.kyoto-rail-transfer{display:flex;align-items:center;gap:11px;padding:4px 8px;
+  background:#294447;border:1px dashed #739b90;border-radius:9px}
+.kyoto-transfer-icon{font-size:18px}
+.kyoto-rail-transfer div{display:grid;gap:2px}
+.kyoto-rail-transfer strong{font-size:12px;color:#ffe2a8}
+.kyoto-rail-transfer small{font-size:10px;color:#b9d4c9}
+.kyoto-ticket-details{border:1px solid #3c6460;border-radius:8px;background:#173336}
+.kyoto-ticket-details>summary{cursor:pointer;padding:8px 9px;
+  font-size:11px;color:#b8edce;font-weight:650}
+.kyoto-ticket-detail-body{padding:0 9px 10px;display:grid;gap:7px}
+.kyoto-ticket-label{display:grid;gap:6px;font-size:10px;color:#d4ebdd}
+.kyoto-ticket-picker{width:100%;min-height:39px;padding:7px;border-radius:8px;
+  border:1px solid #4f7b6d;background:#234247;color:#f3fff7;font-size:12px}
+.kyoto-ticket-detail-body small{font-size:10px;color:#c0d5c9;line-height:1.45}
+.kyoto-rail-footnote{margin:13px 0 6px;font-size:11px;color:#f6ddaa;
+  line-height:1.45;border-top:1px solid #3c645a;padding-top:10px}
+.kyoto-rail-disclaimer{display:block;font-size:10px;color:#b0cfc3;line-height:1.5}
+.kyoto-day-heading h2{font-size:18px;color:#d7f5e5;margin:4px 0}
+.kyoto-day-heading p{margin:6px 0;color:#b9d0c5;font-size:11px;line-height:1.45}
+.kyoto-day-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0}
+.kyoto-day-stats>div{border-radius:8px;background:#244146;border:1px solid #4e756a;
+  padding:9px 4px;text-align:center;min-width:0}
+.kyoto-day-stats strong{display:block;color:#c6f2d8;font-size:14px}
+.kyoto-day-stats small{font-size:9px;color:#b9d1c7}
+.kyoto-overview .kyoto-day{overflow:hidden;border-radius:10px}
+.kyoto-overview .kyoto-day>summary{display:flex;gap:10px;align-items:center;
+  padding:12px 9px;list-style:none}
+.kyoto-overview .kyoto-day>summary::-webkit-details-marker{display:none}
+.kyoto-overview .kyoto-day>summary:after{content:"⌄";font-size:18px;margin-left:auto;color:#bad9cc}
+.kyoto-overview .kyoto-day[open]>summary:after{transform:rotate(180deg)}
+.kyoto-overview .kyoto-day .day-number{width:33px;height:33px;flex:none;
+  border-radius:9px;background:#31564d;color:#c2f7d9;
+  display:grid;place-items:center;font-weight:850}
+.kyoto-overview .kyoto-day summary strong{display:block;font-size:12px;color:#f5e9bb}
+.kyoto-overview .kyoto-day summary small{display:block;color:#b5d5c5;font-size:10px;font-weight:500;margin-top:3px}
+.kyoto-overview .kyoto-day-timeline{margin:0 9px 10px 12px;padding:0;
+  border-left:2px dashed #6e9e8b;list-style:none;gap:0}
+.kyoto-overview .kyoto-day-timeline li{display:grid;grid-template-columns:75px 22px minmax(0,1fr);
+  align-items:flex-start;gap:8px;position:relative;margin-left:0;padding:8px 5px 10px 10px}
+.kyoto-day-timeline time{font-size:10px;color:#f9ddaa;font-weight:800;line-height:1.55}
+.kyoto-day-symbol{font-size:15px}
+.kyoto-day-timeline li>div{display:grid;gap:3px;min-width:0}
+.kyoto-day-timeline li>div strong{font-size:11px;color:#f4fff9}
+.kyoto-day-timeline li>div small{font-size:10px;color:#bdd6c9;line-height:1.35}
+.kyoto-overview .kyoto-plan-note{font-size:10px;color:#b5d0c4;line-height:1.5;margin-top:10px}
+@media(max-width:390px){
+ .kyoto-rail-infographic{padding:12px 10px}
+ .kyoto-rail-leg{padding:9px}
+ .kyoto-kpi strong{font-size:15px}
+ .kyoto-phase-badge{font-size:9px}
+ .kyoto-stage-button{font-size:10px}
+ .kyoto-overview .kyoto-day-timeline li{grid-template-columns:70px 20px minmax(0,1fr);gap:6px}
+}

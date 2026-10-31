@@ -47,5 +47,5 @@ test('overflow description scrolls vertically while default swipes pan the map',
  assert.match(body,/scroll\.scrollHeight>scroll\.clientHeight\+4/);
  assert.match(body,/scroll\.scrollTop-=dy/);
  assert.match(app,/const description=node\('p',p\.description,'place-popup-description'\)/);
- assert.match(sw,/livekarte-shell-pwa-v17/);
+ assert.match(sw,/livekarte-shell-pwa-v18/);
 });

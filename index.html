@@ -121,32 +121,41 @@
     <p class="sync-help">Einmal den <strong>öffentlichen</strong> Code an ChatGPT senden. Nur dein Gerät kann die verschlüsselten Updates lesen. Dein privater Schlüssel bleibt in diesem Browser. Die Verbindung empfängt Ticketstatus-Updates, synchronisiert noch keine Buchungsdokumente und benötigt eine offene/neu geladene Webseite. Bei gelöschten Browserdaten geht der Schlüssel verloren.</p>
   </div>
 </details>
+<section id="kyoto-rail-infographic" class="kyoto-rail-infographic" hidden aria-label="Zugfahrt als Infografik" aria-live="off"></section>
 <section id="journey-panel" class="journey-panel" hidden aria-label="Dein Reiseplan"><div id="journey-info"></div><button type="button" id="remove-journey" class="text-button">Reiseplan entfernen</button></section>
 <section id="kyoto-overview" class="kyoto-overview" hidden aria-label="Kyoto Reise- und Stadtplan">
-  <h2>🗓 Kyoto · Reiseplan 01.–07.11.</h2>
-  <p>Der zuletzt gemeinsam festgelegte Ablauf. Zugzeiten sind Fahrplanwerte, <strong>keine Ticketbestätigung</strong>. Die Karte zeigt Bahnhöfe und Sehenswürdigkeiten als Marker; Bahnlinien sind nur schematisch.</p>
-  <details open>
-    <summary>So. 01.11. · Anreise und Gion-Abend</summary>
-    <ol>
-      <li><strong>11:35–14:04</strong> Takayama → Nagoya · Limited Express Hida 8</li>
-      <li><strong>14:04–14:26</strong> Nagoya · 22 Min. Umsteigen, Gleis prüfen</li>
-      <li><strong>14:26–15:00</strong> Nagoya → Kyoto · Nozomi 71 (Zugnummer mit Ticket abgleichen)</li>
-      <li><strong>ca. 15:30–16:15</strong> Weiterfahrt zum Tomoya Residence, Gepäck und Check-in; alternativ Taxi. Karasuma-Linie bis Karasuma Oike, Ausgang 1, dann etwa 7 Min. zu Fuß</li>
-      <li><strong>Danach</strong> Gion Shirakawa und Tatsumi-Brücke</li>
-      <li><strong>Abends</strong> Ponto-chō zum Abendessen, optional Kamo-Fluss</li>
+  <div class="kyoto-day-heading">
+    <span class="kyoto-eyebrow">🗓 REISEÜBERSICHT</span>
+    <h2>Kyoto · 01.–07.11.</h2>
+    <p>Dein letzter Reiseplan – geplante Zeiten, keine Ticketbestätigung oder Live-Fahrzeiten.</p>
+  </div>
+  <div class="kyoto-day-stats" aria-label="Tagesübersicht">
+    <div><strong>01.11.</strong><small>Anreise &amp; Gion</small></div>
+    <div><strong>02.11.</strong><small>Tempel &amp; Torii</small></div>
+    <div><strong>03.–06.</strong><small>Noch flexibel</small></div>
+  </div>
+  <details class="kyoto-day" open>
+    <summary><span class="day-number">01</span><span><strong>So. 01.11. · Anreise und Gion-Abend</strong><small>Zug · Hotel · Stadtspaziergang</small></span></summary>
+    <ol class="kyoto-day-timeline">
+      <li><time>11:35–14:04</time><span class="kyoto-day-symbol" aria-hidden="true">🚆</span><div><strong>Hida 8 · Takayama → Nagoya</strong><small>Fahrplanwert · Zug und Gleis prüfen</small></div></li>
+      <li><time>14:04–14:26</time><span class="kyoto-day-symbol" aria-hidden="true">🔄</span><div><strong>22 Minuten umsteigen</strong><small>Nagoya · JR → Shinkansen</small></div></li>
+      <li><time>14:26–15:00</time><span class="kyoto-day-symbol" aria-hidden="true">🚄</span><div><strong>Nozomi 71 · Nagoya → Kyoto</strong><small>Fahrplanwert · Ticket und Anzeige prüfen</small></div></li>
+      <li><time>15:30–16:15</time><span class="kyoto-day-symbol" aria-hidden="true">🏨</span><div><strong>Tomoya Residence · Check-in</strong><small>Ungefähre Hotelankunft. Karasuma-Linie bis Karasuma Oike, Ausgang 1, dann etwa 7 Minuten zu Fuß; Taxi alternativ</small></div></li>
+      <li><time>Danach</time><span class="kyoto-day-symbol" aria-hidden="true">⛩️</span><div><strong>Gion Shirakawa &amp; Tatsumi-Brücke</strong><small>Entspannter Abendspaziergang</small></div></li>
+      <li><time>Abends</time><span class="kyoto-day-symbol" aria-hidden="true">🍜</span><div><strong>Ponto-chō · Abendessen</strong><small>Optional am Kamo-Fluss entlang</small></div></li>
     </ol>
   </details>
-  <details>
-    <summary>Mo. 02.11. · Higashiyama und Fushimi Inari</summary>
-    <ol>
-      <li><strong>Vor 09:45</strong> Frühstück und Fahrt nach Higashiyama</li>
-      <li><strong>09:45–11:15</strong> Kiyomizu-dera</li>
-      <li><strong>11:15–13:30</strong> Sannenzaka und Ninenzaka, inklusive Mittagessen</li>
-      <li><strong>13:30–15:15</strong> Weiterfahrt und Zeitpuffer zum Fushimi Inari (keine feste Verbindung zugesichert)</li>
-      <li><strong>15:15–17:15</strong> Fushimi Inari-Taisha</li>
+  <details class="kyoto-day">
+    <summary><span class="day-number">02</span><span><strong>Mo. 02.11. · Higashiyama und Fushimi Inari</strong><small>Altstadt · Tempel · Torii</small></span></summary>
+    <ol class="kyoto-day-timeline">
+      <li><time>Vor 09:45</time><span class="kyoto-day-symbol" aria-hidden="true">☕</span><div><strong>Frühstück &amp; Anreise</strong><small>Nach Higashiyama</small></div></li>
+      <li><time>09:45–11:15</time><span class="kyoto-day-symbol" aria-hidden="true">⛩️</span><div><strong>Kiyomizu-dera</strong><small>Besichtigung und Ausblick</small></div></li>
+      <li><time>11:15–13:30</time><span class="kyoto-day-symbol" aria-hidden="true">🏘️</span><div><strong>Sannenzaka &amp; Ninenzaka</strong><small>Historische Gassen inklusive Mittagessen</small></div></li>
+      <li><time>13:30–15:15</time><span class="kyoto-day-symbol" aria-hidden="true">🚉</span><div><strong>Transfer &amp; Puffer</strong><small>Keine feste ÖPNV-Verbindung zugesichert</small></div></li>
+      <li><time>15:15–17:15</time><span class="kyoto-day-symbol" aria-hidden="true">⛩️</span><div><strong>Fushimi Inari-Taisha</strong><small>Torii-Spaziergang je nach Energie</small></div></li>
     </ol>
   </details>
-  <p class="kyoto-plan-note">03.–06.11.: Stadttage noch nicht verbindlich ausgearbeitet. 07.11.: Weiterreise Richtung Nikko gemäß letzter Umplanung; Ticketstatus und endgültige Verbindungen separat prüfen. Öffnungszeiten und Wege vor Ort kontrollieren.</p>
+  <p class="kyoto-plan-note">03.–06.11.: Noch keine verbindlichen Stadttage. 07.11.: Weiterreise Richtung Nikko gesondert prüfen. Öffnungszeiten, Tickets und Wege sind vor Ort zu kontrollieren.</p>
 </section>
 <div class="toolbar"><button class="primary" id="open-import">＋ Orte importieren</button><button id="share">↗ Teilen</button></div>
 <details id="tour-builder" class="tour-builder">
