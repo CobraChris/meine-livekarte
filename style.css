@@ -871,32 +871,16 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 
 
 
-/* Keep a visible gap between the pinned POI and its anchored popup.
- * Only the small "Ziehen" handle moves the map; action buttons stay tappable. */
+/* Keep the anchored popup above its marker, with space for the close X.
+   The popup surface itself is draggable; no separate handle is needed. */
 .leaflet-popup-content .place-popup-header{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:10px;min-width:0;padding-right:24px; /* clear Leaflet close X */
+  padding-right:24px;
+  min-width:0;
 }
 .leaflet-popup-content .place-popup-header strong{
-  font-size:14px;line-height:1.4;min-width:0;overflow-wrap:anywhere;
+  display:block;font-size:14px;line-height:1.4;
+  overflow-wrap:anywhere;
 }
-.leaflet-popup-content .place-popup-drag{
-  flex:none;display:flex;align-items:center;justify-content:center;
-  min-height:35px;min-width:67px;padding:6px 9px;
-  font-size:11px;font-weight:750;line-height:1.2;
-  background:#2c5657;color:#e6fff6;border:1px solid #86b4a7;
-  border-radius:8px;cursor:grab;touch-action:none;
-  user-select:none;-webkit-user-select:none;
-}
-.leaflet-popup-content .place-popup-drag.is-dragging{cursor:grabbing;background:#367365}
-.leaflet-popup-content .place-popup-drag:focus-visible{
-  outline:2px solid #a4ecc9;outline-offset:2px;
-}
-@media(max-width:760px){
-  .leaflet-popup-content .place-popup-header{gap:6px}
-  .leaflet-popup-content .place-popup-drag{min-height:38px;min-width:72px}
-}
-
 
 /* Swiping text or blank popup space moves the anchored map.
    Other form controls and links remain ordinary clickable elements. */
