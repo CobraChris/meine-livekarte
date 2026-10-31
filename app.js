@@ -1856,8 +1856,17 @@
     const title=node('div',undefined,'kyoto-rail-heading');
     title.append(node('span','🚄 DEINE ZUGREISE · 01.11.2026','kyoto-eyebrow'));
     title.append(node('h2','Takayama → Kyoto'));
-    title.append(node('p','Fahrplanzeiten, keine automatische Ticketprüfung.','kyoto-rail-subtitle'));
+    title.append(node('p','Klook-Buchung bestätigt · Papier-Tickets vor Abfahrt abholen.','kyoto-rail-subtitle'));
     kyotoRailInfographic.append(title);
+    const booking=node('div',undefined,'kyoto-booking-card');
+    booking.append(
+      node('strong','✅ Beide Zugabschnitte gebucht','kyoto-booking-title'),
+      node('span','🎟 Vor Abfahrt in Takayama: Klook-QR-Code am Ticketautomaten scannen und Papier-Tickets ausgeben lassen.','kyoto-booking-row'),
+      node('span','🚆 Hida 8 · Wagen 2 · Sitze 10C + 10D','kyoto-booking-row'),
+      node('span','🚄 Nozomi 71 · Wagen 4 · Sitze 8D + 8E','kyoto-booking-row'),
+      node('span','🧳 Koffer unter 160 cm Gesamtmaß · keine Übergepäckreservierung nötig','kyoto-booking-row')
+    );
+    kyotoRailInfographic.append(booking);
     if(stops.length<2)return;
     const last=stops[stops.length-1],first=stops[0];
     const kpis=node('div',undefined,'kyoto-kpis');
@@ -1883,7 +1892,8 @@
     const origin=node('div',undefined,'kyoto-rail-station');
     origin.append(node('span',first.departure||'–','kyoto-rail-time'));
     const originBody=node('div',undefined,'kyoto-rail-stop-body');
-    originBody.append(node('strong',first.name),node('small','Abfahrt · Bahnhofsanzeige prüfen'));
+    originBody.append(node('strong',first.name+' Station (Bahnhof)'),
+      node('small','Abfahrt · vor dem Einstieg Papier-Tickets per Klook-QR-Code abholen'));
     origin.append(originBody);
     line.append(origin);
     for(let i=0;i<stops.length-1;i++){
@@ -1896,6 +1906,10 @@
       const main=node('div',undefined,'kyoto-rail-leg-name');
       main.append(node('strong',i===0?'Limited Express Hida 8':'Shinkansen Nozomi 71'));
       main.append(node('small',(from.departure||'–')+'–'+(to.arrival||'–')+' · '+from.name+' → '+to.name));
+      main.append(node('small',i===0
+        ?'Wagen 2 · Sitze 10C + 10D · Ankunft Nagoya: Gleis 4'
+        :'Ab Nagoya: Gleis 17 · Wagen 4 · Sitze 8D + 8E · Ankunft Kyoto: Gleis 13',
+        'kyoto-booking-meta'));
       detail.append(main);
       const status=node('span',state==='done'?'✓ Erledigt':state==='booked'?'◔ Gebucht':'○ Geplant','kyoto-phase-badge');
       detail.append(status);
@@ -1950,9 +1964,9 @@
           ?(minutes(toNext)-minutes(arriving)+1440)%1440:null;
         transfer.append(node('span','🔄','kyoto-transfer-icon'));
         const transferText=node('div');
-        transferText.append(node('strong','Umstieg in '+to.name));
+        transferText.append(node('strong','Umstieg in '+to.name+' Station (Bahnhof)'));
         transferText.append(node('small',(diff===null?'Zeit vor Ort prüfen':diff+' Min. Umsteigezeit')+
-          ' · Gleis am Bahnhof prüfen'));
+          ' · Gleis 4 → Gleis 17 · Bahnhofsanzeige vor Ort hat Vorrang'));
         transfer.append(transferText);
         line.append(transfer);
       }
@@ -1960,13 +1974,14 @@
     const final=node('div',undefined,'kyoto-rail-station kyoto-rail-destination');
     final.append(node('span',last.arrival||'–','kyoto-rail-time'));
     const lastBody=node('div',undefined,'kyoto-rail-stop-body');
-    lastBody.append(node('strong',last.name),node('small','Danach Karasuma-Linie oder Taxi zum Hotel'));
+    lastBody.append(node('strong',last.name+' (Bahnhof)'),
+      node('small','Ankunft laut Buchung: Gleis 13 · danach Taxi oder Karasuma-Linie zum Hotel'));
     final.append(lastBody);line.append(final);
     kyotoRailInfographic.append(line);
     const unknown=stops.slice(0,-1).filter((_,i)=>!['booked','ready'].includes(ticketStatusFor(activePlanId,trip,i))).length;
     kyotoRailInfographic.append(node('p',unknown
-      ?'🎟 Für '+unknown+' von '+(stops.length-1)+' Strecken ist eine Buchung bzw. Fahrkarte noch nicht als vorhanden markiert.'
-      :'🎟 Alle Teilstrecken sind als gebucht oder mit vorhandenem Ticket markiert. Das ist keine unabhängige Buchungsprüfung.',
+      ?'🎟 Für '+unknown+' von '+(stops.length-1)+' Strecken ist der bestätigte Buchungsstatus lokal noch nicht übernommen.'
+      :'🎟 Beide Teilstrecken sind bestätigt gebucht. Die Papier-Tickets müssen vor Abfahrt noch abgeholt werden; danach kannst du den Status auf „Vorhanden“ setzen.',
       'kyoto-rail-footnote'));
     kyotoRailInfographic.append(node('small','„Erledigt“ beschreibt nur die durch dich bestätigte Fahrt. Die Ticketdetails bleiben separat und können über die verschlüsselte Synchronisierung aktualisiert werden.','kyoto-rail-disclaimer'));
   }
@@ -2507,6 +2522,37 @@
       }
     }
   }catch{say('Ticketstatus konnte nicht geladen werden.');}
+  // Explicit booking confirmation supplied by the user on 31.10.2026.
+  // Seed only this exact itinerary and never downgrade a later/ready status.
+  try{
+    const confirmedAt=Date.parse('2026-10-31T18:37:00+09:00');
+    const marker='livekarte-ticket-confirmation-kyoto-2026-11-01-v1';
+    if(localStorage.getItem(marker)!=='1'){
+      const trip=Object.prototype.hasOwnProperty.call(planJourneys,'ride-kyoto')
+        ?C.normalizeJourney(planJourneys['ride-kyoto'])
+        :C.presetJourney('takayama-kyoto-2026-11-01');
+      const expected=[
+        ['Takayama','11:35','Nagoya'],
+        ['Nagoya','14:26','Kyoto Station']
+      ];
+      let seeded=0;
+      for(const [from,departure,to] of expected){
+        const index=trip?.stops?.findIndex((stop,i)=>i<trip.stops.length-1 &&
+          stop.name===from&&stop.departure===departure&&trip.stops[i+1].name===to);
+        if(index<0)continue;
+        const key=C.ticketLegKey('ride-kyoto',trip,index);
+        const current=ticketStatuses[key];
+        if(current?.status!=='ready'&&(current?.updatedAt||0)<=confirmedAt){
+          ticketStatuses[key]={status:'booked',source:'chat-link',updatedAt:confirmedAt};
+          seeded++;
+        }
+      }
+      if(seeded){
+        localStorage.setItem('livekarte-ticket-status-v1',JSON.stringify(ticketStatuses));
+        localStorage.setItem(marker,'1');
+      }
+    }
+  }catch{say('Bestätigter Kyoto-Ticketstatus konnte nicht vorbelegt werden.');}
   // Travel progress is explicit and separate from ticket readiness/proof.
   try{
     const saved=JSON.parse(localStorage.getItem('livekarte-trip-progress-v1')||'{}');
