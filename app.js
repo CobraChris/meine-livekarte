@@ -1978,6 +1978,13 @@
       node('small','Ankunft laut Buchung: Gleis 13 · danach Taxi oder Karasuma-Linie zum Hotel'));
     final.append(lastBody);line.append(final);
     kyotoRailInfographic.append(line);
+    const hotelTransfer=node('div',undefined,'kyoto-booking-card');
+    hotelTransfer.append(
+      node('strong','🏨 Kyoto Station (Bahnhof) → Tomoya Residence','kyoto-booking-title'),
+      node('span','🚕 Taxi · ca. 15–20 Min. · Hotel ca. 15:15–15:20','kyoto-booking-row'),
+      node('span','🚇 Karasuma Line (U-Bahn-Linie) bis Karasuma Oike Station (U-Bahn-Station) · Fahrt ca. 5 Min. · danach ca. 7 Min. zu Fuß · Hotel ca. 15:25–15:35','kyoto-booking-row')
+    );
+    kyotoRailInfographic.append(hotelTransfer);
     const unknown=stops.slice(0,-1).filter((_,i)=>!['booked','ready'].includes(ticketStatusFor(activePlanId,trip,i))).length;
     kyotoRailInfographic.append(node('p',unknown
       ?'🎟 Für '+unknown+' von '+(stops.length-1)+' Strecken ist der bestätigte Buchungsstatus lokal noch nicht übernommen.'
