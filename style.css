@@ -875,7 +875,7 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
  * Only the small "Ziehen" handle moves the map; action buttons stay tappable. */
 .leaflet-popup-content .place-popup-header{
   display:flex;align-items:center;justify-content:space-between;
-  gap:10px;min-width:0;padding-right:13px;
+  gap:10px;min-width:0;padding-right:24px; /* clear Leaflet close X */
 }
 .leaflet-popup-content .place-popup-header strong{
   font-size:14px;line-height:1.4;min-width:0;overflow-wrap:anywhere;
