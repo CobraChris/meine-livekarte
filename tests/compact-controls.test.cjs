@@ -49,7 +49,7 @@ test('PWA can display non-destructive update prompt and reload after user action
   assert.match(pwa,/window\.addEventListener\('focus',requestUpdateCheck\)/);
   assert.match(pwa,/window\.addEventListener\('load',requestUpdateCheck\)/);
   assert.doesNotMatch(pwa,/localStorage\.clear\(|indexedDB\.deleteDatabase\(|deleteItem\(/);
-  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v13'/);
+  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v14'/);
   assert.match(sw,/'build-version\.js'/);
   assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
   assert.doesNotMatch(sw,/app-version\.json/);
