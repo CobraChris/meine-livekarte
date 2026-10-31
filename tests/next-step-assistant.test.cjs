@@ -67,7 +67,7 @@ test('new action UI is above existing Klook pickup instructions and adds no new 
  }
  assert.match(html,/next-step-core\.js/);
  assert.match(read('sw.js'),/next-step-core\.js/);
- assert.match(read('sw.js'),/livekarte-shell-pwa-v21/);
+ assert.match(read('sw.js'),/livekarte-shell-pwa-v22/);
  assert.match(read('style.css'),/\.next-action-buttons/);
 });
 test('manual step completion is local and undoable; GPS/tickets remain canonical',()=>{

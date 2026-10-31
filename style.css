@@ -1128,3 +1128,48 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .next-action-buttons button,.next-action-buttons a{padding:8px}
   .next-action-heading h2{font-size:18px}
 }
+
+
+/* Japanese destination card: legible name and verified address for taxi drivers. */
+#japanese-driver-dialog{
+  width:min(560px,calc(100% - 18px));max-height:92dvh;
+  border:1px solid #8bb19d;border-radius:16px;padding:16px;
+  color:#edfdf4;background:#183137;box-shadow:0 16px 50px #0009;
+}
+#japanese-driver-dialog::backdrop{background:#061518d9}
+.japanese-driver-heading{display:flex;align-items:center;justify-content:space-between;
+  gap:10px;border-bottom:1px solid #466e60;padding-bottom:11px}
+.japanese-driver-heading>span{color:#c2f4ce;font-size:12px;font-weight:850;letter-spacing:.05em}
+.japanese-driver-heading button{background:#30565a;border:1px solid #5b8980;
+  border-radius:9px;min-height:40px;min-width:40px;color:#fff;font-size:23px}
+.japanese-driver-content{padding:16px 5px;text-align:center;
+  overflow-wrap:anywhere;line-break:strict}
+.japanese-driver-request{font-size:20px;font-weight:700;color:#d8ebd6;margin:2px 0 20px}
+#japanese-driver-title{font-size:clamp(25px,7vw,36px);line-height:1.55;
+  margin:0 0 18px;letter-spacing:.02em;color:#fff;font-weight:800}
+.japanese-driver-address{font-size:clamp(20px,5.7vw,28px);line-height:1.55;
+  font-weight:750;color:#ffedbb;margin:0 0 15px}
+.japanese-driver-phone{font-size:20px;line-height:1.5;color:#e2f3e8;margin:0}
+.japanese-driver-content [hidden]{display:none!important}
+.japanese-driver-info{margin:6px 0 15px;font-size:11px;
+  color:#bcd6ca;line-height:1.5;text-align:center}
+.japanese-driver-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.japanese-driver-actions button,.japanese-driver-actions a{
+  min-height:47px;padding:9px 8px;border-radius:9px;
+  border:1px solid #89bba1;background:#2e5851;color:#eafff0;
+  font-weight:800;font-size:12px;text-align:center;text-decoration:none;
+  display:flex;align-items:center;justify-content:center
+}
+.japanese-driver-actions button{background:#abeac5;color:#13382b}
+#japanese-driver-feedback{font-size:11px;line-height:1.5;
+  min-height:16px;color:#bff8d3;text-align:center;margin:10px 0 0}
+.place-actions .place-japanese,.leaflet-popup-content .place-japanese,
+.kyoto-booking-card .place-japanese{
+  min-height:36px;padding:7px 10px;border:1px solid #97ccb3;
+  background:#305a50;color:#f5fff7;border-radius:8px;font-weight:800;font-size:11px
+}
+.kyoto-booking-card .place-japanese{margin-top:7px;width:100%;min-height:42px}
+@media(max-width:430px){
+  #japanese-driver-dialog{padding:13px;max-height:90dvh}
+  .japanese-driver-actions{grid-template-columns:1fr}
+}
