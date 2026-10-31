@@ -1,3 +1,16 @@
+## „Was jetzt?“ – kontextbezogener Reiseassistent (31.10.2026)
+
+Direkt unter der Karte und **vor** der Ticketabholung wird in den Reiseansichten von Takayama und Kyoto der Assistent **„🧭 Was jetzt?“** eingeblendet. Er verwendet den vorhandenen Reiseplan und die lokale **Japan-Zeit** (Asia/Tokyo), nicht geschätzte Live-Verbindungen:
+
+- **30./31.10., Takayama:** QR-Voucher für die Kyoto-Fahrt am 01.11. bereithalten.
+- **01.11., Takayama und Fahrt nach Kyoto:** Klook-Papiertickets abholen, Hida 8 (11:35), Umstieg Nagoya (14:04–14:26), Nozomi 71 (14:26), Tomoya Residence, Gion und Ponto-chō.
+- **Kyoto-Stadtansicht am 01.11.:** Hotel, Gion und Abendessen. **02.11.:** Kiyomizu-dera, Sannenzaka/Ninenzaka, Fushimi Inari. Weitere Tage bleiben offen, statt Termine zu erfinden.
+- Wenn ein **berechneter mehrteiliger Rundgang** aktiv ist, wird der nächste Tourstopp angezeigt und der vorhandene Navigationsbereich geöffnet, statt eine zweite GPS-Navigation zu starten.
+
+Der nächste offene Schritt, Uhrzeit, kurze Anweisung und Link **„↗ Weg zum Ort“** (Google Maps öffnet sich erst nach Antippen) sind sofort sichtbar. Über **„Details ansehen“** gelangt man zur vorhandenen Ticketabhol-Checkliste, Zug-Timeline oder Stadttimeline. **„✓ Erledigt“** erfordert eine bewusste Handlung und speichert nur eine lokale Ja/Nein-Bestätigung in `livekarte-next-actions-v1`. Bei normalen Schritten ist **„Rückgängig“** möglich; die echte Ticketabholung wird weiterhin **ausschließlich** über ihre bisherige Rückfrage bestätigt. Abschlüsse der Zugfahrten werden über den vorhandenen `livekarte-trip-progress-v1`-Status geführt; es entstehen keine widersprüchlichen zweiten Ticketbelege.
+
+Die Reihenfolge ist durch den bestehenden abgestimmten Reiseplan vorgegeben, **nicht** durch automatische Live-Daten, GPS-Tracking oder Uhrzeit-Abschlüsse. Der nächste unerledigte Schritt wird empfohlen, ohne eine tatsächliche Ankunft oder einen erledigten Besuch zu erfinden. Keine neuen Cloud-Dienste oder API-Schlüssel erforderlich. Das PWA-Shell-Caching schließt `next-step-core.js` ein, damit die Anweisungen ohne Internet sichtbar bleiben (Kartenkacheln/GPS-Routing sind separat).
+
 ## Kyoto-Buchung und Ticketabholung getrennt (31.10.2026)
 
 Die gebuchten Zugabschnitte am 01.11. (Hida 8 und Nozomi 71) erhalten jetzt **zwei getrennte Zustandsanzeigen**: „✅ Buchung bestätigt“ und „⚠ Papiertickets noch abholen“, bis der Nutzer die tatsächliche Ausgabe aller Tickets bestätigt. Der Hinweis steht im Fahrt- und Takayama-Abschnitt **vor** der optionalen Synchronisierung. Die vier konkreten Abholschritte sind jetzt aus Platzgründen unter „4 Schritte zur Ticketabholung ansehen“ aufklappbar. Eine Schaltfläche im Zugplan springt direkt zur Anleitung.
