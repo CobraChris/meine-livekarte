@@ -1,12 +1,16 @@
+## Kompaktere Popups ohne Ziehgriff (31.10.2026)
+
+Der separate Button „⠿ Ziehen“ ist entfernt. Die freie Popup-Fläche lässt sich weiterhin mit dem Daumen wischen und verschiebt die Karte mit dem angehefteten Marker. Titel, Ort und Aktionsschaltflächen behalten dadurch mehr Platz. Der Abstand zum Marker bleibt unverändert.
+
 ## Popup mit dem Daumen verschieben (31.10.2026)
 
-Streiche direkt über die freie Fläche oder den Text eines Orts-Popups: die **Karte verschiebt sich zusammen mit dem am Ort verankerten Popup**. Der separate Griff „⠿ Ziehen“ bleibt erhalten. Buttons wie „＋ Tour“, „Google Maps“, „Bearbeiten“ und „Fußweg anzeigen“ bleiben klickbar. Bei überlangen Popup-Beschreibungen bleibt senkrechtes Scrollen über dem Text möglich. Standort und Route werden dabei nicht gespeichert oder erneut abgefragt.
+Streiche direkt über die freie Fläche oder den Text eines Orts-Popups: die **Karte verschiebt sich zusammen mit dem am Ort verankerten Popup**. Ein separater Ziehgriff ist nicht mehr nötig. Buttons wie „＋ Tour“, „Google Maps“, „Bearbeiten“ und „Fußweg anzeigen“ bleiben klickbar. Bei überlangen Popup-Beschreibungen bleibt senkrechtes Scrollen über dem Text möglich. Standort und Route werden dabei nicht gespeichert oder erneut abgefragt.
 
 ## Popups mit Abstand und verschiebbarer Karte (31.10.2026)
 
 Bei Ortsmarkern steht das Info-Popup jetzt **24 Pixel weiter oberhalb** des Pins, mit einem größeren Schutzabstand zum oberen Kartenrand. Dadurch bleibt die Marker-Nadel sichtbar. Das Popup bleibt technisch fest an genau diesem Ort verankert.
 
-Im Popup gibt es neben dem Titel einen kleinen Griff **„⠿ Ziehen“**. Halte ihn gedrückt und verschiebe den Finger: Die Karte wird passend darunter verschoben, sodass der Marker **gemeinsam mit seinem Popup** wandert. Ein frei losgelöstes Fenster, das einen falschen Ort suggerieren könnte, entsteht nicht. Buttons wie „＋ Tour“, „Fußweg anzeigen“, „Google Maps“, „Bearbeiten“ sowie das Schließen bleiben normal antippbar. Auf Tastaturen verschieben die Pfeiltasten bei fokussiertem Griff das Popup samt Karte in 36-Pixel-Schritten. Das Verschieben löst **keine GPS- oder Routing-Netzwerkanfrage** aus und ändert keine gespeicherten Orte.
+Streiche über eine freie Fläche des Popups, um die Karte zu verschieben. So wandert der Marker **gemeinsam mit seinem Popup**. Ein frei losgelöstes Fenster, das einen falschen Ort suggerieren könnte, entsteht nicht. Buttons wie „＋ Tour“, „Fußweg anzeigen“, „Google Maps“, „Bearbeiten“ sowie das Schließen bleiben normal antippbar. Auf Tastaturen verschieben die Pfeiltasten bei fokussiertem Griff das Popup samt Karte in 36-Pixel-Schritten. Das Verschieben löst **keine GPS- oder Routing-Netzwerkanfrage** aus und ändert keine gespeicherten Orte.
 
 # Meine Live-Karte
 
