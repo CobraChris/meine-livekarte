@@ -2,6 +2,7 @@
 (() => {
   const $ = id => document.getElementById(id), C = MapCore;
   const symbols = { restaurant: '♨', sight: '◇', station: '▤', hotel: '⌂' };
+  const JP=window.JapaneseDestination;
   let places = [], filter = 'all', position = null, watch = null, following = false, userDot, accuracy;
   let distanceDisplays = [];
   let customPlans = [], planAssignments = Object.create(null), planJourneys = Object.create(null);
@@ -252,6 +253,49 @@
     a.href = 'https://www.google.com/maps/dir/?api=1&destination='+
       p.lat+','+p.lng+'&travelmode=walking';
     a.target = '_blank'; a.rel = 'noopener noreferrer'; return a;
+  }
+  // Japanese taxi/driver card uses verified local data only. In particular,
+  // the hotel name, postal address and phone come from its official JP site.
+  // No geocoding or third-party requests happen until a user opens Maps.
+  const driverDialog=$('japanese-driver-dialog');
+  const driverFeedback=$('japanese-driver-feedback');
+  let driverTarget=null;
+  function showJapaneseDestination(place){
+    const target=JP.get(place);
+    if(!target)return;
+    driverTarget=target;
+    $('japanese-driver-title').textContent=target.name;
+    const address=$('japanese-driver-address'),phone=$('japanese-driver-phone');
+    address.hidden=!target.address;
+    phone.hidden=!target.phone;
+    address.textContent=target.address||'';
+    phone.textContent=target.phone?'電話：'+target.phone:'';
+    $('japanese-driver-info').textContent=target.address
+      ?'Offizielle japanische Hoteladresse. Zum Vorzeigen einfach das Handy drehen oder näher halten.'
+      :'Nur der japanische Ortsname ist hinterlegt, keine geprüfte Straßenadresse. Bei Bedarf den Punkt auf Google Maps zeigen.';
+    driverFeedback.textContent='';
+    $('japanese-driver-map').href=JP.googleMapsLink(target);
+    if(!driverDialog.open)driverDialog.showModal();
+  }
+  $('japanese-driver-close').onclick=()=>driverDialog.close();
+  driverDialog.addEventListener('close',()=>{driverTarget=null;driverFeedback.textContent='';});
+  $('japanese-driver-copy').onclick=async()=>{
+    if(!driverTarget)return;
+    try{
+      if(!navigator.clipboard?.writeText)throw new Error('copy unavailable');
+      await navigator.clipboard.writeText(JP.driverText(driverTarget));
+      driverFeedback.textContent='✓ Japanischer Zieltext kopiert.';
+    }catch{
+      driverFeedback.textContent='Automatisches Kopieren nicht möglich. Text lange gedrückt halten und markieren.';
+    }
+  };
+  function japaneseButton(place){
+    if(!JP.get(place))return null;
+    const btn=node('button','🇯🇵 Dem Fahrer zeigen','place-japanese');
+    btn.type='button';
+    btn.title='Japanischen Ortsnamen und, falls bekannt, die verifizierte Adresse groß anzeigen';
+    btn.onclick=()=>showJapaneseDestination(place);
+    return btn;
   }
   const walkingPanel=$('walk-route-panel');
   const walkingTitle=$('walk-route-title'), walkingStats=$('walk-route-stats');
@@ -1469,6 +1513,8 @@
       popupEditButton.type='button';
       popupEditButton.onclick=()=>openPlaceEditor(p);
       quickActions.append(popupEditButton);
+      const popupJapanese=japaneseButton(p);
+      if(popupJapanese)quickActions.append(popupJapanese);
       popup.append(quickActions);
       const metaText = placeMeta(p);
       if (metaText) popup.append(node('p',metaText,'place-meta'));
@@ -1518,6 +1564,8 @@
       editButton.type='button';
       editButton.onclick=()=>openPlaceEditor(p);
       actions.append(editButton);
+      const placeJapanese=japaneseButton(p);
+      if(placeJapanese)actions.append(placeJapanese);
       const assignRow=node('div',undefined,'plan-assign-row');
       const assignSelect=node('select',undefined,'place-plan-select');
       assignSelect.setAttribute('aria-label','Ort '+p.name+' einem Reiseabschnitt zuordnen');
@@ -1589,6 +1637,7 @@
   const nextActionComplete=$('next-action-complete');
   const nextActionDetails=$('next-action-details');
   const nextActionMap=$('next-action-map');
+  const nextActionJapanese=$('next-action-japanese');
   const nextActionFeedback=$('next-action-feedback');
   const nextActionList=$('next-action-list');
   let nextActionDone=Object.create(null);
@@ -1729,7 +1778,8 @@
       time.textContent='✓ Alle Schritte';
       name.textContent='Alle geplanten Aufgaben erledigt';
       description.textContent='Manuell bestätigt. Fahrpläne und Öffnungszeiten weiterhin vor Ort prüfen.';
-      nextActionComplete.hidden=true;nextActionDetails.hidden=true;nextActionMap.hidden=true;
+      nextActionComplete.hidden=true;nextActionDetails.hidden=true;
+      nextActionMap.hidden=true;nextActionJapanese.hidden=true;
       nextActionFeedback.textContent='Du kannst einzelne Schritte unten wieder zurücksetzen.';
       return;
     }
@@ -1744,6 +1794,9 @@
     nextActionDetails.onclick=()=>showNextActionDetails(task);
     const target=task.place;
     nextActionMap.hidden=!(target&&Number.isFinite(target.lat)&&Number.isFinite(target.lng));
+    nextActionJapanese.hidden=!JP.get(target);
+    if(!nextActionJapanese.hidden)
+      nextActionJapanese.onclick=()=>showJapaneseDestination(target);
     if(!nextActionMap.hidden){
       nextActionMap.href='https://www.google.com/maps/dir/?api=1&destination='+
         encodeURIComponent(target.lat+','+target.lng)+'&travelmode=walking';
@@ -2182,6 +2235,11 @@
       node('span','🚕 Taxi · ca. 15–20 Min. · Hotel ca. 15:15–15:20','kyoto-booking-row'),
       node('span','🚇 Karasuma Line (U-Bahn-Linie) bis Karasuma Oike Station (U-Bahn-Station) · Fahrt ca. 5 Min. · danach ca. 7 Min. zu Fuß · Hotel ca. 15:25–15:35','kyoto-booking-row')
     );
+    const hotelJapanese=japaneseButton({
+      name:'Tomoya Residence Hotel Kyoto Nijo Takakura',
+      lat:35.0137,lng:135.76181
+    });
+    if(hotelJapanese)hotelTransfer.append(hotelJapanese);
     kyotoRailInfographic.append(hotelTransfer);
     const unknown=stops.slice(0,-1).filter((_,i)=>!['booked','ready'].includes(ticketStatusFor(activePlanId,trip,i))).length;
     kyotoRailInfographic.append(node('p',kyotoPickupDone
