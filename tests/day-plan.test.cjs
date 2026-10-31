@@ -121,6 +121,6 @@ test('mobile planner is tied to a real calculated tour, and does not transmit GP
  assert.match(workflow,/node --check day-plan-core\.js/);
  assert.match(workflow,/cp index\.html style\.css core\.js walking-core\.js day-plan-core\.js route-discovery\.js app\.js/);
  assert.match(stamp,/\("src", "day-plan-core\.js"\)/);
- assert.match(read('sw.js'),/livekarte-shell-pwa-v11/);
+ assert.match(read('sw.js'),/livekarte-shell-pwa-v12/);
  assert.match(read('sw.js'),/'day-plan-core\.js'/);
 });
