@@ -33,6 +33,7 @@ assets = [
     ("src", "core.js"),
     ("src", "walking-core.js"),
     ("src", "day-plan-core.js"),
+    ("src", "route-discovery.js"),
     ("src", "app.js"),
     ("src", "sync.js"),
     ("src", "outbox-core.js"),
