@@ -811,3 +811,33 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .tour-map-tools button{min-height:36px;font-size:10px;padding:6px 9px}
   .tour-map-tools span{font-size:9px}
 }
+
+
+/* Map bookmark control shares the existing lightweight map toolbar. */
+.tour-map-tools #map-save-place[aria-pressed="true"]{
+  background:#245968;border-color:#9fe4ee;color:#e9fcff}
+.tour-map-tools #map-save-place-hint{
+  border:1px solid #81bdd0;color:#e5faff;background:#173d49e9}
+#map-place-dialog{width:min(460px,calc(100% - 24px));padding:17px 18px}
+#map-place-dialog form{display:grid;gap:7px}
+#map-place-dialog .dialog-heading{margin-bottom:1px}
+#map-place-dialog .dialog-heading h2{font-size:18px;margin:0}
+#map-place-dialog label{font-size:12px;margin:4px 0 0;color:#e4f3ec}
+#map-place-dialog input,#map-place-dialog select,#map-place-dialog textarea{
+  box-sizing:border-box;width:100%;min-height:43px;padding:10px 11px;
+  background:#152f36;color:#f2fff7;border:1px solid #5b7c7a;
+  border-radius:9px;font-family:inherit;font-size:14px}
+#map-place-dialog textarea{min-height:76px;resize:vertical}
+#map-place-dialog #map-place-use-gps{min-height:41px;padding:8px 10px;
+  margin-top:3px;font-size:12px;background:#274b52;color:#d7f7ee}
+#map-place-dialog #map-place-error{font-size:12px;line-height:1.4;color:#ffb4a9;margin:0}
+#map-place-dialog #map-place-error:empty{display:none}
+#map-place-dialog .map-place-coordinates{font-size:11px;
+  padding:7px;border:1px solid #42615d;border-radius:7px;margin:3px 0 0;color:#bcefe4}
+#map-place-dialog .import-target{font-size:11px;margin:0;color:#cfebd6}
+#map-place-dialog .hint{font-size:10px;line-height:1.5;color:#b0d1c2;margin:2px 0}
+@media(max-width:760px){
+  .tour-map-tools{max-width:calc(100% - 75px)}
+  .tour-map-tools #map-save-place{min-height:36px}
+  #map-place-dialog{padding:14px;max-height:85dvh}
+}
