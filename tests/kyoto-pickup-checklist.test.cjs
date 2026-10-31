@@ -42,7 +42,7 @@ test('only Takayama and Kyoto journey views show task, with safe local progress'
  assert.match(logic,/localStorage\.setItem\('livekarte-kyoto-qr-pickedup-v1','1'\)/);
  assert.match(logic,/ticketStatuses=nextTickets/);
  assert.match(logic,/window\.dispatchEvent\(new Event\('livekarte:ticket-updated'\)\)/);
- assert.match(app,/renderKyotoPickup\(\);\s*journeyLayer\.clearLayers\(\)/);
+ assert.match(app,/renderKyotoPickup\(\);\s*renderNextAction\(\);\s*journeyLayer\.clearLayers\(\)/);
  assert.match(app,/kyotoPickupDone=localStorage\.getItem\('livekarte-kyoto-qr-pickedup-v1'\)==='1'/);
  assert.doesNotMatch(logic,/fetch\(|navigator\.geolocation|QRcodeValue|passphrase|bookingReference/);
 });
