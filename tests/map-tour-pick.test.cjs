@@ -85,7 +85,7 @@ test('normal map popups still support directions and also have a nearby tour but
 
 test('map picking is local-only and preserves previously deployed tour and offline shell',()=>{
  const app=read('app.js'),sw=read('sw.js'),html=read('index.html');
- assert.match(sw,/livekarte-shell-pwa-v17/);
+ assert.match(sw,/livekarte-shell-pwa-v18/);
  assert.doesNotMatch(sw,/routed-foot|overpass-api\.de/);
  assert.match(app,/const badge=chosenIndex<0/);
  assert.match(app,/function toggleTourPlace\(place,fromMap=false\)/);
