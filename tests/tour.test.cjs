@@ -198,7 +198,7 @@ test('tour keeps normal routes and railway views safe; updated PWA shell is offl
  assert.match(app,/if\(activePlanId!==id && walkDestination\)clearWalkingRoute\(\)/);
  assert.match(app,/clearTourRoute\(\);\s*tourDrafts=Object\.create\(null\)/);
  assert.match(app,/clearWalkingRoute\(\);\s*clearTourRoute\(\);/);
- assert.match(sw,/livekarte-shell-pwa-v13/);
+ assert.match(sw,/livekarte-shell-pwa-v14/);
  assert.doesNotMatch(sw,/routed-foot|routing\.openstreetmap\.de/);
  assert.match(html,/src="walking-core\.js"/);
  assert.match(html,/id="walk-route-nav"/);
