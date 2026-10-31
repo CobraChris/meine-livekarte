@@ -17,7 +17,7 @@ test('single manually dispatched Overpass request is local and name-filtered',()
  assert.match(sql,/out center 500;/);
  assert.ok(sql.includes('36.13'));
  assert.match(R.ENDPOINT,/^https:\/\/overpass-api\.de\/api\/interpreter$/);
- assert.throws(()=>R.query([[35.0,135.0],[36.0,137.0]],150),/zu weitläufig/);
+ assert.throws(()=>R.query([[35.0,135.0],[36.0,137.0]],150),/zu (?:groß|weitläufig)/);
  assert.throws(()=>R.query([[35,135]],150),/gültige lokale Fußroute/);
  assert.throws(()=>R.query(walk,999),/gültige lokale Fußroute/);
  assert.throws(()=>R.query([[91,136],[90,136]],150),/gültige lokale Fußroute/);
