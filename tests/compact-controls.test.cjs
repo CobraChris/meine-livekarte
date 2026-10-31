@@ -30,7 +30,8 @@ test('the button for walking directions is immediately beneath the place name, n
   assert.ok(snippet.indexOf('popup.append(popupHeader)')<snippet.indexOf('popup.append(quickActions)'));
   assert.ok(snippet.includes("popup.append(quickActions)"));
   assert.ok(snippet.includes("appendPlaceTiming(popup,p)"));
-  assert.ok(snippet.includes("popup.append(node('p',p.description),inPopup)"));
+  assert.ok(snippet.includes("const description=node('p',p.description,'place-popup-description')"));
+  assert.ok(snippet.includes("popup.append(description,inPopup)"));
   assert.ok(snippet.indexOf('popup.append(quickActions)')<
     snippet.indexOf('appendPlaceTiming(popup,p)'));
   assert.ok(snippet.indexOf('popup.append(quickActions)')<
@@ -51,7 +52,7 @@ test('PWA can display non-destructive update prompt and reload after user action
   assert.match(pwa,/window\.addEventListener\('focus',requestUpdateCheck\)/);
   assert.match(pwa,/window\.addEventListener\('load',requestUpdateCheck\)/);
   assert.doesNotMatch(pwa,/localStorage\.clear\(|indexedDB\.deleteDatabase\(|deleteItem\(/);
-  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v14'/);
+  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v15'/);
   assert.match(sw,/'build-version\.js'/);
   assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
   assert.doesNotMatch(sw,/app-version\.json/);
