@@ -279,6 +279,59 @@
   function placePlanKey(place) {
     return JSON.stringify([place.name,place.lat,place.lng]);
   }
+  // Edit/delete one locally saved place and migrate all references atomically
+  // in memory. A name change changes the legacy name+coordinates place key.
+  // Coordinates stay fixed here; relocating a marker is a separate operation.
+  function changeSavedPlace(places,assignments,drafts,dayPlans,oldKey,changes){
+    if(typeof oldKey!=='string'||!Array.isArray(places))
+      throw new Error('Ungültiger gespeicherter Ort.');
+    const index=places.findIndex(p=>placePlanKey(p)===oldKey);
+    if(index<0)throw new Error('Der Ort ist nicht mehr gespeichert.');
+    const previous=places[index];
+    const next=changes===null?null:normalize([{
+      ...previous,
+      ...changes,
+      lat:previous.lat,lng:previous.lng
+    }])[0];
+    const newKey=next===null?null:placePlanKey(next);
+    if(newKey!==null&&newKey!==oldKey&&places.some((p,i)=>
+      i!==index&&placePlanKey(p)===newKey))
+      throw new Error('Ein Ort mit diesem Namen ist an dieser Position bereits vorhanden.');
+    const updatedPlaces=places.slice();
+    if(next===null)updatedPlaces.splice(index,1);
+    else updatedPlaces[index]=next;
+    const updatedAssignments=Object.assign(Object.create(null),assignments||{});
+    if(newKey!==oldKey){
+      const tags=updatedAssignments[oldKey];
+      delete updatedAssignments[oldKey];
+      if(newKey!==null&&Array.isArray(tags)){
+        const existing=updatedAssignments[newKey];
+        updatedAssignments[newKey]=[...new Set([
+          ...(Array.isArray(existing)?existing:[]),...tags])];
+      }
+    }
+    const updatedDrafts=Object.create(null);
+    for(const [id,keys] of Object.entries(drafts||{})){
+      if(!Array.isArray(keys))continue;
+      updatedDrafts[id]=[...new Set(keys.flatMap(key=>
+        key!==oldKey?[key]:newKey===null?[]:[newKey]))].slice(0,6);
+    }
+    const updatedDayPlans=Object.create(null);
+    for(const [id,plan] of Object.entries(dayPlans||{})){
+      if(!plan||typeof plan!=='object')continue;
+      const copy={...plan,stops:Object.assign(Object.create(null),plan.stops||{})};
+      if(newKey!==oldKey){
+        const options=copy.stops[oldKey];
+        delete copy.stops[oldKey];
+        if(newKey!==null&&options&&!Object.hasOwn(copy.stops,newKey))
+          copy.stops[newKey]=options;
+      }
+      updatedDayPlans[id]=copy;
+    }
+    return {places:updatedPlaces,assignments:updatedAssignments,
+      drafts:updatedDrafts,dayPlans:updatedDayPlans,
+      previous,updated:next,oldKey,newKey};
+  }
   function placesForPlan(places,assignments,planId) {
     if (planId === 'all') return places;
     return places.filter(place => {
@@ -304,7 +357,7 @@
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, presetPlaces, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides, ticketStates, ticketLegKey, normalizeTicketUpdate, encodeTicketUpdate, decodeTicketUpdate };
+  const api = { categories, normalize, merge, changeSavedPlace, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, presetPlaces, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides, ticketStates, ticketLegKey, normalizeTicketUpdate, encodeTicketUpdate, decodeTicketUpdate };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);
