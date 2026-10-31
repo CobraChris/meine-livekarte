@@ -775,3 +775,39 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .route-discovery-marker span{height:26px;width:26px;display:grid;place-items:center;
   background:#74e5d1;color:#123338;font-size:16px;font-weight:900;
   border:2px solid #fff;border-radius:50%;box-shadow:0 2px 8px #00191c88}
+
+
+/* Thumb-friendly, opt-in tap-to-add tour mode. Below the journey selector,
+ * above map markers; normal map gestures and regular popups stay unchanged. */
+.tour-map-tools{position:absolute;z-index:855;top:116px;left:18px;
+  max-width:calc(100% - 94px);display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+.tour-map-tools button{min-height:37px;padding:6px 10px;border-radius:9px;
+  font-size:11px;font-weight:750;background:#19383be9;border:1px solid #659984;
+  color:#dcffed;box-shadow:0 3px 12px #061e20a1;backdrop-filter:blur(4px)}
+.tour-map-tools #tour-map-mode[aria-pressed="true"]{
+  background:#235b4be9;border-color:#acf3c9;color:#f1fff5}
+.tour-map-tools #tour-map-done{background:#a4ecc9;color:#113528;font-weight:800}
+.tour-map-tools span{font-size:10px;color:#fff2c4;
+  padding:5px 8px;border-radius:7px;background:#143039ee}
+.tour-map-tools [hidden]{display:none!important}
+.tour-pick-on-map{width:100%;min-height:42px;margin:6px 0 2px;
+  padding:8px 10px;border:1px solid #75b79b;background:#284c43;
+  color:#ddffeb;font-size:12px;font-weight:750;border-radius:9px}
+.tour-pick-on-map[aria-pressed="true"]{background:#32664f;border-color:#aae6bc}
+.leaflet-popup-content .popup-quick-actions .tour-pick{
+  min-height:37px;padding:6px 11px;background:#2d5847;
+  color:#e9fff1;border:1px solid #80c7a1;border-radius:9px;
+  font-size:12px;font-weight:800}
+.leaflet-popup-content .popup-quick-actions .tour-pick[aria-pressed="true"]{
+  background:#446946;color:#fff4cb;border-color:#f7d780}
+.pin-tour-selected .pin-inner{border-color:#ffdc75;box-shadow:0 0 0 2px #edb95399,0 4px 12px #00171b99}
+.pin-tour-index{position:absolute;top:-9px;right:-10px;min-width:24px;height:24px;
+  display:grid;place-items:center;padding:0 3px;border-radius:50%;
+  background:#ffdc79;border:2px solid white;color:#1f332a;
+  font-size:12px;font-weight:900;box-shadow:0 2px 6px #051e2499}
+.pin-tour-picking{cursor:pointer}
+@media(max-width:760px){
+  .tour-map-tools{top:58px;left:10px;max-width:calc(100% - 85px);gap:4px}
+  .tour-map-tools button{min-height:36px;font-size:10px;padding:6px 9px}
+  .tour-map-tools span{font-size:9px}
+}
