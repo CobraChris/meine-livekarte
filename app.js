@@ -1381,45 +1381,39 @@
   // The normal map, popup buttons and close control retain their gestures.
   // Swipe on the non-interactive popup surface pans the map while keeping
   // popup and marker anchored to the same coordinates. Buttons/links still click.
-  function enablePopupMapDrag(handle,marker,surface){
-    let pointerId=null,lastX=0,lastY=0,captured=null;
-    let fromText=false;
+  function enablePopupMapDrag(marker,surface){
+    let pointerId=null,lastX=0,lastY=0,captured=null,fromText=false;
     const ignore='button,a,input,select,textarea,label,[role="button"],'+
       '[contenteditable="true"],.leaflet-popup-close-button';
     const release=event=>{
       if(pointerId===null||event.pointerId!==pointerId)return;
       const id=pointerId,target=captured;
       pointerId=null;captured=null;fromText=false;
-      handle.classList.remove('is-dragging');
       surface.classList.remove('is-dragging');
       if(target?.hasPointerCapture?.(id))target.releasePointerCapture(id);
     };
-    const down=event=>{
+    surface.addEventListener('pointerdown',event=>{
       if((event.pointerType==='mouse'&&event.button!==0)||
          !marker.isPopupOpen()||pointerId!==null)return;
-      // The handle itself is a button; all other interactive elements remain
-      // completely native and never activate the map-drag gesture.
-      if(event.currentTarget===surface&&event.target.closest?.(ignore))return;
+      // Buttons, links and the close control still receive ordinary clicks.
+      if(event.target.closest?.(ignore))return;
       event.preventDefault();event.stopPropagation();
       pauseGPSFollow();
-      captured=event.currentTarget;
+      captured=surface;
       pointerId=event.pointerId;
       lastX=event.clientX;lastY=event.clientY;
       fromText=!!event.target.closest?.('.place-popup-description');
-      handle.classList.add('is-dragging');
       surface.classList.add('is-dragging');
       captured.setPointerCapture?.(pointerId);
-    };
-    const move=event=>{
+    });
+    surface.addEventListener('pointermove',event=>{
       if(pointerId!==event.pointerId||!marker.isPopupOpen())return;
       event.preventDefault();event.stopPropagation();
       const dx=event.clientX-lastX,dy=event.clientY-lastY;
       lastX=event.clientX;lastY=event.clientY;
       if(!Number.isFinite(dx)||!Number.isFinite(dy)||
          Math.abs(dx)>110||Math.abs(dy)>110)return;
-      // Exception for lengthy descriptions: a vertical swipe directly
-      // over text scrolls the popup if there is overflowing content.
-      // Horizontal swipes, all blank areas and the grab handle pan the map.
+      // Keep scrolling for overflowing descriptions; elsewhere move the map.
       const scroll=marker.getPopup()?.getElement()?.querySelector('.leaflet-popup-content');
       if(fromText&&scroll&&scroll.scrollHeight>scroll.clientHeight+4&&
          Math.abs(dy)>Math.abs(dx)*1.4){
@@ -1427,24 +1421,9 @@
         return;
       }
       if(dx||dy)map.panBy([-dx,-dy],{animate:false});
-    };
-    for(const target of [handle,surface]){
-      target.addEventListener('pointerdown',down);
-      target.addEventListener('pointermove',move);
-      target.addEventListener('pointerup',release);
-      target.addEventListener('pointercancel',release);
-      target.addEventListener('lostpointercapture',release);
-    }
-    handle.addEventListener('keydown',event=>{
-      const shift={
-        ArrowLeft:[36,0],ArrowRight:[-36,0],
-        ArrowUp:[0,36],ArrowDown:[0,-36]
-      }[event.key];
-      if(!shift||!marker.isPopupOpen())return;
-      event.preventDefault();event.stopPropagation();
-      pauseGPSFollow();
-      map.panBy(shift,{animate:false});
     });
+    for(const eventName of ['pointerup','pointercancel','lostpointercapture'])
+      surface.addEventListener(eventName,release);
     marker.on('popupclose',()=>{
       if(pointerId!==null)release({pointerId});
     });
@@ -1469,11 +1448,6 @@
       const popup = node('div',undefined,'place-popup-pan-surface');
       const popupHeader=node('div',undefined,'place-popup-header');
       popupHeader.append(node('strong',p.name));
-      const dragHandle=node('button','⠿ Ziehen','place-popup-drag');
-      dragHandle.type='button';
-      dragHandle.title='Popup mit der Karte verschieben, ohne die Markierung zu verlieren';
-      dragHandle.setAttribute('aria-label','Popup verschieben: ziehen oder Pfeiltasten verwenden');
-      popupHeader.append(dragHandle);
       popup.append(popupHeader);
       const quickActions=node('div',undefined,'popup-quick-actions');
       const popupTourButton=node('button',tourIsSelected(p)?'✓ In Tour':'＋ Tour','tour-pick');
@@ -1517,7 +1491,7 @@
           autoPanPaddingTopLeft:L.point(18,76),
           autoPanPaddingBottomRight:L.point(18,40)
         });
-        enablePopupMapDrag(dragHandle,marker,popup);
+        enablePopupMapDrag(marker,popup);
         marker.on('popupopen', () => { following = false; });
       }
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
