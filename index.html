@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -103,6 +103,7 @@
       <button type="button" class="next-action-primary" id="next-action-complete">✓ Erledigt</button>
       <button type="button" id="next-action-details">Details ansehen</button>
       <a id="next-action-map" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps">↗ Weg zum Ort</a>
+      <button id="next-action-japanese" type="button" hidden>🇯🇵 Dem Fahrer zeigen</button>
     </div>
   </div>
   <p id="next-action-feedback" class="next-action-feedback" role="status" aria-live="polite">Aufgaben werden nur durch dich als erledigt markiert.</p>
@@ -279,6 +280,24 @@
 <footer><span>◉ Dein Standort bleibt auf deinem Gerät.</span><button id="privacy" class="text-button">Datenschutz & Hilfe</button></footer>
 </aside>
 </main>
+<dialog id="japanese-driver-dialog" class="japanese-driver-dialog" aria-labelledby="japanese-driver-title">
+  <div class="japanese-driver-heading">
+    <span>🇯🇵 TAXI · ZIEL ZEIGEN</span>
+    <button type="button" id="japanese-driver-close" aria-label="Japanische Adresskarte schließen">×</button>
+  </div>
+  <div class="japanese-driver-content" lang="ja">
+    <p class="japanese-driver-request">こちらまでお願いします。</p>
+    <h2 id="japanese-driver-title"></h2>
+    <p id="japanese-driver-address" class="japanese-driver-address" hidden></p>
+    <p id="japanese-driver-phone" class="japanese-driver-phone" hidden></p>
+  </div>
+  <p id="japanese-driver-info" class="japanese-driver-info"></p>
+  <div class="japanese-driver-actions">
+    <button type="button" id="japanese-driver-copy">⧉ Japanische Angaben kopieren</button>
+    <a id="japanese-driver-map" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">↗ Ziel auf Google Maps</a>
+  </div>
+  <p id="japanese-driver-feedback" role="status" aria-live="polite"></p>
+</dialog>
 <dialog id="ticket-update-dialog" aria-labelledby="ticket-update-title">
  <div class="dialog-heading"><h2 id="ticket-update-title">Ticketstatus übernehmen?</h2><button type="button" id="ticket-update-close" aria-label="Schließen">×</button></div>
  <p id="ticket-update-route" class="ticket-update-route"></p>
