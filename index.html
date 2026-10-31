@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -134,6 +134,30 @@
       <p>Reine Gehzeit ohne Besichtigungen und Pausen. Wege und Öffnungszeiten vor Ort prüfen.</p>
       <ol id="tour-result-legs" aria-label="Etappen der Rundgangroute"></ol>
     </div>
+    <details id="day-planner" class="day-planner">
+      <summary>🗓 Intelligenter Tagesplan <span id="day-plan-state">Start · Gehzeiten · Besuche</span></summary>
+      <div class="day-planner-body">
+        <p>Aus deiner berechneten Fußroute wird ein Zeitplan erstellt. Die Startzeit ist auf 10:30 Uhr gesetzt, kann aber angepasst werden. Öffnungszeiten werden nur aus deinen eigenen Angaben berücksichtigt.</p>
+        <div class="day-plan-global">
+          <label for="day-start">Startzeit<input type="time" id="day-start" value="10:30"></label>
+          <label for="day-buffer">Puffer je Zwischenstopp
+            <select id="day-buffer"><option value="0">0 Min.</option><option value="5">5 Min.</option><option value="10" selected>10 Min.</option><option value="15">15 Min.</option><option value="20">20 Min.</option><option value="30">30 Min.</option></select>
+          </label>
+          <label for="day-lunch">Mittagspause
+            <select id="day-lunch"><option value="0">Keine</option><option value="30">30 Min.</option><option value="45" selected>45 Min.</option><option value="60">60 Min.</option></select>
+          </label>
+        </div>
+        <div id="day-stop-settings" class="day-stop-settings"></div>
+        <button type="button" id="day-plan-refresh">🗓 Tagesplan berechnen</button>
+        <p id="day-plan-alert" role="status" aria-live="polite">Wähle mindestens zwei Ziele und berechne den Rundgang.</p>
+        <section id="day-plan-output" hidden aria-label="Berechneter Tagesablauf">
+          <strong id="day-plan-summary"></strong>
+          <ol id="day-plan-timeline"></ol>
+          <div id="day-plan-warnings"></div>
+        </section>
+        <p class="day-plan-note">Uhrzeiten sind Planwerte, keine Buchungs- oder Öffnungszeitgarantie. Hinweise aus den Ortskarten bleiben sichtbar, werden aber nicht automatisch als Öffnungszeiten interpretiert. Alle Eingaben bleiben nur auf deinem Gerät; GPS-Start und Routenverlauf werden nicht gespeichert.</p>
+      </div>
+    </details>
     <p class="tour-privacy">Ein Routing-Aufruf pro Berechnung oder Optimierung an FOSSGIS, nur nach deinem Klick. Start und ausgewählte Ziele werden dorthin übertragen. Keine automatische Nachberechnung, keine Speicherung von GPS-Verläufen.</p>
   </div>
 </details>
