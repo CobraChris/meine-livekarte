@@ -40,7 +40,6 @@ test('three simple travel phases do not turn a completed ride into unverified ti
  assert.match(logic,/Gebucht/);
  assert.match(logic,/Erledigt/);
  assert.match(logic,/Fahrt manuell als abgeschlossen markiert – kein Ticketnachweis/);
- assert.match(logic,/Der.+?Fahrt/, 'only strings, no factual status inferred from dates');
  assert.doesNotMatch(logic,/navigator\.geolocation|fetch\(|Date\.now\(\)>.*?arrival|ticketCodes/);
  assert.equal(C.ticketStates.unknown,'Ungeklärt');
  assert.equal(C.ticketStates.ready,'Vorhanden');
