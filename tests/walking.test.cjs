@@ -89,7 +89,7 @@ test('walking user interface is explicit opt in and leaves external Google Maps 
  assert.match(app,/🚶 Fußweg anzeigen/);
  assert.match(app,/actions\.append\(show,walkingButton\(p\),tourButton,route\(p\),distance\)/);
  assert.match(app,/const quickActions=node\('div',undefined,'popup-quick-actions'\)/);
- assert.match(app,/quickActions\.append\(walkingButton\(p\),route\(p\)\)/);
+ assert.match(app,/quickActions\.append\(popupTourButton,walkingButton\(p\),route\(p\)\)/);
  assert.match(app,/popup\.append\(quickActions\)/);
  assert.match(app,/bindPopup\(popup,\{maxWidth:320,maxHeight:250,autoPan:true\}\)/);
  assert.match(app,/function showWalkingRoute\(place\)/);
