@@ -1,3 +1,11 @@
+## Kyoto-Buchung und Ticketabholung getrennt (31.10.2026)
+
+Die gebuchten Zugabschnitte am 01.11. (Hida 8 und Nozomi 71) erhalten jetzt **zwei getrennte Zustandsanzeigen**: „✅ Buchung bestätigt“ und „⚠ Papiertickets noch abholen“, bis der Nutzer die tatsächliche Ausgabe aller Tickets bestätigt. Der Hinweis steht im Fahrt- und Takayama-Abschnitt **vor** der optionalen Synchronisierung. Die vier konkreten Abholschritte sind jetzt aus Platzgründen unter „4 Schritte zur Ticketabholung ansehen“ aufklappbar. Eine Schaltfläche im Zugplan springt direkt zur Anleitung.
+
+Die bestehende Ticketstatus-Synchronisierung bleibt erhalten; ein manuelles Zurückschalten der Reisephase auf „Geplant“ kann eine bereits bestätigte Buchung nicht mehr unbeabsichtigt auf „Ungeklärt“ setzen. Das Häkchen „Papiertickets abgeholt“ wird weiterhin nur durch eine ausdrückliche Nutzerbestätigung gesetzt, niemals automatisch.
+
+Eine Klook-Kontoanbindung zur eigenständigen, autorisierten Abfrage **privater Verbraucherbuchungen** ist über Klooks öffentlich dokumentierte Schnittstelle nicht vorgesehen: Diese adressiert Anbieter, Händler und Channel Manager. Deshalb speichert die App keine Klook-Passwörter oder Session-Cookies und versucht keine nicht dokumentierten APIs. Ein späterer sicherer Import einzelner PDF-Voucher beziehungsweise optional E-Mail-OAuth ist möglich, erfordert aber eigene Implementierung mit expliziter Zustimmung. Dieser Release implementiert keine automatische Klook-Kontosynchronisierung.
+
 ## Vor Abfahrt: Klook-QR-Tickets in Takayama abholen (31.10.2026)
 
 **Wichtigster Handlungsschritt vor der Fahrt am Sonntag 01.11.:** Die zwei gebuchten Teilstrecken Takayama → Nagoya (Hida 8, Wagen 2 Sitze 10C/10D) und Nagoya → Kyoto (Nozomi 71, Wagen 4 Sitze 8D/8E) benötigen laut zuletzt vereinbartem Klook-Voucher vor der Abfahrt die Ausgabe der Papier-Tickets. Die Live-Karte zeigt deshalb jetzt **unmittelbar unter der Karte, vor der optionalen Synchronisierung**, eine nummerierte Abhol-Anleitung, sowohl in **30.10.–01.11. Takayama** als auch in **01.11. Fahrt nach Kyoto**:
