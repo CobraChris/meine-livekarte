@@ -124,7 +124,7 @@ test('Trip waypoint indices reorder stops and route legs consistently',()=>{
 test('optimization is explicit, persists stop IDs only, and keeps existing manual calculation',()=>{
  const app=read('app.js'),html=read('index.html');
  assert.match(html,/id="tour-optimize"/);
- assert.match(html,/Route optimieren/);
+ assert.match(html,/Route durch KI optimieren/);
  assert.match(app,/\$\('tour-optimize'\)\.onclick=\(\)=>\{void calculateTour\(true\);\}/);
  assert.match(app,/\$\('tour-calculate'\)\.onclick=\(\)=>\{void calculateTour\(\);\}/);
  assert.match(app,/tourDrafts\[activePlanId\]=ordered\.map\(p=>C\.placePlanKey\(p\)\)/);
