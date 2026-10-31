@@ -889,3 +889,18 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
  cursor:grabbing;user-select:none;-webkit-user-select:none;
 }
 .leaflet-popup-content .place-popup-pan-surface:not(.is-dragging){cursor:grab}
+
+/* Concrete Kyoto trip and city itinerary, visible in either Kyoto section. */
+.kyoto-overview{background:#1a3238;border:1px solid #517a70;
+  border-radius:13px;padding:14px;margin:0 0 16px;color:#edf9f3}
+.kyoto-overview[hidden]{display:none!important}
+.kyoto-overview h2{font-size:16px;color:#a4ecc9;margin:0 0 8px}
+.kyoto-overview>p{color:#c0d7ce;font-size:11px;line-height:1.55;margin:6px 0 10px}
+.kyoto-overview details{border:1px solid #4b6f69;border-radius:9px;margin:8px 0;
+  background:#183037}
+.kyoto-overview summary{cursor:pointer;padding:11px 10px;font-size:12px;
+  font-weight:750;color:#f3e5bc}
+.kyoto-overview ol{margin:0;padding:4px 14px 11px 30px;display:grid;gap:8px}
+.kyoto-overview li{font-size:11px;line-height:1.5;color:#e4f4ea}
+.kyoto-overview li strong{color:#fff1bc}
+.kyoto-overview .kyoto-plan-note{font-size:10px;color:#b3d2c6}
