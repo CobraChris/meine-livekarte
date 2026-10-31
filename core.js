@@ -133,6 +133,23 @@
   // Small, non-sensitive trip presets allow short browser-friendly URLs.
   // Station-to-station waypoints are illustrative, not rail-grade geometry.
   const journeyPresets = {
+    // Published timetable, departure/arrival times are planned, NOT booked tickets.
+    // Rail map geometry between these stations is schematic (not track geometry).
+    'takayama-kyoto-2026-11-01': {
+      title:'Takayama → Kyoto · Hida 8 / Nozomi 71',
+      date:'01.11.2026',
+      stops:[
+        {name:'Takayama',lat:36.14113,lng:137.25129,departure:'11:35',
+          description:'Am Bahnhof rechtzeitig sein. Zugnummer und Sitzplätze anhand eures Tickets prüfen.',
+          leg:'JR Limited Express Hida 8 · 11:35–14:04'},
+        {name:'Nagoya',lat:35.17073,lng:136.88184,
+          arrival:'14:04',departure:'14:26',
+          description:'22 Min. zum Umsteigen: JR Limited Express → Tokaido Shinkansen. Auf Schilder „Shinkansen Transfer“ achten; Gleis auf Anzeige prüfen.',
+          leg:'Tokaido Shinkansen Nozomi 71 · 14:26–15:00'},
+        {name:'Kyoto Station',lat:34.98535,lng:135.75877,arrival:'15:00',
+          description:'Danach zur Karasuma-U-Bahn Richtung Karasuma Oike, Ausgang 1, ab dort ca. 7 Min. Fußweg zum Tomoya Residence; alternativ Taxi. Check-in ca. 15:30–16:15 (Schätzung).'}
+      ]
+    },
     'hakone-takayama-2026-10-30': {
       title:'Hakone–Takayama',date:'30.10.2026',
       stops:[
@@ -201,6 +218,50 @@
   // Curated city presets. They are ordinary place records and are only seeded
   // once into local browser storage, so users can still edit or clear them.
   const townPlacePresets = {
+    'town-kyoto': [
+      {name:'Tomoya Residence Hotel Kyoto Nijo Takakura',lat:35.0137,lng:135.76181,category:'hotel',
+        schedule:'01.–07.11. · Unterkunft · Check-in ab 14:00, geplante Ankunft etwa 15:30–16:15 am 01.11.',
+        note:'58 Matsuya-cho, Nakagyo-ku. Ab Karasuma Oike Station Ausgang 1 ca. 7 Minuten zu Fuß. Alternativ Taxi ab Kyoto Station.',
+        description:'Euer Kyoto-Hotel und Basis für die Stadterkundung; Check-in ab 14:00 ist nicht eure Ankunftszeit.'},
+      {name:'Kyoto Station',lat:34.98535,lng:135.75877,category:'station',
+        schedule:'01.11. · 15:00 Ankunft geplant (Nozomi 71)',
+        note:'Ankunftszeit laut Plan, Ticket und Anzeigetafel prüfen. Weiterfahrt zum Hotel mit Karasuma-U-Bahn oder Taxi.',
+        description:'Zentraler JR- und Shinkansen-Bahnhof in Kyoto.'},
+      {name:'Karasuma Oike Station',lat:35.01082,lng:135.75965,category:'station',
+        schedule:'01.11. · Umstieg/Ausstieg zum Hotel nach der Zugankunft',
+        note:'Karasuma-Linie ab Kyoto Station. Ausgang 1; von dort ca. 7 Minuten zum Tomoya Residence.',
+        description:'Kyoto Municipal Subway, Karasuma- und Tozai-Linie.'},
+      {name:'Gion Shirakawa / Shinbashi',lat:35.0054743,lng:135.7736461,category:'sight',
+        priority:'1',duration:'30–45 Min.',
+        schedule:'01.11. · nach Check-in · Abendspaziergang',
+        note:'Historisches Gion am Shirakawa-Kanal; ruhiger Fotospaziergang, keine feste Reservierung. Private Wege und Fotografierregeln beachten.',
+        description:'Stimmungsvolle Gassen, traditionelle Holzhäuser und Kanal im Gion-Viertel.'},
+      {name:'Tatsumi-Brücke (Gion)',lat:35.005692,lng:135.774582,category:'sight',
+        priority:'1',duration:'10–15 Min.',
+        schedule:'01.11. · Abendspaziergang direkt bei Gion Shirakawa',
+        note:'Kleiner Fotostopp an der Shirakawa-Gasse; kurzer Stopp, kein eigener großer Ausflug.',
+        description:'Kleine Fußgängerbrücke im Gion-Viertel über den Shirakawa-Kanal.'},
+      {name:'Ponto-chō',lat:35.00613,lng:135.77109,category:'restaurant',
+        priority:'1',duration:'60–90 Min.',
+        schedule:'01.11. · Abendessen nach Gion · Uhrzeit offen',
+        note:'Restaurantgasse westlich des Kamo-Flusses, kein bestimmtes Lokal reserviert. Optional kurzer Spaziergang am Kamo-Fluss.',
+        description:'Enge historische Gasse mit Restaurants und Izakayas. Abends besonders stimmungsvoll.'},
+      {name:'Kiyomizu-dera',lat:34.994722,lng:135.783056,category:'sight',
+        priority:'1',duration:'90 Min.',
+        schedule:'02.11. · 09:45–11:15 (Planzeit)',
+        note:'Frühstück und Anreise nach Higashiyama vorher einplanen. Tempel-Eintritt und aktuelle Regeln vor Ort prüfen.',
+        description:'Berühmter Tempel mit Aussicht über Kyoto; zum Hauptzugang über Kiyomizu-zaka/Nio-mon.'},
+      {name:'Sannenzaka / Ninenzaka',lat:34.9973,lng:135.781,category:'sight',
+        priority:'1',duration:'1–2 Std.',
+        schedule:'02.11. · 11:15–13:30 inkl. Mittagessen',
+        note:'Historische Hang- und Gassenstraße unterhalb Kiyomizu-dera. Die Zeitspanne enthält Mittagessen.',
+        description:'Traditionelle Straßen und Geschäfte in Higashiyama, direkt unterhalb des Tempels.'},
+      {name:'Fushimi Inari-Taisha',lat:34.967125,lng:135.773108,category:'sight',
+        priority:'1',duration:'2 Std.',
+        schedule:'02.11. · 15:15–17:15 (Planzeit)',
+        note:'Transfer von Higashiyama mit ÖPNV einplanen; die vielen Torii liegen am Berg. Laufzeit hängt davon ab, wie weit ihr hinaufgeht.',
+        description:'Shinto-Schrein mit berühmten Reihen roter Torii-Tore am Inari-Berg.'}
+    ],
     'town-takayama': [
       {name:'Sanmachi-Suji / historische Altstadt',lat:36.14088,lng:137.25966,category:'sight',priority:'1',duration:'1–2 Std.',
         schedule:'Tag 1 · 30.10. · ca. 15:30–17:15',
@@ -272,9 +333,9 @@
   const planPresets = [
     {id:'all',name:'Alle gespeicherten Orte',kind:'all'},
     {id:'ride-takayama',name:'30.10. · Fahrt nach Takayama',kind:'journey'},
-    {id:'town-takayama',name:'30.10.–02.11. · Takayama',kind:'city',center:[36.141062,137.251454]},
-    {id:'ride-kyoto',name:'02.11. · Fahrt nach Kyoto',kind:'journey',center:[35.55,136.50]},
-    {id:'town-kyoto',name:'Ab 02.11. · Kyoto',kind:'city',center:[34.98535,135.75877]}
+    {id:'town-takayama',name:'30.10.–01.11. · Takayama',kind:'city',center:[36.141062,137.251454]},
+    {id:'ride-kyoto',name:'01.11. · Fahrt nach Kyoto',kind:'journey',center:[35.55,136.50]},
+    {id:'town-kyoto',name:'01.–07.11. · Kyoto',kind:'city',center:[35.0100,135.7710]}
   ];
   function placePlanKey(place) {
     return JSON.stringify([place.name,place.lat,place.lng]);
