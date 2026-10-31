@@ -22,8 +22,10 @@
   </div>
 </div><div id="tour-map-tools" class="tour-map-tools" role="group" aria-label="Tourziele direkt auf der Karte auswählen">
   <button id="tour-map-mode" type="button" aria-pressed="false" title="Orte durch Antippen der Kartenmarkierungen zur Tour hinzufügen">＋ Tour auf Karte</button>
+  <button id="map-save-place" type="button" aria-pressed="false" title="Neuen Ort mit einem Tipp auf die Karte markieren">📌 Ort merken</button>
   <span id="tour-map-counter" role="status" aria-live="polite" hidden>0/6 Ziele · Markierungen antippen</span>
   <button id="tour-map-done" type="button" hidden>Fertig</button>
+  <span id="map-save-place-hint" role="status" aria-live="polite" hidden>Auf eine freie Kartenstelle tippen</span>
 </div><section id="station-transfer" class="station-transfer-inset" hidden aria-label="Umstieg Hakone-Yumoto">
   <div class="station-transfer-heading"><strong>Hakone-Yumoto · Umstieg</strong><button type="button" id="station-transfer-close" aria-label="Gleishinweise schließen">×</button></div>
   <div class="station-transfer-times">
@@ -239,6 +241,28 @@
 <label for="plan-type">Art</label><select id="plan-type"><option value="city">Ort / Aufenthalt</option><option value="journey">Reisetag / Fahrt</option></select>
 <p class="hint">Du kannst später Orte in diesem Abschnitt speichern. Zugzeiten und Strecken werden nicht automatisch erfunden.</p>
 <p id="plan-error" role="alert"></p><button type="submit" class="primary">Abschnitt hinzufügen</button></form></dialog>
+<dialog id="map-place-dialog" aria-labelledby="map-place-title">
+  <form id="map-place-form">
+    <div class="dialog-heading"><h2 id="map-place-title">📌 Neuen Ort merken</h2><button type="button" id="map-place-cancel" aria-label="Schließen">×</button></div>
+    <p id="map-place-coordinates" class="map-place-coordinates">Punkt auf der Karte wählen</p>
+    <p id="map-place-target" class="import-target">Reiseabschnitt</p>
+    <label for="map-place-name">Name des Ortes</label>
+    <input id="map-place-name" type="text" maxlength="120" autocomplete="off" placeholder="z. B. nettes Café" required>
+    <label for="map-place-category">Kategorie</label>
+    <select id="map-place-category">
+      <option value="restaurant">♨ Essen &amp; Trinken</option>
+      <option value="sight">◇ Sehenswürdigkeit</option>
+      <option value="station">▤ Bahnhof / Haltestelle</option>
+      <option value="hotel">⌂ Unterkunft</option>
+    </select>
+    <label for="map-place-note">Notiz (optional)</label>
+    <textarea id="map-place-note" rows="3" maxlength="260" placeholder="Was möchtest du dir merken?"></textarea>
+    <button type="button" id="map-place-use-gps">⌖ Meinen aktuellen GPS-Punkt verwenden</button>
+    <p id="map-place-error" role="alert"></p>
+    <button type="submit" class="primary">📌 Ort dauerhaft speichern</button>
+    <p class="hint">Der Pin wird nur auf diesem Gerät gespeichert. Du kannst den Standort vor dem Speichern auf der Karte antippen oder deinen GPS-Punkt verwenden. Keine Adresssuche oder automatische Übermittlung.</p>
+  </form>
+</dialog>
 <dialog id="import-dialog"><form id="import-form"><div class="dialog-heading"><h2>Empfehlungen hinzufügen</h2><button type="button" data-close aria-label="Schließen">×</button></div><p>JSON oder eine Zeile pro Ort: <code>Name; Breitengrad; Längengrad; Kategorie; Beschreibung</code></p><p id="import-target" class="import-target">Abschnitt: Alle Orte</p><label for="import-text">Deine Orte</label><textarea id="import-text" rows="8" required maxlength="100000" placeholder="Brandenburger Tor; 52.5163; 13.3777; sight; Wahrzeichen Berlins"></textarea><p class="hint">Kategorien: restaurant, sight, station, hotel. Koordinaten sind erforderlich; reine Adressen werden nicht automatisch gesucht.</p><p id="import-error" role="alert"></p><button class="primary" type="submit">Orte zur Karte hinzufügen</button></form></dialog>
 <dialog id="share-dialog"><div class="dialog-heading"><h2>Deine Karte teilen</h2><button data-close aria-label="Schließen">×</button></div><p>Der Link enthält die Orte der aktuellen Ansicht (oder alle Orte, wenn „Alle Orte“ aktiv ist), niemals deinen GPS-Standort.</p><label for="share-url">Kartenlink</label><textarea id="share-url" rows="4" readonly></textarea><button id="copy" class="primary">Link kopieren</button></dialog>
 <dialog id="help-dialog"><div class="dialog-heading"><h2>Unterwegs mit deiner Karte</h2><button data-close aria-label="Schließen">×</button></div><p>Bitte ChatGPT um Orte mit Name, Breitengrad (lat), Längengrad (lng), Kategorie (category) und Beschreibung (description) als JSON. Die App verbindet sich nicht mit ChatGPT.</p><p>GPS benötigt HTTPS und deine Erlaubnis. Beim Öffnen startet GPS automatisch und zentriert die Karte auf dich, solange du GPS nicht zuvor bewusst ausgeschaltet hast. Falls noch keine Berechtigung erteilt wurde, fragt der Browser gegebenenfalls danach. „GPS ausschalten“ beendet die Verfolgung, entfernt den Standort und deaktiviert den automatischen GPS-Start bis zum nächsten manuellen Einschalten. Entfernungen sind Luftlinien, keine Weglängen. Bei Bewegung folgt die Karte; Verschieben pausiert das Zentrieren. Mit dem blauen Standortpunkt zentrierst du erneut.</p><p>Empfehlungen und über Kartenlinks empfangene Orte werden auf diesem Gerät lokal im Browser gespeichert. Neue Links und Importe ergänzen vorhandene Orte, Duplikate werden vermieden. „Leeren“ entfernt die gespeicherten Orte. Geteilte Links enthalten die ausgewählten Orte im URL-Fragment; jeder mit dem Link kann sie sehen. Der Standort wird nicht gespeichert.</p><p>Auf dem Smartphone kannst du die Karte mit ⛶ auf Vollbild vergrößern und mit ✕ wieder verkleinern. Ohne Orte beginnt sie mit einer neutralen Weltansicht; bei erlaubtem GPS-Zugriff folgt sie nach dem Öffnen automatisch deinem Standort. Verschieben oder Zoomen pausiert das Folgen.</p><p>OpenStreetMap erhält beim Laden der Kacheln deine IP-Adresse und den Kartenausschnitt. Auch beim GPS-Zentrieren wird dieser Ausschnitt angefordert. Nur wenn du „Fußweg anzeigen“ antippst und GPS aktiv ist, werden die aktuelle Startkoordinate und das Ziel zur einmaligen Berechnung eines Fußwegs an den öffentlichen Routingdienst FOSSGIS (routing.openstreetmap.de) übermittelt und dort gemäß dessen Datenschutzhinweisen protokolliert. Die gepunktete Route bleibt in dieser App und wird nicht als Luftlinie vorgetäuscht. Der Dienst kann mehrere Wegvarianten liefern; die App bevorzugt bei vergleichbarer Gehzeit die kürzere Fußroute. Bei auffälligen Umwegen oder ungenauem GPS zeigt sie einen Hinweis. Die Qualität ist von OpenStreetMap-Daten und Start-/Zielkoordinaten abhängig; Google Maps kann anders routen. Die Route ist keine Echtzeit-Abbiegenavigation und wird nicht automatisch nachberechnet. Google Maps erhält beim Öffnen der externen Navigation das Ziel und kann selbst Standortzugriff anfordern. Es gibt keine Analysewerkzeuge, Registrierung oder eigenen Server.</p><p>Die App kann über „App installieren“ bzw. „Zum Startbildschirm hinzufügen“ auf dem Android-Startbildschirm abgelegt werden. Bei bestehender Offline-Kopie sind Reiseabschnitte und gespeicherte Ticketstatus lokal verfügbar, die OpenStreetMap-Hintergrundkarte und die GitHub-Synchronisierung benötigen Internet.</p></dialog>
