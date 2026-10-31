@@ -73,9 +73,71 @@ test('the nearest-first option is a stable, offline direct-distance heuristic, n
  assert.equal(W.nearestTourOrder(start,[stops[0],stops[0]])[0],stops[0]);
 });
 
+
+test('one FOSSGIS Trip request optimizes walking order from GPS, leaving final stop free',()=>{
+ const unordered=[stops[2],stops[0],stops[1]];
+ const url=W.optimizedTourRequestUrl(start,unordered);
+ assert.match(url,/^https:\/\/routing\.openstreetmap\.de\/routed-foot\/trip\/v1\/driving\//);
+ assert.match(url,/roundtrip=false&source=first&destination=any/);
+ assert.match(url,/overview=full&geometries=geojson&steps=false/);
+ assert.equal(url.split('?')[0].split(';').length,4);
+ assert.doesNotMatch(url,/access_token|key=|ghp_/);
+ // This manual input order would violate the 12 km bound; sorted local
+ // candidate can still succeed when all points belong to one compact area.
+ const nearby=[stops[0],stops[1],stops[2]];
+ assert.equal(W.optimizedTourRequestUrl(start,nearby).split(';').length,4);
+ assert.throws(()=>W.optimizedTourRequestUrl(start,[at(36.8,138.1),stops[0]]),/12 km/);
+});
+
+test('Trip waypoint indices reorder stops and route legs consistently',()=>{
+ const permutation=[0,2,1,3]; // GPS, original second, original first, original third
+ const source=[start,...stops];
+ const optimized={
+   code:'Ok',
+   waypoints:source.map((p,original)=>({
+     location:lngLat(p),distance:0,trips_index:0,
+     waypoint_index:permutation.indexOf(original)
+   })),
+   trips:[{
+     distance:940,duration:720,
+     legs:[{distance:240,duration:190},{distance:330,duration:245},{distance:370,duration:285}],
+     geometry:{type:'LineString',coordinates:permutation.map(i=>lngLat(source[i]))}
+   }]
+ };
+ const input=stops.slice();
+ const result=W.parseOptimizedTour(optimized,start,stops);
+ assert.deepEqual(result.orderedStops,[stops[1],stops[0],stops[2]]);
+ assert.deepEqual(stops,input,'input places are untouched');
+ assert.equal(result.distance,940);
+ assert.equal(result.legs.length,3);
+ assert.throws(()=>W.parseOptimizedTour({...optimized,code:'NoTrips'},start,stops),/nicht optimieren/);
+ assert.throws(()=>W.parseOptimizedTour({...optimized,waypoints:optimized.waypoints.slice(1)},start,stops),/nicht optimieren/);
+ assert.throws(()=>W.parseOptimizedTour({...optimized,waypoints:optimized.waypoints.map((p,i)=>
+   i===2?{...p,waypoint_index:1}:p)},start,stops),/ungültig/);
+ assert.throws(()=>W.parseOptimizedTour({...optimized,waypoints:optimized.waypoints.map((p,i)=>
+   i===0?{...p,waypoint_index:3}:p)},start,stops),/ungültig|GPS/);
+ assert.throws(()=>W.parseOptimizedTour({...optimized,waypoints:optimized.waypoints.map((p,i)=>
+   i===2?{...p,location:[139,37]}:p)},start,stops),/zu weit/);
+ assert.throws(()=>W.parseOptimizedTour({...optimized,trips:[{...optimized.trips[0],legs:[]}]},start,stops),/nicht alle/);
+});
+
+test('optimization is explicit, persists stop IDs only, and keeps existing manual calculation',()=>{
+ const app=read('app.js'),html=read('index.html');
+ assert.match(html,/id="tour-optimize"/);
+ assert.match(html,/Route optimieren/);
+ assert.match(app,/\$\('tour-optimize'\)\.onclick=\(\)=>\{void calculateTour\(true\);\}/);
+ assert.match(app,/\$\('tour-calculate'\)\.onclick=\(\)=>\{void calculateTour\(\);\}/);
+ assert.match(app,/tourDrafts\[activePlanId\]=ordered\.map\(p=>C\.placePlanKey\(p\)\)/);
+ assert.match(app,/const ordered=optimized\?result\.orderedStops:selected/);
+ assert.match(app,/ordered\.forEach\(\(place,i\)=>/);
+ assert.match(app,/tourController\)return/);
+ assert.doesNotMatch(app.slice(app.indexOf('function persistTourDrafts()'),
+   app.indexOf('function clearTourRoute()')),/position|geometry|tourRoute/);
+});
+
 test('multistop builder is optional, compact and has reorder/removal/accessibility actions',()=>{
  const html=read('index.html'),app=read('app.js'),css=read('style.css');
- for(const id of ['tour-builder','tour-count','tour-stops','tour-sort','tour-clear',
+ for(const id of ['tour-builder','tour-count','tour-stops','tour-optimize','tour-clear',
    'tour-calculate','tour-builder-status','tour-result','tour-result-summary',
    'tour-result-legs','tour-route-hud','tour-route-title','tour-route-metrics',
    'tour-route-note','tour-route-close'])
@@ -91,9 +153,10 @@ test('multistop builder is optional, compact and has reorder/removal/accessibili
  assert.match(app,/C\.placePlanKey\(p\)/);
  assert.match(app,/new Set\(keys\)/);
  assert.match(app,/aria-pressed/);
- assert.match(app,/W\.nearestTourOrder\(position,selected\)/);
+ assert.match(app,/W\.optimizedTourRequestUrl\(from,selected\)/);
  assert.match(app,/W\.tourRequestUrl\(from,selected\)/);
- assert.match(app,/W\.parseTour\(JSON\.parse\(raw\),from,selected\)/);
+ assert.match(app,/W\.parseOptimizedTour\(data,from,selected\)/);
+ assert.match(app,/W\.parseTour\(data,from,selected\)/);
  assert.match(app,/result\.legs\.forEach/);
  assert.match(app,/L\.polyline\(result\.points/);
  assert.match(app,/L\.divIcon\(\{className:'tour-stop-marker'/);
@@ -105,7 +168,7 @@ test('multistop builder is optional, compact and has reorder/removal/accessibili
 
 test('tour sends GPS only on explicit calculation and does not save routes or location history',()=>{
  const app=read('app.js');
- const start=app.indexOf('  async function calculateTour(){');
+ const start=app.indexOf('  async function calculateTour(optimized=false){');
  const end=app.indexOf('  function placeMeta(p)',start);
  assert.ok(start>=0 && end>start);
  const block=app.slice(start,end);
@@ -135,7 +198,7 @@ test('tour keeps normal routes and railway views safe; updated PWA shell is offl
  assert.match(app,/if\(activePlanId!==id && walkDestination\)clearWalkingRoute\(\)/);
  assert.match(app,/clearTourRoute\(\);\s*tourDrafts=Object\.create\(null\)/);
  assert.match(app,/clearWalkingRoute\(\);\s*clearTourRoute\(\);/);
- assert.match(sw,/livekarte-shell-pwa-v6/);
+ assert.match(sw,/livekarte-shell-pwa-v7/);
  assert.doesNotMatch(sw,/routed-foot|routing\.openstreetmap\.de/);
  assert.match(html,/src="walking-core\.js"/);
  assert.match(html,/id="walk-route-nav"/);
