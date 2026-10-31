@@ -20,6 +20,10 @@
     <select id="plan-select" aria-label="Reiseabschnitt auswählen" title="Reiseabschnitt wechseln"></select>
     <button type="button" id="add-plan" aria-label="Neuen Reiseabschnitt anlegen" title="Neuen Reiseabschnitt anlegen">＋</button>
   </div>
+</div><div id="tour-map-tools" class="tour-map-tools" role="group" aria-label="Tourziele direkt auf der Karte auswählen">
+  <button id="tour-map-mode" type="button" aria-pressed="false" title="Orte durch Antippen der Kartenmarkierungen zur Tour hinzufügen">＋ Tour auf Karte</button>
+  <span id="tour-map-counter" role="status" aria-live="polite" hidden>0/6 Ziele · Markierungen antippen</span>
+  <button id="tour-map-done" type="button" hidden>Fertig</button>
 </div><section id="station-transfer" class="station-transfer-inset" hidden aria-label="Umstieg Hakone-Yumoto">
   <div class="station-transfer-heading"><strong>Hakone-Yumoto · Umstieg</strong><button type="button" id="station-transfer-close" aria-label="Gleishinweise schließen">×</button></div>
   <div class="station-transfer-times">
@@ -120,7 +124,8 @@
 <details id="tour-builder" class="tour-builder">
   <summary>🚶 Rundgang planen <span id="tour-count">0/6 Ziele</span></summary>
   <div class="tour-builder-body">
-    <p>Wähle unten bei deinen Orten <strong>„＋ Tour“</strong> (2–6 Ziele). Die Reihenfolge kannst du hier ändern oder anhand echter Fußwege optimieren. Die Tour startet am aktuellen GPS-Standort und endet am letzten Ziel (kein Rückweg).</p>
+    <p>Tippe auf „📍 Orte direkt auf Karte auswählen“ und wähle bis zu sechs Kartenmarkierungen mit einem Fingertipp, oder verwende unten bei deinen Orten <strong>„＋ Tour“</strong> (2–6 Ziele). Die Reihenfolge kannst du hier ändern oder anhand echter Fußwege optimieren. Die Tour startet am aktuellen GPS-Standort und endet am letzten Ziel (kein Rückweg).</p>
+    <button id="tour-pick-on-map" class="tour-pick-on-map" type="button">📍 Orte direkt auf Karte auswählen</button>
     <ol id="tour-stops" class="tour-stops" aria-label="Ausgewählte Rundgang-Stopps"></ol>
     <div class="tour-builder-actions">
       <button id="tour-optimize" type="button" title="Route anhand realer Fußwege algorithmisch optimieren und anzeigen">✨ Route durch KI optimieren</button>
