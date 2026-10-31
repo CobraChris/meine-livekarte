@@ -896,3 +896,12 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .leaflet-popup-content .place-popup-header{gap:6px}
   .leaflet-popup-content .place-popup-drag{min-height:38px;min-width:72px}
 }
+
+
+/* Swiping text or blank popup space moves the anchored map.
+   Other form controls and links remain ordinary clickable elements. */
+.leaflet-popup-content .place-popup-pan-surface{touch-action:none;overscroll-behavior:contain}
+.leaflet-popup-content .place-popup-pan-surface.is-dragging{
+ cursor:grabbing;user-select:none;-webkit-user-select:none;
+}
+.leaflet-popup-content .place-popup-pan-surface:not(.is-dragging){cursor:grab}
