@@ -113,7 +113,7 @@ test('Trip waypoint indices reorder stops and route legs consistently',()=>{
  assert.throws(()=>W.parseOptimizedTour({...optimized,code:'NoTrips'},start,stops),/nicht optimieren/);
  assert.throws(()=>W.parseOptimizedTour({...optimized,waypoints:optimized.waypoints.slice(1)},start,stops),/nicht optimieren/);
  assert.throws(()=>W.parseOptimizedTour({...optimized,waypoints:optimized.waypoints.map((p,i)=>
-   i===2?{...p,waypoint_index:1}:p)},start,stops),/ungültig/);
+   i===2?{...p,waypoint_index:2}:p)},start,stops),/ungültig/);
  assert.throws(()=>W.parseOptimizedTour({...optimized,waypoints:optimized.waypoints.map((p,i)=>
    i===0?{...p,waypoint_index:3}:p)},start,stops),/ungültig|GPS/);
  assert.throws(()=>W.parseOptimizedTour({...optimized,waypoints:optimized.waypoints.map((p,i)=>
