@@ -1941,6 +1941,30 @@
     }
   }
   seedCuratedPlaces();
+  // A one-off additive migration for a personally requested food marker.
+  // Do not re-seed or overwrite the user's existing curated places, notes,
+  // tour selection, routing data, or other travel-section assignments.
+  function seedBondsBrewBookmark(){
+    const version='livekarte-bonds-brew-takayama-20261031-v1';
+    try{
+      if(localStorage.getItem(version)==='1')return;
+      const bookmark=C.presetPlaces('town-takayama').find(p=>
+        p.name==='Bonds Brew beer craft');
+      if(!bookmark)return;
+      const key=C.placePlanKey(bookmark);
+      const exists=places.some(p=>C.placePlanKey(p)===key);
+      if(!exists)places=C.merge(places,[bookmark]);
+      const tags=Array.isArray(planAssignments[key])?planAssignments[key]:[];
+      planAssignments[key]=[...new Set([...tags,'town-takayama'])];
+      // Only mark complete after both local stores are saved successfully.
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(places));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(planAssignments));
+      localStorage.setItem(version,'1');
+    }catch{
+      say('Der neue Food-Tipp konnte nicht gespeichert werden. Bitte Speicherplatz prüfen.');
+    }
+  }
+  seedBondsBrewBookmark();
   // Persist only chosen place identifiers, never the GPS start or a route.
   try{
     const raw=JSON.parse(localStorage.getItem('livekarte-tour-drafts-v1')||'{}');
