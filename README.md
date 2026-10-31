@@ -1,3 +1,16 @@
+## Japanische Zielkarte „🇯🇵 Dem Fahrer zeigen“ (31.10.2026)
+
+Für in der Kyoto-Reise bereits verzeichnete Ziele gibt es nun **„🇯🇵 Dem Fahrer zeigen“** direkt im Karten-Popup und in der Orteliste, außerdem beim passenden „Was jetzt?“-Schritt und beim Hoteltransfer am 01.11. Ein mobiles, gut lesbares Fenster zeigt dem Taxifahrer den **japanischen Zielnamen in großer Schrift** und „こちらまでお願いします。“. **Nur für das Tomoya Residence Hotel** gibt es auch eine **offiziell bestätigte japanische Postanschrift und Telefonnummer**:
+
+- **トモヤレジデンスホテル 京都 二条高倉**
+- **〒604-0831 京都市中京区二条通高倉西入松屋町58**
+- **電話：075-211-8050**
+- Offizielle Quelle: https://www.tomoyaresidencehotel.net/ (Access / アクセス, abgerufen am 31.10.2026)
+
+Bei weiteren bekannten Kyoto-Orten (Kyoto Station, Karasuma Oike, Gion Shirakawa, Tatsumi-Brücke, Ponto-chō, Kiyomizu-dera, Sannenzaka/Ninenzaka, Fushimi Inari) wird ausschließlich der zugehörige japanische **Ortsname** mit Kartenposition gezeigt; eine vermeintlich konkrete Straßenadresse wird ausdrücklich **nicht erfunden**. Daten werden nur beim exakten Ortsnamen (bzw. bekannten Hotel-Kurznamen) **und** nahe der hinterlegten Position erkannt. Andere frei gespeicherte Orte bleiben unberührt.
+
+Der Dialog hat die Aktionen **„Japanische Angaben kopieren“** (Browser-Clipboard nach Antippen) und **„Ziel auf Google Maps“** (öffnet externe Karten nur nach Antippen). Kein API-Key, Geocoding, privater QR-Code, GPS-Aufruf oder veränderte Reisebuchung. Die lokale Datenbasis liegt in `japanese-destination.js` und ist über die PWA-Shell **v22 offline** verfügbar, auch wenn Kartenkacheln offline ggf. nicht geladen werden.
+
 ## „Was jetzt?“ – kontextbezogener Reiseassistent (31.10.2026)
 
 Direkt unter der Karte und **vor** der Ticketabholung wird in den Reiseansichten von Takayama und Kyoto der Assistent **„🧭 Was jetzt?“** eingeblendet. Er verwendet den vorhandenen Reiseplan und die lokale **Japan-Zeit** (Asia/Tokyo), nicht geschätzte Live-Verbindungen:
