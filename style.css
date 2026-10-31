@@ -918,6 +918,11 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .kyoto-rail-heading h2{font-size:20px;line-height:1.2;margin:6px 0 3px;color:#f3fff7}
 .kyoto-rail-heading .kyoto-rail-subtitle{font-size:11px;color:#b8d3cc;
   line-height:1.45;margin:4px 0 12px}
+.kyoto-booking-card{display:grid;gap:7px;margin:9px 0 13px;padding:11px 12px;
+  border:1px solid #7a8d5b;border-radius:11px;background:#273f35}
+.kyoto-booking-title{font-size:12px;color:#c8f5d8;line-height:1.35}
+.kyoto-booking-row{font-size:10px;color:#d7e9df;line-height:1.45}
+.kyoto-booking-meta{color:#ffdfa0!important;font-weight:700}
 .kyoto-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
   gap:7px;margin:10px 0 17px}
 .kyoto-kpi{padding:11px 7px 9px;text-align:center;border:1px solid #53796e;
