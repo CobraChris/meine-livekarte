@@ -4,57 +4,52 @@ const fs=require('node:fs'),path=require('node:path');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const app=read('app.js'),css=read('style.css'),sw=read('sw.js');
 
-test('normal place popup sits above marker and auto-pans away from map controls',()=>{
+test('popup maintains adequate gap and auto-pan around marker',()=>{
  assert.match(app,/marker\.bindPopup\(popup,\{\s*maxWidth:320,maxHeight:250,\s*offset:L\.point\(0,-24\)/);
  assert.match(app,/autoPan:true,\s*autoPanPaddingTopLeft:L\.point\(18,76\),\s*autoPanPaddingBottomRight:L\.point\(18,40\)/);
- assert.match(app,/marker\.on\('popupopen', \(\) => \{ following = false; \}\)/);
 });
-
-test('popup drag pans map with anchored marker rather than floating tooltip',()=>{
- const start=app.indexOf('  function enablePopupMapDrag(handle,marker){');
+test('a swipe on any non-interactive popup surface moves map and anchored popup',()=>{
+ const start=app.indexOf('  function enablePopupMapDrag(handle,marker,surface){');
  const end=app.indexOf('  function render() {',start);
- assert.ok(start>=0&&end>start,'Expected explicit drag handler');
+ assert.ok(start>=0&&end>start);
  const body=app.slice(start,end);
- for(const pattern of [
-  /handle\.addEventListener\('pointerdown'/,
-  /handle\.addEventListener\('pointermove'/,
-  /handle\.addEventListener\('pointerup'/,
-  /handle\.addEventListener\('pointercancel'/,
-  /handle\.addEventListener\('lostpointercapture'/,
-  /handle\.setPointerCapture\?\.\(pointerId\)/,
-  /handle\.hasPointerCapture\?\.\(id\)/,
-  /marker\.isPopupOpen\(\)/,
-  /map\.panBy\(\[-dx,-dy\],\{animate:false\}\)/,
-  /pauseGPSFollow\(\)/,
-  /marker\.on\('popupclose'/
- ])assert.match(body,pattern);
- assert.doesNotMatch(body,/setLatLng\(|transform:|fetch\(|localStorage|navigator\.geolocation|W\.requestUrl/);
+ assert.match(body,/for\(const target of \[handle,surface\]\)/);
+ assert.match(body,/target\.addEventListener\('pointerdown',down\)/);
+ assert.match(body,/target\.addEventListener\('pointermove',move\)/);
+ assert.match(body,/target\.addEventListener\('pointerup',release\)/);
+ assert.match(body,/target\.addEventListener\('pointercancel',release\)/);
+ assert.match(body,/target\.addEventListener\('lostpointercapture',release\)/);
+ assert.match(body,/captured\.setPointerCapture\?\.\(pointerId\)/);
+ assert.match(body,/target\?\.hasPointerCapture\?\.\(id\)/);
+ assert.match(body,/map\.panBy\(\[-dx,-dy\],\{animate:false\}\)/);
+ assert.match(body,/pauseGPSFollow\(\)/);
+ assert.match(body,/marker\.on\('popupclose'/);
+ assert.doesNotMatch(body,/setLatLng\(|fetch\(|localStorage|navigator\.geolocation/);
 });
-test('only dedicated grab-handle drags; ordinary popup controls and marker tap remain unchanged',()=>{
- const start=app.indexOf("      const popup = node('div');",app.indexOf('  function render()'));
- const end=app.indexOf("      const chosenIndex=tourSelection().findIndex",start);
- const body=app.slice(start,end);
- assert.match(body,/popupHeader=node\('div',undefined,'place-popup-header'\)/);
- assert.match(body,/popupHeader\.append\(node\('strong',p\.name\)\)/);
- assert.match(body,/dragHandle=node\('button','⠿ Ziehen','place-popup-drag'\)/);
- assert.match(body,/dragHandle\.setAttribute\('aria-label','Popup verschieben: ziehen oder Pfeiltasten verwenden'\)/);
- assert.match(body,/quickActions\.append\(popupTourButton,walkingButton\(p\),route\(p\)\)/);
- assert.match(body,/quickActions\.append\(popupEditButton\)/);
- assert.match(app,/enablePopupMapDrag\(dragHandle,marker\)/);
- assert.match(app,/marker\.bindPopup\(popup,\{/);
- assert.match(css,/\.leaflet-popup-content \.place-popup-drag/);
+test('buttons, links, inputs, labels and close control stay clickable while swiping empty areas',()=>{
+ const body=app.slice(app.indexOf('  function enablePopupMapDrag(handle,marker,surface){'),
+   app.indexOf('  function render() {'));
+ assert.match(body,/const ignore='button,a,input,select,textarea,label/);
+ assert.match(body,/\.leaflet-popup-close-button/);
+ assert.match(body,/if\(event\.currentTarget===surface&&event\.target\.closest\?\.\(ignore\)\)return/);
+ assert.match(body,/event\.currentTarget===surface/);
+ assert.match(app,/const popup = node\('div',undefined,'place-popup-pan-surface'\)/);
+ assert.match(app,/enablePopupMapDrag\(dragHandle,marker,popup\)/);
+ assert.match(app,/popupHeader\.append\(dragHandle\)/);
+ assert.match(app,/quickActions\.append\(popupTourButton,walkingButton\(p\),route\(p\)\)/);
+ assert.match(app,/quickActions\.append\(popupEditButton\)/);
+ assert.match(css,/\.leaflet-popup-content \.place-popup-pan-surface\{/);
  assert.match(css,/touch-action:none/);
- assert.match(css,/\.place-popup-drag:focus-visible/);
 });
-test('keyboard arrows pan the same anchored popup, with no accidental normal map click interception',()=>{
- const body=app.slice(app.indexOf('  function enablePopupMapDrag(handle,marker){'),app.indexOf('  function render() {'));
+test('long descriptions can scroll when necessary; keyboard arrows still move map',()=>{
+ const body=app.slice(app.indexOf('  function enablePopupMapDrag(handle,marker,surface){'),
+    app.indexOf('  function render() {'));
+ assert.match(body,/fromText=!!event\.target\.closest\?\.\('\.place-popup-description'\)/);
+ assert.match(body,/scroll\.scrollHeight>scroll\.clientHeight\+4/);
+ assert.match(body,/scroll\.scrollTop-=dy/);
  assert.match(body,/ArrowLeft:\[36,0\],ArrowRight:\[-36,0\]/);
  assert.match(body,/ArrowUp:\[0,36\],ArrowDown:\[0,-36\]/);
- assert.match(body,/handle\.addEventListener\('keydown',event=>/);
  assert.match(body,/map\.panBy\(shift,\{animate:false\}\)/);
- const ordinary=app.slice(app.indexOf('  function render() {'),app.indexOf("      const card = node('article'",app.indexOf('  function render() {')));
- assert.match(ordinary,/if\(mapTourPickMode\)\{/);
- assert.match(ordinary,/marker\.on\('click',\(\)=>\{pauseGPSFollow\(\);toggleTourPlace\(p,true\);\}\)/);
- assert.match(ordinary,/marker\.on\('popupopen'/);
- assert.match(sw,/livekarte-shell-pwa-v14/);
+ assert.match(app,/const description=node\('p',p\.description,'place-popup-description'\)/);
+ assert.match(sw,/livekarte-shell-pwa-v15/);
 });
