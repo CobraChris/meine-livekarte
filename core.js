@@ -99,6 +99,17 @@
   }
   // Indoor guide data: station topology is illustrative; no fabricated indoor coordinates.
   // Current platform assignments are not live feeds; always confirm on departure boards.
+  // Only show the Kyoto-bound guide for the exact verified itinerary, never
+  // for another journey or for a route edited after the booking.
+  function isNagoyaKyotoTrip(trip){
+    if(!trip||trip.date!=='01.11.2026'||!Array.isArray(trip.stops)||
+       trip.stops.length!==3)return false;
+    const [start,change,end]=trip.stops;
+    return start.name==='Takayama'&&start.departure==='11:35'&&
+      change.name==='Nagoya'&&change.arrival==='14:04'&&
+      change.departure==='14:26'&&end.name==='Kyoto Station'&&
+      end.arrival==='15:00';
+  }
   const stationGuides = {
     nagoya: Object.freeze({
       station:'Nagoya',incoming:'Hikari 637',arrival:'11:19',
@@ -127,6 +138,37 @@
           action:'Am richtigen Wagen bzw. an der passenden Markierung warten und in den Hida 9 einsteigen. Geplante Abfahrt 11:43 Uhr.',
           sign:'Hida 9 · 11:43 · Takayama',level:'2F · Gleis 11',
           caution:'Das ist keine Live-Auskunft. Bei Änderungen gilt die Bahnhofsanzeige.'}
+      ]
+    }),
+    // 01.11.2026: reverse direction from JR conventional lines to Shinkansen.
+    nagoyaKyoto: Object.freeze({
+      station:'Nagoya',incoming:'Hida 8',arrival:'14:04',
+      arrivalPlatforms:'4 (laut Reiseplan, vor Ort prüfen)',
+      outbound:'Nozomi 71',departure:'14:26',
+      departurePlatform:'17 (laut Buchung, vor Ort prüfen)',
+      destination:'Kyoto',transferMinutes:22,
+      mapUrl:'https://global.jr-central.co.jp/en/info/station/_img/nagoya.jpg',
+      steps:[
+        {short:'Aussteigen',title:'Hida 8 verlassen und Gleis prüfen',
+          action:'Nach der Ankunft um 14:04 Uhr aussteigen. Laut Reiseplan Gleis 4, aber die Bahnhofsansage und Anzeige sind maßgeblich. Papier-Tickets griffbereit halten.',
+          sign:'新幹線 / Shinkansen',level:'2F · JR-Bahnsteig',
+          caution:'Die Gleisnummer ist aus dem Reiseplan, keine Live-Bestätigung.'},
+        {short:'Hinunter',title:'Zum Shinkansen-Transfer gehen',
+          action:'Mit Treppe, Rolltreppe oder Lift zur Verbindungsebene gehen. Den Schildern „Shinkansen / 新幹線“ und „Transfer / のりかえ“ folgen. Nicht den Straßenausgang wählen.',
+          sign:'新幹線 / のりかえ',level:'1F · Verbindungsebene',
+          caution:'Das Diagramm ist schematisch. Keine Indoor-GPS-Navigation.'},
+        {short:'Umsteigesperre',title:'Shinkansen-Umsteigesperre passieren',
+          action:'Zur Shinkansen-Umsteigesperre (新幹線のりかえ口). Die ausgegebenen Papierfahrkarten für JR und Shinkansen bereithalten. Für die richtige Einlage der Tickets die Anweisung am Automaten beachten oder Personal fragen.',
+          sign:'新幹線のりかえ口',level:'1F · Transfer-Gates',
+          caution:'Bei getrennten Klook-Tickets nicht einfach von einer einzigen Fahrkarte oder IC-Freigabe ausgehen.'},
+        {short:'Gleis 17',title:'Zum Nozomi 71 hinaufgehen',
+          action:'Laut Reiseplan startet der Nozomi 71 Richtung Kyoto um 14:26 Uhr von Gleis 17. Den Zug und das tatsächliche Abfahrtsgleis auf der elektronischen Anzeige prüfen, dann zum Shinkansen-Bahnsteig hinaufgehen.',
+          sign:'17 / のぞみ71 / 京都',level:'2F · Shinkansen-Bahnsteig',
+          caution:'Bei Gleisänderung immer der aktuellen Bahnhofsanzeige folgen.'},
+        {short:'Einsteigen',title:'Wagen 4 · Sitze 8D und 8E',
+          action:'An der Markierung für Wagen 4 warten, einsteigen und die reservierten Plätze 8D und 8E aufsuchen. Planabfahrt ist 14:26 Uhr; beide Papiertickets behalten.',
+          sign:'のぞみ71 · 14:26 · 京都',level:'2F · Abfahrtsgleis',
+          caution:'Keine Echtzeitinformation. Bei Verspätung oder verpasstem Zug JR-Personal kontaktieren.'}
       ]
     })
   };
@@ -419,7 +461,7 @@
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, changeSavedPlace, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, presetPlaces, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides, ticketStates, ticketLegKey, normalizeTicketUpdate, encodeTicketUpdate, decodeTicketUpdate };
+  const api = { categories, normalize, merge, changeSavedPlace, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, presetPlaces, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides, isNagoyaKyotoTrip, ticketStates, ticketLegKey, normalizeTicketUpdate, encodeTicketUpdate, decodeTicketUpdate };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);
