@@ -397,6 +397,7 @@
     tourHud.hidden=true;
     tourResult.hidden=true;
     $('tour-calculate').disabled=tourSelection().length<2;
+    $('tour-optimize').disabled=tourSelection().length<2;
   }
   function setTourSelection(items){
     clearTourRoute();
@@ -462,7 +463,7 @@
     });
     $('tour-calculate').disabled=selected.length<2||!!tourController;
     $('tour-clear').disabled=!selected.length;
-    $('tour-sort').disabled=selected.length<2;
+    $('tour-optimize').disabled=selected.length<2||!!tourController;
     if(!selected.length && !tourRoute)
       tourBuilderStatus.textContent='Wähle zunächst zwei bis sechs Orte über „＋ Tour“.';
   }
@@ -470,23 +471,14 @@
     setTourSelection([]);
     tourBuilderStatus.textContent='Auswahl geleert. Deine gespeicherten Orte bleiben erhalten.';
   };
-  $('tour-sort').onclick=()=>{
-    const selected=tourSelection();
-    if(!position||watch===null||Date.now()-positionUpdatedAt>60000){
-      tourBuilderStatus.textContent='Zum Sortieren bitte zuerst einen aktuellen GPS-Standort abwarten.';
-      return;
-    }
-    try{
-      setTourSelection(W.nearestTourOrder(position,selected));
-      tourBuilderStatus.textContent='Nahe Orte zuerst sortiert (nur nach Luftlinie, keine garantierte optimale Strecke).';
-    }catch(error){tourBuilderStatus.textContent=error.message;}
-  };
+  $('tour-optimize').onclick=()=>{void calculateTour(true);};
   $('tour-route-close').onclick=()=>{
     clearTourRoute();
     tourBuilderStatus.textContent='Rundgang von der Karte entfernt. Deine Zielauswahl bleibt erhalten.';
   };
   $('tour-calculate').onclick=()=>{void calculateTour();};
-  async function calculateTour(){
+  async function calculateTour(optimized=false){
+    if(tourController)return;
     const selected=tourSelection();
     if(selected.length<2){tourBuilderStatus.textContent='Bitte mindestens zwei Orte auswählen.';return;}
     if(!W){tourBuilderStatus.textContent='Rundgang-Modul nicht geladen. Bitte App aktualisieren.';return;}
@@ -496,7 +488,7 @@
     }
     const from={...position},startPlanId=activePlanId;
     let request;
-    try{request=W.tourRequestUrl(from,selected);}
+    try{request=optimized?W.optimizedTourRequestUrl(from,selected):W.tourRequestUrl(from,selected);}
     catch(error){tourBuilderStatus.textContent=error.message;return;}
     // Public FOSSGIS fair use: at most one deliberate request per 1.2 seconds
     // across both single-destination navigation and multi-stop tours.
@@ -511,7 +503,10 @@
     tourController=controller;
     const generation=++tourRequestGeneration;
     $('tour-calculate').disabled=true;
-    tourBuilderStatus.textContent='Rundgang wird entlang der Fußwege berechnet …';
+    $('tour-optimize').disabled=true;
+    tourBuilderStatus.textContent=optimized
+      ?'Fußwege und günstigste Stoppreihenfolge werden ermittelt …'
+      :'Rundgang wird entlang der Fußwege berechnet …';
     tourBuilder.open=true;
     let timeout;
     try{
@@ -526,14 +521,22 @@
       }
       const raw=await response.text();
       if(raw.length>2500000)throw new Error('Rundgangantwort ungewöhnlich groß.');
-      const result=W.parseTour(JSON.parse(raw),from,selected);
+      const data=JSON.parse(raw);
+      const result=optimized?W.parseOptimizedTour(data,from,selected):W.parseTour(data,from,selected);
       if(generation!==tourRequestGeneration||activePlanId!==startPlanId)return;
-      tourRoute={...result,stops:selected.map(p=>({...p})),start:from,planId:activePlanId};
+      const ordered=optimized?result.orderedStops:selected;
+      if(optimized){
+        // Persist only selected place IDs, never the GPS origin or geometry.
+        tourDrafts[activePlanId]=ordered.map(p=>C.placePlanKey(p));
+        persistTourDrafts();
+        render();
+      }
+      tourRoute={...result,stops:ordered.map(p=>({...p})),start:from,planId:activePlanId};
       L.polyline(result.points,{color:'#12313b',opacity:.9,weight:10,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
       L.polyline(result.points,{color:'#ffdb74',opacity:1,weight:5,
         dashArray:'4 12',lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
-      selected.forEach((place,i)=>{
+      ordered.forEach((place,i)=>{
         const marker=L.marker([place.lat,place.lng],{
           title:'Stopp '+(i+1)+': '+place.name,
           icon:L.divIcon({className:'tour-stop-marker',
@@ -544,7 +547,7 @@
       });
       const walkSummary=W.distanceText(result.distance)+' · ca. '+
         W.durationText(result.duration)+' zu Fuß';
-      $('tour-route-title').textContent='🚶 Rundgang · '+selected.length+' Ziele';
+      $('tour-route-title').textContent='🚶 Rundgang · '+ordered.length+' Ziele';
       $('tour-route-metrics').textContent=walkSummary;
       $('tour-route-note').textContent='Start am GPS-Punkt bei Berechnung · keine automatische Aktualisierung';
       tourHud.hidden=false;
@@ -552,12 +555,14 @@
       const legs=$('tour-result-legs');
       legs.replaceChildren();
       result.legs.forEach((leg,i)=>{
-        const label=(i?'Stopp '+i:'Standort')+' → '+selected[i].name+
+        const label=(i?'Stopp '+i:'Standort')+' → '+ordered[i].name+
           ': '+W.distanceText(leg.distance)+' · '+W.durationText(leg.duration);
         legs.append(node('li',label));
       });
       tourResult.hidden=false;
-      tourBuilderStatus.textContent='Rundgang auf der Karte eingezeichnet. Gelbe Ziffern zeigen die Stopps.';
+      tourBuilderStatus.textContent=optimized
+        ?'Reihenfolge anhand echter Fußwege optimiert und gespeichert. Gelbe Ziffern zeigen die neuen Stopps.'
+        :'Rundgang auf der Karte eingezeichnet. Gelbe Ziffern zeigen die Stopps.';
       following=false;refreshGPSFollowControl();
       map.closePopup();
       map.fitBounds(L.latLngBounds(result.points),{padding:[52,52],maxZoom:16});
@@ -573,6 +578,7 @@
       if(generation===tourRequestGeneration){
         tourController=null;
         $('tour-calculate').disabled=tourSelection().length<2;
+        $('tour-optimize').disabled=tourSelection().length<2;
       }
     }
   }
