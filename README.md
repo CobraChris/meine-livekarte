@@ -274,6 +274,14 @@ Für den Reiseabschnitt **„30.10. Fahrt nach Takayama“** gibt es in Nagoya e
 
 Der Bahnhofsmodus verwendet keine bezahlten APIs und zeichnet **keine erfundenen Indoor-Fußwege** auf die Karte. Treppen, Etagen, Tore und Bahnsteige werden als Ablauf dargestellt und bei künftigen Pilotstationen separat verifiziert. Die Live-Anzeigetafeln sowie Personalhinweise haben Vorrang.
 
+## Kyoto: Infografik und drei Reisephasen (31.10.2026)
+
+Unter der Karte des Fahrtages **01.11. · Fahrt nach Kyoto** erscheint nun die mobile **Reise-Infografik**: Gesamtdauer (11:35–15:00 = 3 h 25 m), ein Umstieg, Ankunftszeit und zwei übersichtliche Zugkarten (Hida 8, Nozomi 71) mit der Verbindung Nagoya dazwischen. Marker und schematische Strecken auf der Karte bleiben unverändert. Die Ansicht der Kyoto-Stadt wurde zusätzlich als aufklappbare vertikale Tages-Timeline für 01.11. und 02.11. gestaltet, ohne weitere Touren zu erfinden.
+
+Pro Zugabschnitt kann man unmittelbar die einfache **Reisephase „Geplant“ / „Gebucht“ / „Erledigt“** auswählen. Default ist „Geplant“, solange keine Buchung bekannt ist. „Gebucht“ aktualisiert die bisherige lokale Ticket-Statuslogik auf `booked`, sofern noch kein bestätigter Ticketstatus `ready` existiert. „Geplant“ setzt einen zuvor gesetzten Buchungsstatus bewusst auf `unknown` zurück. **„Erledigt“ markiert ausschließlich die Fahrt als abgeschlossen**, ohne ein Ticket als geprüft/vorhanden zu behaupten. Dieser separate Fortschritt wird lokal in `livekarte-trip-progress-v1` anhand der exakten Zugstrecke gespeichert, weder an GitHub übertragen noch als Reservierung ausgegeben.
+
+Die bestehenden vier präziseren Ticketstatus-Werte **„Ungeklärt“, „Noch kaufen“, „Gebucht · prüfen“, „Vorhanden“** bleiben in jedem Abschnitt unter „🎟 Ticketdetails“ erreichbar. So bleiben bereits gespeicherte/verschlüsselt synchronisierte Ticketdaten kompatibel. Die Ticket-Snapshot-/Import-Pfade unterstützen jetzt auch den Kyoto-Fahrtag, ohne Buchungen zu behaupten oder Tickets selbst zu lesen. Öffnungszeiten, Bahngleise und Ticketausgabe müssen weiterhin vor Ort geprüft werden.
+
 ## Kyoto-Reise am 01.11.2026 – abgestimmter Stand (31.10.2026)
 
 Der Platzhalter „02.11. · Fahrt nach Kyoto“ wurde auf den zuletzt vereinbarten Fahrtag **01.11.2026** korrigiert.
