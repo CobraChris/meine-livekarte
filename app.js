@@ -1721,6 +1721,37 @@
       }
     }
   }catch{say('Ticketstatus konnte nicht geladen werden.');}
+  // Restore only explicit local timing preferences, never GPS or route data.
+  try{
+    const raw=JSON.parse(localStorage.getItem('livekarte-day-plans-v1')||'{}');
+    if(raw&&typeof raw==='object'&&!Array.isArray(raw)){
+      for(const [planId,value] of Object.entries(raw).slice(0,36)){
+        if(!allPlans().some(plan=>plan.id===planId)||
+           !value||typeof value!=='object'||Array.isArray(value))continue;
+        const settings={
+          start:'10:30',buffer:10,lunch:45,stops:Object.create(null)
+        };
+        try{D.minuteOf(value.start);settings.start=value.start;}catch{}
+        if([0,5,10,15,20,30].includes(value.buffer))settings.buffer=value.buffer;
+        if([0,30,45,60].includes(value.lunch))settings.lunch=value.lunch;
+        if(value.stops&&typeof value.stops==='object'&&!Array.isArray(value.stops)){
+          for(const [key,entry] of Object.entries(value.stops).slice(0,120)){
+            if(key.length>300||!entry||typeof entry!=='object'||Array.isArray(entry))continue;
+            const clean=Object.create(null);
+            if(Number.isInteger(entry.minutes)&&entry.minutes>=5&&entry.minutes<=480)
+              clean.minutes=entry.minutes;
+            for(const field of ['open','close']){
+              if(typeof entry[field]==='string'&&entry[field].length<=5){
+                try{D.minuteOf(entry[field]);clean[field]=entry[field];}catch{}
+              }
+            }
+            settings.stops[key]=clean;
+          }
+        }
+        dayPlans[planId]=settings;
+      }
+    }
+  }catch{say('Tagesplan-Einstellungen konnten nicht gelesen werden.');}
   const queryView=new URLSearchParams(location.search).get('view');
   const savedView=(()=>{try{return localStorage.getItem('livekarte-active-plan-v1')}catch{return null}})();
   const requestedView=queryView||savedView||
