@@ -49,5 +49,5 @@ test('physical ticket pickup remains confirmed solely by traveler, not by Klook 
  assert.match(block,/localStorage\.setItem\('livekarte-kyoto-qr-pickedup-v1','1'\)/);
  assert.match(block,/status:'ready',source:'manual'/);
  assert.doesNotMatch(block,/fetch\(|getUserMedia|accessToken|klook\.com\/api/);
- assert.match(read('sw.js'),/livekarte-shell-pwa-v20/);
+ assert.match(read('sw.js'),/livekarte-shell-pwa-v21/);
 });
