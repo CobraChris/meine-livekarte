@@ -140,14 +140,14 @@
       date:'01.11.2026',
       stops:[
         {name:'Takayama',lat:36.14113,lng:137.25129,departure:'11:35',
-          description:'Am Bahnhof rechtzeitig sein. Zugnummer und Sitzplätze anhand eures Tickets prüfen.',
+          description:'Klook-Buchung bestätigt. Vor Abfahrt QR-Code am Ticketautomaten scannen und Papier-Tickets abholen. Hida 8: Wagen 2, Sitze 10C/10D. Koffer <160 cm: keine Übergepäckreservierung nötig.',
           leg:'JR Limited Express Hida 8 · 11:35–14:04'},
         {name:'Nagoya',lat:35.17073,lng:136.88184,
           arrival:'14:04',departure:'14:26',
-          description:'22 Min. zum Umsteigen: JR Limited Express → Tokaido Shinkansen. Auf Schilder „Shinkansen Transfer“ achten; Gleis auf Anzeige prüfen.',
+          description:'Hida 8 laut Buchung an Gleis 4. 22 Min. Umstieg zum Nozomi 71 ab Gleis 17. Nozomi: Wagen 4, Sitze 8D/8E. Bahnhofsanzeige vor Ort hat Vorrang.',
           leg:'Tokaido Shinkansen Nozomi 71 · 14:26–15:00'},
         {name:'Kyoto Station',lat:34.98535,lng:135.75877,arrival:'15:00',
-          description:'Danach zur Karasuma-U-Bahn Richtung Karasuma Oike, Ausgang 1, ab dort ca. 7 Min. Fußweg zum Tomoya Residence; alternativ Taxi. Check-in ca. 15:30–16:15 (Schätzung).'}
+          description:'Nozomi 71 laut Buchung an Gleis 13. Taxi zum Tomoya Residence ca. 15–20 Min. (Hotel ca. 15:15–15:20) oder Karasuma-Linie bis Karasuma Oike + ca. 7 Min. Fußweg (Hotel ca. 15:25–15:35).'}
       ]
     },
     'hakone-takayama-2026-10-30': {
@@ -220,13 +220,13 @@
   const townPlacePresets = {
     'town-kyoto': [
       {name:'Tomoya Residence Hotel Kyoto Nijo Takakura',lat:35.0137,lng:135.76181,category:'hotel',
-        schedule:'01.–07.11. · Unterkunft · Check-in ab 14:00, geplante Ankunft etwa 15:30–16:15 am 01.11.',
-        note:'58 Matsuya-cho, Nakagyo-ku. Ab Karasuma Oike Station Ausgang 1 ca. 7 Minuten zu Fuß. Alternativ Taxi ab Kyoto Station.',
-        description:'Euer Kyoto-Hotel und Basis für die Stadterkundung; Check-in ab 14:00 ist nicht eure Ankunftszeit.'},
+        schedule:'01.–07.11. · Unterkunft · Check-in ab 14:00 · Ankunft am 01.11. je nach Transfer ca. 15:15–15:35',
+        note:'58 Matsuya-cho, Nakagyo-ku. Taxi ab Kyoto Station ca. 15–20 Min.; alternativ Karasuma-Linie bis Karasuma Oike, Ausgang 1, dann ca. 7 Min. zu Fuß.',
+        description:'Euer Kyoto-Hotel und Basis für die Stadterkundung. Taxi: Hotel ca. 15:15–15:20. U-Bahn: Hotel ca. 15:25–15:35.'},
       {name:'Kyoto Station',lat:34.98535,lng:135.75877,category:'station',
-        schedule:'01.11. · 15:00 Ankunft geplant (Nozomi 71)',
-        note:'Ankunftszeit laut Plan, Ticket und Anzeigetafel prüfen. Weiterfahrt zum Hotel mit Karasuma-U-Bahn oder Taxi.',
-        description:'Zentraler JR- und Shinkansen-Bahnhof in Kyoto.'},
+        schedule:'01.11. · 15:00 Ankunft · Nozomi 71 · laut Buchung Gleis 13',
+        note:'Klook-Buchung bestätigt. Weiterfahrt zum Hotel: Taxi ca. 15–20 Min. oder Karasuma-U-Bahn bis Karasuma Oike und ca. 7 Min. Fußweg.',
+        description:'Zentraler JR- und Shinkansen-Bahnhof in Kyoto. Bahnhofsanzeige vor Ort hat Vorrang.'},
       {name:'Karasuma Oike Station',lat:35.01082,lng:135.75965,category:'station',
         schedule:'01.11. · Umstieg/Ausstieg zum Hotel nach der Zugankunft',
         note:'Karasuma-Linie ab Kyoto Station. Ausgang 1; von dort ca. 7 Minuten zum Tomoya Residence.',
