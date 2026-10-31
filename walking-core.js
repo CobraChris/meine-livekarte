@@ -5,6 +5,7 @@
 (function(root){
   'use strict';
   const ENDPOINT='https://routing.openstreetmap.de/routed-foot/route/v1/driving/';
+  const TRIP_ENDPOINT='https://routing.openstreetmap.de/routed-foot/trip/v1/driving/';
   const maxStraightMeters=30000;
   const valid=point=>point && Number.isFinite(point.lat) && Number.isFinite(point.lng)
     && Math.abs(point.lat)<=90 && Math.abs(point.lng)<=180;
@@ -140,13 +141,18 @@
     };
   }
   const MAX_TOUR_STOPS=6;
-  function validateTour(from,stops){
+  function validateTourStopSet(from,stops){
     if(!valid(from)||!Array.isArray(stops)||
        stops.length<2||stops.length>MAX_TOUR_STOPS)
       throw new Error('Bitte 2 bis 6 gültige Ziele für deinen Rundgang auswählen.');
+    for(const stop of stops)
+      if(!valid(stop))throw new Error('Ein Ziel hat ungültige Koordinaten.');
+  }
+  function validateTour(from,stops){
+    validateTourStopSet(from,stops);
     let previous=from,totalDirect=0;
     for(const stop of stops){
-      if(!valid(stop))throw new Error('Ein Ziel hat ungültige Koordinaten.');
+
       const segment=metres(previous,stop);
       if(segment>12000)throw new Error('Zwei Stopps sind über 12 km Luftlinie voneinander entfernt. Bitte eine lokale Tour planen.');
       totalDirect+=segment;
@@ -194,10 +200,46 @@
       throw new Error('Die gemeldeten Etappen passen nicht zur Gesamtroute.');
     return {...parsed,legs};
   }
+  // A single OSRM Trip request returns both an optimized open foot tour and
+  // its geometry/legs. GPS is only submitted after an explicit user click.
+  // The source remains GPS; the last selected destination is not fixed.
+  function optimizedTourRequestUrl(from,stops){
+    validateTourStopSet(from,stops);
+    // Validate a local candidate independently of the manual stop order.
+    // Reject intercity/day trips before sending them to the public server.
+    validateTour(from,nearestTourOrder(from,stops));
+    const fmt=p=>p.lng.toFixed(6)+','+p.lat.toFixed(6);
+    return TRIP_ENDPOINT+[from,...stops].map(fmt).join(';')+
+      '?roundtrip=false&source=first&destination=any&overview=full&geometries=geojson&steps=false';
+  }
+  function parseOptimizedTour(data,from,stops){
+    validateTourStopSet(from,stops);
+    if(!data||data.code!=='Ok'||!Array.isArray(data.trips)||
+       data.trips.length!==1||!Array.isArray(data.waypoints)||
+       data.waypoints.length!==stops.length+1)
+      throw new Error('Der Routingdienst konnte die Rundgang-Reihenfolge nicht optimieren.');
+    const order=Array(stops.length+1).fill(-1);
+    for(let original=0;original<data.waypoints.length;original++){
+      const wp=data.waypoints[original];
+      const index=wp?.waypoint_index;
+      if(!Number.isInteger(index)||index<0||index>=order.length||
+         wp.trips_index!==0||order[index]!==-1)
+        throw new Error('Die optimierte Stoppreihenfolge ist ungültig.');
+      order[index]=original;
+    }
+    if(order[0]!==0||order.includes(-1))
+      throw new Error('Die optimierte Tour startet nicht am GPS-Standort.');
+    const orderedStops=order.slice(1).map(index=>stops[index-1]);
+    const route=parseTour({
+      code:'Ok',routes:data.trips,
+      waypoints:order.map(index=>data.waypoints[index])
+    },from,orderedStops);
+    return {...route,orderedStops};
+  }
   // "Nahe Stopps zuerst" uses only direct geographic distances on-device.
-  // It is a quick starting suggestion, not a network-computed optimum.
+  // Used as a local safety check; actual optimization uses the footpath graph.
   function nearestTourOrder(from,stops){
-    validateTour(from,stops);
+    validateTourStopSet(from,stops);
     const remaining=stops.slice(),ordered=[];
     let at=from;
     while(remaining.length){
@@ -210,7 +252,7 @@
     }
     return ordered;
   }
-  const api={requestUrl,parse,metres,distanceText,durationText,prepareNavigation,navigationProgress,tourRequestUrl,parseTour,nearestTourOrder};
+  const api={requestUrl,parse,metres,distanceText,durationText,prepareNavigation,navigationProgress,tourRequestUrl,parseTour,nearestTourOrder,optimizedTourRequestUrl,parseOptimizedTour};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LivekarteWalkingCore=api;
 })(globalThis);
