@@ -107,8 +107,11 @@
   const pins = L.layerGroup().addTo(map);
   const walkingLayers=L.layerGroup().addTo(map);
   const tourLayers=L.layerGroup().addTo(map);
+  const discoveryLayers=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
   const D=window.LivekarteDayPlan;
+  const R=window.LivekarteRouteDiscovery;
+  let discoveryController=null,discoveryGeneration=0,discoveries=[],lastDiscoveryAt=0;
   let dayPlans=Object.create(null);
   let tourDrafts=Object.create(null),tourRoute=null,tourController=null,tourRequestGeneration=0;
   let tourNavigation=null; // In-memory only; never persist GPS, current step or route.
@@ -380,6 +383,187 @@
   const tourBuilderStatus=$('tour-builder-status');
   const tourResult=$('tour-result');
   const tourHud=$('tour-route-hud');
+  // Explore sights in a fixed buffer around an existing pedestrian route.
+  // The user must explicitly request the search: no GPS-watch networking.
+  const discoveryPanel=$('route-discovery');
+  const discoveryStatus=$('route-discovery-status');
+  const discoveryResults=$('route-discovery-results');
+  const discoverySearch=$('route-discovery-search');
+  const discoveryCount=$('route-discovery-count');
+  const discoveryRadius=$('route-discovery-radius');
+  function clearRouteDiscovery(){
+    discoveryGeneration++;
+    if(discoveryController)discoveryController.abort();
+    discoveryController=null;
+    discoveries=[];
+    discoveryLayers.clearLayers();
+    discoveryResults.replaceChildren();
+    discoveryCount.textContent='Neue Orte finden';
+    discoveryStatus.textContent='Bitte zuerst eine Fußroute berechnen oder optimieren.';
+    discoverySearch.disabled=true;
+    discoverySearch.textContent='◇ Sehenswürdigkeiten suchen';
+  }
+  function renderRouteDiscoveryUI(){
+    const available=!!(tourRoute&&tourRoute.planId===activePlanId&&R);
+    discoverySearch.disabled=!available||!!discoveryController;
+    if(!R)discoveryStatus.textContent='Entdeckungsmodul nicht geladen. Bitte App aktualisieren.';
+    else if(available&&discoveryStatus.textContent.startsWith('Bitte zuerst'))
+      discoveryStatus.textContent='Rundgang bereit · starte die Suche für neue Sehenswürdigkeiten.';
+    else if(!available)
+      discoveryStatus.textContent='Bitte zuerst eine Fußroute berechnen oder optimieren.';
+  }
+  function savedDiscoveryPlace(item){
+    const normalize=name=>String(name||'').trim().toLocaleLowerCase('de-DE');
+    return places.find(p=>normalize(p.name)===normalize(item.name)&&C.distance(p,item)<100);
+  }
+  function saveDiscoveredPlace(item,addToTour=false){
+    if(!tourRoute||!discoveries.some(p=>p.id===item.id))return;
+    if(addToTour&&tourSelection().length>=6){
+      discoveryStatus.textContent='Maximal sechs Ziele. Bitte vor dem Hinzufügen einen Stopp entfernen.';
+      return;
+    }
+    try{
+      let stored=savedDiscoveryPlace(item);
+      if(!stored){
+        const [incoming]=C.normalize([{
+          name:item.name,lat:item.lat,lng:item.lng,category:'sight',
+          description:item.type+' aus OpenStreetMap · Erreichbarkeit und Öffnungszeiten vor Ort prüfen.'
+        }]);
+        const merged=C.merge(places,[incoming]);
+        places=merged;
+        persist();
+        stored=savedDiscoveryPlace(item)||incoming;
+        assignToCurrentPlan([stored]);
+      }else if(activePlanId!=='all'&&!currentPlaces().some(p=>
+        C.placePlanKey(p)===C.placePlanKey(stored)))assignToCurrentPlan([stored]);
+      if(addToTour){
+        const current=tourSelection();
+        if(!current.some(p=>C.placePlanKey(p)===C.placePlanKey(stored))){
+          setTourSelection([...current,stored]);
+          tourBuilder.open=true;
+          tourBuilderStatus.textContent='Neues Ziel hinzugefügt. Bitte Route erneut optimieren oder berechnen.';
+          discoveryPanel.open=true;
+        }else{
+          render();
+          discoveryStatus.textContent='Ort ist bereits in deiner Tour enthalten.';
+        }
+      }else{
+        render();
+        renderDiscoveryResults();
+        discoveryStatus.textContent='✓ '+item.name+' gespeichert. Deine Route bleibt unverändert.';
+      }
+    }catch(error){
+      discoveryStatus.textContent='Konnte den Ort nicht übernehmen: '+(error.message||'Unbekannter Fehler.');
+    }
+  }
+  function renderDiscoveryResults(){
+    discoveryLayers.clearLayers();
+    discoveryResults.replaceChildren();
+    if(!tourRoute)return;
+    for(const item of discoveries){
+      const saved=savedDiscoveryPlace(item);
+      if(!saved){
+        const popup=node('div');
+        popup.append(node('strong',item.name));
+        popup.append(node('p',item.type+' · ca. '+item.distance+' m von der Route'));
+        const marker=L.marker([item.lat,item.lng],{
+          title:item.name,
+          icon:L.divIcon({className:'route-discovery-marker',html:'<span>◇</span>',
+            iconSize:[27,33],iconAnchor:[13,30]})
+        }).bindPopup(popup,{maxWidth:260}).addTo(discoveryLayers);
+        item._marker=marker;
+      }
+      const card=node('div',undefined,'route-discovery-card');
+      card.append(node('strong',item.name));
+      card.append(node('small',item.type+' · ca. '+item.distance+' m seitlich vom Fußweg'));
+      const actions=node('div',undefined,'route-discovery-actions');
+      const focus=node('button','Auf Karte');
+      focus.type='button';
+      focus.onclick=()=>{
+        following=false;refreshGPSFollowControl();
+        map.setView([item.lat,item.lng],17);
+        item._marker?.openPopup();
+        $('map').scrollIntoView({behavior:'smooth',block:'start'});
+      };
+      const save=node('button',saved?'✓ Gespeichert':'Speichern');
+      save.type='button';
+      save.disabled=!!saved;
+      save.onclick=()=>saveDiscoveredPlace(item);
+      const add=node('button','＋ Tour');
+      add.type='button';
+      const selected=tourSelection().some(p=>C.placePlanKey(p)===C.placePlanKey(saved||item));
+      add.textContent=selected?'✓ In Tour':'＋ Tour';
+      add.disabled=selected||tourSelection().length>=6;
+      add.title='Ort hinzufügen; vorhandene Route danach neu berechnen';
+      add.onclick=()=>saveDiscoveredPlace(item,true);
+      const source=node('a','OSM ↗');
+      source.href='https://www.openstreetmap.org/'+item.id;
+      source.target='_blank';source.rel='noopener noreferrer';
+      actions.append(focus,save,add,source);
+      card.append(actions);
+      discoveryResults.append(card);
+    }
+    discoveryCount.textContent=discoveries.length+' Vorschläge';
+  }
+  discoverySearch.onclick=async()=>{
+    if(discoveryController)return;
+    if(!tourRoute||tourRoute.planId!==activePlanId||!R){
+      renderRouteDiscoveryUI();
+      return;
+    }
+    const radius=Number(discoveryRadius.value);
+    let query;
+    try{query=R.query(tourRoute.points,radius);}
+    catch(error){discoveryStatus.textContent=error.message;return;}
+    if(Date.now()-lastDiscoveryAt<30000){
+      discoveryStatus.textContent='Bitte frühestens nach 30 Sekunden erneut suchen – öffentliche OSM-Schnittstelle.';
+      return;
+    }
+    const route=tourRoute,planId=activePlanId;
+    const controller=new AbortController();
+    discoveryController=controller;
+    const generation=++discoveryGeneration;
+    lastDiscoveryAt=Date.now();
+    discoverySearch.disabled=true;
+    discoverySearch.textContent='Suche läuft …';
+    discoveryStatus.textContent='Suche Sehenswürdigkeiten in OpenStreetMap …';
+    let timer;
+    try{
+      timer=setTimeout(()=>controller.abort(),19000);
+      const response=await fetch(R.ENDPOINT,{
+        method:'POST',mode:'cors',credentials:'omit',referrerPolicy:'origin',
+        headers:{'Accept':'application/json'},
+        body:new URLSearchParams({data:query}),signal:controller.signal
+      });
+      if(!response.ok){
+        if([406,429,502,503,504].includes(response.status))
+          throw new Error('Der öffentliche OpenStreetMap-Suchdienst lehnt die Anfrage gerade ab (HTTP '+response.status+'). Bitte später erneut versuchen. Deine Tour bleibt erhalten.');
+        throw new Error('OpenStreetMap-Suche ist nicht erreichbar (HTTP '+response.status+').');
+      }
+      const text=await response.text();
+      if(text.length>2000000)throw new Error('Zu große Antwort. Bitte eine kürzere lokale Tour verwenden.');
+      const result=R.parse(JSON.parse(text),route.points,places,radius);
+      if(discoveryGeneration!==generation||tourRoute!==route||activePlanId!==planId)return;
+      discoveries=result;
+      renderDiscoveryResults();
+      discoveryStatus.textContent=result.length
+        ?result.length+' neue Orte gefunden – nur Vorschau, noch nicht gespeichert.'
+        :'Keine weiteren benannten Sehenswürdigkeiten nah genug an dieser Strecke gefunden.';
+    }catch(error){
+      if(discoveryGeneration!==generation||tourRoute!==route)return;
+      discoveryStatus.textContent=controller.signal.aborted
+        ?'Suche hat zu lange gedauert. Bitte später erneut versuchen.'
+        :error instanceof SyntaxError?'Der Kartendienst hat eine ungültige Antwort gesendet.'
+        :error.message||'Suche zurzeit nicht verfügbar.';
+    }finally{
+      clearTimeout(timer);
+      if(discoveryGeneration===generation){
+        discoveryController=null;
+        discoverySearch.textContent='◇ Sehenswürdigkeiten suchen';
+        renderRouteDiscoveryUI();
+      }
+    }
+  };
   function tourSelection(){
     const keys=Array.isArray(tourDrafts[activePlanId])?tourDrafts[activePlanId]:[];
     const byKey=new Map(currentPlaces().map(p=>[C.placePlanKey(p),p]));
@@ -394,6 +578,7 @@
     }catch{say('Rundgang-Auswahl konnte nicht gespeichert werden.');}
   }
   function clearTourRoute(){
+    clearRouteDiscovery();
     stopTourNavigation();
     ++tourRequestGeneration;
     if(tourController)tourController.abort();
@@ -837,6 +1022,7 @@
         render();
       }
       tourRoute={...result,stops:ordered.map(p=>({...p})),start:from,planId:activePlanId};
+      renderRouteDiscoveryUI();
       L.polyline(result.points,{color:'#12313b',opacity:.9,weight:10,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
       L.polyline(result.points,{color:'#ffdb74',opacity:1,weight:5,

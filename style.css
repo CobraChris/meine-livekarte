@@ -742,3 +742,36 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
  .day-plan-global label,.day-stop-fields label{font-size:9px}
  .day-plan-global input,.day-stop-fields input,.day-plan-global select{padding:4px;font-size:11px}
 }
+
+
+/* Sights near the current pedestrian route: optional, compact, mobile-first. */
+.route-discovery{margin:12px 0 8px;border:1px solid #54776c;border-radius:11px;
+  background:#152e33;color:#e2f7ea}
+.route-discovery>summary{padding:11px 12px;cursor:pointer;font-size:12px;font-weight:750}
+.route-discovery>summary span{font-size:10px;color:#add5c5;font-weight:550;margin-left:6px}
+.route-discovery-body{padding:0 11px 13px}
+.route-discovery-body>p{font-size:10px;line-height:1.55;color:#b8d8c8;margin:8px 0}
+.route-discovery-controls{display:grid;grid-template-columns:1fr 1.6fr;gap:9px;align-items:end}
+.route-discovery-controls label{font-size:10px;color:#c9e9d6;display:grid;gap:5px}
+.route-discovery-controls select{width:100%;box-sizing:border-box;min-height:38px;border:1px solid #527c73;
+  border-radius:8px;padding:6px;color:#effef9;background:#244149;font-size:11px}
+.route-discovery-controls button{font-size:11px;font-weight:750;min-height:38px;
+  padding:6px;border-radius:8px;background:#356656;color:#f1fff5}
+.route-discovery-controls button:disabled{opacity:.58}
+#route-discovery-status{font-size:10px;color:#cbe7d6;line-height:1.55}
+.route-discovery-results{display:grid;gap:7px;margin:7px 0}
+.route-discovery-card{padding:9px;border-radius:9px;background:#102a31;
+  border:1px solid #3b615a;display:grid;gap:4px}
+.route-discovery-card strong{font-size:11px;color:#f6edbe}
+.route-discovery-card small{font-size:10px;color:#b2d3c4}
+.route-discovery-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.route-discovery-actions button,.route-discovery-actions a{font-size:10px;
+  border-radius:7px;min-height:33px;padding:7px 9px;background:#315159;
+  color:#e5fff3;text-decoration:none}
+.route-discovery-actions button:disabled{opacity:.6}
+.route-discovery-actions a{display:flex;align-items:center}
+.route-discovery-note{font-size:9px!important;color:#a2c5b4!important}
+.route-discovery-marker{background:transparent;border:0}
+.route-discovery-marker span{height:26px;width:26px;display:grid;place-items:center;
+  background:#74e5d1;color:#123338;font-size:16px;font-weight:900;
+  border:2px solid #fff;border-radius:50%;box-shadow:0 2px 8px #00191c88}
