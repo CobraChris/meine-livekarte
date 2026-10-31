@@ -11,7 +11,7 @@ test('map exposes a compact direct-pin selection switch with accessible count an
  assert.match(html,/id="tour-map-mode"[^>]*aria-pressed="false"/);
  assert.match(html,/id="tour-map-counter"[^>]*role="status" aria-live="polite"/);
  assert.match(html,/id="tour-map-done" type="button" hidden/);
- assert.match(html,/id="tour-pick-on-map"[^>]*Orte direkt auf Karte auswählen/);
+ assert.match(html,/id="tour-pick-on-map"[^>]*>📍 Orte direkt auf Karte auswählen<\/button>/);
  assert.match(css,/\.tour-map-tools\{position:absolute;z-index:855;top:116px/);
  assert.match(css,/@media\(max-width:760px\)\{\s*\.tour-map-tools\{top:58px/);
  assert.match(css,/\.pin-tour-index\{/);
