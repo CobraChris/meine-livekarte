@@ -1,3 +1,16 @@
+## Vor Abfahrt: Klook-QR-Tickets in Takayama abholen (31.10.2026)
+
+**Wichtigster Handlungsschritt vor der Fahrt am Sonntag 01.11.:** Die zwei gebuchten Teilstrecken Takayama → Nagoya (Hida 8, Wagen 2 Sitze 10C/10D) und Nagoya → Kyoto (Nozomi 71, Wagen 4 Sitze 8D/8E) benötigen laut zuletzt vereinbartem Klook-Voucher vor der Abfahrt die Ausgabe der Papier-Tickets. Die Live-Karte zeigt deshalb jetzt **unmittelbar unter der Karte, vor der optionalen Synchronisierung**, eine nummerierte Abhol-Anleitung, sowohl in **30.10.–01.11. Takayama** als auch in **01.11. Fahrt nach Kyoto**:
+
+1. Klook → Buchungen → eigenen QR-Abholcode und „How to use“ bereithalten (kein QR-Code/Abholcode wird gespeichert).
+2. Rechtzeitig zu **JR Takayama Station (Bahnhof)**, als Sicherheitsziel etwa **10:45 Uhr**; Hida 8 fährt um 11:35. Zur passenden Ticket-Ausgabe am JR-Automaten gehen; **welche Automaten den konkreten Klook-Voucher akzeptieren, muss anhand der Klook-Anleitung geprüft werden**. Im Zweifel am JR-Schalter mit Voucher/Abholcode nachfragen. Tourismusinformation: Schalter 06:00–20:50 Uhr.
+3. **Alle Papier-Tickets für zwei Reisende und beide Zugabschnitte** ausgeben lassen, mit Sitzangaben abgleichen und für den Umstieg bereithalten.
+4. Rechtzeitig zum Gleis, Bahnhofsanzeige maßgeblich.
+
+Der Button **„✓ Beide Teilstrecken: Tickets abgeholt“** funktioniert **erst nach einer ausdrücklichen Ja/Nein-Bestätigung**, dass alle Papiertickets wirklich erhalten wurden. Dann schreibt die App den auf dem Gerät gespeicherten Abholstatus unter `livekarte-kyoto-qr-pickedup-v1` sowie exakt beide Ticketstatus-Schlüssel als `ready`. Die App prüft zuvor die genaue Zugstrecke und setzt niemals automatisch am Vortag einen Abholstatus. Andere Reisen, gewählte Touren, Kartenorte oder GPS-Daten werden nicht verändert. Der tatsächliche QR-Code und die Buchungsunterlagen bleiben vollständig außerhalb der App.
+
+**Quellen:** offizielle Klook-FAQ zur ticketabhängigen Abholart; JR Takayama Station / Takayama Tourismusinformation zu Schalteröffnungszeiten. Der Bahnhof ist als Ort durch die JR- und Tourismusinfo bestätigt, die QR-Akzeptanz jedes einzelnen Automaten dagegen ausdrücklich **nicht**.
+
 ## Kompaktere Popups ohne Ziehgriff (31.10.2026)
 
 Der separate Button „⠿ Ziehen“ ist entfernt. Die freie Popup-Fläche lässt sich weiterhin mit dem Daumen wischen und verschiebt die Karte mit dem angehefteten Marker. Titel, Ort und Aktionsschaltflächen behalten dadurch mehr Platz. Der Abstand zum Marker bleibt unverändert.
