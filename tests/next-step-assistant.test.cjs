@@ -84,6 +84,8 @@ test('manual step completion is local and undoable; GPS/tickets remain canonical
  assert.match(app,/undo\.onclick=\(\)=>setActionDone\(item,false\)/);
  assert.match(app,/task\.source==='pickup'/);
  assert.match(app,/if\(tourIsActive\|\|selectedTour\)/);
+ assert.match(app,/const criticalPickup=result\.next\?\.source==='pickup'&&!kyotoPickupDone/);
+ assert.match(app,/const tourIsActive=!criticalPickup/);
  const begin=app.indexOf('  function renderNextAction(){');
  const end=app.indexOf('  // A resumed app recalculates local calendar context',begin);
  assert.ok(begin>0&&end>begin);
