@@ -35,7 +35,7 @@ test('the button for walking directions is immediately beneath the place name, n
   assert.ok(snippet.indexOf('popup.append(quickActions)')<
     snippet.indexOf('appendPlaceTiming(popup,p)'));
   assert.ok(snippet.indexOf('popup.append(quickActions)')<
-    snippet.indexOf("node('p',p.description)"));
+    snippet.indexOf("const description=node('p',p.description"));
   assert.match(app,/marker\.bindPopup\(popup,\{\s*maxWidth:320,maxHeight:250,/);
 });
 
