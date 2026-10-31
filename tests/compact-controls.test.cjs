@@ -22,7 +22,7 @@ test('map uses compact mobile controls while maintaining keyboard and screen-rea
 
 test('the button for walking directions is immediately beneath the place name, not below long descriptions',()=>{
   const app=read('app.js');
-  const start=app.indexOf("const popup = node('div');");
+  const start=app.indexOf("const popup = node('div',undefined,'place-popup-pan-surface');");
   const end=app.indexOf('const marker = L.marker(',start);
   const snippet=app.slice(start,end);
   assert.ok(snippet.includes("popupHeader.append(node('strong',p.name))"));
