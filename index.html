@@ -50,6 +50,16 @@
     <strong id="tour-route-title">🚶 Rundgang</strong>
     <span id="tour-route-metrics" aria-live="polite"></span>
     <small id="tour-route-note"></small>
+    <div id="tour-live-state" class="tour-live-state" hidden>
+      <strong id="tour-live-step"></strong>
+      <span id="tour-live-progress" role="status" aria-live="polite"></span>
+      <small id="tour-live-message"></small>
+    </div>
+    <div class="tour-live-actions">
+      <button type="button" id="tour-live-toggle" aria-pressed="false">▶ Tour starten</button>
+      <button type="button" id="tour-live-next" hidden>Nächster Stopp →</button>
+      <button type="button" id="tour-live-retry" hidden>↻ Restweg neu</button>
+    </div>
   </div>
   <button id="tour-route-close" type="button" title="Rundgang von der Karte entfernen" aria-label="Rundgang beenden">×</button>
 </div></section>
@@ -118,6 +128,7 @@
     </div>
     <button id="tour-calculate" class="primary tour-calculate" type="button" disabled>🚶 Rundgang berechnen</button>
     <p id="tour-builder-status" role="status" aria-live="polite"></p>
+    <p class="tour-navigation-help">Nach dem Berechnen auf der Karte „▶ Tour starten“ tippen. GPS zeigt den nächsten Stopp, Fortschritt und Abweichungen. Nach dem Besuch per „Nächster Stopp“ weitergehen. Keine automatischen Routinganfragen.</p>
     <div id="tour-result" class="tour-result" hidden>
       <strong id="tour-result-summary"></strong>
       <p>Reine Gehzeit ohne Besichtigungen und Pausen. Wege und Öffnungszeiten vor Ort prüfen.</p>
