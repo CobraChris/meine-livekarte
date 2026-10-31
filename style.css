@@ -1201,3 +1201,37 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
     border-radius:17px}
   #nagoya-kyoto-dialog .dialog-heading h2{font-size:17px}
 }
+
+/* Fast, offline staff-help card for the existing Klook paper-ticket pickup. */
+.kyoto-pickup-help{display:block;width:100%;min-height:42px;
+  margin:10px 0 7px;padding:9px 10px;border:1px solid #98bbad;
+  border-radius:9px;background:#294e48;color:#e7fff3;
+  font-size:12px;font-weight:800;text-align:center}
+.kyoto-pickup-help[hidden]{display:none!important}
+#ticket-help-dialog{width:min(580px,calc(100% - 18px));max-height:92dvh;
+  background:#1b3237;color:#f1fff7;border:1px solid #88ab9f;
+  border-radius:16px;padding:16px;box-shadow:0 12px 40px #0008}
+#ticket-help-dialog::backdrop{background:#07181cdd}
+.ticket-help-heading{display:flex;justify-content:space-between;gap:12px;
+  align-items:center;border-bottom:1px solid #547669;padding-bottom:10px}
+.ticket-help-heading h2{font-size:16px;margin:0;line-height:1.35}
+#ticket-help-close{min-width:41px;min-height:41px;border-radius:8px;
+  border:1px solid #77998b;color:#fff;background:#315456;font-size:24px}
+.ticket-help-intro,.ticket-help-note{font-size:11px;line-height:1.5;
+  color:#c9dcd2;margin:12px 0}
+.ticket-help-jp{display:grid;gap:10px;margin:14px 0;padding:15px 13px;
+  border-radius:12px;background:#f6faf6;color:#15312c;
+  overflow-wrap:anywhere;line-break:strict}
+.ticket-help-jp p{font-size:clamp(17px,4.6vw,22px);line-height:1.58;
+  margin:0;font-weight:650}
+.ticket-help-jp .ticket-help-request{font-size:clamp(19px,5.4vw,26px);
+  font-weight:800}
+.ticket-help-copy{display:block;width:100%;min-height:45px;
+  border-radius:9px;background:#adedd1;border:1px solid #d8f7e6;
+  color:#193b2e;font-weight:800}
+.ticket-help-feedback{min-height:17px;font-size:11px;
+  text-align:center;color:#b6f5cc;line-height:1.5;margin:9px 0 0}
+@media(max-width:430px){
+  #ticket-help-dialog{padding:12px}
+  .ticket-help-jp{padding:12px 10px;gap:9px}
+}
