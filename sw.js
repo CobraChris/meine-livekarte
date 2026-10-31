@@ -3,9 +3,9 @@
  * private repositories or authenticated requests are ever cached here.
  */
 'use strict';
-const CACHE_NAME='livekarte-shell-pwa-v21';
+const CACHE_NAME='livekarte-shell-pwa-v22';
 const SHELL_FILES=[
-  'index.html','style.css','core.js','walking-core.js','day-plan-core.js','route-discovery.js','next-step-core.js','app.js','sync.js',
+  'index.html','style.css','core.js','walking-core.js','day-plan-core.js','route-discovery.js','next-step-core.js','japanese-destination.js','app.js','sync.js',
   'outbox-core.js','sync-out.js','build-version.js','pwa.js','manifest.json',
   'vendor/leaflet.js','vendor/leaflet.css',
   'icons/livekarte.svg','icons/livekarte-192.png',
