@@ -1662,7 +1662,7 @@
         if(Array.isArray(value)) planAssignments[key]=value.filter(id=>allPlans().some(p=>p.id===id));
   } catch { say('Ortszuordnungen konnten nicht geladen werden.'); }
   function seedCuratedPlaces() {
-    const version='takayama-2026-v3';
+    const version='takayama-2026-v4';
     try {
       if (localStorage.getItem('livekarte-curated-places-version')===version) return;
       const preset=C.presetPlaces('town-takayama');
