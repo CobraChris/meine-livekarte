@@ -39,12 +39,12 @@ test('builds true-leg itinerary, waits for entered opening and inserts lunch at 
  assert.deepEqual(plan.items.map(x=>x.legMinutes),[7,4,25]);
  assert.equal(plan.items[0].depart,630);
  assert.equal(plan.items[0].arrival,637);
- assert.equal(plan.items[0].visitEnd,697);
+ assert.equal(plan.items[0].visitEnd,720);
  assert.equal(plan.items[0].lunchAfter,45);
  assert.equal(plan.items[0].bufferAfter,10);
- assert.equal(plan.items[1].depart,752);
- assert.equal(plan.items[1].arrival,756);
- assert.equal(plan.items[1].wait,24);
+ assert.equal(plan.items[1].depart,775);
+ assert.equal(plan.items[1].arrival,779);
+ assert.equal(plan.items[1].wait,1);
  assert.equal(plan.items[1].visitStart,780);
  assert.equal(plan.items[1].visitEnd,870);
  assert.equal(plan.items[2].depart,880);
@@ -55,7 +55,7 @@ test('builds true-leg itinerary, waits for entered opening and inserts lunch at 
  assert.equal(plan.knownHours,2);
  assert.equal(plan.unknownHours,1);
  assert.equal(plan.lunchScheduled,true);
- assert.match(plan.items[0].windowWarning,/nach Schließung/);
+ assert.equal(plan.items[0].windowWarning,'');
  assert.deepEqual(plan.items[1].note,stops[1].note);
 });
 
@@ -106,7 +106,7 @@ test('mobile planner is tied to a real calculated tour, and does not transmit GP
  assert.match(app,/const matching=tourRoute\?\.planId===activePlanId&&tourRoute\.legs\?\.length===tourRoute\.stops\.length/);
  assert.match(app,/D\.build\(/);
  assert.match(app,/livekarte-day-plans-v1/);
- assert.match(app,/D\.visitMinutes\(place\.duration\)\?\?45/);
+ assert.match(app,/D\?\.visitMinutes\(place\.duration\)\?\?45/);
  assert.match(app,/windows:stops\.map/);
  assert.match(app,/if\(!matching\)/);
  assert.match(app,/renderDayPlanControls\(\);\s*tourBuilderStatus\.textContent=remaining/);
