@@ -124,5 +124,5 @@ test('OSRM foot queries remain online only, never cached by installable app',()=
  assert.doesNotMatch(sw,/routing\.openstreetmap\.de/);
  assert.match(sw,/url\.origin!==scope\.origin/);
  assert.match(workflow,/node --check walking-core\.js/);
- assert.match(workflow,/cp index\.html style\.css core\.js walking-core\.js day-plan-core\.js app\.js/);
+ assert.match(workflow,/cp index\.html style\.css core\.js walking-core\.js day-plan-core\.js route-discovery\.js app\.js/);
 });
