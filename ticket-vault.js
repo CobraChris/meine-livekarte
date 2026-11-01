@@ -9,7 +9,8 @@
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.LivekarteTicketVault=api;
 })(typeof window!=='undefined'?window:undefined,function(){
-  const FORMAT='livekarte-ticket-vault-backup-v1';
+  const FORMAT='livekarte-ticket-vault-backup-v2';
+  const LEGACY_FORMAT='livekarte-ticket-vault-backup-v1';
   const DB_NAME='livekarte-ticket-vault-v1';
   const MAX_FILE=10*1024*1024,MAX_TOTAL=50*1024*1024,MAX_ITEMS=25;
   const MAX_BACKUP=80*1024*1024,ITERATIONS=310000;
@@ -107,14 +108,69 @@
       typeof r.metaCipher==='string'&&r.metaCipher.length<16384&&
       r.cipher instanceof ArrayBuffer&&r.cipher.byteLength<=MAX_FILE+16;
   }
-  function goodConfig(c){
+  function goodLegacyConfig(c){
     return !!c&&c.key==='config'&&c.version===1&&c.iterations===ITERATIONS&&
       typeof c.salt==='string'&&unbase64(c.salt).length===16&&
       typeof c.iv==='string'&&unbase64(c.iv).length===12&&
       typeof c.cipher==='string'&&unbase64(c.cipher).length>=16;
   }
+  // Version 2 separates an independent random document key from the
+  // password-derived wrapping key. A 256-bit recovery key wraps the same
+  // document key independently and is shown once, never stored in plaintext.
+  function goodConfigV2(c){
+    try{
+      if(!c||c.key!=='config'||c.version!==2||c.iterations!==ITERATIONS ||
+        !c.password||!c.recovery)return false;
+      const p=c.password,r=c.recovery;
+      return unbase64(p.salt).length===16&&unbase64(p.iv).length===12&&
+        unbase64(p.cipher).length===48&&
+        unbase64(r.iv).length===12&&unbase64(r.cipher).length===48;
+    }catch{return false;}
+  }
+  const goodConfig=c=>goodConfigV2(c)||goodLegacyConfig(c);
+  async function documentKey(raw){
+    return cryptoApi().subtle.importKey('raw',raw,'AES-GCM',false,['encrypt','decrypt']);
+  }
+  function newRecovery(){
+    const bytes=random(32);
+    const token='LKV2-'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
+    return {token,bytes};
+  }
+  function recoveryBytes(token){
+    if(typeof token!=='string'||!/^LKV2-[A-Fa-f0-9]{64}$/.test(token.trim()))
+      throw Error('Wiederherstellungsschlüssel hat ein ungültiges Format.');
+    const hex=token.trim().slice(5);
+    return Uint8Array.from({length:32},(_,i)=>parseInt(hex.slice(i*2,i*2+2),16));
+  }
+  async function passwordEnvelope(password,raw){
+    const salt=random(16),wrapKey=await derive(password,salt);
+    const sealed=await seal(wrapKey,raw);
+    return {salt:base64(salt),iv:sealed.iv,cipher:base64(sealed.cipher)};
+  }
+  async function recoveryEnvelope(raw,recovery){
+    const sealed=await seal(await documentKey(recovery.bytes),raw);
+    return {iv:sealed.iv,cipher:base64(sealed.cipher)};
+  }
+  async function newV2Config(password,raw){
+    const recovery=newRecovery();
+    const [pwd,rec]=await Promise.all([
+      passwordEnvelope(password,raw),recoveryEnvelope(raw,recovery)
+    ]);
+    return {config:{key:'config',version:2,iterations:ITERATIONS,
+      password:pwd,recovery:rec},recoveryCode:recovery.token};
+  }
+  async function passwordRaw(config,password){
+    const wrap=await derive(password,unbase64(config.password.salt));
+    return new Uint8Array(await openSeal(
+      wrap,config.password.iv,unbase64(config.password.cipher)));
+  }
+  async function recoveryRaw(config,recoveryCode){
+    return new Uint8Array(await openSeal(
+      await documentKey(recoveryBytes(recoveryCode)),config.recovery.iv,
+      unbase64(config.recovery.cipher)));
+  }
   class Vault {
-    constructor(){this.db=null;this.key=null;}
+    constructor(){this.db=null;this.key=null;this.legacy=false;}
     async database(){
       if(!this.db)this.db=await connect();
       return this.db;
@@ -127,34 +183,131 @@
     async exists(){return !!(await this.config());}
     async initialize(password){
       if(await this.exists())throw Error('Es gibt bereits einen Ticket-Tresor auf diesem Gerät.');
-      const salt=random(16),key=await derive(password,salt);
-      const proof=await seal(key,enc.encode('livekarte-ticket-vault-verifier-v1'));
-      const db=await this.database();
-      const tx=db.transaction('meta','readwrite');
+      // Make no durable state until the password and recovery wrapping keys exist.
+      const raw=random(32),result=await newV2Config(password,raw);
+      const db=await this.database(),tx=db.transaction('meta','readwrite');
       const done=finished(tx);
-      tx.objectStore('meta').add({key:'config',version:1,iterations:ITERATIONS,
-        salt:base64(salt),iv:proof.iv,cipher:base64(proof.cipher)});
+      tx.objectStore('meta').add(result.config);
       await done;
-      this.key=key;
+      this.key=await documentKey(raw);
+      this.legacy=false;
+      return result.recoveryCode;
     }
     async unlock(password){
       const cfg=await this.config();
       if(!cfg)throw Error('Noch kein Ticket-Tresor eingerichtet.');
       if(!goodConfig(cfg))throw Error('Nicht unterstütztes Tresorformat.');
-      let key;
       try{
-        key=await derive(password,unbase64(cfg.salt));
-        const proof=dec.decode(await openSeal(key,cfg.iv,unbase64(cfg.cipher)));
-        if(proof!=='livekarte-ticket-vault-verifier-v1')throw Error('invalid');
+        if(cfg.version===2){
+          this.key=await documentKey(await passwordRaw(cfg,password));
+          this.legacy=false;
+        }else{
+          const key=await derive(password,unbase64(cfg.salt));
+          const proof=dec.decode(await openSeal(key,cfg.iv,unbase64(cfg.cipher)));
+          if(proof!=='livekarte-ticket-vault-verifier-v1')throw Error('invalid');
+          this.key=key;
+          this.legacy=true;
+        }
       }catch{
+        this.key=null;
         throw Error('Passwort falsch oder Tresordaten beschädigt.');
       }
-      this.key=key;
     }
-    lock(){this.key=null;}
+    lock(){this.key=null;this.legacy=false;}
     requireKey(){
       if(!this.key)throw Error('Ticket-Tresor zuerst entsperren.');
       return this.key;
+    }
+    async hasRecovery(){return (await this.config())?.version===2;}
+    async changePassword(oldPassword,newPassword){
+      this.requireKey();
+      const cfg=await this.config();
+      if(!goodConfig(cfg))throw Error('Tresor-Konfiguration beschädigt.');
+      if(cfg.version===1)return this.upgradeLegacy(oldPassword,newPassword);
+      let raw;
+      try{raw=await passwordRaw(cfg,oldPassword);}
+      catch{throw Error('Das bisherige Passwort ist falsch.');}
+      const pwd=await passwordEnvelope(newPassword,raw);
+      const db=await this.database(),tx=db.transaction('meta','readwrite');
+      const done=finished(tx);
+      tx.objectStore('meta').put({...cfg,password:pwd});
+      await done;
+      // The data key and recovery key remain unchanged; old password no
+      // longer unlocks this device, but old exported backups are unaffected.
+      return null;
+    }
+    async rotateRecovery(password){
+      this.requireKey();
+      const cfg=await this.config();
+      if(!goodConfigV2(cfg))throw Error('Bitte zuerst den alten Tresor aktualisieren.');
+      let raw;
+      try{raw=await passwordRaw(cfg,password);}
+      catch{throw Error('Tresor-Passwort ist falsch.');}
+      const recovery=newRecovery(),envelope=await recoveryEnvelope(raw,recovery);
+      const db=await this.database(),tx=db.transaction('meta','readwrite');
+      const done=finished(tx);
+      tx.objectStore('meta').put({...cfg,recovery:envelope});
+      await done;
+      return recovery.token;
+    }
+    async resetWithRecovery(recoveryCode,newPassword){
+      const cfg=await this.config();
+      if(!goodConfigV2(cfg))throw Error('Für diesen Tresor ist noch kein Wiederherstellungsschlüssel eingerichtet.');
+      let raw;
+      try{raw=await recoveryRaw(cfg,recoveryCode);}
+      catch{throw Error('Wiederherstellungsschlüssel falsch oder beschädigt.');}
+      // Recovery always rotates the old recovery key so a lost token does
+      // not remain usable against this device's future vault state.
+      const result=await newV2Config(newPassword,raw);
+      const db=await this.database(),tx=db.transaction('meta','readwrite');
+      const done=finished(tx);
+      tx.objectStore('meta').put(result.config);
+      await done;
+      this.key=await documentKey(raw);
+      this.legacy=false;
+      return result.recoveryCode;
+    }
+    async upgradeLegacy(oldPassword,newPassword=oldPassword){
+      this.requireKey();
+      const cfg=await this.config();
+      if(!goodLegacyConfig(cfg))throw Error('Tresor wurde bereits aktualisiert.');
+      let oldKey;
+      try{
+        oldKey=await derive(oldPassword,unbase64(cfg.salt));
+        const proof=dec.decode(await openSeal(oldKey,cfg.iv,unbase64(cfg.cipher)));
+        if(proof!=='livekarte-ticket-vault-verifier-v1')throw Error('invalid');
+      }catch{throw Error('Das bisherige Passwort ist falsch.');}
+      const records=await this.rawRecords();
+      if(records.length>MAX_ITEMS)throw Error('Zu viele Ticketdateien für Migration.');
+      const raw=random(32),newKey=await documentKey(raw);
+      const upgraded=[];
+      let total=0;
+      for(const r of records){
+        if(!goodRecord(r))throw Error('Alte Ticketdatei beschädigt.');
+        try{
+          const original=await openSeal(oldKey,r.iv,r.cipher);
+          const metadata=await openSeal(oldKey,r.metaIv,unbase64(r.metaCipher));
+          const m=JSON.parse(dec.decode(metadata));
+          if(m.size!==original.byteLength||m.size<1||m.size>MAX_FILE||
+             validateMime(m.type,m.name,original)!==m.type)throw Error('invalid');
+          total+=m.size;
+          if(total>MAX_TOTAL)throw Error('invalid');
+          const [data,meta]=await Promise.all([
+            seal(newKey,original),seal(newKey,metadata)
+          ]);
+          upgraded.push({id:r.id,iv:data.iv,cipher:data.cipher,
+            metaIv:meta.iv,metaCipher:base64(meta.cipher)});
+        }catch{throw Error('Alte Tickets konnten nicht vollständig gelesen werden. Keine Daten geändert.');}
+      }
+      const result=await newV2Config(newPassword,raw);
+      const db=await this.database(),tx=db.transaction(['meta','files'],'readwrite');
+      const done=finished(tx);
+      for(const record of upgraded)tx.objectStore('files').put(record);
+      tx.objectStore('meta').put(result.config);
+      await done;
+      this.key=newKey;
+      this.legacy=false;
+      return result.recoveryCode;
     }
     async rawRecords(){
       const db=await this.database();
@@ -225,7 +378,7 @@
       const config=await this.config(),records=await this.rawRecords();
       if(!goodConfig(config)||records.length>MAX_ITEMS)throw Error('Tresordaten ungültig.');
       return new Blob([JSON.stringify({
-        format:FORMAT,config,
+        format:config.version===2?FORMAT:LEGACY_FORMAT,config,
         files:records.map(r=>{
           if(!goodRecord(r))throw Error('Ticketdatei beschädigt.');
           return {id:r.id,iv:r.iv,metaIv:r.metaIv,metaCipher:r.metaCipher,
@@ -233,21 +386,37 @@
         })
       })],{type:'application/json'});
     }
-    async restore(backupFile,password){
+    async restore(backupFile,credential,mode='password',newPassword=''){
       if(await this.exists())throw Error('Wiederherstellen nur auf einem leeren Gerät/Tresor möglich. Vorhandene Tickets bleiben geschützt.');
       if(!backupFile||backupFile.size>MAX_BACKUP)throw Error('Backup ist zu groß.');
       let backup;
       try{backup=JSON.parse(await backupFile.text());}
       catch{throw Error('Backup kann nicht gelesen werden.');}
-      if(backup?.format!==FORMAT||!goodConfig(backup.config)||
+      if(!(backup?.format===FORMAT&&goodConfigV2(backup.config)||
+           backup?.format===LEGACY_FORMAT&&goodLegacyConfig(backup.config))||
         !Array.isArray(backup.files)||backup.files.length>MAX_ITEMS)
         throw Error('Nicht unterstütztes oder beschädigtes Backup.');
-      let key;
+      if(!['password','recovery'].includes(mode)||
+        mode==='recovery'&&backup.config.version!==2)
+        throw Error('Backup unterstützt diese Wiederherstellungsmethode nicht.');
+      let key,updatedConfig=backup.config,rotatedCode=null;
       try{
-        key=await derive(password,unbase64(backup.config.salt));
-        const proof=dec.decode(await openSeal(key,backup.config.iv,unbase64(backup.config.cipher)));
-        if(proof!=='livekarte-ticket-vault-verifier-v1')throw Error('invalid');
-      }catch{throw Error('Backup-Passwort falsch oder Backup beschädigt.');}
+        if(backup.config.version===2){
+          const raw=mode==='recovery'
+            ?await recoveryRaw(backup.config,credential)
+            :await passwordRaw(backup.config,credential);
+          if(mode==='recovery'){
+            const rotated=await newV2Config(newPassword,raw);
+            updatedConfig=rotated.config;
+            rotatedCode=rotated.recoveryCode;
+          }
+          key=await documentKey(raw);
+        }else{
+          key=await derive(credential,unbase64(backup.config.salt));
+          const proof=dec.decode(await openSeal(key,backup.config.iv,unbase64(backup.config.cipher)));
+          if(proof!=='livekarte-ticket-vault-verifier-v1')throw Error('invalid');
+        }
+      }catch{throw Error('Backup-Passwort oder Wiederherstellungsschlüssel falsch bzw. Backup beschädigt.');}
       const seen=new Set(),records=[];
       let total=0;
       for(const f of backup.files){
@@ -271,10 +440,12 @@
       }
       const db=await this.database(),tx=db.transaction(['meta','files'],'readwrite');
       const done=finished(tx);
-      tx.objectStore('meta').add(backup.config);
+      tx.objectStore('meta').add(updatedConfig);
       for(const record of records)tx.objectStore('files').add(record);
       await done;
       this.key=key;
+      this.legacy=updatedConfig.version===1;
+      return rotatedCode;
     }
   }
   return Object.freeze({Vault,available,validateMime,MAX_FILE,MAX_TOTAL,MAX_ITEMS,FORMAT});
