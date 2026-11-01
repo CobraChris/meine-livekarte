@@ -170,15 +170,22 @@ test('important tickets can be pinned/unpinned without modifying their original 
     title:'Kyoto Hotel',trip:'Japan 2026'});
   const second=await lib.add(fakeFile('db-hamburg.pdf','application/pdf'),{
     title:'ICE Hamburg',trip:'Deutschland'});
-  assert.equal((await lib.list())[0].id,second.id,'newest first before pinning');
-  assert.equal((await lib.list())[1].pinned,false);
-  assert.equal(await lib.setPinned(first.id,true),true);
-  assert.equal((await lib.list())[0].id,first.id,'pinned item comes first');
+  // Two IndexedDB entries can legitimately share an ISO timestamp.
+  // Pin whichever is SECOND in the initial stable order, so this always
+  // proves pinning changes the order without relying on wall-clock granularity.
+  const initial=await lib.list();
+  assert.equal(initial.length,2);
+  assert.equal(initial[0].pinned,false);
+  assert.equal(initial[1].pinned,false);
+  const target=initial[1].id,previousTop=initial[0].id;
+  assert.ok([first.id,second.id].includes(target));
+  assert.equal(await lib.setPinned(target,true),true);
+  assert.equal((await lib.list())[0].id,target,'pinned item comes first');
   assert.equal((await lib.list())[0].pinned,true);
-  assert.deepEqual(new Uint8Array(await (await lib.get(first.id)).blob.arrayBuffer()),bytes);
-  assert.equal(await lib.setPinned(first.id,true),true,'idempotent pin');
-  assert.equal(await lib.setPinned(first.id,false),false);
-  assert.equal((await lib.list())[0].id,second.id,'unpinned items retain new-first order');
+  assert.deepEqual(new Uint8Array(await (await lib.get(target)).blob.arrayBuffer()),bytes);
+  assert.equal(await lib.setPinned(target,true),true,'idempotent pin');
+  assert.equal(await lib.setPinned(target,false),false);
+  assert.equal((await lib.list())[0].id,previousTop,'unpinned items retain their original order');
   await assert.rejects(()=>lib.setPinned('missing',true),/nicht gefunden/);
   assert.equal((await lib.list()).length,2,'pin controls cannot delete or duplicate tickets');
 });
