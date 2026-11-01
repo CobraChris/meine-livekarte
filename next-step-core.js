@@ -115,6 +115,57 @@
       dateKey===KYOTO_DAY2?'Mo. 02.11.2026':'';
     return {entries,next,doneCount,total:entries.length,dateLabel};
   }
+  // Timetable-only badges. A past time never implies a train was missed,
+  // a ticket invalid or a task completed. Flexible evening plans have no deadline.
+  const plannedEnd=Object.freeze({
+    'kyoto:prepare':['2026-10-31','23:59'],
+    'kyoto:pickup':['2026-11-01','11:35'],
+    'kyoto:hida':['2026-11-01','11:35'],
+    'kyoto:transfer':['2026-11-01','14:26'],
+    'kyoto:nozomi':['2026-11-01','14:26'],
+    'kyoto:kiyomizu':['2026-11-02','11:15'],
+    'kyoto:sannenzaka':['2026-11-02','13:30'],
+    'kyoto:fushimi':['2026-11-02','17:15']
+  });
+  const plannedDay=Object.freeze({
+    'kyoto:prepare':'2026-10-31',
+    'kyoto:pickup':'2026-11-01',
+    'kyoto:hida':'2026-11-01',
+    'kyoto:transfer':'2026-11-01',
+    'kyoto:nozomi':'2026-11-01',
+    'kyoto:hotel':'2026-11-01',
+    'kyoto:gion':'2026-11-01',
+    'kyoto:ponto':'2026-11-01',
+    'kyoto:kiyomizu':'2026-11-02',
+    'kyoto:sannenzaka':'2026-11-02',
+    'kyoto:fushimi':'2026-11-02'
+  });
+  function taskTimeState(entry,at=new Date()){
+    const day=plannedDay[entry?.id];
+    if(!day)return 'unscheduled';
+    const today=localDate(at);
+    if(today>day)return 'past';
+    if(today<day)return 'future';
+    const schedule=plannedEnd[entry.id];
+    if(!schedule)return 'flexible';
+    const parts=new Intl.DateTimeFormat('en-US',{
+      timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+    }).formatToParts(at);
+    const field=name=>Number(parts.find(p=>p.type===name)?.value);
+    const now=field('hour')*60+field('minute');
+    const [hour,minute]=schedule[1].split(':').map(Number);
+    return now>=hour*60+minute?'past':'upcoming';
+  }
+  // Preserve canonical manual statuses and ordering; only partition the
+  // display. Completed tasks are excluded from the visible open list.
+  function taskBuckets(entries,at=new Date()){
+    const open=[],done=[];
+    for(const task of entries||[]){
+      if(task.done)done.push(task);
+      else open.push({...task,timeState:taskTimeState(task,at)});
+    }
+    return {open,done,openCount:open.length,doneCount:done.length};
+  }
   // Contingency helper: the booked connection is NOT a real-time rail feed.
   // Ticket use, refunds and changes for Klook-issued fares are deliberately
   // decided by JR staff/Klook, never automatically by this application.
@@ -195,5 +246,5 @@
       marginText,plannedTransferMinutes:22
     };
   }
-  return Object.freeze({localDate,kyotoDepartureClock,stations,tasksFor,completed,choose,trainProblem});
+  return Object.freeze({localDate,kyotoDepartureClock,stations,tasksFor,completed,choose,taskTimeState,taskBuckets,trainProblem});
 });

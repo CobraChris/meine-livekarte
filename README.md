@@ -1,3 +1,13 @@
+## Sichtbare offene Reiseschritte statt versteckter Checkliste (01.11.2026)
+
+Die Karte zeigt im Bereich „Was jetzt?“ unter dem nächsten Schritt **automatisch alle noch offenen Reiseschritte** (z. B. 4 von 7). **Erledigte** Schritte stehen in einem eigenen, standardmäßig eingeklappten Bereich und können – außer der separat bestätigten Papier-Ticketabholung – weiterhin manuell zurückgesetzt werden. Jede offene Aufgabe kann gezielt angesehen oder vom Nutzer bestätigt werden; die bisherigen kanonischen Ticketabhol- und Zugstatus bleiben maßgeblich.
+
+Für Zugabschnitte mit klaren Fahrplanzeiten unterscheidet die App rein lokal anhand der **Japan-Zeitzone** zwischen „Zeit laut Plan noch nicht vorbei“ und „Planzeit vorbei · Status selbst prüfen“. Verstrichene Zeiten setzen **keine** Aufgaben automatisch auf erledigt und sind keine Live-Auskunft über Züge oder Ankünfte. Flexible Abendaktivitäten bleiben als flexibel gekennzeichnet. Die vier freiwilligen Sitzplatz-Prüfhäkchen sind ausdrücklich **keine zusätzlichen Reiseaufgaben**.
+
+Wenn die Ticketabholung bestätigt ist und die planmäßige Hida-Abfahrt 11:35 bereits vorbei ist, wird die zuvor sehr große Ticketabhol-Anleitung auf eine **kompakte Bestätigungskarte** reduziert. Ein Button öffnet jederzeit wieder die kompletten Details; auch die Einstiegspunkte aus Zug-Infografik und Sitzplatzkontrolle öffnen den Bereich automatisch. Die bereits existierenden Plan-B-Hilfen bleiben zugänglich. Nebenbei ist die Kontrastfarbe der Schaltfläche zur Sitzplatzkontrolle korrigiert.
+
+Diese Änderung ist reine lokale UI-Logik: keine GPS-Abfragen, keine zusätzlichen Netzwerkaufrufe, keine automatische Markierung und keine Änderungen an Klook-Daten oder persistenten Ticketstatus.
+
 ## Ticket-Tresor v2: Passwortänderung und Recovery-Code (01.11.2026)
 
 Neue Tresore besitzen einen zufälligen AES-256-Dokumentenschlüssel, der unabhängig durch Passwort und zufälligen 256-Bit-Wiederherstellungsschlüssel geschützt wird. Bei der Einrichtung den einmalig angezeigten Code im Passwortmanager sichern. Das Passwort kann im entsperrten Zustand mit dem alten Passwort geändert werden. Mit dem Recovery-Code kann man bei vergessenem Passwort ein neues festlegen; dabei wird ein neuer Recovery-Code ausgegeben. Ein verlorener Code kann bei bekanntem Passwort erneuert werden. Backup v2 kann auf einem leeren Gerät entweder mit Passwort oder mit Recovery-Code und neuem Passwort wiederhergestellt werden.
