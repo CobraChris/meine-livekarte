@@ -126,6 +126,7 @@
       if(fresh.some(r=>!isRecord(r))||new Set(fresh.map(r=>r.id)).size!==fresh.length)
         throw Error('Import enthält ungültige Dateien.');
       verifyCapacity(old,fresh);
+      if(!fresh.length)return 0; // No-op restore/migration must not wait on an empty transaction.
       // One transaction: on quota errors all changes roll back.
       const tx=db.transaction('files','readwrite'),completed=done(tx);
       for(const record of fresh)tx.objectStore('files').add(record);
