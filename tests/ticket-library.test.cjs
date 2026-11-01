@@ -1,7 +1,7 @@
 const {test,after}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
-const {Library,mimeOf,MAX_FILE,BACKUP_FORMAT}=require('../ticket-library.js');
+const {Library,mimeOf,filterTickets,MAX_FILE,BACKUP_FORMAT}=require('../ticket-library.js');
 const original=globalThis.indexedDB;
 after(()=>{globalThis.indexedDB=original;});
 function fakeIndexedDB(){
@@ -37,6 +37,7 @@ function fakeIndexedDB(){
               if(map.has(value.id))throw Error('Duplicate');
               map.set(value.id,value);return value.id;
             }),
+            put:value=>request(()=>{map.set(value.id,value);return value.id;}),
             delete:key=>request(()=>{map.delete(key);})
           };
         };
@@ -160,4 +161,65 @@ test('HTML / Pages / service worker only ship password-free ticket UI',()=>{
   assert.match(html,/Das Backup ist nicht verschlüsselt/);
   assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket|navigator\.credentials/);
   assert.doesNotMatch(ui,/localStorage\.setItem|sessionStorage\.setItem|indexedDB\.deleteDatabase/);
+});
+
+
+test('important tickets can be pinned/unpinned without modifying their original bytes',async()=>{
+  fakeIndexedDB();const lib=new Library();
+  const first=await lib.add(fakeFile('horizon-kyoto.pdf','application/pdf'),{
+    title:'Kyoto Hotel',trip:'Japan 2026'});
+  const second=await lib.add(fakeFile('db-hamburg.pdf','application/pdf'),{
+    title:'ICE Hamburg',trip:'Deutschland'});
+  assert.equal((await lib.list())[0].id,second.id,'newest first before pinning');
+  assert.equal((await lib.list())[1].pinned,false);
+  assert.equal(await lib.setPinned(first.id,true),true);
+  assert.equal((await lib.list())[0].id,first.id,'pinned item comes first');
+  assert.equal((await lib.list())[0].pinned,true);
+  assert.deepEqual(new Uint8Array(await (await lib.get(first.id)).blob.arrayBuffer()),bytes);
+  assert.equal(await lib.setPinned(first.id,true),true,'idempotent pin');
+  assert.equal(await lib.setPinned(first.id,false),false);
+  assert.equal((await lib.list())[0].id,second.id,'unpinned items retain new-first order');
+  await assert.rejects(()=>lib.setPinned('missing',true),/nicht gefunden/);
+  assert.equal((await lib.list()).length,2,'pin controls cannot delete or duplicate tickets');
+});
+
+test('local search matches title, filename, trip and multiple words without changing stored items',async()=>{
+  fakeIndexedDB();const lib=new Library();
+  await lib.add(fakeFile('QR-Seat-10C.pdf','application/pdf'),{
+    title:'Hida 8',trip:'Japan Kyoto'});
+  await lib.add(fakeFile('Berliner-Ticket.pdf','application/pdf'),{
+    title:'ICE 100',trip:'Deutschland Berlin'});
+  const all=await lib.list();
+  assert.equal(filterTickets(all,' hida ').length,1);
+  assert.equal(filterTickets(all,'kyoto QR').length,1,'tokens match across fields');
+  assert.equal(filterTickets(all,'seat-10c')[0].title,'Hida 8');
+  assert.equal(filterTickets(all,'BERLIN')[0].title,'ICE 100');
+  assert.equal(filterTickets(all,'Japan Berlin').length,0);
+  assert.equal(filterTickets(all,'').length,2);
+  assert.equal(filterTickets(all,'  ').length,2);
+  assert.equal((await lib.list()).length,2,'filter does not delete or change files');
+});
+
+test('pinned state survives portable backup and old backups remain importable',async()=>{
+  fakeIndexedDB();const lib=new Library();
+  const first=await lib.add(fakeFile('qr-hida.pdf','application/pdf'),{
+    title:'Hida Train',trip:'Japan'});
+  const second=await lib.add(fakeFile('qr-ice.pdf','application/pdf'),{
+    title:'ICE Train',trip:'Germany'});
+  await lib.setPinned(first.id,true);
+  const blob=await lib.backup(),backup=JSON.parse(await blob.text());
+  assert.equal(backup.format,BACKUP_FORMAT);
+  assert.equal(backup.files.find(f=>f.id===first.id).pinned,true);
+  assert.equal(backup.files.find(f=>f.id===second.id).pinned,false);
+  fakeIndexedDB();const restored=new Library();
+  assert.equal(await restored.restore(blob),2);
+  assert.equal((await restored.list())[0].id,first.id);
+  assert.equal((await restored.list())[0].pinned,true);
+  // Backward compatibility: backups exported by the previous version lack
+  // the pinned field. They must still restore as ordinary unpinned tickets.
+  for(const file of backup.files)delete file.pinned;
+  fakeIndexedDB();const legacy=new Library();
+  const oldBlob=new Blob([JSON.stringify(backup)],{type:'application/json'});
+  assert.equal(await legacy.restore(oldBlob),2);
+  assert.ok((await legacy.list()).every(x=>x.pinned===false));
 });

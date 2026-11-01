@@ -85,7 +85,7 @@ test('successful save resets picker only after IndexedDB save and reveals the sa
   const note={textContent:'',hidden:true,classList:{add(){},remove(){}}};
   const els={
     'ticket-file':picker,'ticket-picked-note':note,'ticket-title':{value:'Tokyo ticket'},
-    'ticket-trip':{value:'Japan'},'ticket-save-confirmation':{hidden:false},
+    'ticket-trip':{value:'Japan'},'ticket-search':{value:'old filter'},'ticket-save-confirmation':{hidden:false},
     'ticket-add':{onclick:null}
   };
   const operations=[];
@@ -103,6 +103,7 @@ test('successful save resets picker only after IndexedDB save and reveals the sa
   vm.runInNewContext(ui.slice(start,end),context);
   await els['ticket-add'].onclick();
   assert.equal(picker.value,'');
+  assert.equal(els['ticket-search'].value,'','new saved document should not be hidden by an earlier filter');
   assert.equal(els['ticket-title'].value,'');
   assert.equal(note.hidden,true);
   assert.deepEqual(operations.slice(0,3),['add','render','reveal']);
@@ -116,7 +117,7 @@ test('save failure leaves the selected file available to retry and displays inli
   const note={textContent:'',hidden:true,classList:{add(name){this.error=name},remove(){}}};
   const els={
     'ticket-file':picker,'ticket-picked-note':note,'ticket-title':{value:'Ticket'},
-    'ticket-trip':{value:''},'ticket-save-confirmation':{hidden:false},
+    'ticket-trip':{value:''},'ticket-search':{value:'old filter'},'ticket-save-confirmation':{hidden:false},
     'ticket-add':{onclick:null}
   };
   vm.runInNewContext(ui.slice(start,end),{

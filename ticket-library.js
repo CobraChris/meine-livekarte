@@ -77,16 +77,26 @@
     const type=mimeOf(file.type,name,bytes);
     const title=clean(details.title||name,100)||name,trip=clean(details.trip,100);
     return {id,title,trip,name,type,size:bytes.byteLength,
-      created:new Date().toISOString(),blob:new Blob([bytes],{type})};
+      created:new Date().toISOString(),pinned:false,blob:new Blob([bytes],{type})};
   }
   function isRecord(r){return r&&typeof r.id==='string'&&r.id.length<=100&&
     clean(r.title,100)===r.title&&typeof r.name==='string'&&
     typeof r.trip==='string'&&TYPES.has(r.type)&&Number.isSafeInteger(r.size)&&
-    r.size>0&&r.size<=MAX_FILE&&r.blob instanceof Blob&&r.blob.size===r.size;}
+    r.size>0&&r.size<=MAX_FILE&&r.blob instanceof Blob&&r.blob.size===r.size&&
+    (r.pinned===undefined||typeof r.pinned==='boolean');}
   function verifyCapacity(records,extra){
     if(records.length+extra.length>MAX_ITEMS||
       [...records,...extra].reduce((sum,item)=>sum+item.size,0)>MAX_TOTAL)
       throw Error('Speicherlimit erreicht (25 Dateien oder 50 MB).');
+  }
+  function filterTickets(items,query=''){
+    const terms=String(query||'').trim().toLocaleLowerCase('de').split(/\s+/u).filter(Boolean);
+    if(!terms.length)return items;
+    return items.filter(item=>{
+      const haystack=[item.title,item.trip,item.name]
+        .map(v=>String(v||'').toLocaleLowerCase('de')).join(' ');
+      return terms.every(term=>haystack.includes(term));
+    });
   }
   class Library {
     constructor(){this.db=null;}
@@ -97,8 +107,9 @@
     }
     async list(){
       const all=await this.all();
-      return all.map(({blob,...item})=>item)
-        .sort((a,b)=>String(b.created).localeCompare(String(a.created)));
+      return all.map(({blob,...item})=>({...item,pinned:item.pinned===true}))
+        .sort((a,b)=>Number(b.pinned)-Number(a.pinned)||
+          String(b.created).localeCompare(String(a.created)));
     }
     async add(file,details={}){
       const record=await makeRecord(file,details);
@@ -114,6 +125,15 @@
       const record=await request(tx.objectStore('files').get(id));
       if(!isRecord(record))throw Error('Dokument nicht gefunden oder beschädigt.');
       return record;
+    }
+    async setPinned(id,pinned){
+      const existing=await this.get(id);
+      if(existing.pinned===!!pinned)return !!pinned;
+      const db=await this.database(),tx=db.transaction('files','readwrite');
+      const completed=done(tx);
+      tx.objectStore('files').put({...existing,pinned:!!pinned});
+      await completed;
+      return !!pinned;
     }
     async remove(id){
       const db=await this.database(),tx=db.transaction('files','readwrite');
@@ -164,7 +184,7 @@
         if(type!==item.type)throw Error('Backup-Dateityp stimmt nicht.');
         records.push({id:item.id,title:clean(item.title,100),name:clean(item.name,120),
           trip:clean(item.trip,100),created:clean(item.created,40),type,
-          size:item.size,blob:new Blob([bytes],{type})});
+          size:item.size,pinned:item.pinned===true,blob:new Blob([bytes],{type})});
       }
       return this.addMany(records);
     }
@@ -202,5 +222,5 @@
       return this.addMany(records);
     }
   }
-  return Object.freeze({Library,available,mimeOf,MAX_FILE,MAX_TOTAL,MAX_ITEMS,BACKUP_FORMAT});
+  return Object.freeze({Library,available,mimeOf,filterTickets,MAX_FILE,MAX_TOTAL,MAX_ITEMS,BACKUP_FORMAT});
 });

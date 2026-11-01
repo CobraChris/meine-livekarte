@@ -67,8 +67,14 @@
     const total=files.reduce((sum,item)=>sum+item.size,0);
     $('ticket-count').textContent=files.length+' / '+API.MAX_ITEMS+
       ' Dokumente · '+(total/1048576).toFixed(1)+' MB / 50 MB';
+    const search=$('ticket-search').value;
+    const shown=API.filterTickets(files,search);
+    $('ticket-filter-result').textContent=search.trim()
+      ?shown.length+' von '+files.length+' Tickets gefunden'
+      :files.filter(item=>item.pinned).length+' angepinnt · '+files.length+' Tickets gesamt';
     if(!files.length)list.append(node('p','Noch keine Tickets gespeichert. PDF oder Screenshot auswählen und hinzufügen.','vault-empty'));
-    for(const item of files){
+    else if(!shown.length)list.append(node('p','Keine Tickets gefunden. Suchbegriff ändern oder löschen.','vault-empty'));
+    for(const item of shown){
       const card=node('article',undefined,'vault-file'),
         header=node('div',undefined,'vault-file-heading'),
         // Keep the ID on the displayed card, not the filename; IDs remain stable
@@ -78,8 +84,21 @@
           (item.type==='application/pdf'?'PDF':'Bild')+' · '+
           (item.size/1048576).toFixed(2)+' MB');
       card.dataset.ticketId=item.id;
+      card.classList.toggle('is-pinned',item.pinned===true);
       header.append(title,desc);
       const actions=node('div',undefined,'vault-file-actions');
+      const pin=node('button',item.pinned?'★ Angepinnt':'☆ Anpinnen','ticket-pin');
+      pin.type='button';
+      pin.setAttribute('aria-pressed',String(item.pinned===true));
+      pin.setAttribute('aria-label',item.title+(item.pinned?' nicht mehr anpinnen':' anpinnen'));
+      pin.onclick=()=>busy(pin,async()=>{
+        const pinned=await shelf.setPinned(item.id,!item.pinned);
+        await render();
+        const updated=[...$('ticket-files').children]
+          .find(element=>element.dataset.ticketId===item.id);
+        if(updated)updated.scrollIntoView({behavior:'smooth',block:'nearest'});
+        status(pinned?'★ „'+item.title+'“ steht jetzt oben.':'„'+item.title+'“ ist nicht mehr angepinnt.');
+      });
       const show=node('button','👁 Anzeigen');
       show.type='button';show.onclick=()=>busy(show,()=>viewTicket(item.id));
       const save=node('button','↓ Original');
@@ -94,7 +113,7 @@
         await shelf.remove(item.id);await render();
         status('Dokument gelöscht. Bereits exportierte Backups bleiben unverändert.');
       });
-      actions.append(show,save,remove);card.append(header,actions);list.append(card);
+      actions.append(pin,show,save,remove);card.append(header,actions);list.append(card);
     }
   }
   // A saved ticket is brought into view, highlighted and also gets a
@@ -151,6 +170,7 @@
       trip:$('ticket-shared-trip').value
     });
     await SHARE.remove(item.id);
+    $('ticket-search').value='';
     await render();await renderShared();
     $('ticket-picked-note').hidden=true;
     revealSavedTicket(saved);
@@ -175,6 +195,9 @@
       $('ticket-legacy').hidden=true;
     }
   }
+  $('ticket-search').addEventListener('input',()=>{
+    void render().catch(error=>status('Suche fehlgeschlagen: '+error.message,true));
+  });
   $('ticket-file').addEventListener('change',()=>{
     const file=$('ticket-file').files?.[0];
     const note=$('ticket-picked-note');
@@ -210,6 +233,7 @@
     let item;
     try{
       item=await shelf.add(file,{title:$('ticket-title').value,trip:$('ticket-trip').value});
+      $('ticket-search').value='';
       await render();
     }catch(error){
       note.classList.add('is-error');

@@ -1585,3 +1585,18 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 @media(prefers-reduced-motion:reduce){
   .vault-file.is-new-ticket{scroll-behavior:auto}
 }
+
+/* Quick ticket access: search metadata locally, pin important tickets first. */
+.ticket-library-hint{margin:0;font-size:11px;line-height:1.55;color:#d2ebdc}
+.ticket-library-list>label{font-size:11px;font-weight:800;color:#e5f9e9}
+#ticket-search{display:block;width:100%;box-sizing:border-box;
+  border:1px solid #8ab5a0;border-radius:9px;min-height:45px;
+  padding:10px 12px;background:#122f34;color:#f3fff7;font-size:14px}
+#ticket-search::placeholder{color:#b0c9c0}
+.ticket-filter-result{font-size:11px;margin:0;color:#bfebd0;line-height:1.5}
+.vault-file.is-pinned{border-color:#b6dba5;background:#254b42}
+.vault-file.is-pinned .vault-file-heading strong{color:#e9ffdf}
+.ticket-pin{border:1px solid #96c0a5!important;background:#30534c!important;
+  color:#edfbed!important}
+.vault-file.is-pinned .ticket-pin{background:#48624b!important;
+  border-color:#d9d6a3!important;color:#fff4c4!important}

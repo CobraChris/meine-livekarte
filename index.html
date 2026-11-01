@@ -216,6 +216,10 @@
     </section>
     <section class="ticket-library-list" aria-label="Deine gespeicherten Tickets">
       <h3>Gespeicherte Tickets</h3>
+      <p class="ticket-library-hint">★ Wichtige Tickets anpinnen – sie stehen immer oben. Über den Titel, Dateinamen oder die Reise suchen.</p>
+      <label for="ticket-search">Tickets suchen</label>
+      <input id="ticket-search" type="search" placeholder="z. B. Kyoto, ICE oder QR" autocomplete="off">
+      <p id="ticket-filter-result" class="ticket-filter-result" role="status" aria-live="polite"></p>
       <p id="ticket-count" class="vault-counter">0 Dokumente</p>
       <div id="ticket-files" class="vault-files"></div>
     </section>

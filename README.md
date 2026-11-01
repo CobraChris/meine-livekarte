@@ -1,3 +1,11 @@
+## Ticket-Schnellzugriff: ★ Anpinnen und lokal suchen (01.11.2026)
+
+Bei mehreren Bahn- und Hotel-Tickets werden wichtige Dokumente mit **„☆ Anpinnen“** markiert. Angepinnte Tickets stehen in **„🎟 Meine Tickets → Gespeicherte Tickets“** unabhängig vom Erstellungsdatum ganz oben und sind als **„★ Angepinnt“** erkennbar. Ein erneuter Tipp hebt die Markierung wieder auf. Die Markierung wird **direkt beim gespeicherten Ticket in der lokalen IndexedDB** abgelegt, nicht in einem separaten, potenziell unzuverlässigen Statusspeicher. Bestehende Dateien bekommen automatisch den Standardstatus „nicht angepinnt“, ohne dass eine Datenbankmigration oder Neuinstallation nötig ist.
+
+Das neue Suchfeld filtert direkt und vollständig **offline** nach Ticketname, Originaldateiname und frei eingegebener Reisebezeichnung. Mehrere Suchwörter können kombiniert werden. Die App zeigt die Trefferanzahl, ohne Dokumente zu löschen oder ihren Status zu ändern. Beim Import eines neuen PDFs/QR-Screenshots wird ein eventueller Suchfilter zurückgesetzt, damit die anschließende Bestätigung und das hervorgehobene neue Ticket weiterhin sichtbar sind.
+
+**Backup-Kompatibilität:** Neue unverschlüsselte Ticket-Backups enthalten den Pin-Status und stellen ihn beim Import wieder her. Bereits früher heruntergeladene Ticket-Backups ohne dieses Attribut sind weiterhin importierbar (alte Tickets erscheinen dann nicht angepinnt). Tickets, QR-Codes, Reise-/Ticketstatus und Cloud-/Sicherheitseinstellungen werden nicht verändert.
+
 ## Ticketimport: Sofort sichtbare Bestätigung und Sprung zum gespeicherten Dokument (01.11.2026)
 
 Im Bereich **„🎟 Meine Tickets“** unterscheidet die App jetzt ausdrücklich zwischen **„Datei ausgewählt – noch nicht gespeichert“** und **„✓ Ticket gespeichert“**. Sobald über „Datei auswählen“ ein PDF oder QR-Screenshot ausgewählt wurde, erscheint eine Statusmeldung direkt unter dem Dateifeld. Während des Speicherns zeigt derselbe Bereich einen Fortschrittshinweis. Erst nach erfolgreichem Schreiben in die lokale IndexedDB und Aktualisieren der Liste wird die Auswahl zurückgesetzt.
