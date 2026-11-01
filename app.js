@@ -2460,8 +2460,8 @@
     kyotoPickupPanel.hidden=!['town-takayama','ride-kyoto'].includes(activePlanId);
     kyotoPickupPanel.classList.toggle('is-complete',kyotoPickupDone);
     ticketHelpButton.hidden=kyotoPickupDone||!canShowTicketHelp();
-    $('kyoto-pickup-planb').hidden=!canShowRailPlanB();
     renderKyotoDepartureClock();
+    $('kyoto-pickup-planb').hidden=!canShowRailPlanB();
     $('kyoto-pickup-state').textContent=kyotoPickupDone
       ?'✅ Papiertickets: abgeholt (selbst bestätigt)'
       :'⚠ Papiertickets: noch abholen';
