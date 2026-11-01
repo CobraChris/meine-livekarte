@@ -150,31 +150,22 @@ test('invalid backups fail before creating a local vault',async()=>{
   await assert.rejects(()=>v.add(big),/10 MB/);
 });
 
-test('web app wiring ships encrypted files via GitHub Pages and supports offline PWA shell',()=>{
+test('new app ships password-free local library while legacy crypto remains only for old data',()=>{
   const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
   const html=read('index.html'),sw=read('sw.js'),wf=read('.github/workflows/pages.yml'),
-    stamp=read('scripts/stamp_pwa_version.py'),ui=read('ticket-vault-ui.js'),
-    css=read('style.css');
-  for(const file of ['ticket-vault.js','ticket-vault-ui.js']){
-    assert.match(html,new RegExp('<script defer src="'+file.replace('.','\\.')+'"></script>'));
-    assert.ok(wf.includes('ticket-vault.js ticket-vault-ui.js public/'));
-    assert.ok(sw.includes("'"+file+"'"));
-    assert.ok(stamp.includes('("src", "'+file+'")'));
+    stamp=read('scripts/stamp_pwa_version.py');
+  for(const file of ['ticket-vault.js','ticket-library.js','ticket-library-ui.js']){
+    assert.ok(html.includes('src="'+file+'"'),file);
+    assert.ok(sw.includes("'"+file+"'"),file);
+    assert.ok(stamp.includes('("src", "'+file+'")'),file);
   }
+  assert.ok(wf.includes('cp ticket-vault.js ticket-library.js ticket-library-ui.js public/'));
+  assert.ok(!wf.includes('cp ticket-vault.js ticket-vault-ui.js public/'));
+  assert.doesNotMatch(html,/src="ticket-vault-ui\.js"/);
+  assert.match(html,/id="ticket-files"/);
+  assert.match(html,/ohne Passwort, PIN oder Fingerabdruck/);
   assert.match(sw,/livekarte-shell-pwa-v22/);
-  for(const id of ['ticket-vault','vault-new-password','vault-repeat-password','vault-create',
-    'vault-locked','vault-unlock','vault-open-input','vault-trip','vault-add',
-    'vault-backup','vault-restore','vault-files','vault-preview','vault-preview-pdf',
-    'vault-preview-image','vault-persist'])
-    assert.ok(html.includes('id="'+id+'"'),id);
-  assert.match(css,/\.ticket-vault\[open\]/);
-  assert.match(ui,/URL\.revokeObjectURL/);
-  assert.match(ui,/Date\.now\(\)-lastUse>idleLimit/);
-  assert.match(ui,/confirm\(/);
-  assert.match(ui,/\.textContent=/);
-  assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage\.setItem/);
 });
-
 
 test('first-time setup returns independent recovery key; forgotten password can be safely reset',async()=>{
   const state=setDB(),v=new Vault();
@@ -298,26 +289,18 @@ test('legacy v1 vault can migrate all encrypted files atomically when old passwo
   assert.deepEqual(new Uint8Array(await (await legacy.file(id)).blob.arrayBuffer()),pdfBytes);
 });
 
-test('recovery controls expose password changes and rotated key without network communication',()=>{
+test('legacy recovery code remains in source for migration but new UI has no normal password flows',()=>{
   const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
-  const html=read('index.html'),ui=read('ticket-vault-ui.js');
-  for(const id of ['vault-recovery-display','vault-recovery-code','vault-recovery-copy',
-    'vault-recovery-dismiss','vault-forgot','vault-forgot-code','vault-forgot-new',
-    'vault-forgot-again','vault-forgot-submit','vault-security','vault-change-old',
-    'vault-change-new','vault-change-again','vault-change-submit',
-    'vault-rotate-password','vault-rotate-submit','vault-legacy-upgrade',
-    'vault-upgrade-password','vault-upgrade-submit','vault-restore-use-recovery',
-    'vault-restore-new-password'])
-    assert.ok(html.includes('id="'+id+'"'),id);
-  assert.match(ui,/vault\.resetWithRecovery\(code,fresh\)/);
-  assert.match(ui,/vault\.changePassword\(old,fresh\)/);
-  assert.match(ui,/vault\.rotateRecovery\(/);
-  assert.match(ui,/vault\.upgradeLegacy\(/);
-  assert.match(ui,/vault\.restore\(/);
-  assert.match(ui,/vault-recovery-code'\)\.textContent=''/);
-  assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage\.setItem/);
+  const html=read('index.html'),legacy=read('ticket-vault.js'),ui=read('ticket-library-ui.js');
+  assert.match(legacy,/async resetWithRecovery\(/);
+  assert.match(legacy,/async changePassword\(/);
+  assert.match(legacy,/async upgradeLegacy\(/);
+  assert.doesNotMatch(html,/id="vault-create"|id="vault-unlock"|id="vault-change-submit"|id="vault-recovery-display"/);
+  assert.match(html,/id="ticket-legacy"/);
+  assert.match(ui,/old\.unlock\(password\)/);
+  assert.match(ui,/shelf\.importLegacy\(old\)/);
+  assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket/);
 });
-
 
 test('WebAuthn PRF passkey protects the document key without a password or network request at unlock',async()=>{
   const state=setDB(),vault=new Vault();
@@ -398,25 +381,13 @@ test('unsupported WebAuthn PRF does not partially enable passkey or alter ticket
   assert.equal(await vault.hasRecovery(),true);
 });
 
-test('passkey interface requires deliberate device action; never uses assertion alone to unlock',()=>{
+test('the normal ticket library does not load device passkey UI',()=>{
   const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
-  const html=read('index.html'),js=read('ticket-vault.js'),ui=read('ticket-vault-ui.js');
-  for(const id of ['vault-biometric-unlock','vault-biometric-enable',
-    'vault-biometric-disable','vault-biometric-password','vault-biometric-status',
-    'vault-biometric-enable-area','vault-biometric-disable-area'])
-    assert.ok(html.includes('id="'+id+'"'),id);
-  assert.match(js,/unlockWithBiometric\(credentialApi\)/);
-  assert.match(js,/enableBiometric\(password,credentialApi,hostname\)/);
-  assert.match(js,/async disableBiometric\(password\)/);
-  assert.match(js,/credentialSecret\(verified\)/);
-  assert.match(js,/await openSeal\(wrapping,b\.iv,unbase64\(b\.cipher\)\)/);
-  assert.match(ui,/vault\.unlockWithBiometric\(\)/);
-  assert.match(ui,/await vault\.enableBiometric\(password\)/);
-  assert.match(ui,/vault\.disableBiometric\(\$\('vault-biometric-disable-password'\)\.value\)/);
-  assert.match(ui,/biometricMessage\(/);
-  assert.match(html,/id="vault-biometric-feedback"/);
-  assert.match(ui,/Promise\.resolve\(job\(\)\)/);
-  assert.doesNotMatch(ui,/fetch\(|sendBeacon|WebSocket/);
+  const html=read('index.html'),ui=read('ticket-library-ui.js');
+  assert.doesNotMatch(html,/id="vault-biometric-enable"|id="vault-biometric-unlock"/);
+  assert.doesNotMatch(ui,/navigator\.credentials|enableBiometric|unlockWithBiometric/);
+  assert.match(html,/id="ticket-add"/);
+  assert.match(ui,/shelf\.add\(file/);
 });
 
 test('registration and unlock prompt start synchronously in real click stack before any await',async()=>{
@@ -443,17 +414,13 @@ test('registration and unlock prompt start synchronously in real click stack bef
   assert.ok(v.key);
 });
 
-test('the passkey setup UI shows immediate local errors and does not require scrolling to vault footer',()=>{
+test('new ticket library is usable immediately without setup while legacy DB is left intact',()=>{
   const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
-  const html=read('index.html'),ui=read('ticket-vault-ui.js'),css=read('style.css');
-  const pos=html.indexOf('id="vault-biometric-enable"');
-  const feedback=html.indexOf('id="vault-biometric-feedback"');
-  assert.ok(pos>0&&feedback>pos&&feedback-pos<400);
-  assert.match(ui,/biometricMessage\('Passkey-Einrichtung gestartet/);
-  assert.match(ui,/kind==='NotAllowedError'/);
-  assert.match(ui,/kind==='SecurityError'/);
-  assert.match(ui,/kind==='NotSupportedError'/);
-  assert.match(ui,/biometricMessage\('⚠ '\+help,true\)/);
-  assert.match(css,/\.vault-biometric-feedback\.is-error/);
-  assert.match(ui,/if\(!password\)\{/);
+  const html=read('index.html'),ui=read('ticket-library-ui.js'),code=read('ticket-library.js');
+  assert.doesNotMatch(html,/Tresor entsperren|Passkey zur Schnellentsperrung einrichten/);
+  assert.match(html,/id="ticket-legacy"[^>]*hidden/);
+  assert.match(ui,/if\(!oldCount\)\{\$\('ticket-legacy'\)\.hidden=true/);
+  assert.match(code,/async legacyCount\(/);
+  assert.doesNotMatch(code,/indexedDB\.deleteDatabase|\.clear\(\)/);
+  assert.match(html,/Das Backup ist nicht verschlüsselt/);
 });

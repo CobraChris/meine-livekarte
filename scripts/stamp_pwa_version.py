@@ -43,7 +43,8 @@ assets = [
     ("src", "build-version.js"),
     ("src", "pwa.js"),
     ("src", "ticket-vault.js"),
-    ("src", "ticket-vault-ui.js"),
+    ("src", "ticket-library.js"),
+    ("src", "ticket-library-ui.js"),
 ]
 html_path = public / "index.html"
 html = html_path.read_text(encoding="utf-8")
@@ -55,9 +56,9 @@ if missing_stamps:
     raise RuntimeError(f"Unstamped HTML scripts: {', '.join(missing_stamps)}")
 for attr, asset in assets:
     needle = f'{attr}="{asset}"'
-    # Optional vault modules are absent only in older test HTML fixtures.
-    # Production HTML references both; their files remain mandatory there.
-    if asset in {"ticket-vault.js", "ticket-vault-ui.js"} and needle not in html:
+    # Optional ticket modules are absent in old stamp-test HTML fixtures.
+    # Production HTML references all three and requires their files.
+    if asset in {"ticket-vault.js", "ticket-library.js", "ticket-library-ui.js"} and needle not in html:
         continue
     if not (public / asset).is_file():
         raise RuntimeError(f"Missing Pages artifact asset: {asset}")

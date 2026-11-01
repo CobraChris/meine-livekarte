@@ -1513,3 +1513,21 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .ticket-vault .vault-password-field>.vault-password-eye:focus-visible{
   outline:2px solid #f6dfa9;outline-offset:-2px;background:#2b5c50
 }
+
+/* Tickets are now immediately accessible; only the optional old-data importer
+   mentions the former password vault. No credential gate for normal tickets. */
+.ticket-no-password-notice{font-size:11px;line-height:1.55;margin:0;
+  border:1px solid #759d93;border-radius:9px;background:#24433f;
+  color:#e6f8e9;padding:11px}
+.ticket-no-password-notice strong{color:#fff4c7}
+.ticket-library-list{display:grid;gap:8px}
+.ticket-library-list h3{font-size:14px;margin:0}
+.ticket-library-backup{border:1px solid #648b79;border-radius:10px;
+  padding:11px;background:#203d3d;gap:9px}
+.ticket-library-backup>summary,.ticket-library-legacy>summary{
+  cursor:pointer;font-size:12px;line-height:1.45;font-weight:850;color:#e4f6ec}
+.ticket-library-backup[open],.ticket-library-legacy[open]{display:grid;gap:10px}
+.ticket-library-legacy{border:1px dashed #a3bc88;padding:11px;border-radius:10px}
+.ticket-library-legacy>p{margin:0;font-size:11px;line-height:1.5;color:#d7e8d9}
+#ticket-status.is-error{background:#563f2c;color:#ffdfac}
+.ticket-library-backup>p{font-size:11px;line-height:1.5}
