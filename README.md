@@ -1,3 +1,9 @@
+## Gespeicherte Tickets nachträglich umbenennen (01.11.2026)
+
+In **🎟 Meine Tickets → Gespeicherte Tickets** gibt es pro Ticket **„✎ Bearbeiten“**. Ein kleines Formular direkt innerhalb der jeweiligen Ticketkarte erlaubt, **Titel** und **Reisebezeichnung** zu ändern und zu speichern oder mit **„Abbrechen“** zu verwerfen. So kann beispielsweise ein unspezifischer Android-Dateiname oder Screenshot nachträglich als `Hida 8 · Takayama → Nagoya` benannt werden. Das ursprüngliche PDF/Bild, sein Dateiname, sein ursprüngliches Erstellungsdatum, seine lokale Kennung und sein Pin-Status bleiben erhalten. Es wird **kein** zweites Dokument erzeugt und nichts erneut hochgeladen.
+
+Die Änderung wird atomar in der bestehenden IndexedDB gespeichert – ohne Versionswechsel oder Migration. Suchbegriffe greifen sofort auf die bearbeiteten Metadaten zu. Wenn der vorherige Suchfilter nach einer Umbenennung nicht mehr passt, wird er automatisch zurückgesetzt und die aktualisierte Karte sichtbar markiert. Neue lokale Backups enthalten die geänderten Bezeichnungen; alte Backups bleiben kompatibel. Der Ticketinhalt und die Ticket-/Reiseerledigt-Status werden nicht geändert; es erfolgt keine Internetanfrage.
+
 ## Ticket-Schnellzugriff: ★ Anpinnen und lokal suchen (01.11.2026)
 
 Bei mehreren Bahn- und Hotel-Tickets werden wichtige Dokumente mit **„☆ Anpinnen“** markiert. Angepinnte Tickets stehen in **„🎟 Meine Tickets → Gespeicherte Tickets“** unabhängig vom Erstellungsdatum ganz oben und sind als **„★ Angepinnt“** erkennbar. Ein erneuter Tipp hebt die Markierung wieder auf. Die Markierung wird **direkt beim gespeicherten Ticket in der lokalen IndexedDB** abgelegt, nicht in einem separaten, potenziell unzuverlässigen Statusspeicher. Bestehende Dateien bekommen automatisch den Standardstatus „nicht angepinnt“, ohne dass eine Datenbankmigration oder Neuinstallation nötig ist.

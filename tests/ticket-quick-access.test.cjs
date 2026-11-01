@@ -15,7 +15,7 @@ test('search field and pinned ticket controls are part of the existing offline l
   assert.match(ui,/shelf\.setPinned\(item\.id,!item\.pinned\)/);
   assert.match(ui,/pin\.setAttribute\('aria-pressed',String\(item\.pinned===true\)\)/);
   assert.match(ui,/pin\.setAttribute\('aria-label'/);
-  assert.match(ui,/actions\.append\(pin,show,save,remove\)/);
+  assert.match(ui,/actions\.append\(pin,show,edit,save,remove\)/);
   assert.match(css,/\.vault-file\.is-pinned/);
   assert.match(css,/#ticket-search/);
   assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|WebSocket|navigator\.geolocation/);

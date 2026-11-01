@@ -126,6 +126,26 @@
       if(!isRecord(record))throw Error('Dokument nicht gefunden oder beschädigt.');
       return record;
     }
+    async updateDetails(id,details={}){
+      const db=await this.database(),tx=db.transaction('files','readwrite');
+      const completed=done(tx),store=tx.objectStore('files');
+      let updated=null,missing=false;
+      // Read and update in one IndexedDB write transaction: a simultaneous
+      // pin action cannot be overwritten by an older copy of the document.
+      const req=store.get(id);
+      req.onsuccess=()=>{
+        const current=req.result;
+        if(!isRecord(current)){missing=true;return;}
+        const title=clean(details.title,100)||current.name.slice(0,100);
+        const trip=clean(details.trip,100);
+        updated={...current,title,trip};
+        store.put(updated);
+      };
+      await completed;
+      if(missing)throw Error('Dokument nicht gefunden oder beschädigt.');
+      const {blob,...metadata}=updated;
+      return metadata;
+    }
     async setPinned(id,pinned){
       const existing=await this.get(id);
       if(existing.pinned===!!pinned)return !!pinned;
