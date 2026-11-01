@@ -1,3 +1,9 @@
+## Sitzplatz-Vollständigkeitscheck vor der Kyoto-Fahrt (01.11.2026)
+
+Als Ergänzung zur bestehenden Klook-Abholung gibt es im **Takayama- und Kyoto-Fahrtbereich** einen aufklappbaren, optionalen Check **„🧾 Sitzplätze auf den Papiertickets prüfen“**. Nach Ausgabe lassen sich die Angaben von **beiden Reisenden für beide Zugabschnitte** einzeln abhaken: Hida 8 (Wagen 2, **10C/10D**, 11:35–14:04) und Nozomi 71 (Wagen 4, **8D/8E**, 14:26–15:00). Der Fortschritt **0 bis 4 von 4 kontrolliert** wird unmittelbar angezeigt; jeder Haken ist korrigierbar. Über die Zug-Infografik öffnet ein Button die Checkliste direkt.
+
+Die vier Prüfpunkte beziehen sich **nicht auf vier physische Papiertickets**: Je nach Art der Fahrkarte können auch mehrere Papierabschnitte pro Person ausgegeben werden. Der Abgleich bedeutet weder, dass der richtige Fahrschein vollständig ausgestellt noch dass er gültig ist. **Kein automatischer Ticketstatus**, keine automatische Abholbestätigung, kein Blockieren der bestehenden Bestätigungsschaltfläche. Häkchen gelten nur solange die Seite geöffnet bleibt (keine neue dauerhafte Speicherung, keine QR-Codes oder persönlichen Buchungsdetails). Die bisherige explizite Bestätigung „beide Teilstrecken: Tickets abgeholt“ bleibt unverändert. Bei fehlenden Angaben JR-Personal oder die vorhandene japanische Hilfe nutzen.
+
 ## Plan B bei Zugproblemen · Takayama → Nagoya → Kyoto (01.11.2026)
 
 Die Live-Karte besitzt für den **verifizierten, unveränderten Reiseplan vom 01.11.** einen direkt offline verfügbaren **„🆘 Plan B“**. Aufgerufen wird er über **„Was jetzt?“**, aus dem vorhandenen Ticketabholbereich in Takayama und über die Kyoto-Zug-Infografik. Vier auswählbare Situationen führen ohne zusätzliche Apps oder Login zur passenden Schrittfolge und einer **japanischen Nachricht für das JR-Personal**:
