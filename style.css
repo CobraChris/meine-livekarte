@@ -1491,3 +1491,10 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 #vault-biometric-unlock{min-height:48px}
 .next-action-list-item.is-complete button{font-size:11px;
   min-height:39px;white-space:normal;text-align:center}
+
+/* Inline WebAuthn status is next to the touched button, not at vault footer. */
+.vault-biometric-feedback{font-size:12px;line-height:1.55;padding:10px 11px;
+  background:#2a5144;color:#e8fff0;border:1px solid #74ae8d;
+  border-radius:8px;margin:2px 0;overflow-wrap:anywhere}
+.vault-biometric-feedback.is-error{background:#593e32;color:#fff0d2;
+  border-color:#dcb785;font-weight:700}
