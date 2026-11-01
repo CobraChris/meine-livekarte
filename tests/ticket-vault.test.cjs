@@ -317,3 +317,100 @@ test('recovery controls expose password changes and rotated key without network 
   assert.match(ui,/vault-recovery-code'\)\.textContent=''/);
   assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage\.setItem/);
 });
+
+
+test('WebAuthn PRF passkey protects the document key without a password or network request at unlock',async()=>{
+  const state=setDB(),vault=new Vault();
+  const pass='secure vault password 2026';
+  await vault.initialize(pass);
+  const stored=await vault.add(fakeFile(pdfBytes,'application/pdf','offline-ticket.pdf'),
+    {title:'Confidential QR boarding document',trip:'German train'});
+  const identity=globalThis.crypto.getRandomValues(new Uint8Array(24));
+  const secret=globalThis.crypto.getRandomValues(new Uint8Array(32));
+  let registration=0,assertions=0;
+  const creds={
+    async create({publicKey}){
+      registration++;
+      assert.equal(publicKey.rp.id,'cobrachris.github.io');
+      assert.equal(publicKey.authenticatorSelection.userVerification,'required');
+      assert.ok(publicKey.extensions.prf);
+      return {rawId:identity.buffer};
+    },
+    async get({publicKey}){
+      assertions++;
+      assert.equal(publicKey.rpId,'cobrachris.github.io');
+      assert.equal(publicKey.userVerification,'required');
+      assert.equal(publicKey.allowCredentials.length,1);
+      assert.deepEqual(new Uint8Array(publicKey.allowCredentials[0].id),identity);
+      return {rawId:identity.buffer,getClientExtensionResults(){
+        return {prf:{results:{first:secret.buffer}}};
+      }};
+    }
+  };
+  await assert.rejects(()=>vault.enableBiometric('wrong password 2026',creds,'cobrachris.github.io'),/Passwort/);
+  assert.equal(registration,0,'password must be verified before creating device credential');
+  await vault.enableBiometric(pass,creds,'cobrachris.github.io');
+  assert.equal(registration,1);
+  assert.equal(assertions,1);
+  assert.equal(await vault.hasBiometric(),true);
+  assert.equal(state.data.meta.get('config').biometric.rpId,'cobrachris.github.io');
+  assert.equal(JSON.stringify(state.data.meta.get('config')).includes('Confidential QR'),false);
+  const backup=JSON.parse(await (await vault.backup()).text());
+  assert.equal(backup.config.biometric,undefined,'device-specific passkey must not be exported with backup');
+  vault.lock();
+  await vault.unlockWithBiometric(creds);
+  assert.equal(assertions,2);
+  assert.equal((await vault.list()).length,1);
+  assert.deepEqual(new Uint8Array(await (await vault.file(stored.id)).blob.arrayBuffer()),pdfBytes);
+  vault.lock();
+  const bad={
+    get:async({publicKey})=>({rawId:identity.buffer,getClientExtensionResults(){
+      return {prf:{results:{first:globalThis.crypto.getRandomValues(new Uint8Array(32)).buffer}}};
+    }})
+  };
+  await assert.rejects(()=>vault.unlockWithBiometric(bad),/fehlgeschlagen/);
+  await assert.rejects(()=>vault.list(),/entsperren/);
+  await vault.unlock(pass);
+  await assert.rejects(()=>vault.disableBiometric('incorrect password 2026'),/Passwort/);
+  await vault.disableBiometric(pass);
+  assert.equal(await vault.hasBiometric(),false);
+  vault.lock();
+  await assert.rejects(()=>vault.unlockWithBiometric(creds),/nicht eingerichtet/);
+  await vault.unlock(pass);
+  assert.equal((await vault.list()).length,1,'password fallback must still work');
+});
+
+test('unsupported WebAuthn PRF does not partially enable passkey or alter tickets',async()=>{
+  const state=setDB(),vault=new Vault();
+  const pass='another safe password 2026';
+  await vault.initialize(pass);
+  const id=globalThis.crypto.getRandomValues(new Uint8Array(24));
+  const creds={
+    async create(){return {rawId:id.buffer}},
+    async get(){return {rawId:id.buffer,getClientExtensionResults(){return {prf:{}}}}}
+  };
+  await assert.rejects(()=>vault.enableBiometric(pass,creds,'cobrachris.github.io'),/PRF/);
+  assert.equal(await vault.hasBiometric(),false);
+  assert.equal(state.data.meta.get('config').biometric,undefined);
+  vault.lock();
+  await vault.unlock(pass);
+  assert.equal(await vault.hasRecovery(),true);
+});
+
+test('passkey interface requires deliberate device action; never uses assertion alone to unlock',()=>{
+  const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+  const html=read('index.html'),js=read('ticket-vault.js'),ui=read('ticket-vault-ui.js');
+  for(const id of ['vault-biometric-unlock','vault-biometric-enable',
+    'vault-biometric-disable','vault-biometric-password','vault-biometric-status',
+    'vault-biometric-enable-area','vault-biometric-disable-area'])
+    assert.ok(html.includes('id="'+id+'"'),id);
+  assert.match(js,/async unlockWithBiometric\(credentialApi\)/);
+  assert.match(js,/async enableBiometric\(password,credentialApi,hostname\)/);
+  assert.match(js,/async disableBiometric\(password\)/);
+  assert.match(js,/credentialSecret\(verified\)/);
+  assert.match(js,/await openSeal\(wrapping,b\.iv,unbase64\(b\.cipher\)\)/);
+  assert.match(ui,/vault\.unlockWithBiometric\(\)/);
+  assert.match(ui,/vault\.enableBiometric\(\$\('vault-biometric-password'\)\.value\)/);
+  assert.match(ui,/vault\.disableBiometric\(\$\('vault-biometric-disable-password'\)\.value\)/);
+  assert.doesNotMatch(ui,/fetch\(|sendBeacon|WebSocket/);
+});
