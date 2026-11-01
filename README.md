@@ -1,3 +1,11 @@
+## Ticketimport: Sofort sichtbare Bestätigung und Sprung zum gespeicherten Dokument (01.11.2026)
+
+Im Bereich **„🎟 Meine Tickets“** unterscheidet die App jetzt ausdrücklich zwischen **„Datei ausgewählt – noch nicht gespeichert“** und **„✓ Ticket gespeichert“**. Sobald über „Datei auswählen“ ein PDF oder QR-Screenshot ausgewählt wurde, erscheint eine Statusmeldung direkt unter dem Dateifeld. Während des Speicherns zeigt derselbe Bereich einen Fortschrittshinweis. Erst nach erfolgreichem Schreiben in die lokale IndexedDB und Aktualisieren der Liste wird die Auswahl zurückgesetzt.
+
+**Bei erfolgreichem Import** wird die neue Datei in **„Gespeicherte Tickets“** automatisch ins Bild gescrollt, visuell mit **„✓ Gerade gespeichert“** markiert und für Screenreader fokussiert. Direkt unter dem Speichern-Button bleibt zusätzlich eine Bestätigung mit **„👁 Gespeichertes Ticket öffnen“**. So wirkt die nach erfolgreichem Import geleerte Dateiauswahl nicht mehr wie eine verlorene Datei. Auch beim Android-Share-Import wird die neue Karte auf diese Weise gezeigt.
+
+**Bei einem Fehler** bleibt die ausgewählte Datei stehen und die Fehlermeldung erscheint unmittelbar bei der Dateiauswahl – ein zweiter Versuch ist ohne erneutes Auswählen möglich. Keine Änderung an Ticketdateien, Speicherformat, Passwortfreiheit, Backup oder Reise-/Ticketstatus; keine weiteren Netzwerkzugriffe.
+
 ## Android: PDFs und QR-Screenshots direkt an „Meine Live-Karte“ teilen (01.11.2026)
 
 Die installierte Live-Karte kann über den **Android-Teilen-Dialog** PDF-Fahrscheine und QR-Screenshots entgegennehmen. Technische Grundlage ist der standardisierte Web Share Target API-Eintrag im PWA-Manifest (`POST`, `multipart/form-data`, Feld `ticket`, akzeptiert PDF, PNG, JPEG, WebP). In unterstützten Android-Browsern/WebAPKs sollte nach einem PWA-Manifest-Update in **Eigene Dateien, Galerie oder einem anderen dokumentteilenden Programm → Teilen → Meine Live-Karte** erscheinen. Die Verfügbarkeit und der Zeitpunkt einer Betriebssystem-Aktualisierung sind browser-/geräteabhängig; gegebenenfalls wird das Share-Ziel erst nach Aktualisierung der installierten PWA/WebAPK sichtbar. Die normale Dateiauswahl der App bleibt immer als zuverlässige Alternative vorhanden.

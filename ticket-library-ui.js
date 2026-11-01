@@ -71,10 +71,13 @@
     for(const item of files){
       const card=node('article',undefined,'vault-file'),
         header=node('div',undefined,'vault-file-heading'),
+        // Keep the ID on the displayed card, not the filename; IDs remain stable
+        // across the asynchronous save and subsequent rerender.
         title=node('strong',item.title),desc=node('small',
           (item.trip?item.trip+' · ':'')+
           (item.type==='application/pdf'?'PDF':'Bild')+' · '+
           (item.size/1048576).toFixed(2)+' MB');
+      card.dataset.ticketId=item.id;
       header.append(title,desc);
       const actions=node('div',undefined,'vault-file-actions');
       const show=node('button','👁 Anzeigen');
@@ -92,6 +95,26 @@
         status('Dokument gelöscht. Bereits exportierte Backups bleiben unverändert.');
       });
       actions.append(show,save,remove);card.append(header,actions);list.append(card);
+    }
+  }
+  // A saved ticket is brought into view, highlighted and also gets a
+  // persistent confirmation next to the import button. A cleared file picker
+  // can therefore never be confused with a lost upload.
+  function revealSavedTicket(item){
+    const box=$('ticket-save-confirmation');
+    $('ticket-saved-label').textContent='✓ Ticket gespeichert: '+item.title;
+    box.hidden=false;
+    const open=$('ticket-saved-open');
+    open.onclick=()=>busy(open,()=>viewTicket(item.id));
+    const card=[...$('ticket-files').children]
+      .find(element=>element.dataset.ticketId===item.id);
+    if(card){
+      card.classList.add('is-new-ticket');
+      const header=card.querySelector('.vault-file-heading');
+      if(header)header.prepend(node('span','✓ Gerade gespeichert','ticket-new-tag'));
+      card.tabIndex=-1;
+      card.scrollIntoView({behavior:'smooth',block:'center'});
+      card.focus({preventScroll:true});
     }
   }
   async function renderShared(){
@@ -129,6 +152,8 @@
     });
     await SHARE.remove(item.id);
     await render();await renderShared();
+    $('ticket-picked-note').hidden=true;
+    revealSavedTicket(saved);
     status('✓ Geteiltes Ticket „'+saved.title+'“ lokal gespeichert – ohne Passwort.');
   });
   $('ticket-shared-discard').onclick=()=>busy($('ticket-shared-discard'),async()=>{
@@ -152,7 +177,16 @@
   }
   $('ticket-file').addEventListener('change',()=>{
     const file=$('ticket-file').files?.[0];
-    if(file&&!$('ticket-title').value)$('ticket-title').value=file.name.slice(0,100);
+    const note=$('ticket-picked-note');
+    $('ticket-save-confirmation').hidden=true;
+    note.hidden=!file;
+    note.classList.remove('is-error');
+    if(file){
+      if(!$('ticket-title').value)$('ticket-title').value=file.name.slice(0,100);
+      note.textContent='📎 Ausgewählt: '+file.name+' · noch nicht gespeichert. Bitte „Ticket direkt speichern“ tippen.';
+    }else{
+      note.textContent='';
+    }
   });
   $('ticket-trip-current').onclick=()=>{
     const selected=$('plan-select');
@@ -162,11 +196,31 @@
   };
   $('ticket-add').onclick=()=>busy($('ticket-add'),async()=>{
     const file=$('ticket-file').files?.[0];
-    if(!file)throw Error('Bitte zuerst ein PDF oder Bild auswählen.');
-    const item=await shelf.add(file,{title:$('ticket-title').value,trip:$('ticket-trip').value});
+    const note=$('ticket-picked-note');
+    if(!file){
+      note.hidden=false;
+      note.classList.add('is-error');
+      note.textContent='⚠ Bitte zuerst ein PDF oder Bild auswählen.';
+      return;
+    }
+    $('ticket-save-confirmation').hidden=true;
+    note.hidden=false;
+    note.classList.remove('is-error');
+    note.textContent='⏳ '+file.name+' wird lokal gespeichert …';
+    let item;
+    try{
+      item=await shelf.add(file,{title:$('ticket-title').value,trip:$('ticket-trip').value});
+      await render();
+    }catch(error){
+      note.classList.add('is-error');
+      note.textContent='⚠ Nicht gespeichert: '+(error.message||'Unbekannter Fehler')+
+        '. Datei bleibt ausgewählt – bitte erneut versuchen.';
+      throw error;
+    }
     $('ticket-file').value='';$('ticket-title').value='';
-    await render();
-    status('✓ '+item.title+' gespeichert. Du kannst es sofort ohne Passwort öffnen.');
+    note.hidden=true;note.textContent='';
+    revealSavedTicket(item);
+    status('✓ '+item.title+' gespeichert. Du findest es hervorgehoben unter „Gespeicherte Tickets“.');
   });
   $('ticket-backup').onclick=()=>busy($('ticket-backup'),async()=>{
     if(!confirm('Backup ist NICHT verschlüsselt. Möchtest du die Ticketdateien als lokale JSON-Sicherung exportieren?'))return;
