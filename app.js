@@ -2523,17 +2523,6 @@
     $('kyoto-seat-check').classList.toggle('is-checked',count===4);
   }
   kyotoSeatInputs.forEach(input=>input.addEventListener('change',renderKyotoSeatCheck));
-  let kyotoPickupHistoryExpanded=false;
-  function revealKyotoPickupHistory(){
-    kyotoPickupHistoryExpanded=true;
-    $('kyoto-pickup-body').hidden=false;
-    $('kyoto-pickup-history-toggle').textContent='✓ Details wieder einklappen';
-    $('kyoto-pickup-history-toggle').setAttribute('aria-expanded','true');
-  }
-  $('kyoto-pickup-history-toggle').onclick=()=>{
-    kyotoPickupHistoryExpanded=!kyotoPickupHistoryExpanded;
-    renderKyotoPickup();
-  };
   function renderKyotoPickup(){
     renderKyotoSeatCheck();
     kyotoPickupPanel.hidden=!['town-takayama','ride-kyoto'].includes(activePlanId);
@@ -2568,6 +2557,17 @@
       ?'Erledigt: Abholung bestätigt. Bitte die Tickets für beide Personen mitnehmen.'
       :'Klook-Buchung bestätigt · die Papiertickets müssen vor der Fahrt abgeholt werden.';
   }
+  let kyotoPickupHistoryExpanded=false;
+  function revealKyotoPickupHistory(){
+    kyotoPickupHistoryExpanded=true;
+    $('kyoto-pickup-body').hidden=false;
+    $('kyoto-pickup-history-toggle').textContent='✓ Details wieder einklappen';
+    $('kyoto-pickup-history-toggle').setAttribute('aria-expanded','true');
+  }
+  $('kyoto-pickup-history-toggle').onclick=()=>{
+    kyotoPickupHistoryExpanded=!kyotoPickupHistoryExpanded;
+    renderKyotoPickup();
+  };
   kyotoPickupConfirm.onclick=()=>{
     if(kyotoPickupDone)return;
     if(!confirm('Sind alle Papiertickets für beide Personen UND für Hida 8 und Nozomi 71 tatsächlich abgeholt und kontrolliert?'))return;
