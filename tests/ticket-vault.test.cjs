@@ -39,6 +39,11 @@ function makeDb(){
             map.set(key,v);
             return key;
           }),
+          put:v=>req(()=>{
+            const key=v.id??v.key;
+            map.set(key,v);
+            return key;
+          }),
           delete:k=>req(()=>{map.delete(k);return undefined;})
         };
       };
@@ -167,5 +172,148 @@ test('web app wiring ships encrypted files via GitHub Pages and supports offline
   assert.match(ui,/Date\.now\(\)-lastUse>idleLimit/);
   assert.match(ui,/confirm\(/);
   assert.match(ui,/\.textContent=/);
+  assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage\.setItem/);
+});
+
+
+test('first-time setup returns independent recovery key; forgotten password can be safely reset',async()=>{
+  const state=setDB(),v=new Vault();
+  const oldPassword='safe password phrase v2 a';
+  const code=await v.initialize(oldPassword);
+  assert.match(code,/^LKV2-[A-F0-9]{64}$/);
+  const config=state.data.meta.get('config');
+  assert.equal(config.version,2);
+  assert.equal(config.iterations,310000);
+  assert.deepEqual(Object.keys(config).sort(),['iterations','key','password','recovery','version']);
+  assert.equal(JSON.stringify(config).includes(code),false,'plaintext recovery key must not persist');
+  assert.equal(JSON.stringify(config).includes(oldPassword),false,'password must not persist');
+  const saved=await v.add(fakeFile(pdfBytes,'application/pdf','private-ticket.pdf'),
+    {title:'Sensitive booking secret',trip:'Deutschland'});
+  const original=state.data.files.get(saved.id);
+  v.lock();
+  await assert.rejects(()=>v.unlock('wrong password 2026'),/falsch/);
+  await assert.rejects(()=>v.resetWithRecovery('LKV2-'+ '0'.repeat(64),'new safe password 2026'),/falsch/);
+  assert.deepEqual(state.data.meta.get('config'),config);
+  const freshCode=await v.resetWithRecovery(code,'a different secure password 2026');
+  assert.match(freshCode,/^LKV2-[A-F0-9]{64}$/);
+  assert.notEqual(freshCode,code);
+  assert.equal(v.legacy,false);
+  assert.equal((await v.list()).length,1);
+  assert.equal(state.data.files.get(saved.id).cipher,original.cipher,'password reset must not rewrite ticket ciphertext');
+  v.lock();
+  await assert.rejects(()=>v.unlock(oldPassword),/falsch/);
+  await assert.rejects(()=>v.resetWithRecovery(code,'yet another secure password'),/falsch/);
+  await v.unlock('a different secure password 2026');
+  assert.deepEqual(new Uint8Array(await (await v.file(saved.id)).blob.arrayBuffer()),pdfBytes);
+});
+
+test('password change keeps existing recovery token and ticket ciphertext',async()=>{
+  const state=setDB(),v=new Vault();
+  const code=await v.initialize('first long password 2026');
+  const saved=await v.add(fakeFile(pdfBytes,'application/pdf','my-ticket.pdf'));
+  const cipher=state.data.files.get(saved.id).cipher;
+  await assert.rejects(()=>v.changePassword('incorrect old password','new password phrase 2026'),/bisherige Passwort/);
+  await assert.rejects(()=>v.changePassword('first long password 2026','short'),/mindestens 10/);
+  assert.equal(state.data.meta.get('config').version,2);
+  const changed=await v.changePassword('first long password 2026','long new password 2027');
+  assert.equal(changed,null);
+  assert.equal(cipher,state.data.files.get(saved.id).cipher);
+  v.lock();
+  await assert.rejects(()=>v.unlock('first long password 2026'),/falsch/);
+  await v.unlock('long new password 2027');
+  const newer=await v.rotateRecovery('long new password 2027');
+  assert.match(newer,/^LKV2-[A-F0-9]{64}$/);
+  assert.notEqual(code,newer);
+  v.lock();
+  await assert.rejects(()=>v.resetWithRecovery(code,'another long password 2027'),/falsch/);
+  const rolled=await v.resetWithRecovery(newer,'another long password 2027');
+  assert.notEqual(rolled,newer);
+  assert.equal((await v.list()).length,1);
+});
+
+test('encrypted backups restore via recovery token with a fresh password (new device)',async()=>{
+  setDB();const original=new Vault();
+  const oldPass='backup old password 2026';
+  const token=await original.initialize(oldPass);
+  const file=await original.add(fakeFile(pdfBytes,'application/pdf','db-ticket.pdf'),
+    {trip:'German rail',title:'Private booking'});
+  const backup=await original.backup();
+  const json=await backup.text();
+  assert.ok(json.includes('livekarte-ticket-vault-backup-v2'));
+  assert.equal(json.includes('Private booking'),false);
+  assert.equal(json.includes(token),false);
+  setDB();const restored=new Vault();
+  await assert.rejects(()=>restored.restore(backup,'LKV2-'+'0'.repeat(64),'recovery','new password 2026'),/Backup-Passwort|Wiederherstellungsschlüssel/);
+  assert.equal(await restored.exists(),false);
+  const newToken=await restored.restore(backup,token,'recovery','brand new secure password 2026');
+  assert.match(newToken,/^LKV2-[A-F0-9]{64}$/);
+  assert.notEqual(newToken,token);
+  assert.deepEqual(new Uint8Array(await (await restored.file(file.id)).blob.arrayBuffer()),pdfBytes);
+  restored.lock();
+  await assert.rejects(()=>restored.unlock(oldPass),/falsch/);
+  await restored.unlock('brand new secure password 2026');
+  assert.equal((await restored.list())[0].title,'Private booking');
+  await assert.rejects(()=>restored.restore(backup,oldPass),/leeren Gerät/);
+});
+
+test('legacy v1 vault can migrate all encrypted files atomically when old password is known',async()=>{
+  const state=setDB();
+  const pass='legacy phrase password 2026';
+  const cryptoApi=globalThis.crypto;
+  const encode=new TextEncoder();
+  const salt=cryptoApi.getRandomValues(new Uint8Array(16));
+  const material=await cryptoApi.subtle.importKey('raw',encode.encode(pass),'PBKDF2',false,['deriveKey']);
+  const legacyKey=await cryptoApi.subtle.deriveKey(
+    {name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},
+    material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  const encrypt=async bytes=>{
+    const iv=cryptoApi.getRandomValues(new Uint8Array(12));
+    const cipher=await cryptoApi.subtle.encrypt({name:'AES-GCM',iv},legacyKey,bytes);
+    return {iv:Buffer.from(iv).toString('base64'),cipher};
+  };
+  const proof=await encrypt(encode.encode('livekarte-ticket-vault-verifier-v1'));
+  const cfg={key:'config',version:1,iterations:310000,salt:Buffer.from(salt).toString('base64'),
+    iv:proof.iv,cipher:Buffer.from(proof.cipher).toString('base64')};
+  state.data.meta.set('config',cfg);
+  const plaintext={name:'legacy-ticket.pdf',title:'Older train ticket',
+    trip:'Japan 2026',type:'application/pdf',size:pdfBytes.length,created:'2026-11-01T00:00:00.000Z'};
+  const data=await encrypt(pdfBytes),meta=await encrypt(encode.encode(JSON.stringify(plaintext)));
+  const id='a'.repeat(32);
+  state.data.files.set(id,{id,iv:data.iv,cipher:data.cipher,metaIv:meta.iv,
+    metaCipher:Buffer.from(meta.cipher).toString('base64')});
+  const legacy=new Vault();
+  await legacy.unlock(pass);
+  assert.equal(legacy.legacy,true);
+  assert.equal(await legacy.hasRecovery(),false);
+  assert.equal((await legacy.list()).length,1);
+  await assert.rejects(()=>legacy.upgradeLegacy('bad old password'),/bisherige Passwort/);
+  assert.equal(state.data.meta.get('config').version,1);
+  const code=await legacy.upgradeLegacy(pass);
+  assert.match(code,/^LKV2-[A-F0-9]{64}$/);
+  assert.equal(state.data.meta.get('config').version,2);
+  assert.equal(legacy.legacy,false);
+  assert.equal((await legacy.list())[0].title,'Older train ticket');
+  legacy.lock();
+  await legacy.unlock(pass);
+  assert.deepEqual(new Uint8Array(await (await legacy.file(id)).blob.arrayBuffer()),pdfBytes);
+});
+
+test('recovery controls expose password changes and rotated key without network communication',()=>{
+  const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+  const html=read('index.html'),ui=read('ticket-vault-ui.js');
+  for(const id of ['vault-recovery-display','vault-recovery-code','vault-recovery-copy',
+    'vault-recovery-dismiss','vault-forgot','vault-forgot-code','vault-forgot-new',
+    'vault-forgot-again','vault-forgot-submit','vault-security','vault-change-old',
+    'vault-change-new','vault-change-again','vault-change-submit',
+    'vault-rotate-password','vault-rotate-submit','vault-legacy-upgrade',
+    'vault-upgrade-password','vault-upgrade-submit','vault-restore-use-recovery',
+    'vault-restore-new-password'])
+    assert.ok(html.includes('id="'+id+'"'),id);
+  assert.match(ui,/vault\.resetWithRecovery\(code,fresh\)/);
+  assert.match(ui,/vault\.changePassword\(old,fresh\)/);
+  assert.match(ui,/vault\.rotateRecovery\(/);
+  assert.match(ui,/vault\.upgradeLegacy\(/);
+  assert.match(ui,/vault\.restore\(/);
+  assert.match(ui,/vault-recovery-code'\)\.textContent=''/);
   assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage\.setItem/);
 });
