@@ -152,7 +152,7 @@ test('web app wiring ships encrypted files via GitHub Pages and supports offline
     css=read('style.css');
   for(const file of ['ticket-vault.js','ticket-vault-ui.js']){
     assert.match(html,new RegExp('<script defer src="'+file.replace('.','\\.')+'"></script>'));
-    assert.ok(wf.includes('cp next-step-core.js japanese-destination.js '+file.split(' ')[0]));
+    assert.ok(wf.includes('ticket-vault.js ticket-vault-ui.js public/'));
     assert.ok(sw.includes("'"+file+"'"));
     assert.ok(stamp.includes('("src", "'+file+'")'));
   }
