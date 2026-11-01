@@ -159,7 +159,7 @@ test('new app ships password-free local library while legacy crypto remains only
     assert.ok(sw.includes("'"+file+"'"),file);
     assert.ok(stamp.includes('("src", "'+file+'")'),file);
   }
-  assert.ok(wf.includes('cp ticket-vault.js ticket-library.js ticket-library-ui.js public/'));
+  assert.ok(wf.includes('cp ticket-vault.js ticket-library.js ticket-library-ui.js ticket-share-inbox.js public/'));
   assert.ok(!wf.includes('cp ticket-vault.js ticket-vault-ui.js public/'));
   assert.doesNotMatch(html,/src="ticket-vault-ui\.js"/);
   assert.match(html,/id="ticket-files"/);
