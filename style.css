@@ -1531,3 +1531,22 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .ticket-library-legacy>p{margin:0;font-size:11px;line-height:1.5;color:#d7e8d9}
 #ticket-status.is-error{background:#563f2c;color:#ffdfac}
 .ticket-library-backup>p{font-size:11px;line-height:1.5}
+
+/* Android share-target: confirm first, then persist in the normal library. */
+.ticket-share-help{font-size:11px;line-height:1.5;color:#d4ebdf;margin:0;
+  border:1px dashed #77a993;border-radius:9px;padding:11px}
+.ticket-shared{display:grid;gap:10px;background:#274639;border:2px solid #b7daa9;
+  border-radius:12px;padding:12px;color:#f2fff3}
+.ticket-shared[hidden]{display:none!important}
+.ticket-shared h3{font-size:14px;margin:0}
+.ticket-shared p{font-size:11px;line-height:1.55;color:#d6f0db;margin:0}
+.ticket-shared strong{font-size:12px;overflow-wrap:anywhere;color:#fff0b5}
+.ticket-shared label{font-size:11px;font-weight:800}
+.ticket-shared input{width:100%;box-sizing:border-box;min-height:42px;
+  padding:10px;background:#133338;color:#fff;border:1px solid #8bbcab;
+  border-radius:8px}
+.ticket-shared-actions{display:flex;flex-wrap:wrap;gap:8px}
+.ticket-shared-actions button{flex:1 1 130px;min-height:43px;padding:8px;
+  border:1px solid #a5d7b8;border-radius:9px;background:#335c4d;
+  color:#effff3;font-size:12px;font-weight:750}
+.ticket-shared-actions .vault-primary{background:#afe6bf;color:#193929}
