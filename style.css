@@ -1346,3 +1346,86 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .kyoto-seat-check.is-checked>summary>strong{background:#285946;color:#bdf4d1}
 .kyoto-seat-check.is-checked .kyoto-seat-feedback{color:#bdf4d1}
 .kyoto-seat-launch{background:#2c5147;border-color:#a0d2b6}
+
+/* Offline encrypted ticket vault, independent of travel plans and GPS. */
+.ticket-vault{margin:0 0 16px;background:#163039;border:1px solid #70a991;
+  border-radius:15px;color:#eefdf5;overflow:hidden}
+.ticket-vault>summary{display:flex;justify-content:space-between;align-items:center;
+  gap:12px;cursor:pointer;padding:14px;font-size:16px;
+  font-weight:850;line-height:1.4;list-style:disclosure-closed}
+.ticket-vault>summary span{font-size:10px;color:#c8eedb;font-weight:700}
+.ticket-vault[open]>summary{border-bottom:1px solid #497569}
+.ticket-vault [hidden],.vault-preview [hidden]{display:none!important}
+.vault-body{padding:13px;display:grid;gap:12px}
+.vault-intro,.vault-disclaimer{font-size:11px;line-height:1.55;
+  margin:0;color:#d2e9de}
+.vault-disclaimer{border-top:1px solid #42665b;padding-top:10px}
+.vault-body section{display:grid;gap:9px}
+.vault-body h3{font-size:14px;margin:3px 0;color:#f7fff8}
+.vault-body label{font-size:11px;font-weight:800;color:#e5f9e9}
+.vault-body input:not([type=file]){display:block;width:100%;min-height:44px;
+  box-sizing:border-box;background:#102b31;color:#fff;border:1px solid #6e9e8e;
+  padding:9px 10px;border-radius:8px;font-size:14px}
+.vault-body input[type=file]{display:block;width:100%;max-width:100%;
+  box-sizing:border-box;font-size:12px;padding:10px 4px;
+  color:#e8fbf2}
+.vault-body button{min-height:43px;padding:9px 10px;
+  border-radius:9px;border:1px solid #88bba0;
+  background:#33544e;color:#f0fff4;font-size:12px;font-weight:800}
+.vault-body button:disabled{opacity:.55;cursor:wait}
+.vault-body .vault-primary{color:#173c2b;background:#ace7c1;
+  border-color:#dcffe3;font-size:13px}
+.vault-body .vault-secondary{background:#28534c;
+  color:#effff4;border-color:#8cbca5}
+.vault-warning{font-size:11px;line-height:1.5;color:#ffe9ab;
+  padding:9px;border:1px solid #91784f;border-radius:8px;
+  background:#433e2f;margin:1px 0}
+.vault-restore-block{padding:10px;border:1px solid #58766c;border-radius:9px}
+.vault-restore-block>summary{cursor:pointer;font-size:12px;
+  color:#d9efdf;font-weight:800;line-height:1.45}
+.vault-restore-block[open]{display:grid;gap:9px}
+.vault-restore-block small,.vault-import small{font-size:10px;
+  color:#c3ddcf;line-height:1.5}
+.vault-message{font-size:11px;line-height:1.5;color:#bdf8d2;
+  margin:0;padding:9px;background:#1a403b;border-radius:8px}
+.vault-message.is-error{color:#ffe3b3;background:#523d2f}
+.vault-open-heading{display:flex;align-items:center;
+  justify-content:space-between;gap:12px}
+.vault-open-heading strong{color:#bbf3d3;font-size:12px}
+.vault-counter{font-size:11px;color:#c6e7d0;margin:0}
+.vault-import,.vault-backup{display:grid;gap:9px;
+  padding:11px;border:1px solid #567f71;border-radius:11px;background:#203d3d}
+.vault-backup>p{font-size:10px;color:#cbddd3;line-height:1.5;margin:3px 0}
+.vault-files{display:grid;gap:8px}
+.vault-empty{font-size:11px;color:#cedfd2;line-height:1.5}
+.vault-file{border:1px solid #477568;background:#1f4146;
+  border-radius:10px;padding:11px;display:grid;gap:9px}
+.vault-file-heading{display:grid;gap:4px;min-width:0;overflow-wrap:anywhere}
+.vault-file-heading strong{font-size:12px;line-height:1.4;color:#f5fff7}
+.vault-file-heading small{font-size:10px;color:#cbddcd;line-height:1.5}
+.vault-file-actions{display:flex;flex-wrap:wrap;gap:7px}
+.vault-file-actions button{min-height:39px;font-size:11px;flex:1}
+.vault-file-actions .vault-delete{border-color:#ad7870;background:#55383b;color:#ffe8df}
+.vault-preview{width:min(700px,calc(100% - 18px));
+  max-height:94dvh;background:#17323a;color:#e9f9ee;
+  border:1px solid #89bfa2;border-radius:14px;padding:12px;
+  box-shadow:0 18px 45px #0009}
+.vault-preview::backdrop{background:#051a1ddd}
+.vault-preview-bar{display:flex;align-items:center;
+  justify-content:space-between;gap:10px}
+.vault-preview-bar strong{font-size:15px;overflow-wrap:anywhere}
+.vault-preview-bar button{min-width:42px;min-height:42px;
+  border:1px solid #77ad95;background:#305653;color:#fff;
+  border-radius:8px;font-size:23px}
+.vault-preview>p{font-size:11px;color:#d5e8d8;line-height:1.5}
+#vault-preview-image{width:100%;height:auto;max-height:67dvh;
+  object-fit:contain;background:#f4f4f4;border-radius:7px}
+#vault-preview-pdf{width:100%;height:60dvh;border:0;background:#fff}
+#vault-preview-download{display:block;margin-top:10px;padding:12px;
+  text-align:center;border-radius:9px;background:#a7e6c2;color:#193d29;
+  text-decoration:none;font-size:12px;font-weight:850}
+@media(max-width:430px){
+  .ticket-vault>summary{padding:12px;font-size:15px}
+  .ticket-vault>summary span{font-size:9px}
+  .vault-body{padding:11px}
+}

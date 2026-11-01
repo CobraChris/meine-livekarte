@@ -1,3 +1,23 @@
+## Verschlüsselter Ticket-Tresor – international nutzbares Fundament (01.11.2026)
+
+Unter der Reiseansicht befindet sich jetzt das aufklappbare Modul **„🎟 Meine Tickets“**. Der Tresor gehört zur installierbaren Live-Karte, ist aber von den bisher manuell gepflegten Ticketstatus, Klook-Abholschritten und der Synchronisierung unabhängig. Er eignet sich auch für künftige **Deutsche-Bahn- und andere internationale Reisen**; eine Reisebezeichnung kann frei eingegeben oder aus dem aktuell ausgewählten Reiseabschnitt übernommen werden.
+
+**Phase 1 (in diesem Release):**
+- Vom Smartphone **PDF, PNG, JPG oder WebP** auswählen und mit individuellem Titel sowie Reisebezeichnung hinterlegen (max. **10 MB je Datei**, **25 Dateien / 50 MB insgesamt**).
+- **Dateiinhalt und sämtliche Dokument-Metadaten** (inkl. Dateiname, Route, Datum) in IndexedDB **AES-256-GCM-verschlüsselt** speichern. Schlüsselableitung aus einem selbst vergebenen Passwort mit PBKDF2-SHA-256, 310.000 Iterationen, zufälligem Salt; eigener zufälliger 96-Bit-IV für jede Verschlüsselung. Passwort und abgeleiteter Schlüssel werden **nicht gespeichert**, Schlüssel nur während der Entsperrung im Arbeitsspeicher gehalten. Tresor wird bei Untätigkeit nach rund 15 Minuten gesperrt; manuelle Sperre jederzeit möglich.
+- Dokumente **offline im Tresor ansehen** (Bild beziehungsweise PDF-Vorschau). Falls Androids Browser PDF im Fenster nicht unterstützt, kann eine **bewusst entschlüsselte Originaldatei** heruntergeladen und extern geöffnet werden. Heruntergeladene Originale liegen außerhalb des verschlüsselten Tresors.
+- Lokale Tickets nach expliziter Rückfrage löschen; ursprüngliche App-Reiseplanung und -Fahrkartenstatus werden nicht verändert.
+- **Verschlüsseltes JSON-Backup** aller Dokumente und Metadaten herunterladen. Es lässt sich auf einem **noch leeren Tresor / anderen Browserprofil** mit demselben Passwort wiederherstellen. Für die Wiederherstellung wird das Backup **vor dem Schreiben auf Integrität geprüft**. Bereits vorhandene Tresordaten werden **niemals überschrieben**.
+- Optional einen lokalen Speicherpersistenz-Antrag beim Browser stellen; **kein Schutz gegen App-/Browserdaten-Löschung**. Das Backup muss daher **außerhalb der App**, möglichst getrennt vom Passwort, aufbewahrt werden.
+
+**Datenschutz und Grenzen:** Kein Upload von PDFs, Bildern, QR-Codes, Passwort oder Dateinamen an GitHub/ChatGPT/einen Server. Keine Buchungs-API. Die Datenbank ist lokal auf die HTTPS-Origin der GitHub-Pages-App beschränkt; eine andere Installation oder ein anderes Browserprofil hat zunächst keinen Zugriff und braucht das verschlüsselte Backup. PWA-Service-Worker (Shell v22 mit neuen Modulen) cached **nur die App-Skripte**, niemals Ticketdateien; die verschlüsselten Nutzdaten verbleiben in IndexedDB. Browser-Datenbereinigung kann sie unwiederbringlich löschen. Die App kann QR-Bilder unverändert anzeigen, **liest Codes noch nicht automatisch aus** und behauptet keine Validität dynamischer Bahn-/Airline-Tickets. Manche Anbieter verlangen weiterhin ihre eigene App. Ein externes Original, das man zum Herunterladen entschlüsselt, ist **nicht mehr durch den Tresor geschützt**.
+
+**Sicherheitsentscheidung:** Das Tresor-Passwort kann nicht zurückgesetzt oder rekonstruiert werden. Mindestens 10 Zeichen und eine starke, möglichst einzigartige Passphrase wählen. Der Browser muss HTTPS / WebCrypto und IndexedDB unterstützen. Ein verlorenes Passwort macht auch Sicherungsdateien unlesbar. Der Tresor ist kein eigenständiger Hardware-Sicherheitschip oder Schutz vor einem kompromittierten, bereits entsperrten Gerät.
+
+**Noch nicht in Phase 1:** Dateifreigabe direkt über das Android-Teilen-Menü, OCR/QR-Parsing, automatische Extraktion der Reisebuchung und Cloud-Synchronisierung. Diese Funktionen können später ohne Änderung der verschlüsselten Grundstruktur ergänzt werden.
+
+**Technische Umsetzung:** `ticket-vault.js` (getesteter WebCrypto-/IndexedDB-Speicherdienst), `ticket-vault-ui.js` (manueller Dateiimport und -viewer), `tests/ticket-vault.test.cjs`; GitHub-Pages-Build, Asset-Versionierung und Offline-Shell umfassen beide Module.
+
 ## Sitzplatz-Vollständigkeitscheck vor der Kyoto-Fahrt (01.11.2026)
 
 Als Ergänzung zur bestehenden Klook-Abholung gibt es im **Takayama- und Kyoto-Fahrtbereich** einen aufklappbaren, optionalen Check **„🧾 Sitzplätze auf den Papiertickets prüfen“**. Nach Ausgabe lassen sich die Angaben von **beiden Reisenden für beide Zugabschnitte** einzeln abhaken: Hida 8 (Wagen 2, **10C/10D**, 11:35–14:04) und Nozomi 71 (Wagen 4, **8D/8E**, 14:26–15:00). Der Fortschritt **0 bis 4 von 4 kontrolliert** wird unmittelbar angezeigt; jeder Haken ist korrigierbar. Über die Zug-Infografik öffnet ein Button die Checkliste direkt.

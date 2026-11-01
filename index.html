@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-vault-ui.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -166,6 +166,76 @@
     <p class="kyoto-pickup-footnote">Die konkrete Abholart richtet sich nach dem Klook-Voucher; nicht jeder QR-Code funktioniert an jedem Automaten. Der QR-Code selbst wird nicht in dieser App gespeichert.</p>
   </details>
 </section>
+<details id="ticket-vault" class="ticket-vault" aria-label="Persönlicher verschlüsselter Ticket-Tresor">
+  <summary>🎟 Meine Tickets <span>PDF · QR-Bilder · offline</span></summary>
+  <div class="vault-body">
+    <p class="vault-intro">Speichere PDF-Fahrkarten und Screenshots lokal. Inhalt, Dateiname und Reisebezeichnung sind mit deinem Passwort verschlüsselt. Keine Cloud, keine GitHub-Uploads.</p>
+    <p id="vault-unavailable" hidden>Für den Tresor werden HTTPS, Web Crypto und IndexedDB benötigt. In privaten Browserfenstern kann die Speicherung eingeschränkt sein.</p>
+    <section id="vault-setup" hidden aria-label="Ticket-Tresor einrichten">
+      <h3>Neuen verschlüsselten Tresor anlegen</h3>
+      <label for="vault-new-password">Tresor-Passwort (mindestens 10 Zeichen)</label>
+      <input id="vault-new-password" type="password" autocomplete="new-password" minlength="10" placeholder="Ein sicheres Passwort wählen">
+      <label for="vault-repeat-password">Passwort wiederholen</label>
+      <input id="vault-repeat-password" type="password" autocomplete="new-password" minlength="10" placeholder="Passwort bestätigen">
+      <p class="vault-warning">Ohne dieses Passwort können die Dateien und auch das Backup nicht wiederhergestellt werden. Das Passwort wird nicht an einen Server gesendet und nicht gespeichert.</p>
+      <button id="vault-create" type="button" class="vault-primary">🔐 Tresor einrichten</button>
+      <details class="vault-restore-block">
+        <summary>Bereits ein verschlüsseltes Backup? Hier wiederherstellen</summary>
+        <label for="vault-restore-file">Backup-Datei (.json)</label>
+        <input id="vault-restore-file" type="file" accept=".json,application/json">
+        <label for="vault-restore-password">Passwort des Backups</label>
+        <input id="vault-restore-password" type="password" autocomplete="off">
+        <button id="vault-restore" type="button">↑ Backup vollständig wiederherstellen</button>
+        <small>Nur möglich, solange noch kein Tresor auf diesem Gerät eingerichtet ist. Vorhandene Daten werden niemals überschrieben.</small>
+      </details>
+    </section>
+    <section id="vault-locked" hidden aria-label="Ticket-Tresor entsperren">
+      <h3>🔒 Deine Tickets sind gesperrt</h3>
+      <label for="vault-password">Tresor-Passwort</label>
+      <input id="vault-password" type="password" autocomplete="off" placeholder="Passwort eingeben">
+      <button id="vault-unlock" type="button" class="vault-primary">Tresor entsperren</button>
+      <p class="vault-warning">Passwort vergessen? Es gibt absichtlich keine Hintertür. Bewahre dein Backup und das Passwort getrennt auf.</p>
+    </section>
+    <section id="vault-open" hidden aria-label="Entsperrte Tickets">
+      <div class="vault-open-heading">
+        <strong>🔓 Lokal entsperrt</strong>
+        <button id="vault-lock" type="button">🔒 Sperren</button>
+      </div>
+      <p id="vault-counter" class="vault-counter">0 Dokumente</p>
+      <div class="vault-import">
+        <h3>Ticket hinzufügen</h3>
+        <label for="vault-open-input">PDF oder QR-Screenshot auswählen</label>
+        <input id="vault-open-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp">
+        <label for="vault-title-input">Titel (optional)</label>
+        <input id="vault-title-input" type="text" maxlength="100" placeholder="z. B. ICE 789 · Hamburg → Berlin">
+        <label for="vault-trip">Reise / Zuordnung (optional)</label>
+        <input id="vault-trip" type="text" maxlength="100" placeholder="z. B. Japan 2026 oder Bahnreise Deutschland">
+        <button id="vault-use-trip" type="button" class="vault-secondary">Aktuellen Reiseabschnitt übernehmen</button>
+        <button id="vault-add" type="button" class="vault-primary">＋ Datei verschlüsselt speichern</button>
+        <small>PDF, PNG, JPG, WebP · höchstens 10 MB pro Datei, 25 Dateien bzw. 50 MB insgesamt. QR-Screenshots werden als Bilder gespeichert, nicht automatisch ausgelesen.</small>
+      </div>
+      <div id="vault-files" class="vault-files" aria-label="Gespeicherte Ticketdokumente"></div>
+      <div class="vault-backup">
+        <h3>Backup &amp; Speicher</h3>
+        <button id="vault-backup" type="button" class="vault-secondary">↓ Verschlüsseltes Backup sichern</button>
+        <button id="vault-persist" type="button" class="vault-secondary">Lokalen Speicher schützen (falls unterstützt)</button>
+        <p>Das Backup enthält nur verschlüsselte Daten. <strong>Speichere die Sicherungsdatei außerhalb der App.</strong> Lokale Daten können beim Löschen von Browser-/App-Daten verloren gehen; eine Installation auf einem anderen Gerät übernimmt sie nicht automatisch.</p>
+      </div>
+    </section>
+    <p id="vault-message" class="vault-message" role="status" aria-live="polite">Tresor wird geprüft …</p>
+    <p class="vault-disclaimer">Dieser Tresor ist keine offizielle Ticket-App. Manche dynamischen QR-Codes, gesperrte Screenshots oder Anbieter-Apps sind nicht als gespeichertes Bild nutzbar. Im Zweifel das Original beim Anbieter öffnen.</p>
+  </div>
+</details>
+<dialog id="vault-preview" class="vault-preview" aria-labelledby="vault-preview-title">
+  <div class="vault-preview-bar">
+    <strong id="vault-preview-title">Ticket ansehen</strong>
+    <button id="vault-preview-close" type="button" aria-label="Vorschau schließen">×</button>
+  </div>
+  <p>Bei PDF-Anzeigeproblemen auf Android die Originaldatei unten speichern und mit einem PDF-Viewer öffnen.</p>
+  <img id="vault-preview-image" alt="Gespeichertes Ticket oder QR-Screenshot" hidden>
+  <iframe id="vault-preview-pdf" title="PDF-Ticketvorschau" hidden></iframe>
+  <a id="vault-preview-download" href="#" download>↓ Originaldatei speichern</a>
+</dialog>
 <details id="sync-panel" class="sync-panel">
   <summary>🔒 ChatGPT-Synchronisierung <span class="sync-mini">verschlüsselt · optional</span></summary>
   <div class="sync-body">
