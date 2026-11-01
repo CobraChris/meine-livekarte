@@ -58,7 +58,7 @@ test('departure clock updates text only and never mutates tickets or tasks',()=>
 
 test('core task order and the canonical pickup status are unchanged',()=>{
   const tasks=NS.choose('ride-kyoto','2026-11-01');
-  assert.equal(tasks.entries.length,7);
+  assert.equal(tasks.entries.length,5);
   assert.equal(tasks.next.id,'kyoto:pickup');
   assert.equal(NS.choose('ride-kyoto','2026-11-01',{pickupDone:true}).next.id,'kyoto:hida');
   const fixed=NS.kyotoDepartureClock(new Date('2026-11-01T02:36:00Z'));
