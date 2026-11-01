@@ -230,3 +230,46 @@ test('pinned state survives portable backup and old backups remain importable',a
   assert.equal(await legacy.restore(oldBlob),2);
   assert.ok((await legacy.list()).every(x=>x.pinned===false));
 });
+
+
+test('editing saved title and trip keeps original bytes, id, timestamps and pin status',async()=>{
+  fakeIndexedDB();const lib=new Library();
+  const saved=await lib.add(fakeFile('screenshot_20261101.pdf','application/pdf'),{
+    title:'IMG 20261101',trip:'Japan 2026'});
+  await lib.setPinned(saved.id,true);
+  const before=await lib.get(saved.id);
+  const updated=await lib.updateDetails(saved.id,{
+    title:'  Hida 8 · Takayama nach Nagoya  ',
+    trip:'  Japan: Kyoto  '});
+  assert.equal(updated.title,'Hida 8 · Takayama nach Nagoya');
+  assert.equal(updated.trip,'Japan: Kyoto');
+  assert.equal(updated.name,'screenshot_20261101.pdf');
+  assert.equal(updated.created,saved.created);
+  assert.equal(updated.id,saved.id);
+  assert.equal(updated.pinned,true);
+  const after=await lib.get(saved.id);
+  assert.equal(after.blob,before.blob,'original Blob is not replaced or reencoded');
+  assert.deepEqual(new Uint8Array(await after.blob.arrayBuffer()),bytes);
+  assert.equal((await lib.list()).length,1);
+  assert.equal(filterTickets(await lib.list(),'Kyoto Hida').length,1);
+  const backup=JSON.parse(await (await lib.backup()).text());
+  assert.equal(backup.files[0].title,updated.title);
+  assert.equal(backup.files[0].trip,updated.trip);
+  assert.equal(backup.files[0].pinned,true);
+});
+
+test('blank title falls back to original filename and invalid/missing records cannot be edited',async()=>{
+  fakeIndexedDB();const lib=new Library();
+  const saved=await lib.add(fakeFile('train-qr.pdf','application/pdf'),{
+    title:'Initial',trip:'Japan'});
+  const cleared=await lib.updateDetails(saved.id,{title:'   ',trip:''});
+  assert.equal(cleared.title,'train-qr.pdf');
+  assert.equal(cleared.trip,'');
+  assert.equal((await lib.list())[0].title,'train-qr.pdf');
+  const longTitle='A'.repeat(250),longTrip='B'.repeat(250);
+  const trimmed=await lib.updateDetails(saved.id,{title:longTitle,trip:longTrip});
+  assert.equal(trimmed.title.length,100);
+  assert.equal(trimmed.trip.length,100);
+  await assert.rejects(()=>lib.updateDetails('missing',{title:'No'}),/nicht gefunden/);
+  assert.equal((await lib.list()).length,1);
+});
