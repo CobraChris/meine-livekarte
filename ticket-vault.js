@@ -196,7 +196,7 @@
     catch{return false;}
   }
   class Vault {
-    constructor(){this.db=null;this.key=null;this.legacy=false;}
+    constructor(){this.db=null;this.key=null;this.legacy=false;this.biometricCache=null;}
     async database(){
       if(!this.db)this.db=await connect();
       return this.db;
@@ -248,22 +248,22 @@
 
     async hasBiometric(){
       const cfg=await this.config();
-      return cfg?.version===2&&validBiometric(cfg.biometric);
+      const ready=cfg?.version===2&&validBiometric(cfg.biometric);
+      // Cache only the encrypted wrapping envelope, not passwords or keys.
+      this.biometricCache=ready?cfg.biometric:null;
+      return !!ready;
     }
-    async enableBiometric(password,credentialApi,hostname){
+    enableBiometric(password,credentialApi,hostname){
       this.requireKey();
-      const cfg=await this.config();
-      if(!goodConfigV2(cfg))throw Error('Biometrie benötigt einen Tresor mit Wiederherstellungsschlüssel.');
-      if(validBiometric(cfg.biometric))throw Error('Schnellentsperrung ist bereits eingerichtet.');
+      if(typeof password!=='string'||!password)
+        throw Error('Bitte zuerst das aktuelle Tresor-Passwort eingeben.');
       const api=credentialApi||globalThis.navigator?.credentials;
       const rpId=hostname||globalThis.location?.hostname;
       if(!api?.create||!api?.get||typeof rpId!=='string'||!rpId)
         throw Error('Auf diesem Gerät ist die sichere Passkey-Funktion nicht verfügbar.');
-      let raw;
-      try{raw=await passwordRaw(cfg,password);}
-      catch{throw Error('Tresor-Passwort ist falsch.');}
+      // Start Android WebAuthn from the original click, BEFORE any await.
       const salt=random(32);
-      const created=await api.create({publicKey:{
+      const creation=api.create({publicKey:{
         challenge:random(32),
         rp:{id:rpId,name:'Meine Live-Karte'},
         user:{id:random(16),name:'Ticket-Tresor',displayName:'Meine Tickets'},
@@ -273,56 +273,79 @@
         timeout:60000,attestation:'none',
         extensions:{prf:{eval:{first:salt}}}
       }});
-      if(!created?.rawId||new Uint8Array(created.rawId).byteLength<16)
-        throw Error('Geräte-Passkey konnte nicht erstellt werden.');
-      // Some authenticators provide PRF only during a subsequent assertion.
-      const verified=await api.get({publicKey:{
-        challenge:random(32),rpId,timeout:60000,
-        allowCredentials:[{type:'public-key',id:created.rawId}],
-        userVerification:'required',
-        extensions:{prf:{eval:{first:salt}}}
-      }});
-      if(!sameBytes(verified?.rawId||new Uint8Array(),created.rawId))
-        throw Error('Falscher Geräte-Passkey bestätigt.');
-      const wrapping=await documentKey(credentialSecret(verified));
-      const wrapped=await seal(wrapping,raw);
-      const biometric={id:base64(created.rawId),salt:base64(salt),
-        iv:wrapped.iv,cipher:base64(wrapped.cipher),rpId};
-      // Ensures the PRF can actually unwrap the very same document key.
-      const check=new Uint8Array(await openSeal(wrapping,biometric.iv,
-        unbase64(biometric.cipher)));
-      if(!sameBytes(check,raw))throw Error('Passkey-Schlüsselprüfung fehlgeschlagen.');
-      const db=await this.database(),tx=db.transaction('meta','readwrite');
-      const done=finished(tx);
-      tx.objectStore('meta').put({...cfg,biometric});
-      await done;
+      return (async()=>{
+        // A wrong password can leave an unused passkey in Android's password
+        // manager. Never save any unlock material before password validation.
+        const created=await creation;
+        if(!created?.rawId||new Uint8Array(created.rawId).byteLength<16)
+          throw Error('Geräte-Passkey konnte nicht erstellt werden.');
+        const cfg=await this.config();
+        if(!goodConfigV2(cfg))
+          throw Error('Biometrie benötigt einen Tresor mit Wiederherstellungsschlüssel.');
+        if(validBiometric(cfg.biometric))
+          throw Error('Schnellentsperrung ist bereits eingerichtet.');
+        let raw;
+        try{raw=await passwordRaw(cfg,password);}
+        catch{throw Error('Tresor-Passwort ist falsch. Ein ungenutzter Passkey kann im Android-Passwortmanager gelöscht werden.');}
+        const verified=await api.get({publicKey:{
+          challenge:random(32),rpId,timeout:60000,
+          allowCredentials:[{type:'public-key',id:created.rawId}],
+          userVerification:'required',
+          extensions:{prf:{eval:{first:salt}}}
+        }});
+        if(!sameBytes(verified?.rawId||new Uint8Array(),created.rawId))
+          throw Error('Falscher Geräte-Passkey bestätigt.');
+        const wrapping=await documentKey(credentialSecret(verified));
+        const wrapped=await seal(wrapping,raw);
+        const biometric={id:base64(created.rawId),salt:base64(salt),
+          iv:wrapped.iv,cipher:base64(wrapped.cipher),rpId};
+        const check=new Uint8Array(await openSeal(wrapping,biometric.iv,
+          unbase64(biometric.cipher)));
+        if(!sameBytes(check,raw))throw Error('Passkey-Schlüsselprüfung fehlgeschlagen.');
+        const latest=await this.config();
+        if(!goodConfigV2(latest)||validBiometric(latest.biometric)||
+           latest.password.cipher!==cfg.password.cipher)
+          throw Error('Tresor wurde inzwischen verändert. Bitte erneut versuchen.');
+        const db=await this.database(),tx=db.transaction('meta','readwrite');
+        const done=finished(tx);
+        tx.objectStore('meta').put({...latest,biometric});
+        await done;
+        this.biometricCache=biometric;
+      })();
     }
-    async unlockWithBiometric(credentialApi){
-      const cfg=await this.config();
-      if(!goodConfigV2(cfg)||!validBiometric(cfg.biometric))
+    unlockWithBiometric(credentialApi){
+      const b=this.biometricCache;
+      if(!validBiometric(b))
         throw Error('Schnellentsperrung ist noch nicht eingerichtet.');
-      const b=cfg.biometric;
       const api=credentialApi||globalThis.navigator?.credentials;
       if(!api?.get)throw Error('Passkeys werden von diesem Browser nicht unterstützt.');
       const id=unbase64(b.id);
-      const verified=await api.get({publicKey:{
+      // Device confirmation must start synchronously on the button gesture.
+      const assertion=api.get({publicKey:{
         challenge:random(32),rpId:b.rpId,timeout:60000,
         allowCredentials:[{type:'public-key',id}],
         userVerification:'required',
         extensions:{prf:{eval:{first:unbase64(b.salt)}}}
       }});
-      if(!sameBytes(verified?.rawId||new Uint8Array(),id))
-        throw Error('Falscher Passkey für diesen Tresor.');
-      try{
-        const wrapping=await documentKey(credentialSecret(verified));
-        const raw=new Uint8Array(await openSeal(wrapping,b.iv,unbase64(b.cipher)));
-        if(raw.length!==32)throw Error('invalid');
-        this.key=await documentKey(raw);
-        this.legacy=false;
-      }catch{
-        this.key=null;
-        throw Error('Sichere Passkey-Entsperrung fehlgeschlagen. Bitte mit Passwort entsperren.');
-      }
+      return (async()=>{
+        const verified=await assertion;
+        if(!sameBytes(verified?.rawId||new Uint8Array(),id))
+          throw Error('Falscher Passkey für diesen Tresor.');
+        const cfg=await this.config();
+        if(!goodConfigV2(cfg)||!validBiometric(cfg.biometric)||
+           cfg.biometric.id!==b.id||cfg.biometric.cipher!==b.cipher)
+          throw Error('Passkey-Einrichtung verändert. Bitte mit Passwort entsperren.');
+        try{
+          const wrapping=await documentKey(credentialSecret(verified));
+          const raw=new Uint8Array(await openSeal(wrapping,b.iv,unbase64(b.cipher)));
+          if(raw.length!==32)throw Error('invalid');
+          this.key=await documentKey(raw);
+          this.legacy=false;
+        }catch{
+          this.key=null;
+          throw Error('Sichere Passkey-Entsperrung fehlgeschlagen. Bitte mit Passwort entsperren.');
+        }
+      })();
     }
     async disableBiometric(password){
       this.requireKey();
@@ -335,6 +358,7 @@
       const done=finished(tx);
       tx.objectStore('meta').put(withoutBiometric);
       await done;
+      this.biometricCache=null;
     }
     async changePassword(oldPassword,newPassword){
       this.requireKey();
@@ -382,6 +406,7 @@
       await done;
       this.key=await documentKey(raw);
       this.legacy=false;
+      this.biometricCache=null;
       return result.recoveryCode;
     }
     async upgradeLegacy(oldPassword,newPassword=oldPassword){

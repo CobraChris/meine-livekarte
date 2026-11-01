@@ -348,9 +348,10 @@ test('WebAuthn PRF passkey protects the document key without a password or netwo
     }
   };
   await assert.rejects(()=>vault.enableBiometric('wrong password 2026',creds,'cobrachris.github.io'),/Passwort/);
-  assert.equal(registration,0,'password must be verified before creating device credential');
+  assert.equal(registration,1,'device prompt starts immediately; wrong password cannot persist any unlock capability');
+  assert.equal(await vault.hasBiometric(),false);
   await vault.enableBiometric(pass,creds,'cobrachris.github.io');
-  assert.equal(registration,1);
+  assert.equal(registration,2);
   assert.equal(assertions,1);
   assert.equal(await vault.hasBiometric(),true);
   assert.equal(state.data.meta.get('config').biometric.rpId,'cobrachris.github.io');
@@ -375,7 +376,7 @@ test('WebAuthn PRF passkey protects the document key without a password or netwo
   await vault.disableBiometric(pass);
   assert.equal(await vault.hasBiometric(),false);
   vault.lock();
-  await assert.rejects(()=>vault.unlockWithBiometric(creds),/nicht eingerichtet/);
+  assert.throws(()=>vault.unlockWithBiometric(creds),/nicht eingerichtet/);
   await vault.unlock(pass);
   assert.equal((await vault.list()).length,1,'password fallback must still work');
 });
@@ -404,13 +405,55 @@ test('passkey interface requires deliberate device action; never uses assertion 
     'vault-biometric-disable','vault-biometric-password','vault-biometric-status',
     'vault-biometric-enable-area','vault-biometric-disable-area'])
     assert.ok(html.includes('id="'+id+'"'),id);
-  assert.match(js,/async unlockWithBiometric\(credentialApi\)/);
-  assert.match(js,/async enableBiometric\(password,credentialApi,hostname\)/);
+  assert.match(js,/unlockWithBiometric\(credentialApi\)/);
+  assert.match(js,/enableBiometric\(password,credentialApi,hostname\)/);
   assert.match(js,/async disableBiometric\(password\)/);
   assert.match(js,/credentialSecret\(verified\)/);
   assert.match(js,/await openSeal\(wrapping,b\.iv,unbase64\(b\.cipher\)\)/);
   assert.match(ui,/vault\.unlockWithBiometric\(\)/);
-  assert.match(ui,/vault\.enableBiometric\(\$\('vault-biometric-password'\)\.value\)/);
+  assert.match(ui,/await vault\.enableBiometric\(password\)/);
   assert.match(ui,/vault\.disableBiometric\(\$\('vault-biometric-disable-password'\)\.value\)/);
+  assert.match(ui,/biometricMessage\(/);
+  assert.match(html,/id="vault-biometric-feedback"/);
+  assert.match(ui,/Promise\.resolve\(job\(\)\)/);
   assert.doesNotMatch(ui,/fetch\(|sendBeacon|WebSocket/);
+});
+
+test('registration and unlock prompt start synchronously in real click stack before any await',async()=>{
+  setDB();const v=new Vault();
+  const password='temporary secure password 2026';
+  await v.initialize(password);
+  let called=0;
+  const id=globalThis.crypto.getRandomValues(new Uint8Array(24));
+  const prf=globalThis.crypto.getRandomValues(new Uint8Array(32));
+  const api={
+    create(){called++;return Promise.resolve({rawId:id.buffer})},
+    get(){called++;return Promise.resolve({rawId:id.buffer,
+      getClientExtensionResults(){return {prf:{results:{first:prf.buffer}}};}})}
+  };
+  const operation=v.enableBiometric(password,api,'cobrachris.github.io');
+  assert.equal(called,1,'create must happen synchronously on the button tap');
+  await operation;
+  assert.equal(called,2,'registration then assertion validates PRF');
+  assert.equal(await v.hasBiometric(),true);
+  v.lock();
+  const unlock=v.unlockWithBiometric(api);
+  assert.equal(called,3,'get must happen synchronously on the unlock button tap');
+  await unlock;
+  assert.ok(v.key);
+});
+
+test('the passkey setup UI shows immediate local errors and does not require scrolling to vault footer',()=>{
+  const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+  const html=read('index.html'),ui=read('ticket-vault-ui.js'),css=read('style.css');
+  const pos=html.indexOf('id="vault-biometric-enable"');
+  const feedback=html.indexOf('id="vault-biometric-feedback"');
+  assert.ok(pos>0&&feedback>pos&&feedback-pos<400);
+  assert.match(ui,/biometricMessage\('Passkey-Einrichtung gestartet/);
+  assert.match(ui,/kind==='NotAllowedError'/);
+  assert.match(ui,/kind==='SecurityError'/);
+  assert.match(ui,/kind==='NotSupportedError'/);
+  assert.match(ui,/biometricMessage\('⚠ '\+help,true\)/);
+  assert.match(css,/\.vault-biometric-feedback\.is-error/);
+  assert.match(ui,/if\(!password\)\{/);
 });

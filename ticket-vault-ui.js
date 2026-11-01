@@ -39,11 +39,39 @@
   function mode(name){
     for(const [key,element] of Object.entries(sections))element.hidden=key!==name;
   }
-  function busy(button,job){
+  function busy(button,job,onError){
     if(button.disabled)return;
     button.disabled=true;
-    Promise.resolve().then(job).catch(e=>status(e.message||'Aktion fehlgeschlagen.',true))
-      .finally(()=>{button.disabled=false;});
+    // Run the task immediately in the original click event. This is essential
+    // for Android WebAuthn user activation and also makes UI errors visible.
+    const report=e=>{
+      if(onError)onError(e);
+      else status(e.message||'Aktion fehlgeschlagen.',true);
+    };
+    try{
+      Promise.resolve(job()).catch(report)
+        .finally(()=>{button.disabled=false;});
+    }catch(e){
+      report(e);
+      button.disabled=false;
+    }
+  }
+  function biometricMessage(text,error=false){
+    const el=$('vault-biometric-feedback');
+    el.textContent=text;
+    el.classList.toggle('is-error',error);
+  }
+  function biometricError(error){
+    const kind=error?.name||'';
+    const help=kind==='NotAllowedError'
+      ?'Android hat die Passkey-Abfrage abgebrochen oder nicht zugelassen. App direkt in Chrome öffnen und erneut versuchen.'
+      :kind==='SecurityError'
+        ?'Der Browser blockiert die Passkey-Abfrage. Bitte die installierte Live-Karte oder HTTPS-Seite direkt in Chrome öffnen.'
+        :kind==='NotSupportedError'
+          ?'Der Browser oder der Passkey-Anbieter unterstützt diese Funktion nicht. Passwortentsperrung bleibt verfügbar.'
+          :(error?.message||'Passkey-Einrichtung fehlgeschlagen. Passwort bleibt verfügbar.');
+    biometricMessage('⚠ '+help,true);
+    status('Passkey-Einrichtung fehlgeschlagen. Hinweis direkt beim Passkey-Button ansehen.',true);
   }
   function closePreview(){
     const dialog=$('vault-preview');
@@ -149,25 +177,41 @@
       :supported?'Noch nicht eingerichtet. Fingerabdruck/PIN nur bei WebAuthn-PRF-Unterstützung.'
       :'Browser oder Geräte-Passkeys nicht verfügbar. Passwort bleibt uneingeschränkt nutzbar.';
   }
-  $('vault-biometric-unlock').onclick=()=>busy($('vault-biometric-unlock'),async()=>{
-    await vault.unlockWithBiometric();
-    touch();await refreshMode();
-    status('✓ Tresor sicher über Geräte-Passkey entsperrt.');
-  });
-  $('vault-biometric-enable').onclick=()=>busy($('vault-biometric-enable'),async()=>{
-    // Trigger WebAuthn only from an explicit user click. Never enable an
-    // assertion-only "biometric check" without cryptographic PRF key wrapping.
-    await vault.enableBiometric($('vault-biometric-password').value);
-    $('vault-biometric-password').value='';
-    touch();await redrawBiometric();
-    status('✓ Geräte-Passkey eingerichtet. Tresor kann künftig ohne Passwort geöffnet werden, solange der Passkey verfügbar ist.');
-  });
-  $('vault-biometric-disable').onclick=()=>busy($('vault-biometric-disable'),async()=>{
-    await vault.disableBiometric($('vault-biometric-disable-password').value);
-    $('vault-biometric-disable-password').value='';
-    touch();await redrawBiometric();
-    status('Schnellentsperrung im Tresor deaktiviert. Eventuell gespeicherten Passkey separat im Android-Passwortmanager löschen.');
-  });
+  $('vault-biometric-unlock').onclick=()=>{
+    biometricMessage('Android-Gerätebestätigung wird angefordert …');
+    busy($('vault-biometric-unlock'),async()=>{
+      await vault.unlockWithBiometric();
+      touch();await refreshMode();
+      biometricMessage('✓ Tresor mit Geräte-Passkey geöffnet.');
+      status('✓ Tresor sicher über Geräte-Passkey entsperrt.');
+    },biometricError);
+  };
+  $('vault-biometric-enable').onclick=()=>{
+    const password=$('vault-biometric-password').value;
+    if(!password){
+      biometricMessage('⚠ Bitte erst oben dein aktuelles Tresor-Passwort eingeben.',true);
+      return;
+    }
+    biometricMessage('Passkey-Einrichtung gestartet. Android-Geräteabfrage sollte jetzt erscheinen; eventuell sind zwei Bestätigungen nötig.');
+    busy($('vault-biometric-enable'),async()=>{
+      // enableBiometric starts navigator.credentials.create() synchronously.
+      await vault.enableBiometric(password);
+      $('vault-biometric-password').value='';
+      touch();await redrawBiometric();
+      biometricMessage('✓ Geräte-Passkey erfolgreich eingerichtet.');
+      status('✓ Schnellentsperrung eingerichtet. Passwort und Wiederherstellungsschlüssel bleiben gültig.');
+    },biometricError);
+  };
+  $('vault-biometric-disable').onclick=()=>{
+    biometricMessage('Schnellentsperrung wird deaktiviert …');
+    busy($('vault-biometric-disable'),async()=>{
+      await vault.disableBiometric($('vault-biometric-disable-password').value);
+      $('vault-biometric-disable-password').value='';
+      touch();await redrawBiometric();
+      biometricMessage('✓ Schnellentsperrung deaktiviert.');
+      status('Schnellentsperrung im Tresor deaktiviert. Passkey im Android-Passwortmanager bei Bedarf separat löschen.');
+    },biometricError);
+  };
   async function refreshMode(){
     if(!V.available()){
       $('vault-unavailable').hidden=false;
