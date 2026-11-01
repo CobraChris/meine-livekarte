@@ -1,3 +1,16 @@
+## Plan B bei Zugproblemen · Takayama → Nagoya → Kyoto (01.11.2026)
+
+Die Live-Karte besitzt für den **verifizierten, unveränderten Reiseplan vom 01.11.** einen direkt offline verfügbaren **„🆘 Plan B“**. Aufgerufen wird er über **„Was jetzt?“**, aus dem vorhandenen Ticketabholbereich in Takayama und über die Kyoto-Zug-Infografik. Vier auswählbare Situationen führen ohne zusätzliche Apps oder Login zur passenden Schrittfolge und einer **japanischen Nachricht für das JR-Personal**:
+
+- **Hida 8 verspätet:** optional bekannte Verspätung (0–180 Min.) eingeben; der Helfer zeigt **22 Minuten geplante Umsteigezeit minus Eingabe**. Das ist nur eine Überschlagsrechnung, keine Ankunfts-/Anschlussprognose; mögliche Verspätung des Nozomi, Bahnsteigänderung und Transferweg sind unbekannt.
+- **Nozomi 71 verpasst:** bei JR nachfragen, ob ein späterer Zug mit **den vorliegenden Klook-Tickets** benutzt werden darf und wie die Sitzplatz-/Neuausgabe geregelt ist. Kein ungeprüfter Einstieg oder Anspruch auf reservierte Plätze eines anderen Zuges.
+- **Ticketproblem:** Klook-Voucher und Fahrkarten bereithalten, Schalter bzw. besetzte Transfer-Gates aufsuchen; keine automatische Neubuchung.
+- **Personal fragen:** genaue japanische Frage nach Transfer-Gates und Bahnsteig.
+
+Die stets sichtbaren **Planzeiten** sind Hida 8 **11:35–14:04**, Nozomi 71 **14:26–15:00**, **22 Minuten Umstieg Nagoya**. Die Japanisch-Karte nennt zwei Personen, die original hinterlegten Züge und für Nozomi 71 **Wagen 4, Sitze 8D/8E**. Sie lässt sich auf ausdrücklichen Klick in die Zwischenablage kopieren. Keine Speicherung von Klook-QR-Codes, Ticketnummern, Kontodaten oder Verspätungen; kein GPS, keine Netzwerkaufrufe und keine automatischen Statusänderungen. Wird der Reiseplan abgeändert oder ist ein anderer Tag/Abschnitt gewählt, wird das Feature ausgeblendet bzw. verweigert.
+
+Die **fahrscheinrechtlichen Optionen können sich nach Ticketart und Händler unterscheiden**. Als Orientierung dienen offizielle JR-Central-Seiten zu [Fahrkartenänderungen](https://global.jr-central.co.jp/en/tickets/change/) und zu [Nozomi-Regeln](https://global.jr-central.co.jp/en/nozomi/). Auch wenn bestimmte reguläre JR-Tickets eine Fahrt am selben Tag mit Einschränkungen ermöglichen, setzt dieser Helfer **keine Berechtigung für die konkrete Klook-Buchung** voraus. Bahnpersonal oder Klook bestätigen die jeweils gültige Option. Die bereits vorhandenen Ticketabhol-, Nagoya-Umsteige- und GPS-Funktionen bleiben unverändert.
+
 ## Kyoto-Abfahrt: Live-Uhr auf Basis des Reiseplans (01.11.2026)
 
 Die Ticketabholkarte in den Ansichten **Takayama** und **Fahrt nach Kyoto** zeigt jetzt eine kompakte **Japan-Zeit-Anzeige**. Bis zum empfohlenen Bahnhofstermin **10:45 Uhr** zählt sie die verbleibenden Minuten; danach bis zur **planmäßigen Hida-8-Abfahrt 11:35 Uhr**. Wurden die Papiertickets bereits vom Nutzer ausdrücklich als abgeholt bestätigt, steht die Zugabfahrt im Vordergrund und kein erneuter Ticketwarntext. Ab 11:35 Uhr wird **keine negative Restzeit und keine fälschliche Echtzeit-Ankunft** angezeigt, sondern der Hinweis, dass die *geplante* Abfahrt verstrichen ist. Die App startet keine Zug- oder Ticketstatus-Aktionen automatisch und nimmt keinen Eingriff in den „Was jetzt?“-Fortschritt vor.
