@@ -13,6 +13,49 @@
   let previewUrl=null,lastUse=0;
   const idleLimit=15*60*1000;
   const touch=()=>{lastUse=Date.now();};
+  // Passwords start concealed. Eye controls are local DOM presentation only:
+  // no clipboard, persistence, network or changes to credential values.
+  function installPasswordVisibility(){
+    for(const input of root.querySelectorAll('input[type="password"]')){
+      if(!input.id||input.closest('.vault-password-field'))continue;
+      const wrap=document.createElement('span');
+      wrap.className='vault-password-field';
+      input.parentNode.insertBefore(wrap,input);
+      wrap.append(input);
+      const toggle=document.createElement('button');
+      toggle.type='button';
+      toggle.className='vault-password-eye';
+      toggle.textContent='👁';
+      toggle.title='Passwort anzeigen';
+      toggle.setAttribute('aria-label','Passwort anzeigen');
+      toggle.setAttribute('aria-controls',input.id);
+      toggle.setAttribute('aria-pressed','false');
+      const hide=()=>{
+        input.type='password';
+        toggle.textContent='👁';
+        toggle.title='Passwort anzeigen';
+        toggle.setAttribute('aria-label','Passwort anzeigen');
+        toggle.setAttribute('aria-pressed','false');
+      };
+      toggle.onclick=()=>{
+        const revealing=input.type==='password';
+        if(!revealing){hide();return;}
+        input.type='text';
+        toggle.textContent='🙈';
+        toggle.title='Passwort verbergen';
+        toggle.setAttribute('aria-label','Passwort verbergen');
+        toggle.setAttribute('aria-pressed','true');
+      };
+      toggle.vaultHidePassword=hide;
+      wrap.append(toggle);
+    }
+  }
+  function hideVisiblePasswords(){
+    for(const toggle of root.querySelectorAll('.vault-password-eye')){
+      toggle.vaultHidePassword?.();
+    }
+  }
+  installPasswordVisibility();
   function showRecoveryCode(code){
     const panel=$('vault-recovery-display');
     $('vault-recovery-code').textContent=code;
@@ -82,6 +125,7 @@
     if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}
   }
   function lock(){
+    hideVisiblePasswords();
     dismissRecovery();
     closePreview();
     vault.lock();
