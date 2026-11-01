@@ -1641,6 +1641,7 @@
   const nextActionPlanB=$('next-action-planb');
   const nextActionFeedback=$('next-action-feedback');
   const nextActionList=$('next-action-list');
+  const nextActionOpenList=$('next-action-open-list');
   let nextActionDone=Object.create(null);
   let nextActionCurrent=null;
   // Manual, per-device progress only. Never store GPS, QR, ticket codes or
@@ -1674,6 +1675,7 @@
       C.isNagoyaKyotoTrip(journey)){
       openNagoyaKyotoGuide();
     }else if(task.details==='pickup'){
+      revealKyotoPickupHistory();
       if(!['town-takayama','ride-kyoto'].includes(activePlanId))
         selectPlan('ride-kyoto');
       $('kyoto-pickup-steps-details').open=true;
@@ -1697,6 +1699,7 @@
   function setActionDone(task,done){
     if(!task)return;
     if(task.source==='pickup'){
+      revealKyotoPickupHistory();
       $('kyoto-pickup').scrollIntoView({behavior:'smooth',block:'start'});
       $('kyoto-pickup-steps-details').open=true;
       nextActionFeedback.textContent='Abholung bitte nur über den Bestätigungsbutton im Ticketabschnitt als erledigt markieren.';
@@ -1755,20 +1758,52 @@
             :'Deine berechnete Tour mit '+tourRoute.stops.length+' Stopps ist bereit.'
         },dateLabel:'🚶 AKTUELLER RUNDGANG'};
     }
-    count.textContent=result.doneCount+'/'+result.total+' erledigt';
+    const buckets=NS.taskBuckets(result.entries);
+    count.textContent=buckets.openCount+' offen · '+buckets.doneCount+' erledigt';
     date.textContent=result.dateLabel;
     const task=result.next;
     nextActionCurrent=task;
-    all.hidden=!result.entries.length;
-    nextActionList.replaceChildren();
-    for(const item of result.entries){
-      const li=node('li',undefined,'next-action-list-item');
+    $('next-action-open').hidden=!result.entries.length;
+    $('next-action-open-count').textContent=buckets.openCount+' von '+result.total;
+    nextActionOpenList.replaceChildren();
+    // Unfinished steps are visible without expanding another menu.
+    for(const item of buckets.open){
+      const li=node('li',undefined,'next-action-list-item next-action-open-item');
       const left=node('div',undefined,'next-action-list-text');
-      left.append(node('span',item.done?'✓ '+item.time:item.time,'next-action-list-time'));
+      left.append(node('span',item.time,'next-action-list-time'));
       left.append(node('strong',item.title));
-      li.classList.toggle('is-complete',item.done);
+      if(item.timeState==='past'){
+        li.classList.add('is-past');
+        left.append(node('span','⚠ Planzeit vorbei · Status selbst prüfen','next-action-past'));
+      }else if(item.timeState==='flexible'){
+        left.append(node('span','Flexibel · keine feste Frist','next-action-flexible'));
+      }
+      if(item.note)left.append(node('span',item.note,'next-action-list-note'));
       li.append(left);
-      if(item.done&&item.source!=='pickup'){
+      const actions=node('div',undefined,'next-action-list-actions');
+      const details=node('button','Details');
+      details.type='button';
+      details.setAttribute('aria-label','Details zu '+item.title);
+      details.onclick=()=>showNextActionDetails(item);
+      actions.append(details);
+      const confirm=node('button',item.source==='pickup'?'Abholung prüfen':'✓ Erledigt');
+      confirm.type='button';
+      confirm.setAttribute('aria-label',item.title+(item.source==='pickup'?' kontrollieren':' als erledigt markieren'));
+      confirm.onclick=()=>setActionDone(item,true);
+      actions.append(confirm);
+      li.append(actions);
+      nextActionOpenList.append(li);
+    }
+    all.hidden=!buckets.doneCount;
+    $('next-action-done-count').textContent=buckets.doneCount+' von '+result.total;
+    nextActionList.replaceChildren();
+    for(const item of buckets.done){
+      const li=node('li',undefined,'next-action-list-item is-complete');
+      const left=node('div',undefined,'next-action-list-text');
+      left.append(node('span','✓ '+item.time,'next-action-list-time'));
+      left.append(node('strong',item.title));
+      li.append(left);
+      if(item.source!=='pickup'){
         const undo=node('button','Rückgängig');
         undo.type='button';
         undo.setAttribute('aria-label',item.title+' zurücksetzen');
@@ -1785,12 +1820,18 @@
       description.textContent='Manuell bestätigt. Fahrpläne und Öffnungszeiten weiterhin vor Ort prüfen.';
       nextActionComplete.hidden=true;nextActionDetails.hidden=true;
       nextActionMap.hidden=true;nextActionJapanese.hidden=true;
-      nextActionFeedback.textContent='Du kannst einzelne Schritte unten wieder zurücksetzen.';
+      $('next-action-timing').hidden=true;
+      nextActionFeedback.textContent='Alle geplanten Schritte manuell bestätigt. Erledigte Schritte lassen sich unten aufklappen.';
       return;
     }
     time.textContent=task.time;
     name.textContent=task.title;
     description.textContent=task.note;
+    const currentTimeState=NS.taskTimeState(task);
+    const timing=$('next-action-timing');
+    timing.hidden=currentTimeState!=='past';
+    timing.textContent=currentTimeState==='past'
+      ?'⚠ Geplante Zeit bereits vorbei. Bitte selbst prüfen, ob erledigt; keine Live-Bestätigung.':'';
     nextActionComplete.hidden=task.source==='tour';
     nextActionComplete.textContent=task.source==='pickup'?'✓ Abholung bestätigen':'✓ Erledigt';
     nextActionComplete.onclick=()=>setActionDone(task,true);
@@ -2164,6 +2205,7 @@
     pickupLink.onclick=()=>{
       const details=$('kyoto-pickup-steps-details');
       if(details&&!kyotoPickupDone)details.open=true;
+      revealKyotoPickupHistory();
       $('kyoto-pickup').scrollIntoView({behavior:'smooth',block:'start'});
     };
     booking.append(pickupLink);
@@ -2173,6 +2215,7 @@
       seatsButton.type='button';
       seatsButton.onclick=()=>{
         const check=$('kyoto-seat-check');
+        revealKyotoPickupHistory();
         check.open=true;
         check.scrollIntoView({behavior:'smooth',block:'start'});
       };
@@ -2480,10 +2523,34 @@
     $('kyoto-seat-check').classList.toggle('is-checked',count===4);
   }
   kyotoSeatInputs.forEach(input=>input.addEventListener('change',renderKyotoSeatCheck));
+  let kyotoPickupHistoryExpanded=false;
+  function revealKyotoPickupHistory(){
+    kyotoPickupHistoryExpanded=true;
+    $('kyoto-pickup-body').hidden=false;
+    $('kyoto-pickup-history-toggle').textContent='✓ Details wieder einklappen';
+    $('kyoto-pickup-history-toggle').setAttribute('aria-expanded','true');
+  }
+  $('kyoto-pickup-history-toggle').onclick=()=>{
+    kyotoPickupHistoryExpanded=!kyotoPickupHistoryExpanded;
+    renderKyotoPickup();
+  };
   function renderKyotoPickup(){
     renderKyotoSeatCheck();
     kyotoPickupPanel.hidden=!['town-takayama','ride-kyoto'].includes(activePlanId);
     kyotoPickupPanel.classList.toggle('is-complete',kyotoPickupDone);
+    const phase=NS.kyotoDepartureClock().phase;
+    const archived=kyotoPickupDone&&(phase==='departed'||phase==='past');
+    const toggle=$('kyoto-pickup-history-toggle');
+    toggle.hidden=!archived;
+    toggle.textContent=kyotoPickupHistoryExpanded?'✓ Details wieder einklappen':'✓ Abholung erledigt · Details anzeigen';
+    toggle.setAttribute('aria-expanded',String(archived&&kyotoPickupHistoryExpanded));
+    $('kyoto-pickup-body').hidden=archived&&!kyotoPickupHistoryExpanded;
+    kyotoPickupPanel.classList.toggle('is-archived',archived);
+    $('kyoto-pickup-title').textContent=archived
+      ?'Papiertickets abgeholt · abgeschlossen'
+      :'Klook-Tickets in Takayama abholen';
+    const eyebrow=kyotoPickupPanel.querySelector('.kyoto-pickup-eyebrow');
+    eyebrow.textContent=archived?'✓ ERLEDIGT · 01.11.2026':'⚠ VOR DER ABFAHRT · SO. 01.11.';
     ticketHelpButton.hidden=kyotoPickupDone||!canShowTicketHelp();
     renderKyotoDepartureClock();
     $('kyoto-pickup-planb').hidden=!canShowRailPlanB();
