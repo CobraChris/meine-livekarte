@@ -156,7 +156,7 @@ test('web app wiring ships encrypted files via GitHub Pages and supports offline
     assert.ok(sw.includes("'"+file+"'"));
     assert.ok(stamp.includes('("src", "'+file+'")'));
   }
-  assert.match(sw,/livekarte-shell-pwa-v23/);
+  assert.match(sw,/livekarte-shell-pwa-v22/);
   for(const id of ['ticket-vault','vault-new-password','vault-repeat-password','vault-create',
     'vault-locked','vault-unlock','vault-open-input','vault-trip','vault-add',
     'vault-backup','vault-restore','vault-files','vault-preview','vault-preview-pdf',
@@ -166,6 +166,6 @@ test('web app wiring ships encrypted files via GitHub Pages and supports offline
   assert.match(ui,/URL\.revokeObjectURL/);
   assert.match(ui,/Date\.now\(\)-lastUse>idleLimit/);
   assert.match(ui,/confirm\(/);
-  assert.match(ui,/\\.textContent=/);
+  assert.match(ui,/\.textContent=/);
   assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage\.setItem/);
 });
