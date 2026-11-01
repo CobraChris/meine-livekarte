@@ -1480,3 +1480,14 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .kyoto-pickup.is-archived .kyoto-pickup-heading h2{font-size:15px;color:#d7f4da}
 .kyoto-pickup.is-archived .kyoto-pickup-heading p{margin-bottom:9px}
 .kyoto-seat-launch{color:#ecfff2!important}
+
+/* Optional cryptographic device-passkey unlock; ordinary password stays available. */
+.vault-biometric-setup{display:grid;gap:9px;padding:12px;border:1px solid #7caa98;
+  border-radius:10px;background:#21433e}
+.vault-biometric-setup strong{font-size:12px;line-height:1.5;color:#e6fff0}
+.vault-biometric-setup p,.vault-biometric-setup small{font-size:11px;
+  line-height:1.5;color:#d2e8da;margin:0}
+#vault-biometric-enable-area,#vault-biometric-disable-area{display:grid;gap:8px}
+#vault-biometric-unlock{min-height:48px}
+.next-action-list-item.is-complete button{font-size:11px;
+  min-height:39px;white-space:normal;text-align:center}

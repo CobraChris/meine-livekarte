@@ -1804,9 +1804,9 @@
       left.append(node('strong',item.title));
       li.append(left);
       if(item.source!=='pickup'){
-        const undo=node('button','Rückgängig');
+        const undo=node('button','Wieder als offen markieren');
         undo.type='button';
-        undo.setAttribute('aria-label',item.title+' zurücksetzen');
+        undo.setAttribute('aria-label',item.title+' wieder als offen markieren');
         undo.onclick=()=>setActionDone(item,false);
         li.append(undo);
       }else if(item.source==='pickup'&&item.done){
@@ -1821,7 +1821,7 @@
       nextActionComplete.hidden=true;nextActionDetails.hidden=true;
       nextActionMap.hidden=true;nextActionJapanese.hidden=true;
       $('next-action-timing').hidden=true;
-      nextActionFeedback.textContent='Alle geplanten Schritte manuell bestätigt. Erledigte Schritte lassen sich unten aufklappen.';
+      nextActionFeedback.textContent='Alle notwendigen Schritte bestätigt. Zum Korrigieren unter „Erledigt“ auf „Wieder als offen markieren“ tippen.';
       return;
     }
     time.textContent=task.time;
@@ -2186,7 +2186,7 @@
     const title=node('div',undefined,'kyoto-rail-heading');
     title.append(node('span','🚄 DEINE ZUGREISE · 01.11.2026','kyoto-eyebrow'));
     title.append(node('h2','Takayama → Kyoto'));
-    title.append(node('p','Klook-Buchung bestätigt · Papier-Tickets vor Abfahrt abholen.','kyoto-rail-subtitle'));
+    title.append(node('p',kyotoPickupDone?'Klook-Buchung bestätigt · Papiertickets abgeholt.':'Klook-Buchung bestätigt · Papiertickets vor Abfahrt abholen.','kyoto-rail-subtitle'));
     kyotoRailInfographic.append(title);
     const booking=node('div',undefined,'kyoto-booking-card');
     booking.append(
@@ -2194,7 +2194,7 @@
       node('span',kyotoPickupDone
         ?'✅ Papiertickets: abgeholt (von dir bestätigt)'
         :'⚠ Papiertickets: noch am Bahnhof Takayama abholen','kyoto-booking-row kyoto-booking-pickup-state'),
-      node('span','🎟 Klook-QR-Code nach der Anleitung auf dem Voucher am geeigneten Automaten oder am JR-Ticketschalter verwenden.','kyoto-booking-row'),
+      node('span',kyotoPickupDone?'✓ QR-Abholung abgeschlossen. Original-Papiertickets für beide Züge aufbewahren.':'🎟 Klook-QR-Code nach der Anleitung auf dem Voucher am geeigneten Automaten oder am JR-Ticketschalter verwenden.','kyoto-booking-row'),
       node('span','🚆 Hida 8 · Wagen 2 · Sitze 10C + 10D','kyoto-booking-row'),
       node('span','🚄 Nozomi 71 · Wagen 4 · Sitze 8D + 8E','kyoto-booking-row'),
       node('span','🧳 Koffer unter 160 cm Gesamtmaß · keine Übergepäckreservierung nötig','kyoto-booking-row')

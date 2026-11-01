@@ -65,12 +65,8 @@
       '22 Minuten Puffer · laut Buchung Gleis 4 → 17; Bahnhofsanzeige hat Vorrang.',stations.nagoya,'manual','rail'),
     task('kyoto:nozomi','14:26','Nozomi 71 nehmen',
       'Nagoya → Kyoto · Wagen 4, Sitze 8D und 8E.',stations.nagoya,'rail:1','rail'),
-    task('kyoto:hotel','ab ca. 15:15','Zum Tomoya Residence',
-      'Ab Kyoto Station Taxi oder Karasuma-Linie bis Karasuma Oike und etwa 7 Minuten Fußweg.',stations.hotel,'manual','city'),
-    task('kyoto:gion','nach Check-in','Gion Shirakawa besuchen',
-      'Gemütlicher Abendspaziergang mit Tatsumi-Brücke; Zeiten flexibel.',stations.gion,'manual','city'),
-    task('kyoto:ponto','abends','In Ponto-chō essen',
-      'Restaurantgasse am Kamo-Fluss; keine Reservierung hinterlegt.',stations.ponto,'manual','city')
+    task('kyoto:hotel','ab ca. 15:15','Im Tomoya Residence einchecken',
+      'Ab Kyoto Station Taxi oder Karasuma-Linie bis Karasuma Oike und etwa 7 Minuten Fußweg.',stations.hotel,'manual','city')
   ];
   const kyotoDay2=()=>[
     task('kyoto:kiyomizu','09:45–11:15','Kiyomizu-dera',
@@ -91,9 +87,10 @@
         dateKey===TRAVEL_DATE?travelTasks():[];
     if(view==='ride-kyoto')return travelTasks();
     if(dateKey<=TRAVEL_DATE){
-      return travelTasks().filter(t=>['kyoto:hotel','kyoto:gion','kyoto:ponto'].includes(t.id));
+      return travelTasks().filter(t=>t.id==='kyoto:hotel');
     }
-    if(dateKey===KYOTO_DAY2)return kyotoDay2();
+    // Sightseeing remains on the city timeline; it is never a mandatory checkbox.
+    if(dateKey===KYOTO_DAY2)return [];
     return [];
   }
   function completed(task,context){

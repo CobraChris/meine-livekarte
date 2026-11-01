@@ -218,6 +218,7 @@
       <label for="vault-password">Tresor-Passwort</label>
       <input id="vault-password" type="password" autocomplete="off" placeholder="Passwort eingeben">
       <button id="vault-unlock" type="button" class="vault-primary">Tresor entsperren</button>
+      <button id="vault-biometric-unlock" type="button" class="vault-primary" hidden>👆 Mit Fingerabdruck / Gerätesperre entsperren</button>
       <details id="vault-forgot" class="vault-restore-block" hidden>
         <summary>Passwort vergessen? Mit Wiederherstellungsschlüssel zurücksetzen</summary>
         <label for="vault-forgot-code">Wiederherstellungsschlüssel (LKV2-…)</label>
@@ -246,6 +247,22 @@
           <button id="vault-upgrade-submit" type="button">🔒 Bestehenden Tresor sicher aktualisieren</button>
         </div>
         <div id="vault-modern-security" class="vault-recovery-fields" hidden>
+          <div class="vault-biometric-setup">
+            <strong>👆 Schnellentsperrung mit Geräte-Passkey</strong>
+            <p>Falls dein Android-Browser WebAuthn-PRF unterstützt, kannst du den Tresor nach der Einrichtung mit Fingerabdruck, PIN oder Gerätesperre öffnen. Das normale Passwort und dein Wiederherstellungsschlüssel bleiben gültig.</p>
+            <p id="vault-biometric-status" aria-live="polite">Verfügbarkeit wird geprüft.</p>
+            <div id="vault-biometric-enable-area" hidden>
+              <label for="vault-biometric-password">Tresor-Passwort einmalig bestätigen</label>
+              <input id="vault-biometric-password" type="password" autocomplete="current-password">
+              <button id="vault-biometric-enable" type="button">👆 Passkey zur Schnellentsperrung einrichten</button>
+            </div>
+            <div id="vault-biometric-disable-area" hidden>
+              <label for="vault-biometric-disable-password">Tresor-Passwort zum Deaktivieren</label>
+              <input id="vault-biometric-disable-password" type="password" autocomplete="current-password">
+              <button id="vault-biometric-disable" type="button">Schnellentsperrung deaktivieren</button>
+            </div>
+            <small>Nur bei erfolgreicher kryptografischer Passkey-PRF-Prüfung aktiv. Bei fehlender Unterstützung bleibt das Passwort unverändert nutzbar. Ein Passkey kann im Geräte-Passwortmanager gespeichert oder synchronisiert werden.</small>
+          </div>
           <label for="vault-change-old">Bisheriges Passwort</label>
           <input id="vault-change-old" type="password" autocomplete="off">
           <label for="vault-change-new">Neues Passwort (mindestens 10 Zeichen)</label>

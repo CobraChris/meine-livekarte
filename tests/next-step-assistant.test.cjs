@@ -22,10 +22,10 @@ test('Takayama the evening before departure suggests preparing Klook voucher rat
 });
 test('1 Nov travel steps are complete and ordered without invented real-time confirmation',()=>{
  const schedule=N.choose('ride-kyoto','2026-11-01');
- assert.equal(schedule.total,7);
+ assert.equal(schedule.total,5);
  assert.deepEqual(schedule.entries.map(x=>x.id),[
   'kyoto:pickup','kyoto:hida','kyoto:transfer','kyoto:nozomi',
-  'kyoto:hotel','kyoto:gion','kyoto:ponto'
+  'kyoto:hotel'
  ]);
  assert.equal(schedule.next.id,'kyoto:pickup');
  assert.equal(schedule.doneCount,0);
@@ -49,11 +49,11 @@ test('existing confirmed pickup and completed train stage are shared and not dup
 });
 test('city view switches automatically from arrival night to 02 Nov, with no invented days after',()=>{
  assert.deepEqual(N.choose('town-kyoto','2026-10-31').entries.map(x=>x.id),
-   ['kyoto:hotel','kyoto:gion','kyoto:ponto']);
+   ['kyoto:hotel']);
  assert.deepEqual(N.choose('town-kyoto','2026-11-01').entries.map(x=>x.id),
-   ['kyoto:hotel','kyoto:gion','kyoto:ponto']);
+   ['kyoto:hotel']);
  assert.deepEqual(N.choose('town-kyoto','2026-11-02').entries.map(x=>x.id),
-   ['kyoto:kiyomizu','kyoto:sannenzaka','kyoto:fushimi']);
+   []);
  assert.equal(N.choose('town-kyoto','2026-11-03').total,0);
  assert.equal(N.choose('town-takayama','2026-11-02').total,0);
  assert.equal(N.choose('all','2026-11-01').total,0);

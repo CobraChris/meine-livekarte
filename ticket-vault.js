@@ -169,6 +169,32 @@
       await documentKey(recoveryBytes(recoveryCode)),config.recovery.iv,
       unbase64(config.recovery.cipher)));
   }
+
+  // A WebAuthn PRF output is a credential-bound cryptographic secret.
+  // Do NOT use an unsigned authentication assertion as permission to decrypt.
+  // Only successful AES-GCM decryption with the PRF-derived key grants access.
+  const biometricSupported=()=>typeof PublicKeyCredential!=='undefined'&&
+    typeof navigator!=='undefined'&&!!navigator.credentials?.create&&
+    !!navigator.credentials?.get&&typeof isSecureContext!=='undefined'&&isSecureContext;
+  function credentialSecret(credential){
+    const first=credential?.getClientExtensionResults?.()?.prf?.results?.first;
+    if(!first||new Uint8Array(first).byteLength!==32)
+      throw Error('Dieser Passkey unterstützt keine sichere Tresor-Entsperrung (WebAuthn PRF). Passwort bleibt verfügbar.');
+    return new Uint8Array(first);
+  }
+  function sameBytes(a,b){
+    const x=new Uint8Array(a),y=new Uint8Array(b);
+    if(x.length!==y.length)return false;
+    let diff=0;
+    for(let i=0;i<x.length;i++)diff|=x[i]^y[i];
+    return diff===0;
+  }
+  function validBiometric(b){
+    try{return !!b&&unbase64(b.id).length>=16&&unbase64(b.salt).length===32&&
+      unbase64(b.iv).length===12&&unbase64(b.cipher).length===48&&
+      typeof b.rpId==='string'&&/^[a-z0-9.-]+$/.test(b.rpId);}
+    catch{return false;}
+  }
   class Vault {
     constructor(){this.db=null;this.key=null;this.legacy=false;}
     async database(){
@@ -219,6 +245,97 @@
       return this.key;
     }
     async hasRecovery(){return (await this.config())?.version===2;}
+
+    async hasBiometric(){
+      const cfg=await this.config();
+      return cfg?.version===2&&validBiometric(cfg.biometric);
+    }
+    async enableBiometric(password,credentialApi,hostname){
+      this.requireKey();
+      const cfg=await this.config();
+      if(!goodConfigV2(cfg))throw Error('Biometrie benötigt einen Tresor mit Wiederherstellungsschlüssel.');
+      if(validBiometric(cfg.biometric))throw Error('Schnellentsperrung ist bereits eingerichtet.');
+      const api=credentialApi||globalThis.navigator?.credentials;
+      const rpId=hostname||globalThis.location?.hostname;
+      if(!api?.create||!api?.get||typeof rpId!=='string'||!rpId)
+        throw Error('Auf diesem Gerät ist die sichere Passkey-Funktion nicht verfügbar.');
+      let raw;
+      try{raw=await passwordRaw(cfg,password);}
+      catch{throw Error('Tresor-Passwort ist falsch.');}
+      const salt=random(32);
+      const created=await api.create({publicKey:{
+        challenge:random(32),
+        rp:{id:rpId,name:'Meine Live-Karte'},
+        user:{id:random(16),name:'Ticket-Tresor',displayName:'Meine Tickets'},
+        pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+        authenticatorSelection:{authenticatorAttachment:'platform',
+          residentKey:'preferred',userVerification:'required'},
+        timeout:60000,attestation:'none',
+        extensions:{prf:{eval:{first:salt}}}
+      }});
+      if(!created?.rawId||new Uint8Array(created.rawId).byteLength<16)
+        throw Error('Geräte-Passkey konnte nicht erstellt werden.');
+      // Some authenticators provide PRF only during a subsequent assertion.
+      const verified=await api.get({publicKey:{
+        challenge:random(32),rpId,timeout:60000,
+        allowCredentials:[{type:'public-key',id:created.rawId}],
+        userVerification:'required',
+        extensions:{prf:{eval:{first:salt}}}
+      }});
+      if(!sameBytes(verified?.rawId||new Uint8Array(),created.rawId))
+        throw Error('Falscher Geräte-Passkey bestätigt.');
+      const wrapping=await documentKey(credentialSecret(verified));
+      const wrapped=await seal(wrapping,raw);
+      const biometric={id:base64(created.rawId),salt:base64(salt),
+        iv:wrapped.iv,cipher:base64(wrapped.cipher),rpId};
+      // Ensures the PRF can actually unwrap the very same document key.
+      const check=new Uint8Array(await openSeal(wrapping,biometric.iv,
+        unbase64(biometric.cipher)));
+      if(!sameBytes(check,raw))throw Error('Passkey-Schlüsselprüfung fehlgeschlagen.');
+      const db=await this.database(),tx=db.transaction('meta','readwrite');
+      const done=finished(tx);
+      tx.objectStore('meta').put({...cfg,biometric});
+      await done;
+    }
+    async unlockWithBiometric(credentialApi){
+      const cfg=await this.config();
+      if(!goodConfigV2(cfg)||!validBiometric(cfg.biometric))
+        throw Error('Schnellentsperrung ist noch nicht eingerichtet.');
+      const b=cfg.biometric;
+      const api=credentialApi||globalThis.navigator?.credentials;
+      if(!api?.get)throw Error('Passkeys werden von diesem Browser nicht unterstützt.');
+      const id=unbase64(b.id);
+      const verified=await api.get({publicKey:{
+        challenge:random(32),rpId:b.rpId,timeout:60000,
+        allowCredentials:[{type:'public-key',id}],
+        userVerification:'required',
+        extensions:{prf:{eval:{first:unbase64(b.salt)}}}
+      }});
+      if(!sameBytes(verified?.rawId||new Uint8Array(),id))
+        throw Error('Falscher Passkey für diesen Tresor.');
+      try{
+        const wrapping=await documentKey(credentialSecret(verified));
+        const raw=new Uint8Array(await openSeal(wrapping,b.iv,unbase64(b.cipher)));
+        if(raw.length!==32)throw Error('invalid');
+        this.key=await documentKey(raw);
+        this.legacy=false;
+      }catch{
+        this.key=null;
+        throw Error('Sichere Passkey-Entsperrung fehlgeschlagen. Bitte mit Passwort entsperren.');
+      }
+    }
+    async disableBiometric(password){
+      this.requireKey();
+      const cfg=await this.config();
+      if(!goodConfigV2(cfg))throw Error('Tresor nicht unterstützt.');
+      try{await passwordRaw(cfg,password);}
+      catch{throw Error('Tresor-Passwort ist falsch.');}
+      const {biometric:unused,...withoutBiometric}=cfg;
+      const db=await this.database(),tx=db.transaction('meta','readwrite');
+      const done=finished(tx);
+      tx.objectStore('meta').put(withoutBiometric);
+      await done;
+    }
     async changePassword(oldPassword,newPassword){
       this.requireKey();
       const cfg=await this.config();
@@ -376,9 +493,10 @@
     async backup(){
       this.requireKey();
       const config=await this.config(),records=await this.rawRecords();
+      const {biometric:deviceSpecific,...exportConfig}=config;
       if(!goodConfig(config)||records.length>MAX_ITEMS)throw Error('Tresordaten ungültig.');
       return new Blob([JSON.stringify({
-        format:config.version===2?FORMAT:LEGACY_FORMAT,config,
+        format:config.version===2?FORMAT:LEGACY_FORMAT,config:exportConfig,
         files:records.map(r=>{
           if(!goodRecord(r))throw Error('Ticketdatei beschädigt.');
           return {id:r.id,iv:r.iv,metaIv:r.metaIv,metaCipher:r.metaCipher,
@@ -448,5 +566,5 @@
       return rotatedCode;
     }
   }
-  return Object.freeze({Vault,available,validateMime,MAX_FILE,MAX_TOTAL,MAX_ITEMS,FORMAT});
+  return Object.freeze({Vault,available,biometricSupported,validateMime,MAX_FILE,MAX_TOTAL,MAX_ITEMS,FORMAT});
 });
