@@ -1316,3 +1316,33 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
  .train-planb-schedule strong{font-size:11px}
  .train-planb-scenarios>button{font-size:11px;padding:8px 4px}
 }
+
+/* Optional non-persisted seat/itinerary cross-check before confirming pickup. */
+.kyoto-seat-check{border:1px solid #769b85;border-radius:10px;
+  background:#1a3834;margin:0 0 12px;color:#eafbf1}
+.kyoto-seat-check>summary{display:flex;align-items:center;justify-content:space-between;
+  gap:12px;cursor:pointer;padding:11px 12px;font-size:12px;
+  font-weight:800;line-height:1.35}
+.kyoto-seat-check>summary>span{min-width:0}
+.kyoto-seat-check>summary>strong{font-size:10px;
+  background:#394f42;border-radius:8px;padding:5px 7px;
+  color:#ffe1a7;white-space:nowrap}
+.kyoto-seat-check[open]>summary{border-bottom:1px solid #557b6d}
+.kyoto-seat-hint,.kyoto-seat-footnote{margin:10px 12px;
+  font-size:10px;line-height:1.55;color:#d0e4d5}
+.kyoto-seat-groups{display:grid;gap:8px;padding:0 11px}
+.kyoto-seat-groups fieldset{min-width:0;margin:0;padding:8px 9px;
+  border:1px solid #527c6b;border-radius:9px;background:#20433e}
+.kyoto-seat-groups legend{padding:0 4px;max-width:100%;
+  font-size:11px;font-weight:800;line-height:1.4;color:#fff2c6}
+.kyoto-seat-groups label{display:flex;gap:10px;align-items:center;
+  padding:8px 5px;min-height:39px;font-size:11px;line-height:1.45;
+  color:#f1fff4;cursor:pointer}
+.kyoto-seat-groups input[type=checkbox]{flex:none;width:19px;height:19px;
+  accent-color:#8fdeb0;margin:0}
+.kyoto-seat-feedback{margin:9px 12px 0;font-size:11px;
+  line-height:1.45;color:#ffe8ad}
+.kyoto-seat-check.is-checked{border-color:#7ecba1}
+.kyoto-seat-check.is-checked>summary>strong{background:#285946;color:#bdf4d1}
+.kyoto-seat-check.is-checked .kyoto-seat-feedback{color:#bdf4d1}
+.kyoto-seat-launch{background:#2c5147;border-color:#a0d2b6}

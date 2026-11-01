@@ -2167,6 +2167,17 @@
       $('kyoto-pickup').scrollIntoView({behavior:'smooth',block:'start'});
     };
     booking.append(pickupLink);
+    if(C.isNagoyaKyotoTrip(trip)){
+      const seatsButton=node('button','🧾 Beide Reisenden · Sitzplätze kontrollieren',
+        'kyoto-booking-guide kyoto-seat-launch');
+      seatsButton.type='button';
+      seatsButton.onclick=()=>{
+        const check=$('kyoto-seat-check');
+        check.open=true;
+        check.scrollIntoView({behavior:'smooth',block:'start'});
+      };
+      booking.append(seatsButton);
+    }
     if(canShowRailPlanB()){
       const planBButton=node('button','🆘 Plan B: Zugproblem oder Anschluss verpasst',
         'kyoto-booking-guide kyoto-planb-launch');
@@ -2456,7 +2467,21 @@
     if(!document.hidden)renderKyotoDepartureClock();
   });
   window.addEventListener('focus',renderKyotoDepartureClock);
+  const kyotoSeatInputs=[...document.querySelectorAll('#kyoto-seat-check [data-kyoto-seat]')];
+  function renderKyotoSeatCheck(){
+    // Four explicit visual checks; never treat these as issued or valid tickets.
+    const count=kyotoSeatInputs.filter(input=>input.checked).length;
+    $('kyoto-seat-progress').textContent=count+'/4 geprüft';
+    $('kyoto-seat-feedback').textContent=count===4
+      ?'✓ Alle vier Sitzplatzangaben manuell kontrolliert. Die gesonderte Abholbestätigung bleibt erforderlich.'
+      :count===0
+        ?'Noch keine Angaben als kontrolliert markiert.'
+        :count+'/4 Sitzplatzangaben kontrolliert. Die übrigen Unterlagen prüfen.';
+    $('kyoto-seat-check').classList.toggle('is-checked',count===4);
+  }
+  kyotoSeatInputs.forEach(input=>input.addEventListener('change',renderKyotoSeatCheck));
   function renderKyotoPickup(){
+    renderKyotoSeatCheck();
     kyotoPickupPanel.hidden=!['town-takayama','ride-kyoto'].includes(activePlanId);
     kyotoPickupPanel.classList.toggle('is-complete',kyotoPickupDone);
     ticketHelpButton.hidden=kyotoPickupDone||!canShowTicketHelp();
