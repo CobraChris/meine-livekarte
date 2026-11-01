@@ -72,18 +72,17 @@
     const bytes=await input.arrayBuffer();
     if(bytes.byteLength!==input.size)throw Error('Geteilte Datei unvollständig.');
     const type=detect(providedType,name,bytes);
+    // Count before starting the write transaction so no await can cause
+    // IndexedDB auto-commit between the count check and store.add().
+    if((await pending()).length>=MAX_PENDING)
+      throw Error('Bitte zuerst geteilte Tickets prüfen.');
     const db=await dbOpen();
     try{
       const tx=db.transaction('pending','readwrite');
       const completed=txDone(tx);
-      // Check count inside the same transaction. An unreviewed ticket
-      // is never silently overwritten or moved to permanent storage.
-      const store=tx.objectStore('pending');
-      const existing=await reqResult(store.getAll());
-      if(existing.length>=MAX_PENDING)throw Error('Bitte zuerst geteilte Tickets prüfen.');
       const item={id:id(),name,type,size:bytes.byteLength,
         created:new Date().toISOString(),blob:new Blob([bytes],{type})};
-      store.add(item);
+      tx.objectStore('pending').add(item);
       await completed;
       return item.id;
     }finally{db.close();}
