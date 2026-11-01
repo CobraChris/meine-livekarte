@@ -94,7 +94,7 @@ test('date/route-gated Plan B works from next action, pickup and infographic',()
  assert.match(app,/trainPlanBDelay\.addEventListener\('input',renderTrainPlanB\)/);
  assert.match(app,/trainPlanBDialog\.showModal\(\)/);
  assert.match(app,/trainPlanBDialog\.close\(\)/);
- assert.match(app,/navigator\.clipboard\?\.writeText\(japanese\)/);
+ assert.match(app,/navigator\.clipboard\.writeText\(japanese\)/);
  assert.match(app,/\$\('train-planb-jp'\)\.textContent=advice\.japanese/);
 });
 
