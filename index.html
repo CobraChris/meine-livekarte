@@ -201,12 +201,17 @@
       <h3>Ticket oder Screenshot hinzufügen</h3>
       <label for="ticket-file">PDF oder Bild auswählen</label>
       <input id="ticket-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp">
+      <p id="ticket-picked-note" class="ticket-picked-note" role="status" aria-live="polite" hidden></p>
       <label for="ticket-title">Titel (optional)</label>
       <input id="ticket-title" type="text" maxlength="100" placeholder="z. B. ICE 789 · Hamburg → Berlin">
       <label for="ticket-trip">Reise (optional)</label>
       <input id="ticket-trip" type="text" maxlength="100" placeholder="z. B. Japan 2026">
       <button id="ticket-trip-current" type="button" class="vault-secondary">Aktuellen Reiseabschnitt übernehmen</button>
       <button id="ticket-add" type="button" class="vault-primary">＋ Ticket direkt speichern</button>
+      <div id="ticket-save-confirmation" class="ticket-save-confirmation" role="status" aria-live="polite" hidden>
+        <strong id="ticket-saved-label">✓ Ticket gespeichert</strong>
+        <button id="ticket-saved-open" type="button" class="vault-secondary">👁 Gespeichertes Ticket öffnen</button>
+      </div>
       <small>PDF, PNG, JPG, WebP · höchstens 10 MB pro Datei · insgesamt maximal 25 Dateien oder 50 MB. QR-Screenshots werden als Bilder gespeichert, nicht automatisch ausgelesen.</small>
     </section>
     <section class="ticket-library-list" aria-label="Deine gespeicherten Tickets">
