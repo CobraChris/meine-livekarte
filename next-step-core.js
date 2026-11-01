@@ -17,6 +17,28 @@
     const field=name=>parts.find(x=>x.type===name)?.value;
     return field('year')+'-'+field('month')+'-'+field('day');
   };
+  // Scheduled milestones only. All minute arithmetic uses Japan local clock,
+  // never the device timezone or a guessed real-time train position.
+  function kyotoDepartureClock(at=new Date()){
+    const day=localDate(at);
+    if(day<TRAVEL_DATE)return {phase:'future',minutesToStation:null,minutesToTrain:null};
+    if(day>TRAVEL_DATE)return {phase:'past',minutesToStation:null,minutesToTrain:null};
+    const parts=new Intl.DateTimeFormat('en-US',{
+      timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+    }).formatToParts(at);
+    const field=name=>Number(parts.find(p=>p.type===name)?.value);
+    const nowMinutes=field('hour')*60+field('minute');
+    const stationTarget=10*60+45,trainDeparture=11*60+35;
+    if(nowMinutes<stationTarget)return {
+      phase:'before-station',minutesToStation:stationTarget-nowMinutes,
+      minutesToTrain:trainDeparture-nowMinutes
+    };
+    if(nowMinutes<trainDeparture)return {
+      phase:'station-window',minutesToStation:0,
+      minutesToTrain:trainDeparture-nowMinutes
+    };
+    return {phase:'departed',minutesToStation:0,minutesToTrain:0};
+  }
   const destination=(name,lat,lng,japanese)=>({
     name,lat,lng,japanese:japanese||''
   });
@@ -93,5 +115,5 @@
       dateKey===KYOTO_DAY2?'Mo. 02.11.2026':'';
     return {entries,next,doneCount,total:entries.length,dateLabel};
   }
-  return Object.freeze({localDate,stations,tasksFor,completed,choose});
+  return Object.freeze({localDate,kyotoDepartureClock,stations,tasksFor,completed,choose});
 });

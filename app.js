@@ -2342,10 +2342,54 @@
       ticketHelpFeedback.textContent='Kopieren nicht verfügbar. Den japanischen Text lange drücken und markieren.';
     }
   };
+  function renderKyotoDepartureClock(){
+    // Updating only these text fields avoids rebuilding the journey/markers
+    // each minute. No GPS read, booking lookup, network call or auto-complete.
+    if(kyotoPickupPanel.hidden)return;
+    const state=NS.kyotoDepartureClock();
+    const panel=$('kyoto-departure-clock');
+    const label=$('kyoto-clock-label'),value=$('kyoto-clock-value'),note=$('kyoto-clock-note');
+    panel.classList.toggle('is-urgent',state.phase==='station-window'&&!kyotoPickupDone);
+    if(state.phase==='future'){
+      label.textContent='🕒 VOR DEM REISETAG';
+      value.textContent='Hida 8 · 01.11.2026 · 11:35 Uhr';
+      note.textContent='Bahnhof Takayama möglichst gegen 10:45 Uhr erreichen. Planzeiten, nicht live.';
+    }else if(state.phase==='before-station'){
+      label.textContent=kyotoPickupDone?'🕒 BIS ZUR ZUGABFAHRT':'🕒 BIS ZUR EMPFOHLENEN BAHNHOFSANKUNFT';
+      value.textContent=kyotoPickupDone
+        ?'Noch '+state.minutesToTrain+' Min. · Hida 8 um 11:35'
+        :'Noch '+state.minutesToStation+' Min. · Ziel: 10:45 Uhr';
+      note.textContent=kyotoPickupDone
+        ?'Papiertickets bereithalten. Abfahrt um 11:35 Uhr laut Buchung.'
+        :'Papiertickets für beide Personen abholen. Hida 8 fährt planmäßig 11:35 Uhr.';
+    }else if(state.phase==='station-window'){
+      label.textContent=kyotoPickupDone?'🕒 ABFAHRT NÄHERT SICH':'⚠ JETZT ZUM BAHNHOF / TICKETSCHALTER';
+      value.textContent='Noch '+state.minutesToTrain+' Min. · Hida 8 um 11:35';
+      note.textContent=kyotoPickupDone
+        ?'Zum richtigen Gleis gehen; Bahnhofsanzeigen haben Vorrang.'
+        :'Ticketabholung und Gleis prüfen. Die Abfahrt ist nur eine Planzeit.';
+    }else if(state.phase==='departed'){
+      label.textContent='⚠ PLANABFAHRT WAR UM 11:35';
+      value.textContent='Die geplante Abfahrtszeit ist vorbei.';
+      note.textContent='Keine Live-Auskunft: Falls du den Zug nicht genommen hast, JR-Personal fragen.';
+    }else{
+      label.textContent='🕒 REISETAG VOM 01.11.';
+      value.textContent='Die geplante Fahrt liegt zurück.';
+      note.textContent='Die Anzeige enthält keine aktuelle Zugverbindung.';
+    }
+  }
+  // Recheck the Japan-local clock while the view is open; never mark tasks
+  // done just because their planned time passes.
+  setInterval(renderKyotoDepartureClock,60000);
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden)renderKyotoDepartureClock();
+  });
+  window.addEventListener('focus',renderKyotoDepartureClock);
   function renderKyotoPickup(){
     kyotoPickupPanel.hidden=!['town-takayama','ride-kyoto'].includes(activePlanId);
     kyotoPickupPanel.classList.toggle('is-complete',kyotoPickupDone);
     ticketHelpButton.hidden=kyotoPickupDone||!canShowTicketHelp();
+    renderKyotoDepartureClock();
     $('kyoto-pickup-state').textContent=kyotoPickupDone
       ?'✅ Papiertickets: abgeholt (selbst bestätigt)'
       :'⚠ Papiertickets: noch abholen';
