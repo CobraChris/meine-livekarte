@@ -137,6 +137,37 @@
     document.body.append(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),60000);
   }
+
+  async function redrawBiometric(){
+    const ready=await vault.hasBiometric();
+    const supported=V.biometricSupported();
+    $('vault-biometric-unlock').hidden=!ready||!supported;
+    $('vault-biometric-enable-area').hidden=ready||!supported||vault.legacy;
+    $('vault-biometric-disable-area').hidden=!ready;
+    $('vault-biometric-status').textContent=ready
+      ?'✓ Geräte-Passkey eingerichtet. Passwort bleibt verfügbar.'
+      :supported?'Noch nicht eingerichtet. Fingerabdruck/PIN nur bei WebAuthn-PRF-Unterstützung.'
+      :'Browser oder Geräte-Passkeys nicht verfügbar. Passwort bleibt uneingeschränkt nutzbar.';
+  }
+  $('vault-biometric-unlock').onclick=()=>busy($('vault-biometric-unlock'),async()=>{
+    await vault.unlockWithBiometric();
+    touch();await refreshMode();
+    status('✓ Tresor sicher über Geräte-Passkey entsperrt.');
+  });
+  $('vault-biometric-enable').onclick=()=>busy($('vault-biometric-enable'),async()=>{
+    // Trigger WebAuthn only from an explicit user click. Never enable an
+    // assertion-only "biometric check" without cryptographic PRF key wrapping.
+    await vault.enableBiometric($('vault-biometric-password').value);
+    $('vault-biometric-password').value='';
+    touch();await redrawBiometric();
+    status('✓ Geräte-Passkey eingerichtet. Tresor kann künftig ohne Passwort geöffnet werden, solange der Passkey verfügbar ist.');
+  });
+  $('vault-biometric-disable').onclick=()=>busy($('vault-biometric-disable'),async()=>{
+    await vault.disableBiometric($('vault-biometric-disable-password').value);
+    $('vault-biometric-disable-password').value='';
+    touch();await redrawBiometric();
+    status('Schnellentsperrung im Tresor deaktiviert. Eventuell gespeicherten Passkey separat im Android-Passwortmanager löschen.');
+  });
   async function refreshMode(){
     if(!V.available()){
       $('vault-unavailable').hidden=false;
@@ -144,10 +175,11 @@
       status('Ticket-Tresor benötigt HTTPS, Web Crypto und IndexedDB.',true);
       return;
     }
-    if(vault.key){mode('open');await redraw();return;}
+    if(vault.key){mode('open');await redraw();await redrawBiometric();return;}
     const exists=await vault.exists();
     mode(exists?'locked':'setup');
     $('vault-forgot').hidden=!exists||!(await vault.hasRecovery());
+    $('vault-biometric-unlock').hidden=!exists||!(await vault.hasBiometric())||!V.biometricSupported();
     status('Alle Dateien bleiben nur verschlüsselt auf diesem Gerät. Backup empfohlen.');
   }
   $('vault-create').onclick=()=>busy($('vault-create'),async()=>{
