@@ -130,9 +130,9 @@
       typeof delayInput==='string'?delayInput.trim():'';
     const delayMinutes=/^\\d{1,3}$/.test(input)&&Number(input)<=180?
       Number(input):null;
-    const shared='Klookで2人分の切符を購入しました。11月1日に高山から京都へ向かいます。\\n'
-      +'特急ひだ8号：高山11:35発、名古屋14:04着。\\n'
-      +'のぞみ71号：名古屋14:26発、京都15:00着（4号車、8D・8E）。\\n';
+    const shared='Klookで2人分の切符を購入しました。11月1日に高山から京都へ向かいます。\n'
+      +'特急ひだ8号：高山11:35発、名古屋14:04着。\n'
+      +'のぞみ71号：名古屋14:26発、京都15:00着（4号車、8D・8E）。\n';
     const instructions={
       delay:{
         title:'Hida 8 hat Verspätung',
