@@ -8,6 +8,8 @@
   const root=$('ticket-vault');
   if(!API||!root)return;
   const shelf=new API.Library();
+  const SHARE=window.LivekarteTicketShareInbox;
+  let sharedDraft=null,lastSharedId=null;
   const status=(message,error=false)=>{
     const el=$('ticket-status');
     el.textContent=message;el.classList.toggle('is-error',error);
@@ -44,7 +46,9 @@
   $('vault-preview-close').onclick=closePreview;
   $('vault-preview').addEventListener('close',closePreview);
   async function viewTicket(id){
-    const item=await shelf.get(id);
+    return preview(await shelf.get(id));
+  }
+  function preview(item){
     closePreview();
     currentPreviewUrl=URL.createObjectURL(item.blob);
     $('vault-preview-title').textContent=item.title;
@@ -90,6 +94,50 @@
       actions.append(show,save,remove);card.append(header,actions);list.append(card);
     }
   }
+  async function renderShared(){
+    if(!SHARE)return;
+    const items=await SHARE.pending();
+    sharedDraft=items[0]||null;
+    const panel=$('ticket-shared');
+    panel.hidden=!sharedDraft;
+    if(!sharedDraft){lastSharedId=null;return;}
+    if(lastSharedId!==sharedDraft.id){
+      lastSharedId=sharedDraft.id;
+      $('ticket-shared-title-input').value=sharedDraft.name.slice(0,100);
+      $('ticket-shared-trip').value='';
+    }
+    $('ticket-shared-name').textContent=sharedDraft.name+' · '+
+      (sharedDraft.type==='application/pdf'?'PDF':'Bild')+' · '+
+      (sharedDraft.size/1048576).toFixed(2)+' MB';
+    $('ticket-shared-note').textContent=
+      (items.length>1?items.length+' geteilte Dateien warten. Zuerst diese prüfen. ':
+        'Geteilte Datei bereit. ')+
+      'Sie ist noch kein gespeichertes Ticket. Vorschau ansehen, speichern oder verwerfen.';
+  }
+  $('ticket-shared-preview').onclick=()=>busy($('ticket-shared-preview'),async()=>{
+    if(!sharedDraft)throw Error('Keine geteilte Datei vorhanden.');
+    preview({...sharedDraft,title:$('ticket-shared-title-input').value||sharedDraft.name});
+  });
+  $('ticket-shared-save').onclick=()=>busy($('ticket-shared-save'),async()=>{
+    if(!sharedDraft)throw Error('Keine geteilte Datei vorhanden.');
+    const item=sharedDraft;
+    const file={name:item.name,type:item.type,size:item.size,
+      arrayBuffer:()=>item.blob.arrayBuffer()};
+    const saved=await shelf.add(file,{
+      title:$('ticket-shared-title-input').value,
+      trip:$('ticket-shared-trip').value
+    });
+    await SHARE.remove(item.id);
+    await render();await renderShared();
+    status('✓ Geteiltes Ticket „'+saved.title+'“ lokal gespeichert – ohne Passwort.');
+  });
+  $('ticket-shared-discard').onclick=()=>busy($('ticket-shared-discard'),async()=>{
+    if(!sharedDraft)return;
+    if(!confirm('Geteilte Datei verwerfen? Sie wurde noch nicht dauerhaft als Ticket gespeichert.'))return;
+    await SHARE.remove(sharedDraft.id);
+    await renderShared();
+    status('Geteilte Datei verworfen. Bereits gespeicherte Tickets bleiben erhalten.');
+  });
   async function showLegacy(){
     try{
       const oldCount=await shelf.legacyCount();
@@ -159,7 +207,25 @@
     }
     await render();
     await showLegacy();
-    status('Bereit · Dateien bleiben lokal auf diesem Gerät, ohne Passwort und ohne Cloud.');
+    if(SHARE)await renderShared();
+    const shareStatus=new URLSearchParams(window.location.search).get('shared-ticket');
+    if(shareStatus){
+      root.open=true;
+      root.scrollIntoView({behavior:'smooth',block:'start'});
+      if(shareStatus==='ready'){
+        status('Eine Datei wurde aus Android übergeben. Bitte die Importkarte prüfen und „Als Ticket speichern“ wählen.');
+      }else{
+        status('Android konnte diese Datei nicht übernehmen. Unterstützt sind PDF, PNG, JPG und WebP bis 10 MB. Alternativ die Dateiauswahl nutzen.',true);
+      }
+    }else{
+      status('Bereit · Dateien bleiben lokal auf diesem Gerät, ohne Passwort und ohne Cloud.');
+    }
   }
+  window.addEventListener('focus',()=>{
+    if(SHARE)void renderShared().catch(e=>status('Geteilte Dateien konnten nicht geladen werden: '+e.message,true));
+  });
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&SHARE)void renderShared().catch(e=>status('Geteilte Dateien konnten nicht geladen werden: '+e.message,true));
+  });
   void start().catch(e=>status('Ticketablage nicht verfügbar: '+e.message,true));
 })();

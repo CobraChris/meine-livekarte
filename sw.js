@@ -6,11 +6,14 @@
 const CACHE_NAME='livekarte-shell-pwa-v22';
 const SHELL_FILES=[
   'index.html','style.css','core.js','walking-core.js','day-plan-core.js','route-discovery.js','next-step-core.js','japanese-destination.js','app.js','sync.js',
-  'outbox-core.js','sync-out.js','build-version.js','pwa.js','ticket-vault.js','ticket-library.js','ticket-library-ui.js','manifest.json',
+  'outbox-core.js','sync-out.js','build-version.js','pwa.js','ticket-vault.js','ticket-library.js','ticket-library-ui.js','ticket-share-inbox.js','manifest.json',
   'vendor/leaflet.js','vendor/leaflet.css',
   'icons/livekarte.svg','icons/livekarte-192.png',
   'icons/livekarte-512.png','icons/livekarte-maskable-512.png'
 ];
+// Shared document payloads are only written to local IndexedDB and never
+// fetched over the network or cached as HTTP responses.
+if(typeof importScripts==='function')importScripts('./ticket-share-inbox.js');
 const SHELL_SET=new Set(SHELL_FILES);
 const scopedUrl=path=>new URL(path,self.registration.scope).toString();
 self.addEventListener('install',event=>{
@@ -31,10 +34,33 @@ self.addEventListener('activate',event=>{
 });
 self.addEventListener('fetch',event=>{
   const req=event.request;
-  if(req.method!=='GET'||req.headers.has('Authorization'))return;
+  if(req.headers.has('Authorization'))return;
   const url=new URL(req.url), scope=new URL(self.registration.scope);
   if(url.origin!==scope.origin || !url.pathname.startsWith(scope.pathname))return;
   const relative=url.pathname.slice(scope.pathname.length);
+  if(req.method==='POST'&&relative==='share-ticket'){
+    event.respondWith((async()=>{
+      // Only an installed Android PWA advertises the manifest share target.
+      // A POST to this exact local path never reaches GitHub Pages.
+      let code='invalid';
+      try{
+        const form=await req.formData();
+        const file=form.get('ticket');
+        if(!file||typeof file.arrayBuffer!=='function')code='missing';
+        else if(!self.LivekarteTicketShareInbox)code='offline';
+        else{
+          await self.LivekarteTicketShareInbox.store(file);
+          code='ready';
+        }
+      }catch{
+        code='error';
+      }
+      const destination=new URL('./?shared-ticket='+code+'#ticket-vault',self.registration.scope);
+      return Response.redirect(destination.href,303);
+    })());
+    return;
+  }
+  if(req.method!=='GET')return;
   // Strict allowlist: no /sync/inbox, GitHub, OSM or arbitrary URL data caching.
   const navigate=req.mode==='navigate';
   if(!navigate && !SHELL_SET.has(relative))return;

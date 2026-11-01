@@ -151,7 +151,7 @@ test('HTML / Pages / service worker only ship password-free ticket UI',()=>{
   assert.match(html,/src="ticket-library\.js"/);
   assert.match(html,/src="ticket-library-ui\.js"/);
   assert.doesNotMatch(html,/src="ticket-vault-ui\.js"/);
-  assert.match(wf,/cp ticket-vault\.js ticket-library\.js ticket-library-ui\.js public\//);
+  assert.match(wf,/cp ticket-vault\.js ticket-library\.js ticket-library-ui\.js ticket-share-inbox\.js public\//);
   assert.match(sw,/'ticket-library\.js','ticket-library-ui\.js'/);
   assert.match(stamp,/\("src", "ticket-library\.js"\)/);
   assert.match(stamp,/\("src", "ticket-library-ui\.js"\)/);
