@@ -12,10 +12,10 @@ test('open tasks are derived from canonical manual, rail and pickup statuses wit
   const schedule=NS.choose('ride-kyoto','2026-11-01',context);
   const original=JSON.stringify(schedule);
   const result=NS.taskBuckets(schedule.entries,at('2026-11-01T03:37:00Z'));
-  assert.equal(result.openCount,4);
+  assert.equal(result.openCount,2);
   assert.equal(result.doneCount,3);
   assert.deepEqual(result.open.map(x=>x.id),[
-    'kyoto:nozomi','kyoto:hotel','kyoto:gion','kyoto:ponto']);
+    'kyoto:nozomi','kyoto:hotel']);
   assert.deepEqual(result.done.map(x=>x.id),[
     'kyoto:pickup','kyoto:hida','kyoto:transfer']);
   assert.equal(JSON.stringify(schedule),original);
@@ -23,7 +23,6 @@ test('open tasks are derived from canonical manual, rail and pickup statuses wit
   assert.equal(context.pickupDone,true);
   assert.equal(result.open[0].timeState,'upcoming');
   assert.equal(result.open[1].timeState,'flexible');
-  assert.equal(result.open[2].timeState,'flexible');
 });
 
 test('Japanese planned time can pass without marking travel done or falsely claiming train was missed',()=>{
@@ -36,8 +35,8 @@ test('Japanese planned time can pass without marking travel done or falsely clai
     ['2026-11-01T05:26:00Z','kyoto:transfer','past'],
     ['2026-11-01T05:25:00Z','kyoto:nozomi','upcoming'],
     ['2026-11-01T05:26:00Z','kyoto:nozomi','past'],
-    ['2026-11-01T04:37:00Z','kyoto:gion','flexible'],
-    ['2026-11-02T04:37:00Z','kyoto:gion','past']
+    ['2026-11-01T04:37:00Z','kyoto:hotel','flexible'],
+    ['2026-11-02T04:37:00Z','kyoto:hotel','past']
   ];
   for(const [iso,id,expect] of cases){
     const task=tasks.find(x=>x.id===id);
@@ -45,7 +44,7 @@ test('Japanese planned time can pass without marking travel done or falsely clai
   }
   assert.equal(schedule.doneCount,0);
   assert.ok(schedule.entries.every(x=>x.done===false));
-  assert.equal(NS.taskBuckets(schedule.entries,at('2026-11-02T02:00:00Z')).openCount,7);
+  assert.equal(NS.taskBuckets(schedule.entries,at('2026-11-02T02:00:00Z')).openCount,5);
   assert.equal(NS.taskTimeState({id:'unknown'},at('2026-11-01T00:00:00Z')),'unscheduled');
 });
 
@@ -54,9 +53,7 @@ test('previous and next Japan day trip items are differentiated without guessing
   assert.equal(NS.taskTimeState(prep,at('2026-10-31T03:00:00Z')),'upcoming');
   assert.equal(NS.taskTimeState(prep,at('2026-11-01T05:00:00Z')),'past');
   const day=NS.choose('town-kyoto','2026-11-02');
-  const end=day.entries.find(x=>x.id==='kyoto:fushimi');
-  assert.equal(NS.taskTimeState(end,at('2026-11-02T08:14:00Z')),'upcoming');
-  assert.equal(NS.taskTimeState(end,at('2026-11-02T08:15:00Z')),'past');
+  assert.equal(day.total,0,'optional sightseeing stays in itinerary, not checklist');
   assert.equal(NS.taskBuckets([]).openCount,0);
 });
 
