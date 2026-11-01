@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-library-ui.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-share-inbox.js"></script><script defer src="ticket-library-ui.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -182,6 +182,21 @@
   <div class="vault-body">
     <p class="vault-intro">Deine PDF-Tickets und QR-Screenshots sind hier jederzeit direkt erreichbar – <strong>ohne Passwort, PIN oder Fingerabdruck</strong>. Die Dateien bleiben ausschließlich auf diesem Gerät.</p>
     <p class="ticket-no-password-notice"><strong>Hinweis:</strong> Die Ticketdateien werden nicht verschlüsselt. Wer auf dein entsperrtes Smartphone beziehungsweise dessen App-Daten zugreifen kann, kann sie lesen. Es gibt keine automatische Cloud-Sicherung.</p>
+    <section id="ticket-shared" class="ticket-shared" aria-labelledby="ticket-shared-title" hidden>
+      <h3 id="ticket-shared-title">📥 Aus Android geteilt · Import bestätigen</h3>
+      <p id="ticket-shared-note">Geteilte Dateien werden noch nicht automatisch zu deinen Tickets hinzugefügt.</p>
+      <strong id="ticket-shared-name"></strong>
+      <label for="ticket-shared-title-input">Ticketname</label>
+      <input id="ticket-shared-title-input" type="text" maxlength="100">
+      <label for="ticket-shared-trip">Reise (optional)</label>
+      <input id="ticket-shared-trip" type="text" maxlength="100" placeholder="z. B. Japan 2026">
+      <div class="ticket-shared-actions">
+        <button id="ticket-shared-preview" type="button" class="vault-secondary">👁 Vorschau</button>
+        <button id="ticket-shared-save" type="button" class="vault-primary">✓ Als Ticket speichern</button>
+        <button id="ticket-shared-discard" type="button" class="vault-secondary">Verwerfen</button>
+      </div>
+    </section>
+    <p class="ticket-share-help">Android: PDF oder Screenshot öffnen → <strong>Teilen</strong> → <strong>Meine Live-Karte</strong>. Das funktioniert in kompatiblen Browsern mit installierter App. Alternativ unten eine Datei auswählen.</p>
     <section id="ticket-file-area" class="vault-import" aria-label="Tickets importieren">
       <h3>Ticket oder Screenshot hinzufügen</h3>
       <label for="ticket-file">PDF oder Bild auswählen</label>
