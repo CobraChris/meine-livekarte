@@ -104,6 +104,7 @@
       <button type="button" id="next-action-details">Details ansehen</button>
       <a id="next-action-map" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps">↗ Weg zum Ort</a>
       <button id="next-action-japanese" type="button" hidden>🇯🇵 Dem Fahrer zeigen</button>
+      <button id="next-action-planb" type="button" hidden>🆘 Plan B bei Zugproblemen</button>
     </div>
   </div>
   <p id="next-action-feedback" class="next-action-feedback" role="status" aria-live="polite">Aufgaben werden nur durch dich als erledigt markiert.</p>
@@ -135,6 +136,7 @@
     <p id="kyoto-pickup-feedback" role="status" aria-live="polite">Noch offen: Abholung der Papier-Tickets.</p>
   </div>
   <button id="kyoto-pickup-help" class="kyoto-pickup-help" type="button" hidden>🇯🇵 Hilfe am JR-Schalter zeigen</button>
+  <button id="kyoto-pickup-planb" class="kyoto-pickup-help" type="button" hidden>🆘 Plan B · Zugprobleme &amp; Anschluss</button>
   <details class="kyoto-pickup-more" id="kyoto-pickup-steps-details">
     <summary>4 Schritte zur Ticketabholung ansehen</summary>
     <ol class="kyoto-pickup-steps">
@@ -288,6 +290,46 @@
 </aside>
 </main>
 
+
+<dialog id="train-planb-dialog" class="train-planb-dialog" aria-labelledby="train-planb-title">
+  <div class="train-planb-heading">
+    <div><span>🆘 PLAN B · ZUGREISE 01.11.</span><h2 id="train-planb-title">Wenn unterwegs etwas schiefgeht</h2></div>
+    <button id="train-planb-close" type="button" aria-label="Plan-B-Hilfe schließen">×</button>
+  </div>
+  <div class="train-planb-schedule" aria-label="Geplante Verbindung">
+    <div><small>Hida 8 · Takayama</small><strong>11:35 → 14:04</strong></div>
+    <div><small>Umstieg Nagoya</small><strong>22 Min.</strong></div>
+    <div><small>Nozomi 71 · Kyoto</small><strong>14:26 → 15:00</strong></div>
+  </div>
+  <p class="train-planb-hint">Buchungs-/Planzeiten für zwei Personen. Gleise, Zugausfälle und Verspätungen werden nicht live geprüft.</p>
+  <div class="train-planb-scenarios" role="group" aria-label="Welches Problem ist aufgetreten?">
+    <button type="button" data-train-planb="delay" aria-pressed="true">⏱ Zug verspätet</button>
+    <button type="button" data-train-planb="missed" aria-pressed="false">🚄 Anschluss verpasst</button>
+    <button type="button" data-train-planb="ticket" aria-pressed="false">🎟 Ticketproblem</button>
+    <button type="button" data-train-planb="staff" aria-pressed="false">🇯🇵 Personal fragen</button>
+  </div>
+  <div id="train-planb-delay" class="train-planb-delay">
+    <label for="train-planb-delay-minutes">Verspätung des Hida 8 (Minuten, falls bekannt)</label>
+    <input id="train-planb-delay-minutes" type="number" inputmode="numeric" min="0" max="180" step="1" placeholder="z. B. 15">
+    <strong id="train-planb-margin" aria-live="polite">22 Minuten geplante Umsteigezeit</strong>
+    <small>Nur eine Rechnung (22 Min. minus eingegebene Verspätung), keine Anschlussprognose. Fußweg, geänderte Gleise oder eine Verspätung des Nozomi sind unbekannt.</small>
+  </div>
+  <section class="train-planb-guidance" aria-labelledby="train-planb-action-title">
+    <h3 id="train-planb-action-title">Was jetzt tun?</h3>
+    <ol id="train-planb-steps"></ol>
+  </section>
+  <div class="train-planb-japanese">
+    <span>🇯🇵 DEM JR-PERSONAL ZEIGEN</span>
+    <p id="train-planb-jp" lang="ja"></p>
+  </div>
+  <button type="button" id="train-planb-copy">⧉ Japanische Nachricht kopieren</button>
+  <p id="train-planb-feedback" role="status" aria-live="polite"></p>
+  <p class="train-planb-disclaimer">Wichtig: Die Regeln für spätere Züge, Sitzplätze, Umbuchung und Erstattung hängen vom tatsächlichen Fahrkartentyp ab – besonders bei Klook-Vouchern. JR-Personal oder Klook muss die Gültigkeit klären. Kein eigenständiger Ticketwechsel in der App.</p>
+  <div class="train-planb-links">
+    <a href="https://global.jr-central.co.jp/en/tickets/change/" target="_blank" rel="noopener noreferrer">JR Central · Ticketänderungen</a>
+    <a href="https://global.jr-central.co.jp/en/nozomi/" target="_blank" rel="noopener noreferrer">JR Central · Nozomi-Regeln</a>
+  </div>
+</dialog>
 <dialog id="ticket-help-dialog" class="ticket-help-dialog" aria-labelledby="ticket-help-title">
   <div class="ticket-help-heading">
     <h2 id="ticket-help-title">🇯🇵 JR-Ticketabholung · Personal zeigen</h2>

@@ -115,5 +115,85 @@
       dateKey===KYOTO_DAY2?'Mo. 02.11.2026':'';
     return {entries,next,doneCount,total:entries.length,dateLabel};
   }
-  return Object.freeze({localDate,kyotoDepartureClock,stations,tasksFor,completed,choose});
+  // Contingency helper: the booked connection is NOT a real-time rail feed.
+  // Ticket use, refunds and changes for Klook-issued fares are deliberately
+  // decided by JR staff/Klook, never automatically by this application.
+  function trainProblem(kind,delayInput=null){
+    const names={
+      delay:'Hida 8 verspätet',
+      missed:'Nozomi 71 verpasst',
+      ticket:'Ticket oder Sperre funktioniert nicht',
+      staff:'Personal um Hilfe bitten'
+    };
+    if(!Object.hasOwn(names,kind))throw new Error('Unbekanntes Zugproblem.');
+    const input=typeof delayInput==='number'?String(delayInput):
+      typeof delayInput==='string'?delayInput.trim():'';
+    const delayMinutes=/^\d{1,3}$/.test(input)&&Number(input)<=180?
+      Number(input):null;
+    const shared='Klookで2人分の切符を購入しました。11月1日に高山から京都へ向かいます。\n'
+      +'特急ひだ8号：高山11:35発、名古屋14:04着。\n'
+      +'のぞみ71号：名古屋14:26発、京都15:00着（4号車、8D・8E）。\n';
+    const instructions={
+      delay:{
+        title:'Hida 8 hat Verspätung',
+        steps:[
+          'Im Hida 8 beim Zugpersonal nachfragen, sobald der Anschluss unsicher wird.',
+          'In Nagoya der Shinkansen-Anzeige folgen und bei drohendem Anschlussverlust direkt JR-Personal ansprechen.',
+          'Beide Papierfahrkarten und den Klook-Voucher bereithalten; neue Zug- und Sitzplatzberechtigung vor dem Einstieg bestätigen lassen.'
+        ],
+        jp:'ひだ8号が遅れています。名古屋駅でのぞみ71号に乗り換えられるか、確認していただけますか？乗り遅れる場合、どうすればよいですか？'
+      },
+      missed:{
+        title:'Anschluss Nozomi 71 verpasst',
+        steps:[
+          'Am JR-Shinkansen-Schalter oder bei der Umsteigesperre Personal ansprechen; beide Papiertickets vorzeigen.',
+          'Fragen, welchen späteren Zug du mit genau diesen Klook-Tickets nehmen darfst und ob ein neues Ticket nötig ist.',
+          'Nicht ungeprüft einen anderen Nozomi nehmen oder die reservierten Plätze 8D/8E im nächsten Zug beanspruchen.'
+        ],
+        jp:'のぞみ71号に乗り遅れました。Klookで購入したこの切符で利用できる次の列車と、必要な手続きを教えてください。新しい切符は必要ですか？'
+      },
+      ticket:{
+        title:'Ticketproblem am Automaten oder Gate',
+        steps:[
+          'Bei Abholproblemen in Takayama die bisherige JR-Schalterhilfe und den echten Klook-Voucher zeigen.',
+          'Wenn die Umsteigesperre in Nagoya das Ticket ablehnt, den besetzten JR-Transfer-Schalter nutzen.',
+          'Tickets nicht wegwerfen und nicht erneut kaufen, bevor das Personal die erforderlichen Schritte erklärt.'
+        ],
+        jp:'Klookの予約バウチャーがあります。切符の発券、または乗り換え改札で困っています。2人分の切符を確認して、手続き方法を教えていただけますか？'
+      },
+      staff:{
+        title:'Personal nach dem richtigen Weg fragen',
+        steps:[
+          'Die Karte zusammen mit deinen Papiertickets beim JR-Personal vorzeigen.',
+          'Am Bahnhof Nagoya den Schildern „新幹線“ (Shinkansen) und „のりかえ“ (Umsteigen) folgen.',
+          'Das tatsächliche Gleis und die Abfahrt des Nozomi 71 auf der Bahnhofsanzeige abgleichen.'
+        ],
+        jp:'名古屋駅でのぞみ71号に乗り換えたいです。新幹線の乗り換え改札口とホームはどこですか？この切符で大丈夫ですか？'
+      }
+    };
+    const selected=instructions[kind];
+    let margin=null;
+    let marginText='';
+    if(kind==='delay'){
+      if(delayMinutes===null){
+        marginText='22 Minuten laut Fahrplan. Wenn du die Verspätung kennst, kannst du sie eingeben.';
+      }else{
+        margin=22-delayMinutes;
+        marginText=margin>0
+          ?'Rechnerisch noch '+margin+' Minuten Umsteigezeit (22 − '+delayMinutes+').'
+          :margin===0
+            ?'Rechnerisch 0 Minuten Umsteigezeit. Anschluss stark gefährdet.'
+            :'Rechnerisch '+(-margin)+' Minuten nach geplanter Nozomi-Abfahrt. Kein Nachweis, dass der Anschluss tatsächlich verpasst ist.';
+      }
+    }
+    const japanese='すみません。'+shared+selected.jp+
+      (kind==='delay'&&delayMinutes!==null?' 現在、約'+delayMinutes+'分遅れています。':'');
+    return {
+      kind,title:selected.title,steps:selected.steps.slice(),
+      japanese,delayMinutes:kind==='delay'?delayMinutes:null,
+      remainingMinutes:kind==='delay'?margin:null,
+      marginText,plannedTransferMinutes:22
+    };
+  }
+  return Object.freeze({localDate,kyotoDepartureClock,stations,tasksFor,completed,choose,trainProblem});
 });

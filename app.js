@@ -1638,6 +1638,7 @@
   const nextActionDetails=$('next-action-details');
   const nextActionMap=$('next-action-map');
   const nextActionJapanese=$('next-action-japanese');
+  const nextActionPlanB=$('next-action-planb');
   const nextActionFeedback=$('next-action-feedback');
   const nextActionList=$('next-action-list');
   let nextActionDone=Object.create(null);
@@ -1731,6 +1732,7 @@
     const selectedTour=!criticalPickup&&!tourIsActive&&tourRoute?.planId===view&&
       tourRoute?.stops?.length>=2;
     nextActionSection.hidden=!result.total&&!tourIsActive&&!selectedTour;
+    nextActionPlanB.hidden=!canShowRailPlanB();
     if(nextActionSection.hidden)return;
     const count=$('next-action-count');
     const time=$('next-action-time'),name=$('next-action-name'),
@@ -2165,6 +2167,13 @@
       $('kyoto-pickup').scrollIntoView({behavior:'smooth',block:'start'});
     };
     booking.append(pickupLink);
+    if(canShowRailPlanB()){
+      const planBButton=node('button','🆘 Plan B: Zugproblem oder Anschluss verpasst',
+        'kyoto-booking-guide kyoto-planb-launch');
+      planBButton.type='button';
+      planBButton.onclick=()=>openTrainPlanB();
+      booking.append(planBButton);
+    }
     kyotoRailInfographic.append(booking);
     if(stops.length<2)return;
     const last=stops[stops.length-1],first=stops[0];
@@ -2310,6 +2319,68 @@
   const kyotoPickupPanel=$('kyoto-pickup');
   const kyotoPickupConfirm=$('kyoto-pickup-confirm');
   const kyotoPickupFeedback=$('kyoto-pickup-feedback');
+  // Plan B is based on the existing, exact journey and never authorizes
+  // a different train or new ticket. Separate from ticket-pickup confirmation.
+  const trainPlanBDialog=$('train-planb-dialog');
+  const trainPlanBButtons=[...trainPlanBDialog.querySelectorAll('[data-train-planb]')];
+  const trainPlanBDelay=$('train-planb-delay-minutes');
+  const trainPlanBFeedback=$('train-planb-feedback');
+  let trainPlanBKind='delay';
+  function canShowRailPlanB(){
+    if(!['town-takayama','ride-kyoto'].includes(activePlanId)||
+       NS.localDate()!=='2026-11-01')return false;
+    const trip=Object.hasOwn(planJourneys,'ride-kyoto')
+      ?planJourneys['ride-kyoto']
+      :C.presetJourney('takayama-kyoto-2026-11-01');
+    return C.isNagoyaKyotoTrip(trip);
+  }
+  function renderTrainPlanB(){
+    const advice=NS.trainProblem(trainPlanBKind,trainPlanBDelay.value);
+    trainPlanBButtons.forEach(button=>
+      button.setAttribute('aria-pressed',String(button.dataset.trainPlanb===trainPlanBKind)));
+    $('train-planb-delay').hidden=trainPlanBKind!=='delay';
+    $('train-planb-margin').textContent=advice.marginText;
+    $('train-planb-action-title').textContent='Was jetzt tun? · '+advice.title;
+    const list=$('train-planb-steps');
+    list.replaceChildren();
+    advice.steps.forEach(instruction=>list.append(node('li',instruction)));
+    $('train-planb-jp').textContent=advice.japanese;
+  }
+  function openTrainPlanB(kind='delay'){
+    if(!canShowRailPlanB()){
+      say('Plan B ist nur für die unveränderte Kyoto-Zugreise am 01.11. verfügbar.');
+      return;
+    }
+    trainPlanBKind=kind;
+    trainPlanBDelay.value='';
+    trainPlanBFeedback.textContent='';
+    renderTrainPlanB();
+    if(!trainPlanBDialog.open)trainPlanBDialog.showModal();
+  }
+  trainPlanBButtons.forEach(button=>{
+    button.onclick=()=>{
+      trainPlanBKind=button.dataset.trainPlanb;
+      trainPlanBFeedback.textContent='';
+      renderTrainPlanB();
+    };
+  });
+  trainPlanBDelay.addEventListener('input',renderTrainPlanB);
+  $('train-planb-close').onclick=()=>trainPlanBDialog.close();
+  trainPlanBDialog.addEventListener('close',()=>{
+    trainPlanBFeedback.textContent='';
+  });
+  $('train-planb-copy').onclick=async()=>{
+    const japanese=NS.trainProblem(trainPlanBKind,trainPlanBDelay.value).japanese;
+    try{
+      if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(japanese);
+      trainPlanBFeedback.textContent='✓ Japanische Nachricht kopiert.';
+    }catch{
+      trainPlanBFeedback.textContent='Kopieren nicht möglich. Japanischen Text direkt dem Personal zeigen.';
+    }
+  };
+  nextActionPlanB.onclick=()=>openTrainPlanB();
+  $('kyoto-pickup-planb').onclick=()=>openTrainPlanB();
   const ticketHelpButton=$('kyoto-pickup-help');
   const ticketHelpDialog=$('ticket-help-dialog');
   const ticketHelpFeedback=$('ticket-help-feedback');
@@ -2390,6 +2461,7 @@
     kyotoPickupPanel.classList.toggle('is-complete',kyotoPickupDone);
     ticketHelpButton.hidden=kyotoPickupDone||!canShowTicketHelp();
     renderKyotoDepartureClock();
+    $('kyoto-pickup-planb').hidden=!canShowRailPlanB();
     $('kyoto-pickup-state').textContent=kyotoPickupDone
       ?'✅ Papiertickets: abgeholt (selbst bestätigt)'
       :'⚠ Papiertickets: noch abholen';
