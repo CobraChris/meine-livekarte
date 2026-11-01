@@ -169,7 +169,15 @@
 <details id="ticket-vault" class="ticket-vault" aria-label="Persönlicher verschlüsselter Ticket-Tresor">
   <summary>🎟 Meine Tickets <span>PDF · QR-Bilder · offline</span></summary>
   <div class="vault-body">
-    <p class="vault-intro">Speichere PDF-Fahrkarten und Screenshots lokal. Inhalt, Dateiname und Reisebezeichnung sind mit deinem Passwort verschlüsselt. Keine Cloud, keine GitHub-Uploads.</p>
+    <p class="vault-intro">Speichere PDF-Fahrkarten und Screenshots lokal. Ein unabhängiger Hauptschlüssel verschlüsselt die Dokumente; Passwort und Wiederherstellungsschlüssel sichern jeweils den Zugriff. Keine Cloud, keine GitHub-Uploads.</p>
+    <section id="vault-recovery-display" class="vault-recovery-display" hidden aria-labelledby="vault-recovery-title">
+      <h3 id="vault-recovery-title">🔑 Dein Wiederherstellungsschlüssel</h3>
+      <p><strong>Jetzt unbedingt außerhalb dieser App sichern.</strong> Bei verlorenem Passwort kannst du damit ein neues vergeben. Der Schlüssel wird nur jetzt angezeigt und nicht im Klartext gespeichert.</p>
+      <code id="vault-recovery-code" class="vault-recovery-code" aria-label="Wiederherstellungsschlüssel"></code>
+      <button id="vault-recovery-copy" type="button">⧉ Schlüssel kopieren</button>
+      <button id="vault-recovery-dismiss" type="button" class="vault-primary">✓ Schlüssel sicher gespeichert</button>
+      <p>Am besten im Passwortmanager ablegen. Nie zusammen mit einem unverschlüsselten Ticket-Screenshot teilen. Bei Verlust kannst du nach dem Entsperren mit deinem Passwort einen neuen Schlüssel erzeugen.</p>
+    </section>
     <p id="vault-unavailable" hidden>Für den Tresor werden HTTPS, Web Crypto und IndexedDB benötigt. In privaten Browserfenstern kann die Speicherung eingeschränkt sein.</p>
     <section id="vault-setup" hidden aria-label="Ticket-Tresor einrichten">
       <h3>Neuen verschlüsselten Tresor anlegen</h3>
@@ -177,14 +185,19 @@
       <input id="vault-new-password" type="password" autocomplete="new-password" minlength="10" placeholder="Ein sicheres Passwort wählen">
       <label for="vault-repeat-password">Passwort wiederholen</label>
       <input id="vault-repeat-password" type="password" autocomplete="new-password" minlength="10" placeholder="Passwort bestätigen">
-      <p class="vault-warning">Ohne dieses Passwort können die Dateien und auch das Backup nicht wiederhergestellt werden. Das Passwort wird nicht an einen Server gesendet und nicht gespeichert.</p>
+      <p class="vault-warning">Nach dem Einrichten bekommst du einen separaten Wiederherstellungsschlüssel. Speichere ihn unbedingt im Passwortmanager. Sind sowohl Passwort als auch Schlüssel verloren, sind die Dokumente nicht mehr lesbar.</p>
       <button id="vault-create" type="button" class="vault-primary">🔐 Tresor einrichten</button>
       <details class="vault-restore-block">
         <summary>Bereits ein verschlüsseltes Backup? Hier wiederherstellen</summary>
         <label for="vault-restore-file">Backup-Datei (.json)</label>
         <input id="vault-restore-file" type="file" accept=".json,application/json">
-        <label for="vault-restore-password">Passwort des Backups</label>
+        <label for="vault-restore-password">Passwort des Backups oder Wiederherstellungsschlüssel</label>
         <input id="vault-restore-password" type="password" autocomplete="off">
+        <label class="vault-check-row"><input id="vault-restore-use-recovery" type="checkbox"> Mit Wiederherstellungsschlüssel statt Passwort öffnen (ab Tresor-Version 2)</label>
+        <div id="vault-restore-new-group" class="vault-recovery-fields" hidden>
+          <label for="vault-restore-new-password">Neues Tresor-Passwort (mindestens 10 Zeichen)</label>
+          <input id="vault-restore-new-password" type="password" autocomplete="new-password" minlength="10">
+        </div>
         <button id="vault-restore" type="button">↑ Backup vollständig wiederherstellen</button>
         <small>Nur möglich, solange noch kein Tresor auf diesem Gerät eingerichtet ist. Vorhandene Daten werden niemals überschrieben.</small>
       </details>
@@ -194,7 +207,18 @@
       <label for="vault-password">Tresor-Passwort</label>
       <input id="vault-password" type="password" autocomplete="off" placeholder="Passwort eingeben">
       <button id="vault-unlock" type="button" class="vault-primary">Tresor entsperren</button>
-      <p class="vault-warning">Passwort vergessen? Es gibt absichtlich keine Hintertür. Bewahre dein Backup und das Passwort getrennt auf.</p>
+      <details id="vault-forgot" class="vault-restore-block" hidden>
+        <summary>Passwort vergessen? Mit Wiederherstellungsschlüssel zurücksetzen</summary>
+        <label for="vault-forgot-code">Wiederherstellungsschlüssel (LKV2-…)</label>
+        <input id="vault-forgot-code" type="password" autocomplete="off" placeholder="LKV2-…">
+        <label for="vault-forgot-new">Neues Passwort (mindestens 10 Zeichen)</label>
+        <input id="vault-forgot-new" type="password" autocomplete="new-password" minlength="10">
+        <label for="vault-forgot-again">Neues Passwort wiederholen</label>
+        <input id="vault-forgot-again" type="password" autocomplete="new-password" minlength="10">
+        <button id="vault-forgot-submit" type="button" class="vault-primary">🔑 Neues Passwort mit Schlüssel vergeben</button>
+        <small>Der bisherige Wiederherstellungsschlüssel wird dabei ersetzt. Du erhältst sofort einen neuen. Bereits exportierte alte Backups behalten ihre bisherigen Zugangsdaten.</small>
+      </details>
+      <p class="vault-warning">Wenn du Passwort <strong>und</strong> Wiederherstellungsschlüssel verlierst, gibt es keinen Zugriff mehr. Backup und Zugangsdaten getrennt aufbewahren.</p>
     </section>
     <section id="vault-open" hidden aria-label="Entsperrte Tickets">
       <div class="vault-open-heading">
@@ -202,6 +226,29 @@
         <button id="vault-lock" type="button">🔒 Sperren</button>
       </div>
       <p id="vault-counter" class="vault-counter">0 Dokumente</p>
+      <details id="vault-security" class="vault-security">
+        <summary>🔐 Sicherheit · Passwort ändern / Schlüssel erneuern</summary>
+        <div id="vault-legacy-upgrade" class="vault-recovery-fields" hidden>
+          <p>Dieser Tresor stammt aus der ersten Version. Mit dem bisherigen Passwort kannst du ihn einmalig auf den neuen Wiederherstellungsschutz umstellen. Die Ticketdateien bleiben erhalten.</p>
+          <label for="vault-upgrade-password">Bisheriges Tresor-Passwort</label>
+          <input id="vault-upgrade-password" type="password" autocomplete="off">
+          <button id="vault-upgrade-submit" type="button">🔒 Bestehenden Tresor sicher aktualisieren</button>
+        </div>
+        <div id="vault-modern-security" class="vault-recovery-fields" hidden>
+          <label for="vault-change-old">Bisheriges Passwort</label>
+          <input id="vault-change-old" type="password" autocomplete="off">
+          <label for="vault-change-new">Neues Passwort (mindestens 10 Zeichen)</label>
+          <input id="vault-change-new" type="password" autocomplete="new-password" minlength="10">
+          <label for="vault-change-again">Neues Passwort wiederholen</label>
+          <input id="vault-change-again" type="password" autocomplete="new-password" minlength="10">
+          <button id="vault-change-submit" type="button">Passwort ändern</button>
+          <hr>
+          <label for="vault-rotate-password">Aktuelles Passwort zum Erneuern des Wiederherstellungsschlüssels</label>
+          <input id="vault-rotate-password" type="password" autocomplete="off">
+          <button id="vault-rotate-submit" type="button">Neuen Wiederherstellungsschlüssel erzeugen</button>
+          <small>Nach Passwortänderung oder Schlüsselerneuerung neues Backup erstellen. Alte exportierte Backups bleiben mit ihren ursprünglichen Zugangsdaten entschlüsselbar.</small>
+        </div>
+      </details>
       <div class="vault-import">
         <h3>Ticket hinzufügen</h3>
         <label for="vault-open-input">PDF oder QR-Screenshot auswählen</label>

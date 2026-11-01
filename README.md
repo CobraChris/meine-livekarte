@@ -1,3 +1,10 @@
+## Ticket-Tresor v2: Passwortänderung und Recovery-Code (01.11.2026)
+
+Neue Tresore besitzen einen zufälligen AES-256-Dokumentenschlüssel, der unabhängig durch Passwort und zufälligen 256-Bit-Wiederherstellungsschlüssel geschützt wird. Bei der Einrichtung den einmalig angezeigten Code im Passwortmanager sichern. Das Passwort kann im entsperrten Zustand mit dem alten Passwort geändert werden. Mit dem Recovery-Code kann man bei vergessenem Passwort ein neues festlegen; dabei wird ein neuer Recovery-Code ausgegeben. Ein verlorener Code kann bei bekanntem Passwort erneuert werden. Backup v2 kann auf einem leeren Gerät entweder mit Passwort oder mit Recovery-Code und neuem Passwort wiederhergestellt werden.
+
+Bestehende v1-Tresore bleiben lesbar und lassen sich nach Eingabe des bisherigen Passworts ausdrücklich auf v2 migrieren. Frühere v1-Backups bleiben mit dem ursprünglichen Passwort lesbar. Alte Backups behalten auch nach einem Passwort- oder Recovery-Code-Wechsel ihre ursprünglichen Zugangsdaten: deshalb neue Sicherung erzeugen und alte Sicherungen gegebenenfalls sicher entfernen. Wenn weder Passwort noch Recovery-Code verfügbar ist, gibt es keine Entschlüsselung. Ohne Backup sind beim Verlust der lokalen Browserdaten die Tickets verloren. Keine automatische Cloud-Sicherung oder serverseitige Passwortzurücksetzung.
+
+---
 ## Verschlüsselter Ticket-Tresor – international nutzbares Fundament (01.11.2026)
 
 Unter der Reiseansicht befindet sich jetzt das aufklappbare Modul **„🎟 Meine Tickets“**. Der Tresor gehört zur installierbaren Live-Karte, ist aber von den bisher manuell gepflegten Ticketstatus, Klook-Abholschritten und der Synchronisierung unabhängig. Er eignet sich auch für künftige **Deutsche-Bahn- und andere internationale Reisen**; eine Reisebezeichnung kann frei eingegeben oder aus dem aktuell ausgewählten Reiseabschnitt übernommen werden.
