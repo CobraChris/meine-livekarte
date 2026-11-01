@@ -101,6 +101,64 @@
       });
       const show=node('button','👁 Anzeigen');
       show.type='button';show.onclick=()=>busy(show,()=>viewTicket(item.id));
+      const edit=node('button','✎ Bearbeiten','ticket-edit-toggle');
+      edit.type='button';
+      edit.setAttribute('aria-expanded','false');
+      const editForm=node('form',undefined,'ticket-card-editor');
+      editForm.hidden=true;
+      const titleId='ticket-edit-title-'+item.id;
+      const tripId='ticket-edit-trip-'+item.id;
+      const titleLabel=node('label','Titel ändern');
+      titleLabel.htmlFor=titleId;
+      const editTitle=node('input');editTitle.type='text';
+      editTitle.id=titleId;editTitle.maxLength=100;
+      editTitle.value=item.title;editTitle.required=true;
+      const tripLabel=node('label','Reise ändern (optional)');
+      tripLabel.htmlFor=tripId;
+      const editTrip=node('input');editTrip.type='text';
+      editTrip.id=tripId;editTrip.maxLength=100;editTrip.value=item.trip||'';
+      const editHelp=node('small','Nur Titel und Reise werden geändert. Das Original-PDF oder Bild bleibt unverändert.');
+      const editControls=node('div',undefined,'ticket-card-editor-actions');
+      const saveChanges=node('button','✓ Änderungen speichern');
+      saveChanges.type='submit';saveChanges.className='vault-primary';
+      const cancel=node('button','Abbrechen');
+      cancel.type='button';cancel.className='vault-secondary';
+      editControls.append(saveChanges,cancel);
+      editForm.append(titleLabel,editTitle,tripLabel,editTrip,editHelp,editControls);
+      edit.setAttribute('aria-controls',titleId);
+      edit.onclick=()=>{
+        editForm.hidden=!editForm.hidden;
+        edit.setAttribute('aria-expanded',String(!editForm.hidden));
+        if(!editForm.hidden)editTitle.focus();
+        else edit.focus();
+      };
+      cancel.onclick=()=>{
+        editTitle.value=item.title;editTrip.value=item.trip||'';
+        editForm.hidden=true;
+        edit.setAttribute('aria-expanded','false');
+        edit.focus();
+      };
+      editForm.addEventListener('submit',event=>{
+        event.preventDefault();
+        busy(saveChanges,async()=>{
+          const updated=await shelf.updateDetails(item.id,{
+            title:editTitle.value,trip:editTrip.value
+          });
+          const search=$('ticket-search');
+          if(search.value.trim()&&!API.filterTickets([updated],search.value).length)
+            search.value='';
+          await render();
+          const current=[...$('ticket-files').children]
+            .find(element=>element.dataset.ticketId===item.id);
+          if(current){
+            current.classList.add('is-edited-ticket');
+            current.scrollIntoView({behavior:'smooth',block:'nearest'});
+            current.tabIndex=-1;
+            current.focus({preventScroll:true});
+          }
+          status('✓ Ticket aktualisiert: „'+updated.title+'“. Die Originaldatei und die Pin-Markierung bleiben erhalten.');
+        });
+      });
       const save=node('button','↓ Original');
       save.type='button';save.onclick=()=>busy(save,async()=>{
         const file=await shelf.get(item.id);
@@ -113,7 +171,8 @@
         await shelf.remove(item.id);await render();
         status('Dokument gelöscht. Bereits exportierte Backups bleiben unverändert.');
       });
-      actions.append(pin,show,save,remove);card.append(header,actions);list.append(card);
+      actions.append(pin,show,edit,save,remove);
+      card.append(header,actions,editForm);list.append(card);
     }
   }
   // A saved ticket is brought into view, highlighted and also gets a
