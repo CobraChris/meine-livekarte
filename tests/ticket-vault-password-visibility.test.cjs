@@ -26,5 +26,5 @@ test('old encrypted files are only transferred after an explicit one-time action
   assert.match(ui,/old\.lock\(\)/);
   assert.match(ui,/ticket-legacy-password'\)\.value=''/);
   assert.match(css,/\.ticket-library-legacy/);
-  assert.match(html,/Der alte Tresor bleibt/);
+  assert.match(ui,/Der alte Tresor bleibt unverändert erhalten/);
 });
