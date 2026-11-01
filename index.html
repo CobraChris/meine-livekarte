@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-vault-ui.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-library-ui.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -177,129 +177,47 @@
   </details>
   </div>
 </section>
-<details id="ticket-vault" class="ticket-vault" aria-label="Persönlicher verschlüsselter Ticket-Tresor">
+<details id="ticket-vault" class="ticket-vault" aria-label="Meine lokal gespeicherten Ticketdateien">
   <summary>🎟 Meine Tickets <span>PDF · QR-Bilder · offline</span></summary>
   <div class="vault-body">
-    <p class="vault-intro">Speichere PDF-Fahrkarten und Screenshots lokal. Ein unabhängiger Hauptschlüssel verschlüsselt die Dokumente; Passwort und Wiederherstellungsschlüssel sichern jeweils den Zugriff. Keine Cloud, keine GitHub-Uploads.</p>
-    <section id="vault-recovery-display" class="vault-recovery-display" hidden aria-labelledby="vault-recovery-title">
-      <h3 id="vault-recovery-title">🔑 Dein Wiederherstellungsschlüssel</h3>
-      <p><strong>Jetzt unbedingt außerhalb dieser App sichern.</strong> Bei verlorenem Passwort kannst du damit ein neues vergeben. Der Schlüssel wird nur jetzt angezeigt und nicht im Klartext gespeichert.</p>
-      <code id="vault-recovery-code" class="vault-recovery-code" aria-label="Wiederherstellungsschlüssel"></code>
-      <button id="vault-recovery-copy" type="button">⧉ Schlüssel kopieren</button>
-      <button id="vault-recovery-dismiss" type="button" class="vault-primary">✓ Schlüssel sicher gespeichert</button>
-      <p>Am besten im Passwortmanager ablegen. Nie zusammen mit einem unverschlüsselten Ticket-Screenshot teilen. Bei Verlust kannst du nach dem Entsperren mit deinem Passwort einen neuen Schlüssel erzeugen.</p>
+    <p class="vault-intro">Deine PDF-Tickets und QR-Screenshots sind hier jederzeit direkt erreichbar – <strong>ohne Passwort, PIN oder Fingerabdruck</strong>. Die Dateien bleiben ausschließlich auf diesem Gerät.</p>
+    <p class="ticket-no-password-notice"><strong>Hinweis:</strong> Die Ticketdateien werden nicht verschlüsselt. Wer auf dein entsperrtes Smartphone beziehungsweise dessen App-Daten zugreifen kann, kann sie lesen. Es gibt keine automatische Cloud-Sicherung.</p>
+    <section id="ticket-file-area" class="vault-import" aria-label="Tickets importieren">
+      <h3>Ticket oder Screenshot hinzufügen</h3>
+      <label for="ticket-file">PDF oder Bild auswählen</label>
+      <input id="ticket-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp">
+      <label for="ticket-title">Titel (optional)</label>
+      <input id="ticket-title" type="text" maxlength="100" placeholder="z. B. ICE 789 · Hamburg → Berlin">
+      <label for="ticket-trip">Reise (optional)</label>
+      <input id="ticket-trip" type="text" maxlength="100" placeholder="z. B. Japan 2026">
+      <button id="ticket-trip-current" type="button" class="vault-secondary">Aktuellen Reiseabschnitt übernehmen</button>
+      <button id="ticket-add" type="button" class="vault-primary">＋ Ticket direkt speichern</button>
+      <small>PDF, PNG, JPG, WebP · höchstens 10 MB pro Datei · insgesamt maximal 25 Dateien oder 50 MB. QR-Screenshots werden als Bilder gespeichert, nicht automatisch ausgelesen.</small>
     </section>
-    <p id="vault-unavailable" hidden>Für den Tresor werden HTTPS, Web Crypto und IndexedDB benötigt. In privaten Browserfenstern kann die Speicherung eingeschränkt sein.</p>
-    <section id="vault-setup" hidden aria-label="Ticket-Tresor einrichten">
-      <h3>Neuen verschlüsselten Tresor anlegen</h3>
-      <label for="vault-new-password">Tresor-Passwort (mindestens 10 Zeichen)</label>
-      <input id="vault-new-password" type="password" autocomplete="new-password" minlength="10" placeholder="Ein sicheres Passwort wählen">
-      <label for="vault-repeat-password">Passwort wiederholen</label>
-      <input id="vault-repeat-password" type="password" autocomplete="new-password" minlength="10" placeholder="Passwort bestätigen">
-      <p class="vault-warning">Nach dem Einrichten bekommst du einen separaten Wiederherstellungsschlüssel. Speichere ihn unbedingt im Passwortmanager. Sind sowohl Passwort als auch Schlüssel verloren, sind die Dokumente nicht mehr lesbar.</p>
-      <button id="vault-create" type="button" class="vault-primary">🔐 Tresor einrichten</button>
-      <details class="vault-restore-block">
-        <summary>Bereits ein verschlüsseltes Backup? Hier wiederherstellen</summary>
-        <label for="vault-restore-file">Backup-Datei (.json)</label>
-        <input id="vault-restore-file" type="file" accept=".json,application/json">
-        <label for="vault-restore-password">Passwort des Backups oder Wiederherstellungsschlüssel</label>
-        <input id="vault-restore-password" type="password" autocomplete="off">
-        <label class="vault-check-row"><input id="vault-restore-use-recovery" type="checkbox"> Mit Wiederherstellungsschlüssel statt Passwort öffnen (ab Tresor-Version 2)</label>
-        <div id="vault-restore-new-group" class="vault-recovery-fields" hidden>
-          <label for="vault-restore-new-password">Neues Tresor-Passwort (mindestens 10 Zeichen)</label>
-          <input id="vault-restore-new-password" type="password" autocomplete="new-password" minlength="10">
-        </div>
-        <button id="vault-restore" type="button">↑ Backup vollständig wiederherstellen</button>
-        <small>Nur möglich, solange noch kein Tresor auf diesem Gerät eingerichtet ist. Vorhandene Daten werden niemals überschrieben.</small>
-      </details>
+    <section class="ticket-library-list" aria-label="Deine gespeicherten Tickets">
+      <h3>Gespeicherte Tickets</h3>
+      <p id="ticket-count" class="vault-counter">0 Dokumente</p>
+      <div id="ticket-files" class="vault-files"></div>
     </section>
-    <section id="vault-locked" hidden aria-label="Ticket-Tresor entsperren">
-      <h3>🔒 Deine Tickets sind gesperrt</h3>
-      <label for="vault-password">Tresor-Passwort</label>
-      <input id="vault-password" type="password" autocomplete="off" placeholder="Passwort eingeben">
-      <button id="vault-unlock" type="button" class="vault-primary">Tresor entsperren</button>
-      <button id="vault-biometric-unlock" type="button" class="vault-primary" hidden>👆 Mit Fingerabdruck / Gerätesperre entsperren</button>
-      <details id="vault-forgot" class="vault-restore-block" hidden>
-        <summary>Passwort vergessen? Mit Wiederherstellungsschlüssel zurücksetzen</summary>
-        <label for="vault-forgot-code">Wiederherstellungsschlüssel (LKV2-…)</label>
-        <input id="vault-forgot-code" type="password" autocomplete="off" placeholder="LKV2-…">
-        <label for="vault-forgot-new">Neues Passwort (mindestens 10 Zeichen)</label>
-        <input id="vault-forgot-new" type="password" autocomplete="new-password" minlength="10">
-        <label for="vault-forgot-again">Neues Passwort wiederholen</label>
-        <input id="vault-forgot-again" type="password" autocomplete="new-password" minlength="10">
-        <button id="vault-forgot-submit" type="button" class="vault-primary">🔑 Neues Passwort mit Schlüssel vergeben</button>
-        <small>Der bisherige Wiederherstellungsschlüssel wird dabei ersetzt. Du erhältst sofort einen neuen. Bereits exportierte alte Backups behalten ihre bisherigen Zugangsdaten.</small>
-      </details>
-      <p class="vault-warning">Wenn du Passwort <strong>und</strong> Wiederherstellungsschlüssel verlierst, gibt es keinen Zugriff mehr. Backup und Zugangsdaten getrennt aufbewahren.</p>
-    </section>
-    <section id="vault-open" hidden aria-label="Entsperrte Tickets">
-      <div class="vault-open-heading">
-        <strong>🔓 Lokal entsperrt</strong>
-        <button id="vault-lock" type="button">🔒 Sperren</button>
-      </div>
-      <p id="vault-counter" class="vault-counter">0 Dokumente</p>
-      <details id="vault-security" class="vault-security">
-        <summary>🔐 Sicherheit · Passwort ändern / Schlüssel erneuern</summary>
-        <div id="vault-legacy-upgrade" class="vault-recovery-fields" hidden>
-          <p>Dieser Tresor stammt aus der ersten Version. Mit dem bisherigen Passwort kannst du ihn einmalig auf den neuen Wiederherstellungsschutz umstellen. Die Ticketdateien bleiben erhalten.</p>
-          <label for="vault-upgrade-password">Bisheriges Tresor-Passwort</label>
-          <input id="vault-upgrade-password" type="password" autocomplete="off">
-          <button id="vault-upgrade-submit" type="button">🔒 Bestehenden Tresor sicher aktualisieren</button>
-        </div>
-        <div id="vault-modern-security" class="vault-recovery-fields" hidden>
-          <div class="vault-biometric-setup">
-            <strong>👆 Schnellentsperrung mit Geräte-Passkey</strong>
-            <p>Falls dein Android-Browser WebAuthn-PRF unterstützt, kannst du den Tresor nach der Einrichtung mit Fingerabdruck, PIN oder Gerätesperre öffnen. Das normale Passwort und dein Wiederherstellungsschlüssel bleiben gültig.</p>
-            <p id="vault-biometric-status" aria-live="polite">Verfügbarkeit wird geprüft.</p>
-            <div id="vault-biometric-enable-area" hidden>
-              <label for="vault-biometric-password">Tresor-Passwort einmalig bestätigen</label>
-              <input id="vault-biometric-password" type="password" autocomplete="current-password">
-              <button id="vault-biometric-enable" type="button">👆 Passkey zur Schnellentsperrung einrichten</button>
-              <p id="vault-biometric-feedback" class="vault-biometric-feedback" role="status" aria-live="assertive">Tippe zum Einrichten. Fehlermeldungen erscheinen direkt hier.</p>
-            </div>
-            <div id="vault-biometric-disable-area" hidden>
-              <label for="vault-biometric-disable-password">Tresor-Passwort zum Deaktivieren</label>
-              <input id="vault-biometric-disable-password" type="password" autocomplete="current-password">
-              <button id="vault-biometric-disable" type="button">Schnellentsperrung deaktivieren</button>
-            </div>
-            <small>Nur bei erfolgreicher kryptografischer Passkey-PRF-Prüfung aktiv. Bei fehlender Unterstützung bleibt das Passwort unverändert nutzbar. Ein Passkey kann im Geräte-Passwortmanager gespeichert oder synchronisiert werden.</small>
-          </div>
-          <label for="vault-change-old">Bisheriges Passwort</label>
-          <input id="vault-change-old" type="password" autocomplete="off">
-          <label for="vault-change-new">Neues Passwort (mindestens 10 Zeichen)</label>
-          <input id="vault-change-new" type="password" autocomplete="new-password" minlength="10">
-          <label for="vault-change-again">Neues Passwort wiederholen</label>
-          <input id="vault-change-again" type="password" autocomplete="new-password" minlength="10">
-          <button id="vault-change-submit" type="button">Passwort ändern</button>
-          <hr>
-          <label for="vault-rotate-password">Aktuelles Passwort zum Erneuern des Wiederherstellungsschlüssels</label>
-          <input id="vault-rotate-password" type="password" autocomplete="off">
-          <button id="vault-rotate-submit" type="button">Neuen Wiederherstellungsschlüssel erzeugen</button>
-          <small>Nach Passwortänderung oder Schlüsselerneuerung neues Backup erstellen. Alte exportierte Backups bleiben mit ihren ursprünglichen Zugangsdaten entschlüsselbar.</small>
-        </div>
-      </details>
-      <div class="vault-import">
-        <h3>Ticket hinzufügen</h3>
-        <label for="vault-open-input">PDF oder QR-Screenshot auswählen</label>
-        <input id="vault-open-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp">
-        <label for="vault-title-input">Titel (optional)</label>
-        <input id="vault-title-input" type="text" maxlength="100" placeholder="z. B. ICE 789 · Hamburg → Berlin">
-        <label for="vault-trip">Reise / Zuordnung (optional)</label>
-        <input id="vault-trip" type="text" maxlength="100" placeholder="z. B. Japan 2026 oder Bahnreise Deutschland">
-        <button id="vault-use-trip" type="button" class="vault-secondary">Aktuellen Reiseabschnitt übernehmen</button>
-        <button id="vault-add" type="button" class="vault-primary">＋ Datei verschlüsselt speichern</button>
-        <small>PDF, PNG, JPG, WebP · höchstens 10 MB pro Datei, 25 Dateien bzw. 50 MB insgesamt. QR-Screenshots werden als Bilder gespeichert, nicht automatisch ausgelesen.</small>
-      </div>
-      <div id="vault-files" class="vault-files" aria-label="Gespeicherte Ticketdokumente"></div>
-      <div class="vault-backup">
-        <h3>Backup &amp; Speicher</h3>
-        <button id="vault-backup" type="button" class="vault-secondary">↓ Verschlüsseltes Backup sichern</button>
-        <button id="vault-persist" type="button" class="vault-secondary">Lokalen Speicher schützen (falls unterstützt)</button>
-        <p>Das Backup enthält nur verschlüsselte Daten. <strong>Speichere die Sicherungsdatei außerhalb der App.</strong> Lokale Daten können beim Löschen von Browser-/App-Daten verloren gehen; eine Installation auf einem anderen Gerät übernimmt sie nicht automatisch.</p>
-      </div>
-    </section>
-    <p id="vault-message" class="vault-message" role="status" aria-live="polite">Tresor wird geprüft …</p>
-    <p class="vault-disclaimer">Dieser Tresor ist keine offizielle Ticket-App. Manche dynamischen QR-Codes, gesperrte Screenshots oder Anbieter-Apps sind nicht als gespeichertes Bild nutzbar. Im Zweifel das Original beim Anbieter öffnen.</p>
+    <details class="vault-backup ticket-library-backup">
+      <summary>Backup, Wiederherstellung und lokaler Speicher</summary>
+      <p>Du kannst eine Sicherung herunterladen und auf einem anderen Gerät wieder importieren. <strong>Das Backup ist nicht verschlüsselt</strong> und muss deshalb sicher aufbewahrt werden. Beim Löschen von App- oder Browserdaten können lokale Tickets verloren gehen.</p>
+      <button id="ticket-backup" type="button" class="vault-secondary">↓ Alle Tickets als Backup sichern</button>
+      <label for="ticket-restore-file">Vorhandenes Backup wieder einlesen (.json)</label>
+      <input id="ticket-restore-file" type="file" accept=".json,application/json">
+      <button id="ticket-restore" type="button" class="vault-secondary">↑ Backup importieren</button>
+      <button id="ticket-persist" type="button" class="vault-secondary">Lokalen Speicher möglichst erhalten</button>
+    </details>
+    <details id="ticket-legacy" class="ticket-library-legacy" hidden>
+      <summary>Alte verschlüsselte Tickets einmalig übernehmen</summary>
+      <p id="ticket-legacy-count"></p>
+      <p>Nur für Dokumente aus der bisherigen Passwort-Tresor-Version. Diese Daten werden <strong>nicht gelöscht</strong>, sondern nach einmaliger Entschlüsselung zusätzlich hier gespeichert. Für die normalen Tickets benötigst du danach kein Passwort mehr.</p>
+      <label for="ticket-legacy-password">Bisheriges Tresor-Passwort (nur für diese Übernahme)</label>
+      <input id="ticket-legacy-password" type="password" autocomplete="off">
+      <button id="ticket-legacy-import" type="button" class="vault-secondary">Alte Tickets einmalig übernehmen</button>
+    </details>
+    <p id="ticket-status" class="vault-message" role="status" aria-live="polite">Lokale Ablage wird geladen …</p>
+    <p class="vault-disclaimer">Dies ist keine offizielle Ticket-App. Manche dynamischen QR-Codes gelten nur in der Original-App. Bitte bei wichtigen Buchungen zusätzlich das Original behalten.</p>
   </div>
 </details>
 <dialog id="vault-preview" class="vault-preview" aria-labelledby="vault-preview-title">
