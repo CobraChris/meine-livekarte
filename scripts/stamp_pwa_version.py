@@ -42,6 +42,8 @@ assets = [
     ("src", "sync-out.js"),
     ("src", "build-version.js"),
     ("src", "pwa.js"),
+    ("src", "ticket-vault.js"),
+    ("src", "ticket-vault-ui.js"),
 ]
 html_path = public / "index.html"
 html = html_path.read_text(encoding="utf-8")
