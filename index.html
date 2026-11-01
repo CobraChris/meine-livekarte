@@ -131,6 +131,24 @@
     <small id="kyoto-clock-note">Zeitplan, keine Live-Bahnauskunft. Bahnhofsanzeige hat Vorrang.</small>
     <a href="https://www.google.com/maps/dir/?api=1&amp;destination=36.14113%2C137.25129&amp;travelmode=walking" target="_blank" rel="noopener noreferrer">↗ Fußweg zum Bahnhof Takayama öffnen</a>
   </div>
+  <details class="kyoto-seat-check" id="kyoto-seat-check">
+    <summary><span>🧾 Sitzplätze auf den Papiertickets prüfen</span><strong id="kyoto-seat-progress">0/4 geprüft</strong></summary>
+    <p class="kyoto-seat-hint">Nach der Ausgabe die Angaben für beide Reisenden und beide Züge mit den Unterlagen vergleichen. Je nach Fahrkartentyp können pro Person mehrere Papiere ausgegeben werden.</p>
+    <div class="kyoto-seat-groups">
+      <fieldset>
+        <legend>🚆 Hida 8 · Takayama 11:35 → Nagoya 14:04</legend>
+        <label><input type="checkbox" data-kyoto-seat="hida-10c"> Reisende Person 1 · Wagen 2 · Sitz 10C</label>
+        <label><input type="checkbox" data-kyoto-seat="hida-10d"> Reisende Person 2 · Wagen 2 · Sitz 10D</label>
+      </fieldset>
+      <fieldset>
+        <legend>🚄 Nozomi 71 · Nagoya 14:26 → Kyoto 15:00</legend>
+        <label><input type="checkbox" data-kyoto-seat="nozomi-8d"> Reisende Person 1 · Wagen 4 · Sitz 8D</label>
+        <label><input type="checkbox" data-kyoto-seat="nozomi-8e"> Reisende Person 2 · Wagen 4 · Sitz 8E</label>
+      </fieldset>
+    </div>
+    <p id="kyoto-seat-feedback" class="kyoto-seat-feedback" role="status" aria-live="polite">Noch keine Angaben als kontrolliert markiert.</p>
+    <p class="kyoto-seat-footnote">Die vier Häkchen sind nur eine freiwillige Sichtprüfung, kein Nachweis für die Ticketgültigkeit. Sie speichern keine Ticketdaten und bestätigen nicht automatisch die Abholung. Bei Unklarheit JR-Personal mit Voucher fragen.</p>
+  </details>
   <div class="kyoto-pickup-status">
     <button id="kyoto-pickup-confirm" type="button">✓ Beide Teilstrecken: Tickets abgeholt</button>
     <p id="kyoto-pickup-feedback" role="status" aria-live="polite">Noch offen: Abholung der Papier-Tickets.</p>
