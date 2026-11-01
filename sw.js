@@ -6,7 +6,7 @@
 const CACHE_NAME='livekarte-shell-pwa-v22';
 const SHELL_FILES=[
   'index.html','style.css','core.js','walking-core.js','day-plan-core.js','route-discovery.js','next-step-core.js','japanese-destination.js','app.js','sync.js',
-  'outbox-core.js','sync-out.js','build-version.js','pwa.js','ticket-vault.js','ticket-vault-ui.js','manifest.json',
+  'outbox-core.js','sync-out.js','build-version.js','pwa.js','ticket-vault.js','ticket-library.js','ticket-library-ui.js','manifest.json',
   'vendor/leaflet.js','vendor/leaflet.css',
   'icons/livekarte.svg','icons/livekarte-192.png',
   'icons/livekarte-512.png','icons/livekarte-maskable-512.png'
