@@ -91,7 +91,7 @@
 <section id="next-action" class="next-action" hidden aria-labelledby="next-action-title">
   <div class="next-action-heading">
     <div><span class="next-action-kicker">🧭 REISEASSISTENT</span><h2 id="next-action-title">Was jetzt?</h2></div>
-    <span id="next-action-count" class="next-action-count" aria-live="polite">0/0 erledigt</span>
+    <span id="next-action-count" class="next-action-count" aria-live="polite">0 offen</span>
   </div>
   <p id="next-action-date" class="next-action-date"></p>
   <div class="next-action-current">
@@ -108,8 +108,15 @@
     </div>
   </div>
   <p id="next-action-feedback" class="next-action-feedback" role="status" aria-live="polite">Aufgaben werden nur durch dich als erledigt markiert.</p>
+  <section id="next-action-open" class="next-action-open" aria-labelledby="next-action-open-title">
+    <div class="next-action-section-heading">
+      <h3 id="next-action-open-title">Noch offen</h3>
+      <strong id="next-action-open-count" aria-live="polite">0 Schritte</strong>
+    </div>
+    <ol id="next-action-open-list" class="next-action-open-list"></ol>
+  </section>
   <details id="next-action-all" class="next-action-all">
-    <summary>Alle Schritte dieses Tages anzeigen</summary>
+    <summary>✓ Erledigt <span id="next-action-done-count">0 Schritte</span> · Details öffnen</summary>
     <ol id="next-action-list"></ol>
   </details>
   <p class="next-action-privacy">Planzeiten, keine Live-Verbindungen. Kein automatischer Aufgabenabschluss und keine zusätzlichen GPS- oder Routinganfragen. „Weg zum Ort“ öffnet Google Maps erst nach deinem Tipp.</p>
@@ -120,6 +127,8 @@
     <h2 id="kyoto-pickup-title">Klook-Tickets in Takayama abholen</h2>
     <p id="kyoto-pickup-subtitle">Klook-Buchung bestätigt · Papier-Tickets vor der Fahrt abholen.</p>
   </div>
+  <button id="kyoto-pickup-history-toggle" class="kyoto-pickup-history-toggle" type="button" hidden aria-expanded="false" aria-controls="kyoto-pickup-body">✓ Abholung erledigt · Details anzeigen</button>
+  <div id="kyoto-pickup-body">
   <div class="kyoto-pickup-two-status">
     <span>✅ Buchung: bestätigt</span>
     <strong id="kyoto-pickup-state">⚠ Papiertickets: noch abholen</strong>
@@ -165,6 +174,7 @@
     </ol>
     <p class="kyoto-pickup-footnote">Die konkrete Abholart richtet sich nach dem Klook-Voucher; nicht jeder QR-Code funktioniert an jedem Automaten. Der QR-Code selbst wird nicht in dieser App gespeichert.</p>
   </details>
+  </div>
 </section>
 <details id="ticket-vault" class="ticket-vault" aria-label="Persönlicher verschlüsselter Ticket-Tresor">
   <summary>🎟 Meine Tickets <span>PDF · QR-Bilder · offline</span></summary>
