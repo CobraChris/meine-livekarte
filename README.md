@@ -1,3 +1,9 @@
+## Passwort sichtbar machen · Ticket-Tresor (01.11.2026)
+
+Alle Passwort-Eingabefelder im Ticket-Tresor erhalten rechts im Feld eine Schaltfläche **👁 Passwort anzeigen**. Ein Tipp zeigt das eingegebene Passwort im Klartext, ein zweiter Tipp (**🙈 Passwort verbergen**) maskiert es wieder. Die Funktion gilt gleichermaßen für Einrichtung, Passwort-Entsperrung, Passkey-Einrichtung, Passwortwechsel, Wiederherstellungsschlüssel-Eingaben sowie Backup-Wiederherstellung. Sie ist standardmäßig **aus** (Eingaben verborgen), mit Tastaturbedienung und ARIA-Status erreichbar. Beim manuellen Sperren des Tresors werden alle gerade eingeblendeten Geheimnisse automatisch wieder verborgen.
+
+Die Umschaltung betrifft **ausschließlich die Darstellung** im Browser. Es werden weder Eingaben verändert noch Passwörter, Recovery-Codes oder Ticketdaten gespeichert, kopiert oder versendet. Die bestehende kryptografische Tresor-Sicherung und der separate Passkey-Fallback bleiben unverändert.
+
 ## WebAuthn-Passkey UX-Fix (01.11.2026)
 
 Das Erstellen eines Android-Passkeys startet nun unmittelbar aus dem echten Klick auf „Passkey zur Schnellentsperrung einrichten“, **vor** asynchronen Browser-Datenbank-/PBKDF2-Operationen. Dadurch kann die Browser-Anforderung einer zeitlich gültigen Nutzeraktion eingehalten werden. Auch beim biometrischen Entsperren wird die bereits geprüfte, **verschlüsselte** Passkey-Hülle kurzfristig im JS-Sitzungsspeicher gehalten, damit die OS-Abfrage ohne Vorab-IndexedDB-Await gestartet werden kann. Passwörter und eigentliche Dokumentenschlüssel sind nicht dauerhaft gespeichert. Nach jeder Passkey-Anlage ist eine erneute kryptografische PRF-Antwort und das korrekte Tresor-Passwort erforderlich, bevor ein Entsperrschlüssel lokal gespeichert wird.
