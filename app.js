@@ -34,7 +34,8 @@
   function activeJourney() {
     if (Object.prototype.hasOwnProperty.call(planJourneys,activePlanId)) return planJourneys[activePlanId];
     return activePlanId === 'ride-takayama' ? C.presetJourney('hakone-takayama-2026-10-30')
-      : activePlanId === 'ride-kyoto' ? C.presetJourney('takayama-kyoto-2026-11-01') : null;
+      : activePlanId === 'ride-kyoto' ? C.presetJourney('takayama-kyoto-2026-11-01')
+      : activePlanId === 'ride-nikko' ? C.presetJourney('kyoto-nikko-2026-11-07') : null;
   }
 
   let heading = null, visualHeading = null, compassGeneration = 0;
@@ -1883,7 +1884,17 @@
     if(document.visibilityState==='visible')renderNextAction();
   });
   window.addEventListener('focus',renderNextAction);
-  const kyotoOverview=$('kyoto-overview');
+  const kyotoOverview=$('kyoto-overview'),nikkoOverview=$('nikko-overview');
+  function renderNikkoOverview(){
+    const visiting=activePlanId==='town-nikko',travel=activePlanId==='ride-nikko';
+    nikkoOverview.hidden=!visiting&&!travel;
+    if(nikkoOverview.hidden)return;
+    const label=nikkoOverview.querySelector('.kyoto-eyebrow');
+    const title=nikkoOverview.querySelector('.kyoto-day-heading h2');
+    label.textContent=visiting?'🏨 NIKKŌ · AUFENTHALT':'🚄 NÄCHSTE ETAPPE · 07.11.2026';
+    title.textContent=visiting?'Nikkō · Hotel und Orientierung':'Kyoto → Tokio → Nikkō';
+    $('nikko-rail-steps').open=travel;
+  }
   let lastOverviewDay=null;
   function focusKyotoOverviewDay(index){
     const sections=kyotoOverview.querySelectorAll('details.kyoto-day');
@@ -1900,6 +1911,7 @@
         focusKyotoOverviewDay(suggested.dayIndex);
       lastOverviewDay=today;
     }
+    renderNikkoOverview();
     renderTodayDashboard();
   }
   const todayPanel=$('today-panel');
@@ -1928,6 +1940,9 @@
     if(suggestion.planId==='town-kyoto'||suggestion.planId==='ride-kyoto'){
       focusKyotoOverviewDay(suggestion.dayIndex);
       kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
+    }else if(suggestion.planId==='ride-nikko'||suggestion.planId==='town-nikko'){
+      renderNikkoOverview();
+      nikkoOverview.scrollIntoView({behavior:'smooth',block:'start'});
     }else{
       $('map').scrollIntoView({behavior:'smooth',block:'start'});
     }
@@ -3196,6 +3211,41 @@
     }
   }
   seedKyotoPlaces();
+  // Add the Nikko hotel and both distinct train stations exactly once.
+  // Never overwrite an existing marker or manually edited descriptions.
+  function seedNikkoPlaces(){
+    const marker='livekarte-nikko-2026-11-07-v1';
+    try{
+      if(localStorage.getItem(marker)==='1')return;
+      const preset=C.presetPlaces('town-nikko');
+      if(!preset.length)return;
+      const additions=[],mapped=[];
+      for(const candidate of preset){
+        const existing=places.find(p=>
+          C.placePlanKey(p)===C.placePlanKey(candidate)||
+          (p.name.toLocaleLowerCase('de-DE')===candidate.name.toLocaleLowerCase('de-DE')&&
+            C.distance(p,candidate)<75));
+        const effective=existing||candidate;
+        mapped.push(effective);
+        if(!existing)additions.push(candidate);
+      }
+      const merged=C.merge(places,additions);
+      const next=Object.assign(Object.create(null),planAssignments);
+      for(const place of mapped){
+        const key=C.placePlanKey(place);
+        const tags=Array.isArray(next[key])?next[key]:[];
+        next[key]=[...new Set([...tags,'town-nikko',
+          ...(place.category==='hotel'||place.name==='Nikkō Station (JR)'?['ride-nikko']:[])])];
+      }
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(merged));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(next));
+      localStorage.setItem(marker,'1');
+      places=merged;planAssignments=next;
+    }catch{
+      say('Nikkō-Orte konnten nicht automatisch ergänzt werden. Bestehende Orte bleiben erhalten.');
+    }
+  }
+  seedNikkoPlaces();
   // Persist only chosen place identifiers, never the GPS start or a route.
   try{
     const raw=JSON.parse(localStorage.getItem('livekarte-tour-drafts-v1')||'{}');

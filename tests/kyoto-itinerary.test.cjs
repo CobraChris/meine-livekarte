@@ -5,10 +5,11 @@ const C=require('../core.js');
 const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 const app=read('app.js'),html=read('index.html');
 
-test('the latest plan sets Takayama → Kyoto on 01 Nov and city to 07 Nov',()=>{
+test('Kyoto plan ends before the separate Nikkō travel day on 07 Nov',()=>{
  const plans=C.planPresets;
  assert.equal(plans.find(p=>p.id==='ride-kyoto').name,'01.11. · Fahrt nach Kyoto');
- assert.equal(plans.find(p=>p.id==='town-kyoto').name,'01.–07.11. · Kyoto');
+ assert.equal(plans.find(p=>p.id==='town-kyoto').name,'01.–06.11. · Kyoto');
+ assert.equal(plans.find(p=>p.id==='ride-nikko').name,'07.11. · Fahrt Kyoto → Nikkō');
  assert.match(plans.find(p=>p.id==='town-takayama').name,/30\.10\.–01\.11/);
  assert.doesNotMatch(plans.find(p=>p.id==='ride-kyoto').name,/02\.11/);
 });

@@ -211,7 +211,8 @@ test('manual zoom pauses GPS camera follow but keeps watchPosition and marker up
 test('multi-day presets separate journey days from city stays', () => {
  const expected=[
   ['all','all'],['ride-takayama','journey'],['town-takayama','city'],
-  ['ride-kyoto','journey'],['town-kyoto','city']
+  ['ride-kyoto','journey'],['town-kyoto','city'],
+  ['ride-nikko','journey'],['town-nikko','city']
  ];
  assert.deepEqual(C.planPresets.map(p=>[p.id,p.kind]),expected);
  assert.deepEqual(C.planPresets.find(p=>p.id==='town-takayama').center,[36.141062,137.251454]);
@@ -219,6 +220,8 @@ test('multi-day presets separate journey days from city stays', () => {
  const names=C.planPresets.map(p=>p.name);
  assert.ok(names.some(n=>n.includes('Fahrt nach Takayama')));
  assert.ok(names.some(n=>n.includes('Fahrt nach Kyoto')));
+ assert.ok(names.some(n=>n.includes('Fahrt Kyoto')));
+ assert.ok(names.some(n=>n.includes('Nikkō')));
 });
 test('saved destinations can be filtered into sections without changing the master list', () => {
  const places=C.normalize([

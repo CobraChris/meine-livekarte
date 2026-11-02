@@ -16,8 +16,10 @@ test('today suggestions use real Japan local date and only confirmed preset trav
     ['2026-11-01T15:00:00Z','town-kyoto',1],
     ['2026-11-02T14:59:00Z','town-kyoto',1],
     ['2026-11-02T15:00:00Z','town-kyoto',null],
-    ['2026-11-06T15:00:00Z','town-kyoto',null],
-    ['2026-11-07T15:00:00Z',null,null]
+    ['2026-11-05T15:00:00Z','town-kyoto',null],
+    ['2026-11-06T15:00:00Z','ride-nikko',null],
+    ['2026-11-07T15:00:00Z','town-nikko',null],
+    ['2026-11-08T15:00:00Z',null,null]
   ];
   for(const [iso,id,dayIndex] of cases){
     const actual=NS.todaySuggestion(at(iso));
@@ -39,6 +41,9 @@ test('past views are archived only for dated travel plans, not current Kyoto or 
   assert.equal(NS.isPastTravelView('town-takayama',at('2026-11-02T01:00:00Z')),true);
   assert.equal(NS.isPastTravelView('ride-takayama',at('2026-10-31T01:00:00Z')),true);
   assert.equal(NS.isPastTravelView('town-kyoto',at('2026-11-02T01:00:00Z')),false);
+  assert.equal(NS.isPastTravelView('town-kyoto',at('2026-11-07T01:00:00Z')),true);
+  assert.equal(NS.isPastTravelView('ride-nikko',at('2026-11-07T01:00:00Z')),false);
+  assert.equal(NS.isPastTravelView('ride-nikko',at('2026-11-08T01:00:00Z')),true);
   assert.equal(NS.isPastTravelView('all',at('2026-11-02T01:00:00Z')),false);
   assert.equal(NS.isPastTravelView('custom-trip',at('2026-11-02T01:00:00Z')),false);
   // Old items remain explicitly incomplete, with no auto-completion.
@@ -73,6 +78,7 @@ test('today button selects only after click and shows second Kyoto day; old day 
   assert.match(app,/if\(activePlanId!==suggestion\.planId\)\s*selectPlan\(suggestion\.planId,\{focus:false\}\)/);
   assert.match(app,/focusKyotoOverviewDay\(suggestion\.dayIndex\)/);
   assert.match(app,/kyotoOverview\.scrollIntoView\(\{behavior:'smooth',block:'start'\}\)/);
+  assert.match(app,/nikkoOverview\.scrollIntoView\(\{behavior:'smooth',block:'start'\}\)/);
   assert.match(app,/focusKyotoOverviewDay\(suggested\.dayIndex\)/);
   assert.match(app,/if\(!kyotoOverview\.hidden&&lastOverviewDay!==today\)/);
   assert.match(app,/sections\.forEach\(\(section,i\)=>\{section\.open=index===i;\}\)/);
