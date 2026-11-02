@@ -34,17 +34,29 @@
         title:'Kyoto · Higashiyama & Fushimi Inari',
         summary:'Kiyomizu-dera · Sannenzaka/Ninenzaka · Fushimi Inari',
         hint:'Besichtigungen sind freiwillig; Zeitangaben sind keine Live-Auskunft.'};
-    if(day>='2026-11-03'&&day<='2026-11-07')
+    if(day>='2026-11-03'&&day<='2026-11-06')
       return {date:day,planId:'town-kyoto',dayIndex:null,
         title:'Kyoto · flexibel',summary:'Eigene Ziele und Tagesplan auswählen',
         hint:'Für diesen Tag ist noch keine feste Route hinterlegt.'};
+    if(day==='2026-11-07')
+      return {date:day,planId:'ride-nikko',dayIndex:null,
+        title:'Weiterreise Kyoto → Nikkō',
+        summary:'Kyoto → Tokyo → Utsunomiya → Nikkō (JR)',
+        hint:'Bisherige Planung, keine Live-Fahrzeiten. Zugzeiten und Tickets vor Abfahrt prüfen.'};
+    if(day==='2026-11-08')
+      return {date:day,planId:'town-nikko',dayIndex:null,
+        title:'Nikkō · flexibel',
+        summary:'Fairfield-Hotel · eigene Ausflugsziele auswählen',
+        hint:'Noch kein verbindlicher Tagesablauf hinterlegt.'};
     return null;
   }
   function isPastTravelView(view,at=new Date()){
     const today=localDate(at);
     return view==='ride-takayama'&&today>'2026-10-30'||
       view==='ride-kyoto'&&today>'2026-11-01'||
-      view==='town-takayama'&&today>'2026-11-01';
+      view==='town-takayama'&&today>'2026-11-01'||
+      view==='town-kyoto'&&today>'2026-11-06'||
+      view==='ride-nikko'&&today>'2026-11-07';
   }
   // Scheduled milestones only. All minute arithmetic uses Japan local clock,
   // never the device timezone or a guessed real-time train position.
