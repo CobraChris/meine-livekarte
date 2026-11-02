@@ -224,7 +224,7 @@
       for(const record of fresh)tx.objectStore('files').add(record);
       await completed;return fresh.length;
     }
-    async backup(){
+    async backupPackage(){
       const records=await this.all();
       if(records.some(r=>!isRecord(r)))throw Error('Gespeicherte Daten beschädigt.');
       const files=[];
@@ -234,12 +234,16 @@
         const {blob,...meta}=r;
         files.push({...meta,base64:base64(bytes)});
       }
-      return new Blob([JSON.stringify({format:BACKUP_FORMAT,files})],{type:'application/json'});
+      return {blob:new Blob([JSON.stringify({format:BACKUP_FORMAT,files})],{type:'application/json'}),
+        signature:backupSignature(records),count:records.length};
+    }
+    async backup(){
+      return (await this.backupPackage()).blob;
     }
     async inspectBackup(file){
       const records=await parseBackup(file);
       return {count:records.length,size:records.reduce((n,r)=>n+r.size,0),
-        titles:records.map(r=>r.title)};
+        titles:records.map(r=>r.title),signature:backupSignature(records)};
     }
     async restore(file){
       return this.addMany(await parseBackup(file));
