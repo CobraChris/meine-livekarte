@@ -1,7 +1,7 @@
 const {test,after}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
-const {Library,mimeOf,filterTickets,MAX_FILE,BACKUP_FORMAT}=require('../ticket-library.js');
+const {Library,mimeOf,filterTickets,backupSignature,backupIndicator,MAX_FILE,BACKUP_FORMAT}=require('../ticket-library.js');
 const original=globalThis.indexedDB;
 after(()=>{globalThis.indexedDB=original;});
 function fakeIndexedDB(){
@@ -160,7 +160,11 @@ test('HTML / Pages / service worker only ship password-free ticket UI',()=>{
   assert.match(html,/ohne Passwort, PIN oder Fingerabdruck/);
   assert.match(html,/Das Backup ist nicht verschlüsselt/);
   assert.doesNotMatch(ui,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket|navigator\.credentials/);
-  assert.doesNotMatch(ui,/localStorage\.setItem|sessionStorage\.setItem|indexedDB\.deleteDatabase/);
+  // Only a short reminder marker is stored. Never copy tickets or QR
+  // content into localStorage; full PDFs remain in IndexedDB only.
+  assert.match(ui,/localStorage\.setItem\(BACKUP_MARKER/);
+  assert.equal((ui.match(/localStorage\.setItem\(/g)||[]).length,1);
+  assert.doesNotMatch(ui,/sessionStorage\.setItem|indexedDB\.deleteDatabase/);
 });
 
 
@@ -272,4 +276,68 @@ test('blank title falls back to original filename and invalid/missing records ca
   assert.equal(trimmed.trip.length,100);
   await assert.rejects(()=>lib.updateDetails('missing',{title:'No'}),/nicht gefunden/);
   assert.equal((await lib.list()).length,1);
+});
+
+
+test('backup reminder differentiates empty, missing, changed, old and recent export attempts',()=>{
+  const doc=[{id:'ticket-a',title:'Hida 8',trip:'Japan',
+    name:'train.pdf',size:17,pinned:false,created:'2026-11-01T02:00:00Z'}];
+  const now=Date.parse('2026-11-02T06:00:00Z');
+  assert.equal(backupIndicator([],null,now).level,'empty');
+  assert.equal(backupIndicator(doc,null,now).level,'missing');
+  assert.match(backupIndicator(doc,null,now).message,/außerhalb der App/);
+  const snapshot=backupSignature(doc);
+  const marker={sig:snapshot,at:'2026-11-02T05:00:00Z'};
+  const recent=backupIndicator(doc,marker,now);
+  assert.equal(recent.level,'recent');
+  assert.match(recent.message,/Export angestoßen/);
+  assert.match(recent.message,/tatsächlich heruntergeladen/);
+  assert.equal(backupIndicator(doc,{...marker,at:'2026-10-20T00:00:00Z'},now).level,'old');
+  assert.equal(backupIndicator(doc,{...marker,at:'invalid'},now).level,'missing');
+  assert.equal(backupIndicator([...doc,{...doc[0],id:'ticket-b'}],marker,now).level,'changed');
+  assert.equal(backupIndicator([{...doc[0],title:'Another title'}],marker,now).level,'changed');
+  assert.equal(backupIndicator([{...doc[0],trip:'Kyoto'}],marker,now).level,'changed');
+  assert.equal(backupIndicator([{...doc[0],pinned:true}],marker,now).level,'changed');
+  assert.equal(backupSignature([...doc].reverse()),snapshot,'ordering must not change backup marker');
+});
+
+test('backup snapshot has exact exported metadata and inspectBackup changes no local records',async()=>{
+  fakeIndexedDB();const lib=new Library();
+  const first=await lib.add(fakeFile('hidatrain.pdf','application/pdf'),
+    {title:'Takayama → Nagoya',trip:'Japan 2026'});
+  const second=await lib.add(fakeFile('kyoto-stay.pdf','application/pdf'),
+    {title:'Hotel Buchung',trip:'Kyoto'});
+  await lib.setPinned(first.id,true);
+  const pack=await lib.backupPackage();
+  assert.equal(pack.count,2);
+  assert.ok(pack.blob instanceof Blob);
+  const backupText=await pack.blob.text();
+  assert.match(backupText,/Takayama/);
+  const inspection=await lib.inspectBackup(pack.blob);
+  assert.equal(inspection.count,2);
+  assert.equal(inspection.size,bytes.length*2);
+  assert.equal(inspection.signature,pack.signature);
+  assert.deepEqual(new Set(inspection.titles),new Set(['Takayama → Nagoya','Hotel Buchung']));
+  assert.equal(pack.signature,backupSignature(await lib.list()));
+  assert.deepEqual((await lib.list()).map(r=>r.id).sort(),[first.id,second.id].sort());
+  // An edit after export makes the reminder stale, not the already exported file.
+  await lib.updateDetails(second.id,{title:'New hotel title',trip:'Kyoto'});
+  assert.equal(backupIndicator(await lib.list(),{sig:pack.signature,at:new Date().toISOString()}).level,'changed');
+  assert.equal((await lib.inspectBackup(pack.blob)).signature,pack.signature);
+});
+
+test('backup checker rejects corrupt or spoofed JSON without writing any records',async()=>{
+  fakeIndexedDB();const lib=new Library();
+  await lib.add(fakeFile('valid.pdf','application/pdf'));
+  const backup=JSON.parse(await (await lib.backup()).text());
+  const original=await lib.list();
+  const asFile=data=>new Blob([JSON.stringify(data)],{type:'application/json'});
+  const corrupt=structuredClone(backup);
+  corrupt.files[0].base64='PGh0bWw+';
+  await assert.rejects(()=>lib.inspectBackup(asFile(corrupt)),/Dateigröße|Dateiinhalt/);
+  const duplicates=structuredClone(backup);
+  duplicates.files.push({...duplicates.files[0]});
+  await assert.rejects(()=>lib.inspectBackup(asFile(duplicates)),/doppelte/);
+  await assert.rejects(()=>lib.inspectBackup(asFile({format:'not-ours',files:[]})),/Format/);
+  assert.deepEqual(await lib.list(),original,'inspection must never mutate saved tickets');
 });
