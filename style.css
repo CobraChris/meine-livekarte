@@ -1664,3 +1664,53 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .daily-quick-nav button{font-size:11px;padding:7px 2px}
   .today-panel h2{font-size:16px}
 }
+
+/* On-device ticket inspection: white canvas, full-viewport image and real zoom.
+   This changes only display; never changes QR pixels, file or brightness setting. */
+.vault-preview-bar-actions{display:flex;align-items:center;justify-content:end;
+  flex-wrap:wrap;gap:7px}
+.vault-preview-bar-actions button{font-size:12px;line-height:1.3;padding:7px 9px;
+  min-height:44px;font-weight:800}
+#vault-preview-close{font-size:23px;min-width:44px}
+.vault-preview.is-scan-mode{
+  position:fixed;inset:0;margin:0;width:100vw;max-width:100vw;
+  height:100dvh;max-height:100dvh;box-sizing:border-box;
+  border:0;border-radius:0;padding:env(safe-area-inset-top,0px)
+  max(6px,env(safe-area-inset-right,0px))
+  env(safe-area-inset-bottom,0px)
+  max(6px,env(safe-area-inset-left,0px));
+  background:#10292a;color:#fff;overflow:hidden
+}
+.vault-preview.is-scan-mode[open]{display:flex;flex-direction:column;gap:7px}
+.vault-preview.is-scan-mode .vault-preview-bar{
+  flex:0 0 auto;min-height:44px;gap:6px;padding:2px 4px
+}
+.vault-preview.is-scan-mode .vault-preview-bar strong{
+  font-size:12px;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.vault-preview.is-scan-mode #vault-preview-help,
+.vault-preview.is-scan-mode #vault-preview-image,
+.vault-preview.is-scan-mode #vault-preview-pdf,
+.vault-preview.is-scan-mode #vault-preview-download{display:none!important}
+.ticket-scan-controls{display:flex;align-items:center;justify-content:center;
+  flex:0 0 auto;gap:14px;color:#fff;font-size:13px;font-weight:850;padding:0 6px}
+.ticket-scan-controls[hidden],.ticket-scan-stage[hidden]{display:none!important}
+.ticket-scan-controls button{width:46px;height:43px;min-width:46px;min-height:43px;
+  border-radius:10px;border:1px solid #90c2a5;color:#f8fff6;
+  background:#2f5c4c;font-size:24px}
+.ticket-scan-controls button:disabled{opacity:.35}
+#ticket-scan-zoom{min-width:56px;text-align:center;font-variant-numeric:tabular-nums}
+.ticket-scan-stage{flex:1 1 auto;min-height:0;min-width:0;
+  width:100%;overflow:auto;background:#fff;color:#000;
+  overscroll-behavior:contain;scrollbar-width:thin}
+.ticket-scan-frame{min-height:100%;min-width:100%;
+  display:flex;align-items:center;justify-content:center;
+  background:#fff}
+#ticket-scan-image{display:block;max-width:none!important;max-height:none!important;
+  object-fit:fill;flex:none;background:#fff}
+.ticket-control-open{border-color:#a3d3af!important;background:#305944!important;
+  color:#edffe9!important}
+@media(max-width:370px){
+  .vault-preview.is-scan-mode .vault-preview-bar strong{max-width:30%}
+  .vault-preview-bar-actions button{font-size:11px;padding:5px}
+}
