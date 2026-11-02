@@ -1739,3 +1739,17 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 }
 .ticket-backup-check-result{font-size:11px;line-height:1.6;
   margin:0;color:#e7f6e9;overflow-wrap:anywhere}
+
+/* Upcoming Nikko leg: reuse the existing Kyoto timeline design without
+   invented platform assignments, confirmed ticket state or live data. */
+.nikko-overview .nikko-help{padding:12px;border:1px solid #8db8a6;
+  border-radius:11px;background:#25483f;color:#ebf6ec;display:grid;gap:8px}
+.nikko-overview .nikko-help strong{font-size:13px}
+.nikko-overview .nikko-help p{font-size:11px;line-height:1.6;margin:0}
+.nikko-help-links{display:flex;flex-wrap:wrap;gap:8px}
+.nikko-help-links a{min-height:42px;box-sizing:border-box;display:inline-flex;
+  align-items:center;justify-content:center;flex:1 1 145px;
+  padding:8px 10px;text-align:center;border:1px solid #9dc7b2;
+  border-radius:9px;color:#eaffef;background:#345c4f;
+  text-decoration:none;font-size:12px;font-weight:800}
+.nikko-overview[hidden]{display:none!important}
