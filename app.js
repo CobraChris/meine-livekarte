@@ -1721,6 +1721,17 @@
     }
     if(storeNextAction(task.id,done))renderNextAction();
   }
+  let oldTravelExpanded=false;
+  $('next-action-archive-toggle').onclick=()=>{
+    oldTravelExpanded=!oldTravelExpanded;
+    const reveal=$('next-action-archive-content');
+    reveal.hidden=!oldTravelExpanded;
+    const button=$('next-action-archive-toggle');
+    button.setAttribute('aria-expanded',String(oldTravelExpanded));
+    button.textContent=oldTravelExpanded
+      ?'Vergangene Aufgaben wieder einklappen'
+      :'Vergangene Aufgaben anzeigen · keine automatische Bestätigung';
+  };
   function renderNextAction(){
     const today=NS.localDate();
     const view=activePlanId;
@@ -1759,8 +1770,20 @@
         },dateLabel:'🚶 AKTUELLER RUNDGANG'};
     }
     const buckets=NS.taskBuckets(result.entries);
-    count.textContent=buckets.openCount+' offen · '+buckets.doneCount+' erledigt';
-    date.textContent=result.dateLabel;
+    const isArchived=NS.isPastTravelView(view);
+    nextActionSection.classList.toggle('is-archived-trip',isArchived);
+    const archiveButton=$('next-action-archive-toggle');
+    archiveButton.hidden=!isArchived;
+    archiveButton.setAttribute('aria-expanded',String(isArchived&&oldTravelExpanded));
+    archiveButton.textContent=oldTravelExpanded
+      ?'Vergangene Aufgaben wieder einklappen'
+      :'Vergangene Aufgaben anzeigen · keine automatische Bestätigung';
+    $('next-action-archive-content').hidden=isArchived&&!oldTravelExpanded;
+    count.textContent=isArchived
+      ?'Archiv · '+buckets.openCount+' nicht bestätigt'
+      :buckets.openCount+' offen · '+buckets.doneCount+' erledigt';
+    date.textContent=result.dateLabel+
+      (isArchived?' · Vergangener Reisetag, keine automatische Erledigung':'');
     const task=result.next;
     nextActionCurrent=task;
     $('next-action-open').hidden=!result.entries.length;
@@ -1861,9 +1884,71 @@
   });
   window.addEventListener('focus',renderNextAction);
   const kyotoOverview=$('kyoto-overview');
+  let lastOverviewDay=null;
+  function focusKyotoOverviewDay(index){
+    const sections=kyotoOverview.querySelectorAll('details.kyoto-day');
+    sections.forEach((section,i)=>{section.open=index===i;});
+  }
   function renderKyotoOverview(){
     kyotoOverview.hidden=!['ride-kyoto','town-kyoto'].includes(activePlanId);
+    // Default day depends on Japan date. Don't close a day the user
+    // explicitly opened unless the local calendar day actually changes.
+    const today=NS.localDate();
+    if(!kyotoOverview.hidden&&lastOverviewDay!==today){
+      const suggested=NS.todaySuggestion();
+      if(suggested?.planId==='town-kyoto'||suggested?.planId==='ride-kyoto')
+        focusKyotoOverviewDay(suggested.dayIndex);
+      lastOverviewDay=today;
+    }
+    renderTodayDashboard();
   }
+  const todayPanel=$('today-panel');
+  function renderTodayDashboard(){
+    const suggestion=NS.todaySuggestion();
+    todayPanel.hidden=false;
+    const date=NS.localDate(),text=date.slice(8,10)+'.'+date.slice(5,7)+'.'+date.slice(0,4);
+    $('today-date').textContent=text;
+    $('today-title').textContent=suggestion?suggestion.title:'Kein fester Tagesplan hinterlegt';
+    $('today-summary').textContent=suggestion?suggestion.summary:
+      'Wähle deinen gewünschten Reiseabschnitt manuell aus.';
+    $('today-hint').textContent=suggestion?suggestion.hint:
+      'Für diesen Tag sind keine konkreten Reiseabschnitte bestätigt.';
+    $('today-open').hidden=!suggestion;
+    $('today-view-note').textContent=suggestion
+      ?(suggestion.planId===activePlanId
+        ?'Passender Reiseabschnitt ausgewählt · Tagesplan öffnen'
+        :'Vorschlag · deine aktuelle Auswahl bleibt erhalten')
+      :'Alle gespeicherten Reiseabschnitte sind weiterhin verfügbar.';
+  }
+  function openTodayPlan(){
+    const suggestion=NS.todaySuggestion();
+    if(!suggestion){todayPanel.scrollIntoView({behavior:'smooth',block:'start'});return;}
+    if(activePlanId!==suggestion.planId)
+      selectPlan(suggestion.planId,{focus:false});
+    if(suggestion.planId==='town-kyoto'||suggestion.planId==='ride-kyoto'){
+      focusKyotoOverviewDay(suggestion.dayIndex);
+      kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
+    }else{
+      $('map').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    renderTodayDashboard();
+  }
+  $('today-open').onclick=openTodayPlan;
+  $('quick-today').onclick=openTodayPlan;
+  $('quick-map').onclick=()=>{
+    $('map').scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  $('quick-tickets').onclick=()=>{
+    const shelf=$('ticket-vault');
+    shelf.open=true;
+    shelf.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  // No automatic change of an explicitly selected view while using the app.
+  // Resume merely refreshes the date suggestion and day headings.
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden)renderKyotoOverview();
+  });
+  window.addEventListener('focus',renderKyotoOverview);
   let journey = null;
   const transferCard = $('station-transfer');
   let transferDismissed = false;
@@ -2739,6 +2824,7 @@
     if(activePlanId!==id)clearTourRoute();
     if(activePlanId!==id)mapTourPickMode=false;
     if(activePlanId!==id)setMapPlacePicking(false);
+    if(activePlanId!==id)oldTravelExpanded=false;
     activePlanId=id;
     journey=activeJourney();
     pauseGPSFollow();
@@ -3230,7 +3316,10 @@
   }catch{say('Tagesplan-Einstellungen konnten nicht gelesen werden.');}
   const queryView=new URLSearchParams(location.search).get('view');
   const savedView=(()=>{try{return localStorage.getItem('livekarte-active-plan-v1')}catch{return null}})();
-  const requestedView=queryView||savedView||
+  const dailyDefault=NS.todaySuggestion()?.planId;
+  // An explicit deep link or manually saved selection always wins.
+  // Only first visits without either use today's approved preset.
+  const requestedView=queryView||savedView||dailyDefault||
     (Object.prototype.hasOwnProperty.call(planJourneys,'ride-takayama')?'ride-takayama':'all');
   activePlanId=allPlans().some(p=>p.id===requestedView)?requestedView:'all';
   journey=activeJourney();
