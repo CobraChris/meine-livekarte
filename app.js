@@ -1949,6 +1949,11 @@
     renderTodayDashboard();
   }
   $('today-open').onclick=openTodayPlan;
+  // The Kyoto recap offers a deliberate jump to the next journey, not an automatic redirect.
+  $('open-nikko-next').onclick=()=>{
+    if(!selectPlan('ride-nikko'))return;
+    nikkoOverview.scrollIntoView({behavior:'smooth',block:'start'});
+  };
   $('quick-today').onclick=openTodayPlan;
   $('quick-map').onclick=()=>{
     $('map').scrollIntoView({behavior:'smooth',block:'start'});

@@ -101,3 +101,23 @@ test('one-time Nikko migration only adds missing location pins, keeping user edi
   assert.match(snippet,/localStorage\.setItem\(marker,'1'\)/);
   assert.doesNotMatch(snippet,/localStorage\.clear|indexedDB|ticketStatuses\[|tripStageDone\[/);
 });
+
+
+test('Kyoto recap offers an explicit one-tap transition to the Nikko journey',()=>{
+  const start=html.indexOf('id="kyoto-overview"');
+  const end=html.indexOf('<div class="toolbar">',start);
+  assert.ok(start>0&&end>start);
+  const section=html.slice(start,end);
+  assert.ok(section.includes('<button type="button" id="open-nikko-next" class="kyoto-next-leg">'));
+  assert.ok(section.includes('Fahrt Kyoto → Nikkō am 07.11. öffnen'));
+  const marker="  $('open-nikko-next').onclick=";
+  const handlerStart=app.indexOf(marker);
+  const handlerEnd=app.indexOf("  $('quick-today').onclick=",handlerStart);
+  assert.ok(handlerStart>0&&handlerEnd>handlerStart);
+  const handler=app.slice(handlerStart,handlerEnd);
+  assert.ok(handler.includes("selectPlan('ride-nikko')"));
+  assert.ok(handler.includes('nikkoOverview.scrollIntoView'));
+  for(const bad of ['ticketStatuses','ticketVault','tripStageDone','localStorage.clear'])
+    assert.ok(!handler.includes(bad));
+  assert.ok(css.includes('.kyoto-next-leg{'));
+});
