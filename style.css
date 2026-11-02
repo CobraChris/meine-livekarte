@@ -1714,3 +1714,28 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .vault-preview.is-scan-mode .vault-preview-bar strong{max-width:30%}
   .vault-preview-bar-actions button{font-size:11px;padding:5px}
 }
+
+/* No account or cloud: show backup export reminders without claiming a
+   downloaded file was safely stored outside the browser. */
+.ticket-backup-health{display:grid;gap:9px;margin:5px 0 0;
+  padding:12px;border-radius:10px;background:#2c463e;
+  border:1px solid #83b599;color:#eaf7ed}
+.ticket-backup-health[hidden]{display:none!important}
+.ticket-backup-health[data-level="missing"],
+.ticket-backup-health[data-level="changed"],
+.ticket-backup-health[data-level="old"]{
+  background:#4a4031;border-color:#c5a878;color:#fff2d5
+}
+.ticket-backup-health p{margin:0;font-size:11px;line-height:1.55}
+.ticket-backup-actions{display:flex;flex-wrap:wrap;gap:7px}
+.ticket-backup-actions button{min-height:44px;border-radius:8px;
+  padding:8px 10px;font-size:12px;font-weight:850;
+  flex:1 1 145px;border:1px solid #bdd8b7;
+  color:#eaffea;background:#305c49;cursor:pointer}
+.ticket-backup-health[data-level="missing"] #ticket-backup-quick,
+.ticket-backup-health[data-level="changed"] #ticket-backup-quick,
+.ticket-backup-health[data-level="old"] #ticket-backup-quick{
+  background:#e6d9ac;color:#3a301d
+}
+.ticket-backup-check-result{font-size:11px;line-height:1.6;
+  margin:0;color:#e7f6e9;overflow-wrap:anywhere}
