@@ -175,6 +175,30 @@
   // Small, non-sensitive trip presets allow short browser-friendly URLs.
   // Station-to-station waypoints are illustrative, not rail-grade geometry.
   const journeyPresets = {
+    // Previously discussed 07.11. itinerary. Scheduled times are a PLAN,
+    // not live timetable feeds, platform numbers or booking proof.
+    // The line drawn between stations is schematic, not the actual rails.
+    'kyoto-nikko-2026-11-07': {
+      title:'07.11. · Kyoto → Tokio → Nikkō',
+      date:'07.11.2026',
+      stops:[
+        {name:'Kyoto Station',lat:34.98535,lng:135.75877,
+          departure:'11:01',
+          description:'Kyoto (Bahnhof) · bisheriger Plan: Nozomi 12 (Shinkansen-Zug). QR-Ticket und Abfahrtsgleis vor Ort prüfen.',
+          leg:'Nozomi 12 (Shinkansen-Zug) · Kyoto → Tokyo · Abfahrt laut früherem Plan 11:01'},
+        {name:'Tokyo Station',lat:35.68124,lng:139.76712,
+          departure:'14:00',
+          description:'Tokyo (Bahnhof) · Umstieg vom Tokaido- auf den Tohoku-Shinkansen; Abfahrtsgleis und Fußweg prüfen.',
+          leg:'Yamabiko 141 (Shinkansen-Zug) · 14:00–14:48 laut bisherigem Reiseplan'},
+        {name:'Utsunomiya Station',lat:36.55916,lng:139.89851,
+          arrival:'14:48',departure:'15:15',
+          description:'Utsunomiya (Bahnhof) · 27 Minuten geplanter Umstieg zur JR Nikkō-Linie. Beschilderung prüfen.',
+          leg:'JR Nikkō-Linie (Regionalzug) · 15:15–15:58 laut bisherigem Reiseplan'},
+        {name:'Nikkō Station (JR)',lat:36.74718,lng:139.62194,
+          arrival:'15:58',
+          description:'Nikkō (JR-Bahnhof) · Weiterfahrt zum Fairfield by Marriott Tochigi Nikko. Hotel in Tokorono 1541-3, nicht direkt am Bahnhof.'}
+      ]
+    },
     // Timetable plus user-confirmed booking details for the 01.11.2026 itinerary.
     // No booking codes, QR codes or ticket images are stored here.
     // Rail map geometry between these stations is schematic (not track geometry).
@@ -261,6 +285,21 @@
   // Curated city presets. They are ordinary place records and are only seeded
   // once into local browser storage, so users can still edit or clear them.
   const townPlacePresets = {
+    'town-nikko': [
+      {name:'Fairfield by Marriott Tochigi Nikko',lat:36.76169,lng:139.61775,
+        category:'hotel',
+        schedule:'Nikkō · geplantes Hotel nach der Anreise am 07.11. · Check-in ab 15:00',
+        note:'1541-3 Tokorono, Nikkō, Tochigi 321-1421. Laut Hotel ca. 5 Min. Auto oder 30 Min. zu Fuß ab Bahnhof; keine Speisen vor Ort, Abendessen vorplanen.',
+        description:'Hotel im Tokorono-Viertel. Adresse und Anfahrtsmöglichkeit vor Abfahrt prüfen; keine automatische Taxibuchung.'},
+      {name:'Nikkō Station (JR)',lat:36.74718,lng:139.62194,category:'station',
+        schedule:'07.11. · erwartete Zugankunft 15:58 laut bisherigem Reiseplan',
+        note:'Endstation der JR Nikkō-Linie ab Utsunomiya. Nicht mit dem benachbarten Tōbu-Nikkō (anderer Bahnhof/Betreiber) verwechseln.',
+        description:'JR-Bahnhof in Nikkō; Ausgang, Taxi oder Hoteltransfer vor Ort prüfen.'},
+      {name:'Tōbu-Nikkō Station',lat:36.74806,lng:139.62008,category:'station',
+        schedule:'Alternative Bahnanreise und lokaler Busverkehr',
+        note:'Tōbu-Nikkō (Bahnhof) ist nicht derselbe Bahnhof wie JR Nikkō; 07.11. geplante Ankunft erfolgt am JR-Bahnhof.',
+        description:'Tōbu-Bahnhof mit regionalen Busverbindungen und Reiseinformation.'}
+    ],
     'town-kyoto': [
       {name:'Tomoya Residence Hotel Kyoto Nijo Takakura',lat:35.0137,lng:135.76181,category:'hotel',
         schedule:'01.–07.11. · Unterkunft · Check-in ab 14:00 · Ankunft am 01.11. je nach Transfer ca. 15:15–15:35',
@@ -378,7 +417,9 @@
     {id:'ride-takayama',name:'30.10. · Fahrt nach Takayama',kind:'journey'},
     {id:'town-takayama',name:'30.10.–01.11. · Takayama',kind:'city',center:[36.141062,137.251454]},
     {id:'ride-kyoto',name:'01.11. · Fahrt nach Kyoto',kind:'journey',center:[35.55,136.50]},
-    {id:'town-kyoto',name:'01.–07.11. · Kyoto',kind:'city',center:[35.0100,135.7710]}
+    {id:'town-kyoto',name:'01.–06.11. · Kyoto',kind:'city',center:[35.0100,135.7710]},
+    {id:'ride-nikko',name:'07.11. · Fahrt Kyoto → Nikkō',kind:'journey',center:[36.55916,139.89851]},
+    {id:'town-nikko',name:'ab 07.11. · Nikkō',kind:'city',center:[36.752,139.621]}
   ];
   function placePlanKey(place) {
     return JSON.stringify([place.name,place.lat,place.lng]);
