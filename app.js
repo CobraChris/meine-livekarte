@@ -248,6 +248,134 @@
       mapPlaceError.textContent=e.message||'Der Ort konnte nicht gespeichert werden.';
     }
   };
+  // Explicit, lightweight place lookup. Never run a network request on typing,
+  // GPS updates, map movements or application startup.
+  const S=window.LivekartePlaceSearch;
+  const searchForm=$('place-search-form');
+  const searchInput=$('place-search-input');
+  const searchGo=$('place-search-go');
+  const searchStatus=$('place-search-status');
+  const searchResults=$('place-search-results');
+  const searchPicked=$('place-search-picked');
+  const searchPreview=L.layerGroup().addTo(map);
+  let searchController=null,searchGeneration=0,lastSearchAt=0,selectedSearchPlace=null;
+  const searchMessage=message=>{
+    searchStatus.textContent=message;
+    searchStatus.hidden=!message;
+  };
+  function resetPlaceSearch(clearInput=false){
+    searchGeneration++;
+    if(searchController){searchController.abort();searchController=null;}
+    searchGo.disabled=false;
+    searchGo.textContent='Suchen';
+    searchResults.replaceChildren();
+    searchResults.hidden=true;
+    searchPicked.hidden=true;
+    selectedSearchPlace=null;
+    searchPreview.clearLayers();
+    if(clearInput)searchInput.value='';
+    searchMessage('');
+  }
+  $('place-search-close').onclick=()=>resetPlaceSearch(true);
+  searchInput.oninput=()=>resetPlaceSearch(false);
+  function pickSearchResult(place){
+    selectedSearchPlace=place;
+    searchResults.hidden=true;
+    searchPreview.clearLayers();
+    L.circleMarker([place.lat,place.lng],{
+      radius:11,color:'#ffffff',weight:3,fillColor:'#6cddbb',
+      fillOpacity:.94,interactive:false
+    }).addTo(searchPreview);
+    pauseGPSFollow();
+    following=false;refreshGPSFollowControl();
+    map.setView([place.lat,place.lng],Math.max(15,Math.min(17,map.getZoom())));
+    $('place-search-picked-name').textContent=place.name;
+    $('place-search-picked-info').textContent=place.label;
+    searchPicked.hidden=false;
+    searchMessage('📍 Vorschau auf der Karte · noch nicht gespeichert.');
+    searchInput.blur();
+  }
+  function renderPlaceSearchResults(found){
+    searchResults.replaceChildren();
+    searchResults.hidden=!found.length;
+    searchPicked.hidden=true;
+    for(const place of found){
+      const button=node('button',undefined,'place-search-result');
+      button.type='button';
+      button.append(node('strong',place.name),node('small',place.label));
+      button.onclick=()=>pickSearchResult(place);
+      searchResults.append(button);
+    }
+    searchMessage(found.length
+      ?found.length+' Treffer gefunden · einen Ort auswählen.'
+      :'Keine passenden Orte gefunden. Versuche den Namen mit Stadt oder Stadtteil.');
+  }
+  searchForm.onsubmit=async event=>{
+    event.preventDefault();
+    if(!S){searchMessage('Ortssuche nicht geladen. Bitte App aktualisieren.');return;}
+    let url;
+    const query=searchInput.value;
+    try{url=S.requestUrl(query,map.getCenter());}
+    catch(error){searchMessage(error.message);return;}
+    if(navigator.onLine===false){
+      searchMessage('Für die Ortssuche ist eine Internetverbindung nötig.');
+      return;
+    }
+    if(Date.now()-lastSearchAt<1200){
+      searchMessage('Bitte kurz warten, bevor du erneut suchst.');
+      return;
+    }
+    resetPlaceSearch(false);
+    const controller=new AbortController();
+    searchController=controller;
+    const generation=++searchGeneration;
+    lastSearchAt=Date.now();
+    searchGo.disabled=true;
+    searchGo.textContent='Suche …';
+    searchMessage('Suche in OpenStreetMap (Photon) …');
+    let timeout;
+    try{
+      timeout=setTimeout(()=>controller.abort(),13000);
+      const response=await fetch(url,{
+        method:'GET',mode:'cors',credentials:'omit',referrerPolicy:'origin',
+        headers:{'Accept':'application/json'},signal:controller.signal
+      });
+      if(!response.ok){
+        if(response.status===429||response.status===503)
+          throw new Error('Der öffentliche Suchdienst ist ausgelastet. Bitte später erneut versuchen.');
+        throw new Error('Ortssuche nicht erreichbar (HTTP '+response.status+').');
+      }
+      const raw=await response.text();
+      if(raw.length>500000)throw new Error('Die Suchantwort ist zu groß.');
+      const found=S.parse(JSON.parse(raw));
+      if(generation!==searchGeneration)return;
+      renderPlaceSearchResults(found);
+    }catch(error){
+      if(generation!==searchGeneration)return;
+      searchMessage(controller.signal.aborted
+        ?'Ortssuche hat zu lange gedauert. Bitte erneut versuchen.'
+        :error instanceof SyntaxError?'Der Suchdienst hat eine ungültige Antwort geliefert.'
+        :error.message||'Ortssuche derzeit nicht verfügbar. Bitte Internet prüfen.');
+    }finally{
+      clearTimeout(timeout);
+      if(generation===searchGeneration){
+        searchController=null;
+        searchGo.disabled=false;
+        searchGo.textContent='Suchen';
+      }
+    }
+  };
+  $('place-search-walk').onclick=()=>{
+    if(selectedSearchPlace)void showWalkingRoute(selectedSearchPlace);
+  };
+  $('place-search-save').onclick=()=>{
+    if(!selectedSearchPlace)return;
+    openMapPlaceDialog(selectedSearchPlace);
+    $('map-place-name').value=selectedSearchPlace.name;
+    $('map-place-category').value=selectedSearchPlace.category;
+    $('map-place-note').value=('Gefunden über Photon/OpenStreetMap: '+selectedSearchPlace.label).slice(0,260);
+  };
+
   // The external Google walking link remains available as a full navigation fallback.
   function route(p) {
     const a = node('a', '↗ Google Maps', 'navigate');
