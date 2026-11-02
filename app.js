@@ -1576,58 +1576,6 @@
     const visible = items.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
-  // A popup stays attached to its marker. Dragging its explicit handle
-  // pans the map underneath, rather than detaching the popup from the place.
-  // The normal map, popup buttons and close control retain their gestures.
-  // Swipe on the non-interactive popup surface pans the map while keeping
-  // popup and marker anchored to the same coordinates. Buttons/links still click.
-  function enablePopupMapDrag(marker,surface){
-    let pointerId=null,lastX=0,lastY=0,captured=null,fromText=false;
-    const ignore='button,a,input,select,textarea,label,[role="button"],'+
-      '[contenteditable="true"],.leaflet-popup-close-button';
-    const release=event=>{
-      if(pointerId===null||event.pointerId!==pointerId)return;
-      const id=pointerId,target=captured;
-      pointerId=null;captured=null;fromText=false;
-      surface.classList.remove('is-dragging');
-      if(target?.hasPointerCapture?.(id))target.releasePointerCapture(id);
-    };
-    surface.addEventListener('pointerdown',event=>{
-      if((event.pointerType==='mouse'&&event.button!==0)||
-         !marker.isPopupOpen()||pointerId!==null)return;
-      // Buttons, links and the close control still receive ordinary clicks.
-      if(event.target.closest?.(ignore))return;
-      event.preventDefault();event.stopPropagation();
-      pauseGPSFollow();
-      captured=surface;
-      pointerId=event.pointerId;
-      lastX=event.clientX;lastY=event.clientY;
-      fromText=!!event.target.closest?.('.place-popup-description');
-      surface.classList.add('is-dragging');
-      captured.setPointerCapture?.(pointerId);
-    });
-    surface.addEventListener('pointermove',event=>{
-      if(pointerId!==event.pointerId||!marker.isPopupOpen())return;
-      event.preventDefault();event.stopPropagation();
-      const dx=event.clientX-lastX,dy=event.clientY-lastY;
-      lastX=event.clientX;lastY=event.clientY;
-      if(!Number.isFinite(dx)||!Number.isFinite(dy)||
-         Math.abs(dx)>110||Math.abs(dy)>110)return;
-      // Keep scrolling for overflowing descriptions; elsewhere move the map.
-      const scroll=marker.getPopup()?.getElement()?.querySelector('.leaflet-popup-content');
-      if(fromText&&scroll&&scroll.scrollHeight>scroll.clientHeight+4&&
-         Math.abs(dy)>Math.abs(dx)*1.4){
-        scroll.scrollTop-=dy;
-        return;
-      }
-      if(dx||dy)map.panBy([-dx,-dy],{animate:false});
-    });
-    for(const eventName of ['pointerup','pointercancel','lostpointercapture'])
-      surface.addEventListener(eventName,release);
-    marker.on('popupclose',()=>{
-      if(pointerId!==null)release({pointerId});
-    });
-  }
   // City dates are an extra filter inside one city, never extra trip sections.
   const cityDaysPanel=$('city-days'),cityDaysList=$('city-days-list');
   function renderCityDays(){
@@ -1699,6 +1647,58 @@
     return box;
   }
 
+  // A popup stays attached to its marker. Dragging its explicit handle
+  // pans the map underneath, rather than detaching the popup from the place.
+  // The normal map, popup buttons and close control retain their gestures.
+  // Swipe on the non-interactive popup surface pans the map while keeping
+  // popup and marker anchored to the same coordinates. Buttons/links still click.
+  function enablePopupMapDrag(marker,surface){
+    let pointerId=null,lastX=0,lastY=0,captured=null,fromText=false;
+    const ignore='button,a,input,select,textarea,label,[role="button"],'+
+      '[contenteditable="true"],.leaflet-popup-close-button';
+    const release=event=>{
+      if(pointerId===null||event.pointerId!==pointerId)return;
+      const id=pointerId,target=captured;
+      pointerId=null;captured=null;fromText=false;
+      surface.classList.remove('is-dragging');
+      if(target?.hasPointerCapture?.(id))target.releasePointerCapture(id);
+    };
+    surface.addEventListener('pointerdown',event=>{
+      if((event.pointerType==='mouse'&&event.button!==0)||
+         !marker.isPopupOpen()||pointerId!==null)return;
+      // Buttons, links and the close control still receive ordinary clicks.
+      if(event.target.closest?.(ignore))return;
+      event.preventDefault();event.stopPropagation();
+      pauseGPSFollow();
+      captured=surface;
+      pointerId=event.pointerId;
+      lastX=event.clientX;lastY=event.clientY;
+      fromText=!!event.target.closest?.('.place-popup-description');
+      surface.classList.add('is-dragging');
+      captured.setPointerCapture?.(pointerId);
+    });
+    surface.addEventListener('pointermove',event=>{
+      if(pointerId!==event.pointerId||!marker.isPopupOpen())return;
+      event.preventDefault();event.stopPropagation();
+      const dx=event.clientX-lastX,dy=event.clientY-lastY;
+      lastX=event.clientX;lastY=event.clientY;
+      if(!Number.isFinite(dx)||!Number.isFinite(dy)||
+         Math.abs(dx)>110||Math.abs(dy)>110)return;
+      // Keep scrolling for overflowing descriptions; elsewhere move the map.
+      const scroll=marker.getPopup()?.getElement()?.querySelector('.leaflet-popup-content');
+      if(fromText&&scroll&&scroll.scrollHeight>scroll.clientHeight+4&&
+         Math.abs(dy)>Math.abs(dx)*1.4){
+        scroll.scrollTop-=dy;
+        return;
+      }
+      if(dx||dy)map.panBy([-dx,-dy],{animate:false});
+    });
+    for(const eventName of ['pointerup','pointercancel','lostpointercapture'])
+      surface.addEventListener(eventName,release);
+    marker.on('popupclose',()=>{
+      if(pointerId!==null)release({pointerId});
+    });
+  }
   function render() {
     pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = [];
     renderCityDays();
