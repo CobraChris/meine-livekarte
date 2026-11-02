@@ -9,6 +9,7 @@
   if(!API||!root)return;
   const shelf=new API.Library();
   const SHARE=window.LivekarteTicketShareInbox;
+  const BACKUP_MARKER='livekarte-ticket-backup-export-v1';
   let sharedDraft=null,lastSharedId=null;
   const status=(message,error=false)=>{
     const el=$('ticket-status');
@@ -137,12 +138,23 @@
     $('vault-preview').showModal();
     if(scan&&!isPdf)enterScanMode();
   }
+  function renderBackupHealth(files){
+    const panel=$('ticket-backup-health');
+    panel.hidden=!files.length;
+    if(!files.length)return;
+    let marker=null;
+    try{marker=JSON.parse(localStorage.getItem(BACKUP_MARKER)||'null');}catch{}
+    const guidance=API.backupIndicator(files,marker);
+    panel.dataset.level=guidance.level;
+    $('ticket-backup-message').textContent=guidance.message;
+  }
   async function render(){
     const files=await shelf.list(),list=$('ticket-files');
     list.replaceChildren();
     const total=files.reduce((sum,item)=>sum+item.size,0);
     $('ticket-count').textContent=files.length+' / '+API.MAX_ITEMS+
       ' Dokumente · '+(total/1048576).toFixed(1)+' MB / 50 MB';
+    renderBackupHealth(files);
     const search=$('ticket-search').value;
     const shown=API.filterTickets(files,search);
     $('ticket-filter-result').textContent=search.trim()
@@ -388,19 +400,59 @@
     revealSavedTicket(item);
     status('✓ '+item.title+' gespeichert. Du findest es hervorgehoben unter „Gespeicherte Tickets“.');
   });
-  $('ticket-backup').onclick=()=>busy($('ticket-backup'),async()=>{
-    if(!confirm('Backup ist NICHT verschlüsselt. Möchtest du die Ticketdateien als lokale JSON-Sicherung exportieren?'))return;
-    const blob=await shelf.backup();
-    download(blob,'livekarte-ticketablage-'+new Date().toISOString().slice(0,10)+'.json');
-    status('Lokales Backup erstellt (unverschlüsselt). Bitte außerhalb der App sicher aufbewahren.');
+  async function exportBackup(){
+    const current=await shelf.list();
+    if(!current.length)throw Error('Noch keine gespeicherten Tickets für ein Backup vorhanden.');
+    if(!confirm('Das Backup enthält alle Ticketdateien UNVERSCHLÜSSELT. Export starten?'))return;
+    const pack=await shelf.backupPackage();
+    const now=new Date();
+    download(pack.blob,'livekarte-ticketablage-'+now.toISOString().slice(0,10)+'.json');
+    // Only an export attempt is recorded. Browsers cannot confirm that the
+    // downloaded file was actually saved or moved off-device.
+    try{localStorage.setItem(BACKUP_MARKER,JSON.stringify({
+      at:now.toISOString(),sig:pack.signature
+    }));}catch{}
+    renderBackupHealth(await shelf.list());
+    status('Backup-Export angestoßen ('+pack.count+' Tickets). Bitte unter „Downloads“ prüfen und die unverschlüsselte Datei außerhalb der App aufbewahren.');
+  }
+  $('ticket-backup').onclick=()=>busy($('ticket-backup'),exportBackup);
+  $('ticket-backup-quick').onclick=()=>busy($('ticket-backup-quick'),exportBackup);
+  $('ticket-backup-open').onclick=()=>{
+    const details=$('ticket-backup-details');
+    details.open=true;
+    details.scrollIntoView({behavior:'smooth',block:'start'});
+    $('ticket-restore-file').focus({preventScroll:true});
+  };
+  $('ticket-restore-file').addEventListener('change',()=>{
+    $('ticket-backup-check-result').textContent='';
+  });
+  $('ticket-backup-check').onclick=()=>busy($('ticket-backup-check'),async()=>{
+    const file=$('ticket-restore-file').files?.[0];
+    if(!file)throw Error('Bitte zuerst eine Sicherungsdatei auswählen.');
+    const result=$('ticket-backup-check-result');
+    result.textContent='Prüfe die Sicherungsdatei lokal …';
+    try{
+      const info=await shelf.inspectBackup(file);
+      result.textContent='✓ Sicherungsdatei lesbar: '+info.count+
+        ' Tickets · '+(info.size/1048576).toFixed(1)+
+        ' MB Originaldateien. Noch nichts importiert. Das prüft das Format und die Dateisignaturen, nicht einen externen Speicherort.';
+      status('Sicherungsdatei lokal geprüft – keine Daten geändert.');
+    }catch(e){
+      result.textContent='⚠ Prüfung fehlgeschlagen: '+e.message+'. Nichts importiert.';
+      throw e;
+    }
   });
   $('ticket-restore').onclick=()=>busy($('ticket-restore'),async()=>{
     const file=$('ticket-restore-file').files?.[0];
     if(!file)throw Error('Bitte eine Sicherungsdatei auswählen.');
+    const info=await shelf.inspectBackup(file);
+    if(!confirm('Geprüfte Sicherung: '+info.count+
+      ' Tickets. Vorhandene Dateien bleiben erhalten. Jetzt fehlende Dokumente importieren?'))return;
     const imported=await shelf.restore(file);
     $('ticket-restore-file').value='';
+    $('ticket-backup-check-result').textContent='';
     await render();
-    status(imported+' Dokumente aus dem lokalen Backup hinzugefügt. Bereits vorhandene Dokumente nicht überschrieben.');
+    status('✓ '+imported+' Dokumente aus dem lokalen Backup hinzugefügt. Vorhandene Dateien wurden nicht überschrieben.');
   });
   $('ticket-persist').onclick=()=>busy($('ticket-persist'),async()=>{
     if(!navigator.storage?.persist)throw Error('Dein Browser unterstützt diese Speicherfunktion nicht.');

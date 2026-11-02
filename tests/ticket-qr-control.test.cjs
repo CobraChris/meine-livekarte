@@ -28,7 +28,7 @@ function buildPreviewFixture(){
     'ticket-scan-out','ticket-scan-in','ticket-scan-zoom'];
   const els=Object.fromEntries(names.map(id=>[id,make(id)]));
   const $=id=>{if(!els[id])throw Error('Missing '+id);return els[id];};
-  const snippet=ui.slice(ui.indexOf('  let previewIsImage='),ui.indexOf('  async function render(){'));
+  const snippet=ui.slice(ui.indexOf('  let previewIsImage='),ui.indexOf('  function renderBackupHealth(files){'));
   assert.ok(snippet.startsWith('  let previewIsImage='));
   assert.ok(snippet.includes('function enterScanMode()'));
   const context={
@@ -119,7 +119,7 @@ test('PDFs retain normal preview with no control mode, no QR image and unchanged
 });
 
 test('QR view needs no network, changes only visual sizes and never alters stored tickets',()=>{
-  const scan=ui.slice(ui.indexOf('  let previewIsImage='),ui.indexOf('  async function render(){'));
+  const scan=ui.slice(ui.indexOf('  let previewIsImage='),ui.indexOf('  function renderBackupHealth(files){'));
   assert.doesNotMatch(scan,/fetch\(|XMLHttpRequest|sendBeacon|WebSocket|navigator\.credentials|navigator\.geolocation/);
   assert.doesNotMatch(scan,/localStorage|indexedDB\.deleteDatabase|clear\(\)/);
   assert.match(scan,/const zoomLevels=\[1,1\.5,2,3\]/);

@@ -98,6 +98,58 @@
       return terms.every(term=>haystack.includes(term));
     });
   }
+  async function parseBackup(file){
+      if(!file||file.size>MAX_BACKUP)throw Error('Backup ist zu groß.');
+      let backup;
+      try{backup=JSON.parse(await file.text());}catch{throw Error('Backup kann nicht gelesen werden.');}
+      if(backup?.format!==BACKUP_FORMAT||!Array.isArray(backup.files)||
+        backup.files.length>MAX_ITEMS)throw Error('Unbekanntes Backup-Format.');
+      const records=[],seen=new Set();
+      for(const item of backup.files){
+        if(!item||typeof item.id!=='string'||item.id.length>100||seen.has(item.id))
+          throw Error('Backup enthält doppelte oder ungültige Kennungen.');
+        seen.add(item.id);
+        if(typeof item.name!=='string'||typeof item.title!=='string'||
+          typeof item.trip!=='string'||!Number.isSafeInteger(item.size)||
+          item.size<1||item.size>MAX_FILE)throw Error('Backup enthält ungültige Metadaten.');
+        const bytes=fromBase64(item.base64);
+        if(bytes.byteLength!==item.size)throw Error('Backup-Dateigröße stimmt nicht.');
+        const type=mimeOf(item.type,item.name,bytes);
+        if(type!==item.type)throw Error('Backup-Dateityp stimmt nicht.');
+        records.push({id:item.id,title:clean(item.title,100),name:clean(item.name,120),
+          trip:clean(item.trip,100),created:clean(item.created,40),type,
+          size:item.size,pinned:item.pinned===true,blob:new Blob([bytes],{type})});
+      }
+      return records;
+  }
+
+  // Backup status is a reminder only, NOT a checksum of the binary contents.
+  // The marker contains a short metadata digest rather than ticket names.
+  function backupSignature(items){
+    const metadata=items.map(r=>[r.id,r.title,r.trip,r.name,r.size,
+      r.pinned===true,r.created]).sort((a,b)=>a[0].localeCompare(b[0]));
+    const input=JSON.stringify(metadata);
+    let hash=2166136261;
+    for(let i=0;i<input.length;i++){
+      hash^=input.charCodeAt(i);
+      hash=Math.imul(hash,16777619);
+    }
+    return (hash>>>0).toString(16).padStart(8,'0')+':'+metadata.length;
+  }
+  function backupIndicator(items,marker,now=Date.now()){
+    if(!items.length)return {level:'empty',message:''};
+    if(!marker||typeof marker!=='object'||typeof marker.at!=='string'||
+      typeof marker.sig!=='string'||!Number.isFinite(Date.parse(marker.at)))
+      return {level:'missing',message:'Noch kein Backup-Export auf diesem Gerät vermerkt. Bitte eine Sicherungsdatei außerhalb der App aufbewahren.'};
+    if(marker.sig!==backupSignature(items))
+      return {level:'changed',message:'Die Ticketablage hat sich seit dem letzten Export verändert. Eine neue Sicherung ist empfehlenswert.'};
+    const age=now-Date.parse(marker.at);
+    if(age<0||age>7*86400000)
+      return {level:'old',message:'Der letzte Export liegt länger als 7 Tage zurück oder das Datum ist ungültig. Bitte Sicherung prüfen.'};
+    return {level:'recent',message:'Letzter Backup-Export angestoßen: '+
+      new Intl.DateTimeFormat('de-DE',{timeZone:'Asia/Tokyo',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(marker.at))+
+      '. Prüfe, ob die Datei tatsächlich heruntergeladen und außerhalb der App sicher aufbewahrt wurde.'};
+  }
   class Library {
     constructor(){this.db=null;}
     async database(){if(!this.db)this.db=await connect();return this.db;}
@@ -172,7 +224,7 @@
       for(const record of fresh)tx.objectStore('files').add(record);
       await completed;return fresh.length;
     }
-    async backup(){
+    async backupPackage(){
       const records=await this.all();
       if(records.some(r=>!isRecord(r)))throw Error('Gespeicherte Daten beschädigt.');
       const files=[];
@@ -182,31 +234,19 @@
         const {blob,...meta}=r;
         files.push({...meta,base64:base64(bytes)});
       }
-      return new Blob([JSON.stringify({format:BACKUP_FORMAT,files})],{type:'application/json'});
+      return {blob:new Blob([JSON.stringify({format:BACKUP_FORMAT,files})],{type:'application/json'}),
+        signature:backupSignature(records),count:records.length};
+    }
+    async backup(){
+      return (await this.backupPackage()).blob;
+    }
+    async inspectBackup(file){
+      const records=await parseBackup(file);
+      return {count:records.length,size:records.reduce((n,r)=>n+r.size,0),
+        titles:records.map(r=>r.title),signature:backupSignature(records)};
     }
     async restore(file){
-      if(!file||file.size>MAX_BACKUP)throw Error('Backup ist zu groß.');
-      let backup;
-      try{backup=JSON.parse(await file.text());}catch{throw Error('Backup kann nicht gelesen werden.');}
-      if(backup?.format!==BACKUP_FORMAT||!Array.isArray(backup.files)||
-        backup.files.length>MAX_ITEMS)throw Error('Unbekanntes Backup-Format.');
-      const records=[],seen=new Set();
-      for(const item of backup.files){
-        if(!item||typeof item.id!=='string'||item.id.length>100||seen.has(item.id))
-          throw Error('Backup enthält doppelte oder ungültige Kennungen.');
-        seen.add(item.id);
-        if(typeof item.name!=='string'||typeof item.title!=='string'||
-          typeof item.trip!=='string'||!Number.isSafeInteger(item.size)||
-          item.size<1||item.size>MAX_FILE)throw Error('Backup enthält ungültige Metadaten.');
-        const bytes=fromBase64(item.base64);
-        if(bytes.byteLength!==item.size)throw Error('Backup-Dateigröße stimmt nicht.');
-        const type=mimeOf(item.type,item.name,bytes);
-        if(type!==item.type)throw Error('Backup-Dateityp stimmt nicht.');
-        records.push({id:item.id,title:clean(item.title,100),name:clean(item.name,120),
-          trip:clean(item.trip,100),created:clean(item.created,40),type,
-          size:item.size,pinned:item.pinned===true,blob:new Blob([bytes],{type})});
-      }
-      return this.addMany(records);
+      return this.addMany(await parseBackup(file));
     }
     async legacyCount(){
       // Old encrypted DB stays intact. Opening it may create an empty DB in
@@ -242,5 +282,5 @@
       return this.addMany(records);
     }
   }
-  return Object.freeze({Library,available,mimeOf,filterTickets,MAX_FILE,MAX_TOTAL,MAX_ITEMS,BACKUP_FORMAT});
+  return Object.freeze({Library,available,mimeOf,filterTickets,backupSignature,backupIndicator,MAX_FILE,MAX_TOTAL,MAX_ITEMS,BACKUP_FORMAT});
 });
