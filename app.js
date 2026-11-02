@@ -1476,7 +1476,15 @@
       $('edit-place-error').textContent=error.message;
       return false;
     }
+    const nextCityDays=Object.assign(Object.create(null),cityDayAssignments);
+    const assignedDay=nextCityDays[oldKey];
+    if(next.newKey!==oldKey){
+      delete nextCityDays[oldKey];
+      if(next.newKey!==null&&assignedDay&&!Object.hasOwn(nextCityDays,next.newKey))
+        nextCityDays[next.newKey]=assignedDay;
+    }
     const storageKeys={
+      cityDays:'livekarte-city-day-assignments-v1',
       places:'livekarte-places-v1',
       assignments:'livekarte-plan-assignments-v1',
       drafts:'livekarte-tour-drafts-v1',
@@ -1490,6 +1498,7 @@
       localStorage.setItem(storageKeys.assignments,JSON.stringify(next.assignments));
       localStorage.setItem(storageKeys.drafts,JSON.stringify(next.drafts));
       localStorage.setItem(storageKeys.days,JSON.stringify(next.dayPlans));
+      localStorage.setItem(storageKeys.cityDays,JSON.stringify(nextCityDays));
     }catch{
       // Best-effort rollback of any partially saved keys. Keep in-memory
       // data unchanged so a quota/security error never silently erases pins.
@@ -1510,6 +1519,7 @@
     planAssignments=next.assignments;
     tourDrafts=next.drafts;
     dayPlans=next.dayPlans;
+    cityDayAssignments=nextCityDays;
     if(onWalkingRoute)clearWalkingRoute();
     if(wasInCurrentTour||onActiveRoute)clearTourRoute();
     editPlaceDialog.close();
@@ -1556,7 +1566,17 @@
     return parts.join(' · ');
   }
   function appendPlaceTiming(target,p) {
-    if (p.schedule) target.append(node('p','🗓 '+p.schedule,'place-schedule'));
+    if(p.schedule){
+      const assigned=activePlanId==='town-kyoto'
+        ?cityDayAssignments[C.placePlanKey(p)]:null;
+      const sourceDate=MD.fromSchedule(p.schedule);
+      const changed=assigned&&sourceDate&&assigned!==sourceDate;
+      const label=changed
+        ?'🗓 Frühere Planung: '+p.schedule+' · jetzt für '+MD.dayLabel(assigned)+
+          ' vorgemerkt (Uhrzeiten nicht automatisch übertragen)'
+        :'🗓 '+p.schedule;
+      target.append(node('p',label,'place-schedule'));
+    }
     if (p.note) target.append(node('p','💡 '+p.note,'place-note'));
   }
   function metric(p) {
@@ -2162,6 +2182,9 @@
     if(activePlanId!==suggestion.planId)
       selectPlan(suggestion.planId,{focus:false});
     if(suggestion.planId==='town-kyoto'||suggestion.planId==='ride-kyoto'){
+      const today=NS.localDate();
+      if(suggestion.planId==='town-kyoto'&&MD.days('town-kyoto').includes(today))
+        selectCityDay(today);
       focusKyotoOverviewDay(suggestion.dayIndex);
       kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
     }else if(suggestion.planId==='ride-nikko'||suggestion.planId==='town-nikko'){
