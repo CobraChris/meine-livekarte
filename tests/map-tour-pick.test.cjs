@@ -91,7 +91,7 @@ test('map picking is local-only and preserves previously deployed tour and offli
  assert.match(app,/function toggleTourPlace\(place,fromMap=false\)/);
  assert.match(app,/function clearTourRoute\(\)/);
  assert.match(app,/function renderTourBuilder\(\)/);
- assert.match(app,/tourDrafts\[activePlanId\]=items\.map\(p=>C\.placePlanKey\(p\)\)/);
+ assert.match(app,/tourDrafts\[tourContextKey\(\)\]=items\.map\(p=>C\.placePlanKey\(p\)\)/);
  assert.match(html,/id="tour-optimize"/);
  assert.match(html,/id="tour-calculate"/);
  assert.match(html,/id="day-planner"/);
