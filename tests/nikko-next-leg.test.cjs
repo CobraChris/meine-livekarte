@@ -121,3 +121,30 @@ test('Kyoto recap offers an explicit one-tap transition to the Nikko journey',()
     assert.ok(!handler.includes(bad));
   assert.ok(css.includes('.kyoto-next-leg{'));
 });
+
+
+test('Tokyo transfer helper distinguishes operator platform zones and ticket gate limits',()=>{
+  const start=html.indexOf('id="nikko-tokyo-transfer"');
+  const end=html.indexOf('id="nikko-rail-steps"',start);
+  assert.ok(start>0&&end>start);
+  const help=html.slice(start,end);
+  assert.ok(help.includes('E-Ticket und Umsteigesperre prüfen'));
+  assert.ok(help.includes('Gleise 14–19'));
+  assert.ok(help.includes('20–23'));
+  assert.ok(help.includes('keine IC-Karten für den direkten Umstieg'));
+  assert.ok(help.includes('nicht aus dem Plan ableiten'));
+  assert.ok(help.includes('lang="ja"'));
+  assert.ok(help.includes('のぞみ12号')&&help.includes('やまびこ141号'));
+  assert.ok(help.includes('jreast.co.jp/en/estation/stations/1039.html'));
+  assert.ok(help.includes('faq.expy.jp/faq/show/59'));
+  assert.ok(help.includes('eki-net.com/top/jrticket/guide/geton/e-ticket.html'));
+  assert.ok(!help.includes('type="checkbox"'));
+  assert.ok(!help.includes('Gleis 20 für Yamabiko'));
+  const begin=app.indexOf('  function renderNikkoOverview(){');
+  const finish=app.indexOf('  let lastOverviewDay=',begin);
+  const renderer=app.slice(begin,finish);
+  assert.ok(renderer.includes("$('nikko-tokyo-transfer').hidden=!travel"));
+  assert.ok(!renderer.includes('ticketStatuses['));
+  assert.ok(!renderer.includes('localStorage.setItem'));
+  assert.ok(css.includes('.nikko-tokyo-transfer[hidden]'));
+});

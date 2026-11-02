@@ -1761,3 +1761,24 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   color:#143629;font:800 13px/1.4 system-ui,sans-serif;
   text-align:center;cursor:pointer}
 .kyoto-next-leg:focus-visible{outline:3px solid #fff0b3;outline-offset:3px}
+
+/* No fabricated route, gate or confirmed ticket state: official-source guide only. */
+.nikko-tokyo-transfer[hidden]{display:none!important}
+.kyoto-overview .nikko-tokyo-transfer{border:1px solid #f0ce8e;background:#3b352a;margin:12px 0}
+.kyoto-overview .nikko-tokyo-transfer>summary{min-height:48px;box-sizing:border-box;
+  padding:12px;color:#ffe0a2;font-size:13px;line-height:1.45}
+.nikko-tokyo-body{padding:0 12px 13px;color:#f1eee1;font-size:12px;line-height:1.55}
+.nikko-tokyo-body>p{margin:7px 0 10px}
+.kyoto-overview .nikko-tokyo-body>ol{padding:0 0 0 22px;margin:8px 0;display:block}
+.nikko-tokyo-body>ol li{padding:5px 0;color:#ecf3e9;font-size:12px}
+.nikko-tokyo-body strong{color:#fff2cb}
+.kyoto-overview .nikko-staff-japanese{background:#203a3c;border:1px solid #729e93}
+.kyoto-overview .nikko-staff-japanese>summary{color:#dcffe9;font-size:12px}
+.nikko-staff-japanese p[lang="ja"]{font-size:17px;line-height:1.7;letter-spacing:.015em;
+  color:#fff;background:#162c31;padding:12px;border-radius:7px;margin:8px}
+.nikko-staff-translation{font-size:11px;color:#cee0d5;margin:7px 10px 12px}
+.nikko-transfer-sources{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.nikko-transfer-sources a{flex:1 1 170px;display:flex;align-items:center;
+  justify-content:center;min-height:42px;padding:7px 9px;
+  border:1px solid #a4cbb4;border-radius:8px;background:#244b42;
+  color:#e1ffec;text-align:center;text-decoration:none;font-size:11px;font-weight:700}
