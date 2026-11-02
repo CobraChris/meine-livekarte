@@ -15,6 +15,24 @@
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
 <main>
+<nav class="daily-quick-nav" aria-label="Schnellzugriff">
+  <button id="quick-today" type="button">🗓 Heute</button>
+  <button id="quick-map" type="button">🗺 Karte</button>
+  <button id="quick-tickets" type="button">🎟 Meine Tickets</button>
+</nav>
+<section id="today-panel" class="today-panel" aria-labelledby="today-title" hidden>
+  <div class="today-panel-heading">
+    <span class="today-kicker">HEUTE · JAPANISCHE ORTSZEIT</span>
+    <strong id="today-date" class="today-date"></strong>
+  </div>
+  <h2 id="today-title">Dein heutiger Reiseplan</h2>
+  <p id="today-summary"></p>
+  <p id="today-hint" class="today-hint"></p>
+  <div class="today-panel-actions">
+    <button id="today-open" type="button">🗓 Heutigen Plan öffnen</button>
+    <span id="today-view-note" role="status" aria-live="polite"></span>
+  </div>
+</section>
 <section class="workspace" aria-label="Interaktive Karte"><div id="map" aria-label="Karte mit empfohlenen Orten"></div><div class="plan-picker" role="group" aria-label="Reiseabschnitt auswählen">
   <label for="plan-select">Reiseabschnitt</label><div class="plan-picker-row">
     <select id="plan-select" aria-label="Reiseabschnitt auswählen" title="Reiseabschnitt wechseln"></select>
@@ -94,6 +112,8 @@
     <span id="next-action-count" class="next-action-count" aria-live="polite">0 offen</span>
   </div>
   <p id="next-action-date" class="next-action-date"></p>
+  <button id="next-action-archive-toggle" class="next-action-archive-toggle" type="button" hidden aria-expanded="false" aria-controls="next-action-archive-content">Vergangene Aufgaben anzeigen</button>
+  <div id="next-action-archive-content">
   <div class="next-action-current">
     <span class="next-action-eyebrow">NÄCHSTER OFFENER SCHRITT</span>
     <p id="next-action-time" class="next-action-time"></p>
@@ -120,6 +140,7 @@
     <summary>✓ Erledigt <span id="next-action-done-count">0 Schritte</span> · Details öffnen</summary>
     <ol id="next-action-list"></ol>
   </details>
+  </div>
   <p class="next-action-privacy">Planzeiten, keine Live-Verbindungen. Kein automatischer Aufgabenabschluss und keine zusätzlichen GPS- oder Routinganfragen. „Weg zum Ort“ öffnet Google Maps erst nach deinem Tipp.</p>
 </section>
 <section id="kyoto-pickup" class="kyoto-pickup" hidden aria-labelledby="kyoto-pickup-title">
