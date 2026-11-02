@@ -1753,3 +1753,11 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   border-radius:9px;color:#eaffef;background:#345c4f;
   text-decoration:none;font-size:12px;font-weight:800}
 .nikko-overview[hidden]{display:none!important}
+
+/* Voluntary next-leg transition at the end of the Kyoto recap. */
+.kyoto-next-leg{display:flex;align-items:center;justify-content:center;
+  width:100%;min-height:48px;margin:12px 0 0;padding:11px 14px;
+  border:1px solid #d1ffe6;border-radius:11px;background:#a4eac4;
+  color:#143629;font:800 13px/1.4 system-ui,sans-serif;
+  text-align:center;cursor:pointer}
+.kyoto-next-leg:focus-visible{outline:3px solid #fff0b3;outline-offset:3px}
