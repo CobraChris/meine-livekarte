@@ -248,6 +248,7 @@
       mapPlaceError.textContent=e.message||'Der Ort konnte nicht gespeichert werden.';
     }
   };
+  // The external Google walking link remains available as a full navigation fallback.
   // Explicit, lightweight place lookup. Never run a network request on typing,
   // GPS updates, map movements or application startup.
   const S=window.LivekartePlaceSearch;
@@ -376,7 +377,6 @@
     $('map-place-note').value=('Gefunden über Photon/OpenStreetMap: '+selectedSearchPlace.label).slice(0,260);
   };
 
-  // The external Google walking link remains available as a full navigation fallback.
   function route(p) {
     const a = node('a', '↗ Google Maps', 'navigate');
     a.href = 'https://www.google.com/maps/dir/?api=1&destination='+
