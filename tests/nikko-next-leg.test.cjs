@@ -108,12 +108,16 @@ test('Kyoto recap offers an explicit one-tap transition to the Nikko journey',()
   const end=html.indexOf('<div class="toolbar">',start);
   assert.ok(start>0&&end>start);
   const section=html.slice(start,end);
-  assert.match(section,/<button type="button" id="open-nikko-next" class="kyoto-next-leg">/);
-  assert.match(section,/Fahrt Kyoto → Nikkō am 07\\.11\\. öffnen/);
-  const handler=app.slice(app.indexOf("  $('open-nikko-next').onclick="),
-    app.indexOf("  $('quick-today').onclick="));
-  assert.match(handler,/selectPlan\\('ride-nikko'\\)/);
-  assert.match(handler,/nikkoOverview\\.scrollIntoView/);
-  assert.doesNotMatch(handler,/ticketStatuses|ticketVault|tripStageDone|localStorage\\.clear/);
-  assert.match(css,/\\.kyoto-next-leg\\{/);
+  assert.ok(section.includes('<button type="button" id="open-nikko-next" class="kyoto-next-leg">'));
+  assert.ok(section.includes('Fahrt Kyoto → Nikkō am 07.11. öffnen'));
+  const marker="  $('open-nikko-next').onclick=";
+  const handlerStart=app.indexOf(marker);
+  const handlerEnd=app.indexOf("  $('quick-today').onclick=",handlerStart);
+  assert.ok(handlerStart>0&&handlerEnd>handlerStart);
+  const handler=app.slice(handlerStart,handlerEnd);
+  assert.ok(handler.includes("selectPlan('ride-nikko')"));
+  assert.ok(handler.includes('nikkoOverview.scrollIntoView'));
+  for(const bad of ['ticketStatuses','ticketVault','tripStageDone','localStorage.clear'])
+    assert.ok(!handler.includes(bad));
+  assert.ok(css.includes('.kyoto-next-leg{'));
 });
