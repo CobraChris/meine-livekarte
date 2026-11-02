@@ -1,3 +1,11 @@
+## Freie Ziel- und Adresssuche (02.11.2026)
+
+Über dem Kartenausschnitt steht nun **„🔎 Ziel, Adresse, Café …“**. Erst beim Drücken von **„Suchen“** wird eine Anfrage an den öffentlichen, kostenlosen [Photon/komoot](https://github.com/komoot/photon)-Demo-Suchdienst gestellt. Bis zu sechs OpenStreetMap-Treffer werden als Vorschläge mit Ort und Region angezeigt. Die App überträgt zur räumlichen Gewichtung den **aktuellen Mittelpunkt der sichtbaren Karte**, der bei vorheriger GPS-Zentrierung ungefähr dem Standort entsprechen kann; **keine separate GPS-Abfrage, kein Tracking, keine Anfragen bei jedem Tastendruck**.
+
+Ein angetippter Treffer wird als **temporärer** Kartenmarker gezeigt. Von dort lässt sich die bestehende **Fußwegfunktion** (auf ausdrücklichen Klick und bei aktivem GPS) öffnen oder der Ort über das **bestehende Bestätigungsformular „Ort merken“** lokal im gewählten Reiseabschnitt speichern. Es gibt keine automatische Speicherung, keine Ticket-/Tour-Änderung und keine neuen Zugangsschlüssel. Die Suche selbst benötigt Internet; die gefundenen Daten sind nicht auf Vollständigkeit, Öffnungszeiten oder Fußgängerzugang geprüft. Photon stellt keine Verfügbarkeitsgarantie für den öffentlichen Demo-Server bereit; große Anfragemengen können gedrosselt werden. Es erfolgen maximal 6 Treffer pro Anfrage, mindestens 1,2 Sekunden Abstand zwischen Suchversuchen, Abbruch veralteter Anfragen und keine Hintergrund- oder Autocomplete-Abfragen.
+
+---
+
 ## Neue Reiseetappe Kyoto → Nikkō · 07.11.2026 (Stand 02.11.)
 
 ### Tokyo (Bahnhof): Umstieg zwischen zwei Shinkansen-Betreibern (02.11.)
