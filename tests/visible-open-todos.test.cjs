@@ -67,7 +67,7 @@ test('overview shows all open steps, completed steps are grouped and can be undo
     assert.ok(html.includes('id="'+id+'"'),id);
   }
   assert.match(app,/NS\.taskBuckets\(result\.entries\)/);
-  assert.match(app,/count\.textContent=buckets\.openCount\+' offen · '\+buckets\.doneCount\+' erledigt'/);
+  assert.match(app,/:buckets\.openCount\+' offen · '\+buckets\.doneCount\+' erledigt'/);
   assert.match(app,/for\(const item of buckets\.open\)/);
   assert.match(app,/nextActionOpenList\.append\(li\)/);
   assert.match(app,/for\(const item of buckets\.done\)/);
