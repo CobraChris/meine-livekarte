@@ -17,6 +17,35 @@
     const field=name=>parts.find(x=>x.type===name)?.value;
     return field('year')+'-'+field('month')+'-'+field('day');
   };
+  // Explicit, approved itinerary dates only. Outside the known window we
+  // deliberately make no assumptions about later train bookings or locations.
+  function todaySuggestion(at=new Date()){
+    const day=localDate(at);
+    if(day==='2026-10-30'||day==='2026-10-31')
+      return {date:day,planId:'town-takayama',dayIndex:null,
+        title:'Takayama',summary:'Altstadt und Reisevorbereitung',
+        hint:'Die Orte sind ein Vorschlag, keine bestätigten Besuche.'};
+    if(day==='2026-11-01')
+      return {date:day,planId:'ride-kyoto',dayIndex:0,
+        title:'Fahrt nach Kyoto',summary:'Takayama → Nagoya → Kyoto',
+        hint:'Zugzeiten sind Planwerte. Erledigte Schritte bleiben manuell bestätigt.'};
+    if(day==='2026-11-02')
+      return {date:day,planId:'town-kyoto',dayIndex:1,
+        title:'Kyoto · Higashiyama & Fushimi Inari',
+        summary:'Kiyomizu-dera · Sannenzaka/Ninenzaka · Fushimi Inari',
+        hint:'Besichtigungen sind freiwillig; Zeitangaben sind keine Live-Auskunft.'};
+    if(day>='2026-11-03'&&day<='2026-11-07')
+      return {date:day,planId:'town-kyoto',dayIndex:null,
+        title:'Kyoto · flexibel',summary:'Eigene Ziele und Tagesplan auswählen',
+        hint:'Für diesen Tag ist noch keine feste Route hinterlegt.'};
+    return null;
+  }
+  function isPastTravelView(view,at=new Date()){
+    const today=localDate(at);
+    return view==='ride-takayama'&&today>'2026-10-30'||
+      view==='ride-kyoto'&&today>'2026-11-01'||
+      view==='town-takayama'&&today>'2026-11-01';
+  }
   // Scheduled milestones only. All minute arithmetic uses Japan local clock,
   // never the device timezone or a guessed real-time train position.
   function kyotoDepartureClock(at=new Date()){
@@ -243,5 +272,5 @@
       marginText,plannedTransferMinutes:22
     };
   }
-  return Object.freeze({localDate,kyotoDepartureClock,stations,tasksFor,completed,choose,taskTimeState,taskBuckets,trainProblem});
+  return Object.freeze({localDate,todaySuggestion,isPastTravelView,kyotoDepartureClock,stations,tasksFor,completed,choose,taskTimeState,taskBuckets,trainProblem});
 });
