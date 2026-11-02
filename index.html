@@ -243,14 +243,23 @@
       <p id="ticket-filter-result" class="ticket-filter-result" role="status" aria-live="polite"></p>
       <p id="ticket-count" class="vault-counter">0 Dokumente</p>
       <div id="ticket-files" class="vault-files"></div>
+      <div id="ticket-backup-health" class="ticket-backup-health" hidden>
+        <p id="ticket-backup-message" role="status" aria-live="polite"></p>
+        <div class="ticket-backup-actions">
+          <button id="ticket-backup-quick" type="button">↓ Ticket-Backup exportieren</button>
+          <button id="ticket-backup-open" type="button">Sicherung prüfen</button>
+        </div>
+      </div>
     </section>
-    <details class="vault-backup ticket-library-backup">
+    <details id="ticket-backup-details" class="vault-backup ticket-library-backup">
       <summary>Backup, Wiederherstellung und lokaler Speicher</summary>
       <p>Du kannst eine Sicherung herunterladen und auf einem anderen Gerät wieder importieren. <strong>Das Backup ist nicht verschlüsselt</strong> und muss deshalb sicher aufbewahrt werden. Beim Löschen von App- oder Browserdaten können lokale Tickets verloren gehen.</p>
       <button id="ticket-backup" type="button" class="vault-secondary">↓ Alle Tickets als Backup sichern</button>
       <label for="ticket-restore-file">Vorhandenes Backup wieder einlesen (.json)</label>
       <input id="ticket-restore-file" type="file" accept=".json,application/json">
-      <button id="ticket-restore" type="button" class="vault-secondary">↑ Backup importieren</button>
+      <button id="ticket-backup-check" type="button" class="vault-secondary">✓ Sicherungsdatei prüfen (ohne Import)</button>
+      <p id="ticket-backup-check-result" class="ticket-backup-check-result" role="status" aria-live="polite"></p>
+      <button id="ticket-restore" type="button" class="vault-secondary">↑ Backup nach Prüfung importieren</button>
       <button id="ticket-persist" type="button" class="vault-secondary">Lokalen Speicher möglichst erhalten</button>
     </details>
     <details id="ticket-legacy" class="ticket-library-legacy" hidden>
