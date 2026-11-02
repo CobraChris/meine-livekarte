@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-share-inbox.js"></script><script defer src="ticket-library-ui.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="route-discovery.js"></script><script defer src="place-search-core.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-share-inbox.js"></script><script defer src="ticket-library-ui.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -38,7 +38,30 @@
     <select id="plan-select" aria-label="Reiseabschnitt auswählen" title="Reiseabschnitt wechseln"></select>
     <button type="button" id="add-plan" aria-label="Neuen Reiseabschnitt anlegen" title="Neuen Reiseabschnitt anlegen">＋</button>
   </div>
-</div><div id="tour-map-tools" class="tour-map-tools" role="group" aria-label="Tourziele direkt auf der Karte auswählen">
+</div><section id="place-search" class="place-search" aria-label="Ziel oder Adresse suchen">
+  <form id="place-search-form" role="search">
+    <label for="place-search-input" class="place-search-label">Freie Ortssuche</label>
+    <div class="place-search-line">
+      <input type="search" id="place-search-input" maxlength="120" placeholder="🔎 Ziel, Adresse, Café …" autocomplete="off" enterkeyhint="search">
+      <button id="place-search-go" type="submit">Suchen</button>
+      <button id="place-search-close" type="button" aria-label="Suche und Markierung schließen" title="Suche schließen">×</button>
+    </div>
+  </form>
+  <p id="place-search-status" role="status" aria-live="polite" hidden></p>
+  <div id="place-search-results" class="place-search-results" aria-label="Suchergebnisse" hidden></div>
+  <div id="place-search-picked" class="place-search-picked" hidden>
+    <strong id="place-search-picked-name"></strong>
+    <small id="place-search-picked-info"></small>
+    <div class="place-search-actions">
+      <button id="place-search-walk" type="button">🚶 Fußweg anzeigen</button>
+      <button id="place-search-save" type="button">📌 Ort merken</button>
+    </div>
+  </div>
+  <details class="place-search-privacy"><summary>OpenStreetMap-Suche · Datenschutzhinweis</summary>
+    <p>Die Suchanfrage und der Kartenausschnitt werden erst nach „Suchen“ an Photon (komoot) übertragen. Keine automatische GPS-Abfrage, keine Ticketdaten. Die Suche benötigt Internet. Treffer können unvollständig oder ungenau sein.</p>
+    <a href="https://github.com/komoot/photon" target="_blank" rel="noopener noreferrer">Photon – Dienstinformationen</a>
+  </details>
+</section><div id="tour-map-tools" class="tour-map-tools" role="group" aria-label="Tourziele direkt auf der Karte auswählen">
   <button id="tour-map-mode" type="button" aria-pressed="false" title="Orte durch Antippen der Kartenmarkierungen zur Tour hinzufügen">＋ Tour auf Karte</button>
   <button id="map-save-place" type="button" aria-pressed="false" title="Neuen Ort mit einem Tipp auf die Karte markieren">📌 Ort merken</button>
   <span id="tour-map-counter" role="status" aria-live="polite" hidden>0/6 Ziele · Markierungen antippen</span>
