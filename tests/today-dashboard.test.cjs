@@ -89,7 +89,7 @@ test('selected day, manual edits and deep links win over automatic date suggesti
   assert.match(app,/const dailyDefault=NS\.todaySuggestion\(\)\?\.planId/);
   assert.match(app,/const requestedView=queryView\|\|savedView\|\|dailyDefault\|\|/);
   assert.match(app,/const plan=allPlans\(\)\.find\(p=>p\.id===id\)/);
-  assert.match(app,/if\(options\.save!==false\) persistPlanState\(\)/);
+  assert.match(app,/if\s*\(options\.save!==false\)\s*persistPlanState\(\)/);
   assert.match(app,/if\(options\.url!==false\)/);
   assert.match(app,/window\.addEventListener\('focus',renderKyotoOverview\)/);
   assert.match(app,/if\(!document\.hidden\)renderKyotoOverview\(\)/);
