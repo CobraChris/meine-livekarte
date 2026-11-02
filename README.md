@@ -1,3 +1,17 @@
+## Backup-Status und sichere Wiederherstellung ohne Konto (02.11.2026)
+
+Weil **„🎟 Meine Tickets“** die Dateien absichtlich **nur lokal und unverschlüsselt** im Android-Browser speichert, zeigt die Ticketliste bei mindestens einer gespeicherten Datei einen kleinen Sicherungshinweis mit den Aktionen **„↓ Ticket-Backup exportieren“** und **„Sicherung prüfen“**. Es gibt weder Passwortschutz noch eine Cloud-/E-Mail-Anbindung und keinerlei automatische Uploads.
+
+- **Noch kein Export vermerkt:** Sicherung außerhalb der App empfohlen.
+- **Seit dem letzten Export geändert:** Ticket hinzugefügt, gelöscht, umbenannt, anderer Reisebezug oder Pin-Änderung → neuen Export empfehlen. Dafür wird **nur ein kurzer Metadaten-Fingerabdruck**, keine PDF-Datei und kein Ticketname, im lokalen Browserstatus abgelegt.
+- **Export älter als sieben Tage:** erneute Kontrolle empfehlen.
+- **Letzter Export angestoßen:** Die App kann **nicht verifizieren**, ob Android den Download tatsächlich abgeschlossen hat oder ob die Sicherungsdatei auf ein anderes Gerät/externes Laufwerk kopiert wurde. Darum heißt die Meldung ausdrücklich **„Export angestoßen“** und fordert zur Kontrolle unter Downloads auf. Der bloße Marker ist **keine geprüfte Sicherung**.
+
+Der bestehende unverschlüsselte JSON-Backup-Export bleibt vollständig kompatibel. Die beiden Exportbuttons verwenden denselben Ablauf. Neu ist **„✓ Sicherungsdatei prüfen (ohne Import)“**: Eine ausgewählte JSON-Datei wird vollständig auf ihrem Gerät eingelesen, das Format, alle PDF-/Bilddateisignaturen und Dateigrößen werden geprüft und Anzahl sowie Umfang gemeldet, **ohne lokale Tickets anzufassen**. Erst **„↑ Backup nach Prüfung importieren“** und eine ausdrückliche weitere Bestätigung fügen fehlende Tickets hinzu; vorhandene Datensätze und deren Pins bleiben erhalten. Beschädigte Dateien werden abgewiesen. Das ist keine kryptographische Authentifizierung einer Sicherungsdatei, sondern eine Struktur-/Inhaltsformatprüfung.
+
+Alle Meldungen und Prüfungen bleiben auf dem Gerät. Bestehende Backups von früheren App-Versionen bleiben nutzbar, ebenso die Ticket-Kontrollansicht. **Besonders wichtig:** Eine Sicherungsdatei nur im selben Android-Browser abzulegen, ist keine Absicherung gegen Handyverlust oder Browserdatenlöschung. Das Backup bewusst extern ablegen; es ist nicht verschlüsselt und daher entsprechend vorsichtig behandeln.
+
+---
 ## Ticket-Kontrollmodus · QR-Screenshot groß vorzeigen (02.11.2026)
 
 Bei lokal gespeicherten **QR-Screenshots (PNG, JPG/JPEG und WebP)** gibt es direkt an der Ticketkarte einen Button **„▣ Kontrollmodus“**. Damit öffnet sich die bestehende Vorschau als **bildschirmfüllender, weißer Hintergrund** ohne die sonstigen Ablenkungen. Ein- und Ausstieg sind jederzeit über **„← Vorschau“** beziehungsweise **„× Ticket schließen“** möglich. Die Vorschau selbst bietet für Bildtickets ebenfalls den Einstieg in den Kontrollmodus.
