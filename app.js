@@ -1893,6 +1893,7 @@
     const title=nikkoOverview.querySelector('.kyoto-day-heading h2');
     label.textContent=visiting?'🏨 NIKKŌ · AUFENTHALT':'🚄 NÄCHSTE ETAPPE · 07.11.2026';
     title.textContent=visiting?'Nikkō · Hotel und Orientierung':'Kyoto → Tokio → Nikkō';
+    $('nikko-tokyo-transfer').hidden=!travel;
     $('nikko-rail-steps').open=travel;
   }
   let lastOverviewDay=null;
