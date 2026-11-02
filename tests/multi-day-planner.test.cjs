@@ -73,3 +73,21 @@ test('UI and deployment preserve itinerary while adding per-day tours',()=>{
  assert.ok(stamp.includes('("src", "multi-day-core.js")'));
  assert.ok(!sw.includes('ticket-backup.json'));
 });
+
+
+test('renaming or deleting a saved place also migrates separate calendar mapping',()=>{
+  const app=read('app.js');
+  const from=app.indexOf('  function commitPlaceEditor(changes){');
+  const to=app.indexOf("  $('edit-place-close').onclick=",from);
+  assert.ok(from>=0&&to>from);
+  const part=app.slice(from,to);
+  assert.ok(part.includes('const assignedDay=nextCityDays[oldKey]'));
+  assert.ok(part.includes('delete nextCityDays[oldKey]'));
+  assert.ok(part.includes("cityDays:'livekarte-city-day-assignments-v1'"));
+  assert.ok(part.includes('localStorage.setItem(storageKeys.cityDays,JSON.stringify(nextCityDays))'));
+  assert.ok(part.includes('cityDayAssignments=nextCityDays'));
+  const helper=app.slice(app.indexOf('  function appendPlaceTiming(target,p)'),
+                         app.indexOf('  function metric(p)'));
+  assert.ok(helper.includes('Uhrzeiten nicht automatisch übertragen'));
+  assert.ok(app.includes('Persönlich zugeordnete Ziele findest du in der Tagesauswahl'));
+});
