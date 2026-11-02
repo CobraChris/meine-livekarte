@@ -35,31 +35,107 @@
     document.body.append(link);link.click();link.remove();
     setTimeout(()=>URL.revokeObjectURL(url),60000);
   }
-  function closePreview(){
-    const dialog=$('vault-preview');
-    if(dialog.open)dialog.close();
+  let previewIsImage=false,scanActive=false,scanZoomIndex=0;
+  const zoomLevels=[1,1.5,2,3];
+  function clearPreview(){
+    // Release temporary object URLs on every close (including Esc/Back).
+    scanActive=false;
+    previewIsImage=false;
+    scanZoomIndex=0;
+    $('vault-preview').classList.remove('is-scan-mode');
+    $('ticket-scan-stage').hidden=true;
+    $('ticket-scan-controls').hidden=true;
+    $('vault-preview-scan-exit').hidden=true;
+    $('vault-preview-scan').hidden=true;
+    $('ticket-scan-image').removeAttribute('src');
     $('vault-preview-image').removeAttribute('src');
     $('vault-preview-pdf').removeAttribute('src');
     $('vault-preview-download').removeAttribute('href');
     if(currentPreviewUrl){URL.revokeObjectURL(currentPreviewUrl);currentPreviewUrl=null;}
   }
-  $('vault-preview-close').onclick=closePreview;
-  $('vault-preview').addEventListener('close',closePreview);
-  async function viewTicket(id){
-    return preview(await shelf.get(id));
+  function closePreview(){
+    const dialog=$('vault-preview');
+    if(dialog.open)dialog.close();
+    clearPreview();
   }
-  function preview(item){
-    closePreview();
+  $('vault-preview-close').onclick=closePreview;
+  $('vault-preview').addEventListener('close',()=>{
+    // A queued close event must not clear an already opened new preview.
+    if(!$('vault-preview').open)clearPreview();
+  });
+  function updateScanZoom(){
+    if(!scanActive)return;
+    const stage=$('ticket-scan-stage'),frame=$('ticket-scan-frame'),image=$('ticket-scan-image');
+    const zoom=zoomLevels[scanZoomIndex];
+    $('ticket-scan-zoom').textContent=Math.round(zoom*100)+' %';
+    $('ticket-scan-out').disabled=scanZoomIndex===0;
+    $('ticket-scan-in').disabled=scanZoomIndex===zoomLevels.length-1;
+    if(!image.naturalWidth||!image.naturalHeight||!stage.clientWidth||!stage.clientHeight)return;
+    const fit=Math.min(stage.clientWidth/image.naturalWidth,
+      stage.clientHeight/image.naturalHeight);
+    const width=Math.max(1,Math.round(image.naturalWidth*fit*zoom));
+    const height=Math.max(1,Math.round(image.naturalHeight*fit*zoom));
+    image.style.width=width+'px';image.style.height=height+'px';
+    frame.style.width=Math.max(stage.clientWidth,width)+'px';
+    frame.style.height=Math.max(stage.clientHeight,height)+'px';
+    // Keep the center visible when increasing zoom. Larger images are
+    // scrollable in both directions, rather than being cropped by CSS.
+    stage.scrollLeft=Math.max(0,(frame.offsetWidth-stage.clientWidth)/2);
+    stage.scrollTop=Math.max(0,(frame.offsetHeight-stage.clientHeight)/2);
+  }
+  function enterScanMode(){
+    if(!previewIsImage||!currentPreviewUrl)return;
+    scanActive=true;scanZoomIndex=0;
+    const dialog=$('vault-preview');
+    dialog.classList.add('is-scan-mode');
+    $('ticket-scan-stage').hidden=false;
+    $('ticket-scan-controls').hidden=false;
+    $('vault-preview-scan').hidden=true;
+    $('vault-preview-scan-exit').hidden=false;
+    $('ticket-scan-image').src=currentPreviewUrl;
+    updateScanZoom();
+    $('vault-preview-scan-exit').focus();
+  }
+  function leaveScanMode(){
+    if(!scanActive)return;
+    scanActive=false;
+    $('vault-preview').classList.remove('is-scan-mode');
+    $('ticket-scan-stage').hidden=true;
+    $('ticket-scan-controls').hidden=true;
+    $('vault-preview-scan-exit').hidden=true;
+    $('vault-preview-scan').hidden=!previewIsImage;
+    $('vault-preview-scan').focus();
+  }
+  $('vault-preview-scan').onclick=enterScanMode;
+  $('vault-preview-scan-exit').onclick=leaveScanMode;
+  $('ticket-scan-image').addEventListener('load',updateScanZoom);
+  $('ticket-scan-in').onclick=()=>{
+    if(scanZoomIndex<zoomLevels.length-1){scanZoomIndex++;updateScanZoom();}
+  };
+  $('ticket-scan-out').onclick=()=>{
+    if(scanZoomIndex>0){scanZoomIndex--;updateScanZoom();}
+  };
+  window.addEventListener('resize',updateScanZoom);
+  async function viewTicket(id,scan=false){
+    return preview(await shelf.get(id),scan);
+  }
+  function preview(item,scan=false){
+    // The existing ordinary preview remains available, including for PDFs.
+    if($('vault-preview').open)closePreview();
+    else clearPreview();
     currentPreviewUrl=URL.createObjectURL(item.blob);
     $('vault-preview-title').textContent=item.title;
     const isPdf=item.type==='application/pdf';
+    previewIsImage=!isPdf;
     $('vault-preview-image').hidden=isPdf;
     $('vault-preview-pdf').hidden=!isPdf;
+    $('vault-preview-scan').hidden=isPdf;
     if(isPdf)$('vault-preview-pdf').src=currentPreviewUrl;
     else $('vault-preview-image').src=currentPreviewUrl;
     const original=$('vault-preview-download');
     original.href=currentPreviewUrl;original.download=item.name;
     $('vault-preview').showModal();
+    if(scan&&!isPdf)enterScanMode();
   }
   async function render(){
     const files=await shelf.list(),list=$('ticket-files');
@@ -172,6 +248,13 @@
         status('Dokument gelöscht. Bereits exportierte Backups bleiben unverändert.');
       });
       actions.append(pin,show,edit,save,remove);
+      if(item.type!=='application/pdf'){
+        const scanButton=node('button','▣ Kontrollmodus','ticket-control-open');
+        scanButton.type='button';
+        scanButton.setAttribute('aria-label',item.title+' groß für Ticketkontrolle anzeigen');
+        scanButton.onclick=()=>busy(scanButton,()=>viewTicket(item.id,true));
+        actions.insertBefore(scanButton,edit);
+      }
       card.append(header,actions,editForm);list.append(card);
     }
   }

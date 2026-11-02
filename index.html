@@ -268,11 +268,25 @@
 <dialog id="vault-preview" class="vault-preview" aria-labelledby="vault-preview-title">
   <div class="vault-preview-bar">
     <strong id="vault-preview-title">Ticket ansehen</strong>
-    <button id="vault-preview-close" type="button" aria-label="Vorschau schließen">×</button>
+    <div class="vault-preview-bar-actions">
+      <button id="vault-preview-scan" type="button" hidden aria-label="Bild im Kontrollmodus groß anzeigen">▣ Kontrollmodus</button>
+      <button id="vault-preview-scan-exit" type="button" hidden>← Vorschau</button>
+      <button id="vault-preview-close" type="button" aria-label="Ticket schließen">×</button>
+    </div>
   </div>
-  <p>Bei PDF-Anzeigeproblemen auf Android die Originaldatei unten speichern und mit einem PDF-Viewer öffnen.</p>
+  <p id="vault-preview-help">Bei PDF-Anzeigeproblemen auf Android die Originaldatei unten speichern und mit einem PDF-Viewer öffnen.</p>
   <img id="vault-preview-image" alt="Gespeichertes Ticket oder QR-Screenshot" hidden>
   <iframe id="vault-preview-pdf" title="PDF-Ticketvorschau" hidden></iframe>
+  <section id="ticket-scan-controls" class="ticket-scan-controls" aria-label="Zoom für Ticketkontrolle" hidden>
+    <button id="ticket-scan-out" type="button" aria-label="Ticketansicht verkleinern">−</button>
+    <span id="ticket-scan-zoom" role="status" aria-live="polite">100 %</span>
+    <button id="ticket-scan-in" type="button" aria-label="Ticketansicht vergrößern">＋</button>
+  </section>
+  <div id="ticket-scan-stage" class="ticket-scan-stage" role="region" aria-label="Vergrößerter QR-Screenshot zum Vorzeigen" hidden>
+    <div id="ticket-scan-frame" class="ticket-scan-frame">
+      <img id="ticket-scan-image" alt="Großer QR-Screenshot auf weißem Hintergrund">
+    </div>
+  </div>
   <a id="vault-preview-download" href="#" download>↓ Originaldatei speichern</a>
 </dialog>
 <details id="sync-panel" class="sync-panel">

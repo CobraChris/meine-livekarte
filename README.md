@@ -1,3 +1,14 @@
+## Ticket-Kontrollmodus · QR-Screenshot groß vorzeigen (02.11.2026)
+
+Bei lokal gespeicherten **QR-Screenshots (PNG, JPG/JPEG und WebP)** gibt es direkt an der Ticketkarte einen Button **„▣ Kontrollmodus“**. Damit öffnet sich die bestehende Vorschau als **bildschirmfüllender, weißer Hintergrund** ohne die sonstigen Ablenkungen. Ein- und Ausstieg sind jederzeit über **„← Vorschau“** beziehungsweise **„× Ticket schließen“** möglich. Die Vorschau selbst bietet für Bildtickets ebenfalls den Einstieg in den Kontrollmodus.
+
+Über **＋ / −** lässt sich das Bild von **100 % über 150 % und 200 % bis 300 %** der an den Bildschirm angepassten Größe vergrößern. Ein größeres Bild kann innerhalb der weißen Fläche horizontal und vertikal verschoben werden; es wird nicht einfach abgeschnitten. Die Vergrößerung ist **rein visuell**. Originaldatei, JPEG-/PNG-/WebP-Bytes, Pin-Markierung, Reisebezeichnung, lokale Speicherung und Backups werden nicht verändert. Die Ansicht funktioniert **ohne Netzverbindung** und verwendet die bereits vorhandene lokale Blob-URL, die beim Schließen wieder freigegeben wird.
+
+Für **PDF-Tickets** bleibt absichtlich die bisherige PDF-Vorschau mit „Originaldatei speichern“ erhalten, da die eingebettete PDF-Anzeige unter Android je nach Browser unterschiedlich funktioniert. Der Kontrollmodus ändert **nicht** die Systemhelligkeit und kann keinen Erfolg beim Scannen garantieren. Bei dynamischen QR-Codes weiterhin die offizielle App verwenden.
+
+Automatische Tests decken Bild vs. PDF, Bedienung/Schließen, Zoomstufen, Bildmaße und gesichertes Aufräumen ab. Keine zusätzlichen APIs oder personenbezogenen Übertragungen.
+
+---
 ## Heute / Karte / Meine Tickets · datumsabhängige Startansicht (02.11.2026)
 
 Die PWA zeigt nun **über der Karte** drei leicht erreichbare Schnellzugriffe: **🗓 Heute**, **🗺 Karte** und **🎟 Meine Tickets**. Der Heute-Bereich wird lokal über die **japanische Zeitzone** berechnet. Für den **02.11.2026** schlägt er `Kyoto · Higashiyama & Fushimi Inari` vor und benennt die bereits geplanten Stopps Kiyomizu-dera, Sannenzaka/Ninenzaka und Fushimi Inari. Tippen auf **„Heutigen Plan öffnen“** oder **„Heute“** wählt bei Bedarf `town-kyoto`, öffnet gezielt den **02.11.** in der vorhandenen Kyoto-Zeitachse, klappt den **01.11.** ein und scrollt dorthin. Die Informationen sind vorhandene Planwerte, keine Live-Fahrzeiten, aktuelle Öffnungszeiten oder Buchungen. Freiwillige Sehenswürdigkeiten werden **nicht** in Pflicht-To-dos umgewandelt.
