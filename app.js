@@ -2155,6 +2155,11 @@
         focusKyotoOverviewDay(suggested.dayIndex);
       lastOverviewDay=today;
     }
+    const future=MD.days('town-kyoto').slice(2);
+    const planned=Object.values(cityDayAssignments).some(day=>future.includes(day));
+    kyotoOverview.querySelector('.kyoto-plan-note').textContent=planned
+      ?'03.–06.11.: Persönlich zugeordnete Ziele findest du in der Tagesauswahl oberhalb der Karte. Ihre Reihenfolge und Zeiten kannst du je Tag planen. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.'
+      :'03.–06.11.: Noch keine verbindlichen Stadttage. In der Tagesauswahl oberhalb der Karte kannst du Ziele zuordnen. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.';
     renderNikkoOverview();
     renderTodayDashboard();
   }
