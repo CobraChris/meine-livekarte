@@ -254,7 +254,8 @@ test('section picker and import flow do not erase existing places or GPS trackin
  assert.match(html,/id="add-plan"/);
  assert.match(html,/id="plan-dialog"/);
  assert.match(app,/localStorage\.setItem\('livekarte-active-plan-v1'/);
- assert.match(app,/planPlaces=currentPlaces\(\)/);
+ assert.match(app,/planPlaces=visiblePlaces\(\)/);
+ assert.match(app,/const currentPlaces = \(\) => C\.placesForPlan/);
  assert.match(app,/assignToCurrentPlan\(additions\)/);
  assert.match(app,/navigator\.geolocation\.watchPosition/);
  assert.match(app,/selectPlan\(activePlanId/);
