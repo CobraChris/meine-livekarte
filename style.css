@@ -1866,3 +1866,9 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .leaflet-popup-content .place-day-picker label{font-size:11px}
 @media(max-width:400px){.city-days-list{grid-template-columns:repeat(4,minmax(0,1fr))}
  .city-days-list button{font-size:11px;min-height:50px}}
+
+/* Keep the established desktop map/sidebar pairing when the day strip is shown. */
+@media(min-width:761px){
+  main{grid-template-rows:auto auto minmax(0,1fr)}
+  main>.city-days{grid-column:1 / -1}
+}
