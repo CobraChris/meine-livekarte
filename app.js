@@ -3,6 +3,11 @@
   const $ = id => document.getElementById(id), C = MapCore;
   const symbols = { restaurant: '♨', sight: '◇', station: '▤', hotel: '⌂' };
   const JP=window.JapaneseDestination;
+  const MD=window.LivekarteMultiDay;
+  let cityDayAssignments=Object.create(null);
+  let activeCityDay=MD.ALL;
+  const tourContextKey=()=>activePlanId==='town-kyoto'&&MD.days('town-kyoto').includes(activeCityDay)
+    ?'town-kyoto@'+activeCityDay:activePlanId;
   let places = [], filter = 'all', position = null, watch = null, following = false, userDot, accuracy;
   let distanceDisplays = [];
   let customPlans = [], planAssignments = Object.create(null), planJourneys = Object.create(null);
@@ -13,6 +18,9 @@
   const allPlans = () => [...C.planPresets,...customPlans];
   const currentPlan = () => allPlans().find(p=>p.id===activePlanId) || C.planPresets[0];
   const currentPlaces = () => C.placesForPlan(places,planAssignments,activePlanId);
+  const visiblePlaces = () => activePlanId==='town-kyoto'
+    ?MD.selected(currentPlaces(),cityDayAssignments,activeCityDay,C.placePlanKey)
+    :currentPlaces();
   function assignToCurrentPlan(items) {
     if (activePlanId === 'all') return;
     items.forEach(p => {
@@ -21,6 +29,16 @@
       planAssignments[key]=[...new Set([...list,activePlanId])];
     });
     persistPlanState();
+    if(activePlanId==='town-kyoto'&&MD.days('town-kyoto').includes(activeCityDay)){
+      const next=Object.assign(Object.create(null),cityDayAssignments);
+      for(const p of items){
+        const key=C.placePlanKey(p);
+        if(!Object.hasOwn(next,key))next[key]=activeCityDay;
+      }
+      try{localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(next));
+        cityDayAssignments=next;
+      }catch{say('Tageszuordnung konnte nicht gespeichert werden.');}
+    }
   }
   function persistPlanState() {
     try {
@@ -907,8 +925,8 @@
     tourBuilder.scrollIntoView({behavior:'smooth',block:'start'});
   };
   function tourSelection(){
-    const keys=Array.isArray(tourDrafts[activePlanId])?tourDrafts[activePlanId]:[];
-    const byKey=new Map(currentPlaces().map(p=>[C.placePlanKey(p),p]));
+    const keys=Array.isArray(tourDrafts[tourContextKey()])?tourDrafts[tourContextKey()]:[];
+    const byKey=new Map(visiblePlaces().map(p=>[C.placePlanKey(p),p]));
     return [...new Set(keys)].map(k=>byKey.get(k)).filter(Boolean).slice(0,6);
   }
   function tourIsSelected(p){
@@ -935,7 +953,7 @@
   }
   function setTourSelection(items){
     clearTourRoute();
-    tourDrafts[activePlanId]=items.map(p=>C.placePlanKey(p)).slice(0,6);
+    tourDrafts[tourContextKey()]=items.map(p=>C.placePlanKey(p)).slice(0,6);
     persistTourDrafts();
     render(); // Keep per-place selected states and numbered tour list synchronized.
   }
@@ -1011,12 +1029,12 @@
   const dayPlanTimeline=$('day-plan-timeline');
   const dayStopSettings=$('day-stop-settings');
   function dayPlanPrefs(){
-    if(!dayPlans[activePlanId]){
-      dayPlans[activePlanId]={
+    if(!dayPlans[tourContextKey()]){
+      dayPlans[tourContextKey()]={
         start:'10:30',buffer:10,lunch:45,stops:Object.create(null)
       };
     }
-    return dayPlans[activePlanId];
+    return dayPlans[tourContextKey()];
   }
   function persistDayPlans(){
     try{localStorage.setItem('livekarte-day-plans-v1',JSON.stringify(dayPlans));}
@@ -1365,7 +1383,7 @@
       const ordered=optimized?result.orderedStops:selected;
       if(optimized){
         // Persist only selected place IDs, never the GPS origin or geometry.
-        tourDrafts[activePlanId]=ordered.map(p=>C.placePlanKey(p));
+        tourDrafts[tourContextKey()]=ordered.map(p=>C.placePlanKey(p));
         persistTourDrafts();
         render();
       }
@@ -1458,7 +1476,15 @@
       $('edit-place-error').textContent=error.message;
       return false;
     }
+    const nextCityDays=Object.assign(Object.create(null),cityDayAssignments);
+    const assignedDay=nextCityDays[oldKey];
+    if(next.newKey!==oldKey){
+      delete nextCityDays[oldKey];
+      if(next.newKey!==null&&assignedDay&&!Object.hasOwn(nextCityDays,next.newKey))
+        nextCityDays[next.newKey]=assignedDay;
+    }
     const storageKeys={
+      cityDays:'livekarte-city-day-assignments-v1',
       places:'livekarte-places-v1',
       assignments:'livekarte-plan-assignments-v1',
       drafts:'livekarte-tour-drafts-v1',
@@ -1472,6 +1498,7 @@
       localStorage.setItem(storageKeys.assignments,JSON.stringify(next.assignments));
       localStorage.setItem(storageKeys.drafts,JSON.stringify(next.drafts));
       localStorage.setItem(storageKeys.days,JSON.stringify(next.dayPlans));
+      localStorage.setItem(storageKeys.cityDays,JSON.stringify(nextCityDays));
     }catch{
       // Best-effort rollback of any partially saved keys. Keep in-memory
       // data unchanged so a quota/security error never silently erases pins.
@@ -1484,14 +1511,15 @@
       $('edit-place-error').textContent='Änderungen konnten nicht gespeichert werden. Bitte Speicherplatz prüfen.';
       return false;
     }
-    const wasInCurrentTour=Array.isArray(tourDrafts[activePlanId])&&
-      tourDrafts[activePlanId].includes(oldKey);
+    const wasInCurrentTour=Array.isArray(tourDrafts[tourContextKey()])&&
+      tourDrafts[tourContextKey()].includes(oldKey);
     const onActiveRoute=tourRoute?.stops.some(item=>C.placePlanKey(item)===oldKey);
     const onWalkingRoute=walkDestination&&C.placePlanKey(walkDestination)===oldKey;
     places=next.places;
     planAssignments=next.assignments;
     tourDrafts=next.drafts;
     dayPlans=next.dayPlans;
+    cityDayAssignments=nextCityDays;
     if(onWalkingRoute)clearWalkingRoute();
     if(wasInCurrentTour||onActiveRoute)clearTourRoute();
     editPlaceDialog.close();
@@ -1538,7 +1566,17 @@
     return parts.join(' · ');
   }
   function appendPlaceTiming(target,p) {
-    if (p.schedule) target.append(node('p','🗓 '+p.schedule,'place-schedule'));
+    if(p.schedule){
+      const assigned=activePlanId==='town-kyoto'
+        ?cityDayAssignments[C.placePlanKey(p)]:null;
+      const sourceDate=MD.fromSchedule(p.schedule);
+      const changed=assigned&&sourceDate&&assigned!==sourceDate;
+      const label=changed
+        ?'🗓 Frühere Planung: '+p.schedule+' · jetzt für '+MD.dayLabel(assigned)+
+          ' vorgemerkt (Uhrzeiten nicht automatisch übertragen)'
+        :'🗓 '+p.schedule;
+      target.append(node('p',label,'place-schedule'));
+    }
     if (p.note) target.append(node('p','💡 '+p.note,'place-note'));
   }
   function metric(p) {
@@ -1554,10 +1592,81 @@
       inList.textContent = value;
     });
   }
-  function fit(items = currentPlaces()) {
+  function fit(items = visiblePlaces()) {
     const visible = items.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
+  // City dates are an extra filter inside one city, never extra trip sections.
+  const cityDaysPanel=$('city-days'),cityDaysList=$('city-days-list');
+  function renderCityDays(){
+    cityDaysPanel.hidden=activePlanId!=='town-kyoto';
+    if(cityDaysPanel.hidden)return;
+    cityDaysList.replaceChildren();
+    const cityPlaces=currentPlaces().filter(p=>p.category!=='hotel');
+    const choices=[MD.ALL,...MD.days('town-kyoto'),MD.UNASSIGNED];
+    for(const day of choices){
+      const count=day===MD.ALL?cityPlaces.length:
+        cityPlaces.filter(p=>day===MD.UNASSIGNED
+          ?!Object.hasOwn(cityDayAssignments,C.placePlanKey(p))
+          :cityDayAssignments[C.placePlanKey(p)]===day).length;
+      const button=node('button',MD.dayLabel(day),'city-day-tile');
+      button.type='button';
+      button.dataset.dayDate=day;
+      button.setAttribute('data-day-date',day);
+      button.setAttribute('aria-pressed',String(activeCityDay===day));
+      button.append(node('small',count+' Ziele'));
+      button.onclick=()=>selectCityDay(day);
+      cityDaysList.append(button);
+    }
+    $('city-days-help').textContent=activeCityDay===MD.ALL
+      ?'Alle Ziele · wähle einen Tag oder die Merkliste'
+      :activeCityDay===MD.UNASSIGNED
+        ?'Noch nicht verplante Orte · Datum am Ziel wählen'
+        :'Nur '+MD.dayLabel(activeCityDay)+' · Hotel bleibt sichtbar';
+  }
+  function selectCityDay(day){
+    if(!MD.allowed('town-kyoto',day)||day===activeCityDay)return;
+    clearTourRoute();
+    if(mapTourPickMode)mapTourPickMode=false;
+    activeCityDay=day;
+    pauseGPSFollow();
+    try{localStorage.setItem('livekarte-active-city-day-v1',day);}
+    catch{say('Tagesauswahl konnte nicht gespeichert werden.');}
+    render();
+    const p=visiblePlaces();
+    if(p.length)fit(p);
+    say('Kyoto · '+MD.dayLabel(day)+' ausgewählt.');
+  }
+  function setDayAssignment(place,day){
+    if(activePlanId!=='town-kyoto'||place.category==='hotel')return;
+    const key=C.placePlanKey(place);
+    let next;
+    try{next=MD.change(cityDayAssignments,key,day);}
+    catch(error){say(error.message);return;}
+    try{localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(next));}
+    catch{say('Tageszuordnung konnte nicht gespeichert werden.');return;}
+    cityDayAssignments=next;
+    clearTourRoute();
+    render();
+    say('📅 '+place.name+' → '+(day===MD.UNASSIGNED?'Merkliste':MD.dayLabel(day))+'.');
+  }
+  function makePlaceDayPicker(place){
+    if(activePlanId!=='town-kyoto'||place.category==='hotel')return null;
+    const box=node('div',undefined,'place-day-picker');
+    const label=node('label','Für Tag:');
+    const select=node('select');
+    select.setAttribute('aria-label','Kalendertag für '+place.name);
+    for(const day of [MD.UNASSIGNED,...MD.days('town-kyoto')]){
+      const opt=node('option',MD.dayLabel(day));
+      opt.value=day;
+      select.append(opt);
+    }
+    select.value=cityDayAssignments[C.placePlanKey(place)]||MD.UNASSIGNED;
+    select.onchange=()=>setDayAssignment(place,select.value);
+    box.append(label,select);
+    return box;
+  }
+
   // A popup stays attached to its marker. Dragging its explicit handle
   // pans the map underneath, rather than detaching the popup from the place.
   // The normal map, popup buttons and close control retain their gestures.
@@ -1612,7 +1721,8 @@
   }
   function render() {
     pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = [];
-    const planPlaces=currentPlaces();
+    renderCityDays();
+    const planPlaces=visiblePlaces();
     $('count').textContent = planPlaces.length;
     $('empty').hidden = planPlaces.length > 0;
     $('demo').hidden = activePlanId !== 'all';
@@ -1645,6 +1755,8 @@
       const popupJapanese=japaneseButton(p);
       if(popupJapanese)quickActions.append(popupJapanese);
       popup.append(quickActions);
+      const popupDayPicker=makePlaceDayPicker(p);
+      if(popupDayPicker)popup.append(popupDayPicker);
       const metaText = placeMeta(p);
       if (metaText) popup.append(node('p',metaText,'place-meta'));
       appendPlaceTiming(popup,p);
@@ -1716,7 +1828,10 @@
       assignRow.append(assignSelect);
       if (metaText) card.append(node('p',metaText,'place-meta'));
       appendPlaceTiming(card,p);
-      card.append(node('p',p.description),actions,assignRow); $('places').append(card);
+      const cardDayPicker=makePlaceDayPicker(p);
+      card.append(node('p',p.description),actions,assignRow);
+      if(cardDayPicker)card.append(cardDayPicker);
+      $('places').append(card);
       distanceDisplays.push({ place:p, inPopup, inList:distance });
     });
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
@@ -2040,6 +2155,11 @@
         focusKyotoOverviewDay(suggested.dayIndex);
       lastOverviewDay=today;
     }
+    const future=MD.days('town-kyoto').slice(2);
+    const planned=Object.values(cityDayAssignments).some(day=>future.includes(day));
+    kyotoOverview.querySelector('.kyoto-plan-note').textContent=planned
+      ?'03.–06.11.: Persönlich zugeordnete Ziele findest du in der Tagesauswahl oberhalb der Karte. Ihre Reihenfolge und Zeiten kannst du je Tag planen. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.'
+      :'03.–06.11.: Noch keine verbindlichen Stadttage. In der Tagesauswahl oberhalb der Karte kannst du Ziele zuordnen. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.';
     renderNikkoOverview();
     renderTodayDashboard();
   }
@@ -2067,6 +2187,9 @@
     if(activePlanId!==suggestion.planId)
       selectPlan(suggestion.planId,{focus:false});
     if(suggestion.planId==='town-kyoto'||suggestion.planId==='ride-kyoto'){
+      const today=NS.localDate();
+      if(suggestion.planId==='town-kyoto'&&MD.days('town-kyoto').includes(today))
+        selectCityDay(today);
       focusKyotoOverviewDay(suggestion.dayIndex);
       kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
     }else if(suggestion.planId==='ride-nikko'||suggestion.planId==='town-nikko'){
@@ -2981,7 +3104,7 @@
     if (options.focus!==false) {
       if(journey) fitJourney();
       else {
-        const matching=currentPlaces();
+        const matching=visiblePlaces();
         if(matching.length) fit(matching);
         else if(plan.center) map.setView(plan.center,plan.kind==='city'?14:8);
       }
@@ -3199,6 +3322,8 @@
     clearTourRoute();
     tourDrafts=Object.create(null);
     dayPlans=Object.create(null);
+    cityDayAssignments=Object.create(null);
+    try{localStorage.setItem('livekarte-city-day-assignments-v1','{}');}catch{}
     persistTourDrafts();
     persistDayPlans();
     persist();persistPlanState();render();say('Empfehlungen entfernt. Reiseabschnitte bleiben erhalten.');
@@ -3380,12 +3505,32 @@
     }
   }
   seedNikkoPlaces();
+  // Adopt existing Kyoto dates once. Never replace a manually curated assignment.
+  try{
+    const marker='livekarte-city-day-assignments-v1';
+    const saved=localStorage.getItem(marker);
+    if(saved!==null){
+      cityDayAssignments=MD.cleanAssignments(JSON.parse(saved),places,C.placePlanKey);
+    }else{
+      cityDayAssignments=MD.seedDayAssignments(places,planAssignments,C.placePlanKey,'town-kyoto');
+      localStorage.setItem(marker,JSON.stringify(cityDayAssignments));
+    }
+    const chosen=localStorage.getItem('livekarte-active-city-day-v1');
+    activeCityDay=chosen&&MD.allowed('town-kyoto',chosen)?chosen:
+      MD.defaultDay('town-kyoto',NS.localDate());
+  }catch{
+    cityDayAssignments=Object.create(null);
+    activeCityDay=MD.defaultDay('town-kyoto',NS.localDate());
+    say('Tageszuordnung konnte nicht geladen werden; die ursprünglichen Ortsdaten bleiben erhalten.');
+  }
+
   // Persist only chosen place identifiers, never the GPS start or a route.
   try{
     const raw=JSON.parse(localStorage.getItem('livekarte-tour-drafts-v1')||'{}');
     if(raw&&typeof raw==='object'&&!Array.isArray(raw)){
       for(const [planId,keys] of Object.entries(raw).slice(0,36)){
-        if(!allPlans().some(p=>p.id===planId)||!Array.isArray(keys))continue;
+        if(!(allPlans().some(p=>p.id===planId)||
+          /^town-kyoto@2026-11-0[1-6]$/.test(planId))||!Array.isArray(keys))continue;
         tourDrafts[planId]=[...new Set(keys.filter(k=>
           typeof k==='string'&&k.length<=300))].slice(0,6);
       }
@@ -3472,7 +3617,8 @@
     const raw=JSON.parse(localStorage.getItem('livekarte-day-plans-v1')||'{}');
     if(raw&&typeof raw==='object'&&!Array.isArray(raw)){
       for(const [planId,value] of Object.entries(raw).slice(0,36)){
-        if(!allPlans().some(plan=>plan.id===planId)||
+        if(!(allPlans().some(plan=>plan.id===planId)||
+           /^town-kyoto@2026-11-0[1-6]$/.test(planId))||
            !value||typeof value!=='object'||Array.isArray(value))continue;
         const settings={
           start:'10:30',buffer:10,lunch:45,stops:Object.create(null)

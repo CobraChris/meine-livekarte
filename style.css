@@ -1836,3 +1836,39 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .place-search-line button{padding:5px 7px;font-size:11px}
   .place-search-line input{font-size:12px}
 }
+
+
+/* One city view, separately selectable days. Sits outside map so it never blocks GPS. */
+.city-days{margin:0 0 9px;padding:11px 11px 9px;background:#1b3737;
+  border:1px solid #77b29b;border-radius:13px;color:#eafff1}
+.city-days[hidden]{display:none!important}
+.city-days-heading{display:flex;align-items:baseline;gap:5px 12px;flex-wrap:wrap;
+  justify-content:space-between;margin-bottom:9px}
+.city-days-heading strong{font-size:14px;color:#eaffee}
+.city-days-heading span{font-size:10px;color:#b9dccb}
+.city-days-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.city-days-list button{min-height:54px;min-width:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;gap:1px;padding:6px 3px;
+  border:1px solid #6b9989;border-radius:9px;background:#21483f;color:#eaffef;
+  font-size:12px;font-weight:800}
+.city-days-list button small{font-size:10px;font-weight:550;color:#c3dfd1}
+.city-days-list button[aria-pressed="true"]{background:#b1edca;color:#12392b;
+  border-color:#e9fff0;box-shadow:inset 0 0 0 1px #407f63}
+.city-days-list button[aria-pressed="true"] small{color:#27543f}
+.place-day-picker{display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  padding:6px 0;border-top:1px solid #45655b;margin:8px 0 2px}
+.place-day-picker label{margin:0;color:#cce9d8;font-size:11px;flex:none}
+.place-day-picker select{min-height:39px;min-width:120px;flex:1;
+  border-radius:8px;border:1px solid #89b8a4;background:#1e4943;color:#f3ffed;
+  padding:7px;font-size:12px;font-weight:700}
+.place-day-picker small{font-size:10px;color:#c7dfd5}
+.leaflet-popup-content .place-day-picker{max-width:270px}
+.leaflet-popup-content .place-day-picker label{font-size:11px}
+@media(max-width:400px){.city-days-list{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .city-days-list button{font-size:11px;min-height:50px}}
+
+/* Keep the established desktop map/sidebar pairing when the day strip is shown. */
+@media(min-width:761px){
+  main{grid-template-rows:auto auto minmax(0,1fr)}
+  main>.city-days{grid-column:1 / -1}
+}

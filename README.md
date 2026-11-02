@@ -1,3 +1,13 @@
+## Kyoto: Mehrtägige Reiseplanung in einem Stadtabschnitt (02.11.2026)
+
+Die Kyoto-Stadtansicht bleibt ein **einziger Reiseabschnitt (01.–06.11.)**. Darüber gibt es nun eine **Tagesauswahl** mit sechs Datumsschaltflächen, **Alle Tage** und **Merkliste**. Die Auswahl filtert Karte und Ortsliste; die Unterkunft wird als Orientierung unabhängig vom Tag immer angezeigt. Die bisherige Anreise-/02.11.-Timeline bleibt lesbar. Anfangs werden die belegten Kyoto-Orte aus bereits vorhandenen, datierten Ortsangaben für **01.11.** und **02.11.** zugeordnet. Für 03.–06.11. wird nichts erfunden.
+
+An jeder Ortskarte sowie in der Marker-Vorschau kann der Benutzer **„Für Tag“** ändern oder **„Merkliste (ohne Tag)“** auswählen. Der Ortsdatensatz, seine Notiz und das Hotel bleiben dabei erhalten. Die neue Zuordnung wird getrennt als \`livekarte-city-day-assignments-v1\` ausschließlich in \`localStorage\` abgelegt und nur beim erstmaligen Fehlen mit vorhandenen Datumsangaben aus den Kyoto-Planorten vorbelegt. Keine Ticketdaten oder Geopositionen enthalten. Bei Neukreation in einem ausgewählten Datum wird der Ort nach erfolgreicher Speicherung diesem Datum zugeordnet. Bei „Alle Tage“/„Merkliste“ wird nicht ungefragt ein Datum festgelegt.
+
+Tourentwürfe und Tagesplan-Einstellungen werden für aktiv gewählte Kyoto-Daten unter separaten Schlüsseln \`town-kyoto@YYYY-MM-DD\` gespeichert; bisherige \`town-kyoto\`-Einstellungen bleiben als allgemeine Ansicht unverändert vorhanden. Die Tour-/Routenberechnung verwendet weiterhin die ausdrücklich ausgewählten Marker und die vorhandenen Dienste, keine automatische Berechnung beim Tageswechsel. Bei neuer Datumsauswahl wird nur die aktive **temporäre** Tourlinie zurückgesetzt; bestehende gespeicherte Tourentwürfe, Ortsdaten, Fahrkarten und Buchungsstatus bleiben unangetastet. Das Datum ist keine Bestätigung, dass ein Ort besucht wurde. Der Kalenderdaten-Kern lässt sich für zukünftige Städte erweitern, indem weitere Stadtabschnitte konfiguriert werden.
+
+---
+
 ## Freie Ziel- und Adresssuche (02.11.2026)
 
 Über dem Kartenausschnitt steht nun **„🔎 Ziel, Adresse, Café …“**. Erst beim Drücken von **„Suchen“** wird eine Anfrage an den öffentlichen, kostenlosen [Photon/komoot](https://github.com/komoot/photon)-Demo-Suchdienst gestellt. Bis zu sechs OpenStreetMap-Treffer werden als Vorschläge mit Ort und Region angezeigt. Die App überträgt zur räumlichen Gewichtung den **aktuellen Mittelpunkt der sichtbaren Karte**, der bei vorheriger GPS-Zentrierung ungefähr dem Standort entsprechen kann; **keine separate GPS-Abfrage, kein Tracking, keine Anfragen bei jedem Tastendruck**.

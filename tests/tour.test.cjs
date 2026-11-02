@@ -127,7 +127,7 @@ test('optimization is explicit, persists stop IDs only, and keeps existing manua
  assert.match(html,/Route durch KI optimieren/);
  assert.match(app,/\$\('tour-optimize'\)\.onclick=\(\)=>\{void calculateTour\(true\);\}/);
  assert.match(app,/\$\('tour-calculate'\)\.onclick=\(\)=>\{void calculateTour\(\);\}/);
- assert.match(app,/tourDrafts\[activePlanId\]=ordered\.map\(p=>C\.placePlanKey\(p\)\)/);
+ assert.match(app,/tourDrafts\[tourContextKey\(\)\]=ordered\.map\(p=>C\.placePlanKey\(p\)\)/);
  assert.match(app,/const ordered=optimized\?result\.orderedStops:selected/);
  assert.match(app,/ordered\.forEach\(\(place,i\)=>/);
  assert.match(app,/tourController\)return/);
