@@ -1,3 +1,13 @@
+## Zielsuche: eigene Orte zuerst, regionale Ergebnisse statt weltweiter Treffer (03.11.2026)
+
+Bei der Suche nach `Tomoya` erschien das bereits in Kyoto gespeicherte Hotel bislang erst nach weltweiten Photon-Treffern. Die Suche priorisiert ab jetzt die **auf dem Gerät gespeicherten Ortsnamen** (aktueller Reiseabschnitt zuerst), ohne dafür eine Netzwerkanfrage auszulösen. Ein Antippen zeigt die Position und den vorhandenen Fußweg-Zugang; `Ort merken` ist für bereits gespeicherte Treffer deaktiviert, um Duplikate zu verhindern. Wer trotz lokalem Treffer weitere Vorschläge sucht, kann **„Weitere Orte in der Region suchen“** explizit antippen.
+
+Nur externe Suchanfragen gehen an Photon: dort werden nun ein rechteckiger Ausschnitt um den aktuellen Kartenmittelpunkt (`bbox`), stärkere geografische Gewichtung, bei japanischem Kartenausschnitt der Ländercode `JP` und `lang=en` (bevorzugt lateinisch/englische Namen, sofern in OpenStreetMap gepflegt) übermittelt. Zusätzlich filtert die App versehentlich trotzdem gelieferte weltweite Treffer aus der Umgebung heraus und sortiert nach Entfernung. **Die Karte muss für entfernte Ziele zunächst in die entsprechende Region verschoben werden**; der Dienst kann nicht garantieren, dass alle Geschäfte oder eine englische Beschriftung vorliegen. Das erfordert keine bezahlte Google-API und keine zusätzlichen Berechtigungen. Die hauseigene Ortssuche nutzt weiterhin keine GPS-Abfrage und sendet weder Ticketdaten noch lokal gespeicherte Orte an Photon. Visuell unterscheidet die Trefferliste „Gespeicherte Orte“ von „Orte in der Kartenregion“, mit größerer lesbarer Schrift.
+
+Automatische Tests prüfen lokale Hotelpräferenz, regionalen Filter, Japan-Beschränkung, Offline-Verhalten durch lokalen Suchpfad und UI-Anbindungen.
+
+---
+
 ## Osaka: Drei feste Souvenir-Shoppingstopps am 05.11.2026
 
 Am 05.11. ergänzt die Kyoto-Stadtansicht den bereits bestätigten Tagesausflug nach Osaka um drei zusätzliche Ziele zwischen **Kuromon Market (14:00)** und **Shinsaibashi-suji (16:30)**: **15:00 Osaka Shikki (大阪漆器)** für ein Stäbchenset, **15:25 Kagetsudo (花月堂)** für eine Maneki-neko/Winkekatze und **15:50 Utsuwa Tsukinoshita (うつわ 月乃下) Namba** für weitere Stäbchen bzw. eine mögliche Gravur. Danach bleiben Shinsaibashi (16:30) und Dōtonbori (18:00) erhalten. Die Markierungen gehören zu **town-kyoto@2026-11-05**, nicht zu neuen Reiseabschnitten. Keine Käufe/Buchungen werden als erledigt gesetzt.
