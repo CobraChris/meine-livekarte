@@ -1725,7 +1725,7 @@
   function enablePopupMapDrag(marker,surface){
     let pointerId=null,lastX=0,lastY=0,captured=null,fromText=false;
     const ignore='button,a,input,select,textarea,label,[role="button"],'+
-      'summary,details,[contenteditable="true"],.leaflet-popup-close-button';
+      'summary,[contenteditable="true"],.leaflet-popup-close-button';
     const release=event=>{
       if(pointerId===null||event.pointerId!==pointerId)return;
       const id=pointerId,target=captured;
