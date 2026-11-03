@@ -50,6 +50,20 @@
       (day===UNASSIGNED?!Object.hasOwn(assignments,placeKey(place)):
         assignments[placeKey(place)]===day));
   }
+  // A hotel remains a visible map marker for context, but must not expand
+  // the camera bounds for a day trip in Nara or Osaka.
+  function mapFocusPlaces(visible,day){
+    if(!days('town-kyoto').includes(day))return visible;
+    const goals=visible.filter(p=>p.category!=='hotel');
+    return goals.length?goals:visible;
+  }
+  // On automatic GPS startup, keep distant day-trip goals on screen.
+  // GPS still records a position and a deliberate "GPS folgen" tap resumes following.
+  function preferDistantDayView(visible,day,position,distance){
+    if(!days('town-kyoto').includes(day)||!position)return false;
+    const goals=visible.filter(p=>p.category!=='hotel');
+    return goals.length>0&&goals.every(p=>distance(position,p)>12000);
+  }
   function change(assignments,key,day,planId='town-kyoto'){
     if(!allowed(planId,day))throw new Error('Ungültiger Kalendertag.');
     const next=Object.assign(Object.create(null),assignments);
@@ -58,7 +72,7 @@
     return next;
   }
   const api={CITY_DAYS,ALL,UNASSIGNED,days,allowed,defaultDay,dayLabel,
-    fromSchedule,seedDayAssignments,cleanAssignments,selected,change};
+    fromSchedule,seedDayAssignments,cleanAssignments,selected,mapFocusPlaces,preferDistantDayView,change};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LivekarteMultiDay=api;
 })(globalThis);
