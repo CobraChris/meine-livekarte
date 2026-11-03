@@ -2034,3 +2034,60 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
     grid-column:1;
   }
 }
+
+
+/* Map-first Kyoto layout: date context above the map, one compact day card below. */
+.map-day-context{
+  display:flex;align-items:center;justify-content:space-between;gap:9px;
+  margin:0 0 7px;padding:7px 12px;background:#183b38;
+  color:#e8fff1;border:1px solid #6d9d8c;border-radius:10px;font-size:12px
+}
+.map-day-context[hidden]{display:none!important}
+.map-day-context strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.map-day-context span{font-size:11px;white-space:nowrap;color:#bfead4}
+.day-planning{
+  background:#1b3737;color:#eafff1;border:1px solid #77b29b;
+  border-radius:13px;padding:12px;margin:10px 0 14px
+}
+.day-planning .city-days,.day-planning .today-panel{
+  margin:0;padding:0;background:transparent;border:0;border-radius:0
+}
+.day-planning .city-days-heading{margin-bottom:9px}
+.day-planning .city-days-heading strong{font-size:14px}
+.day-planning .city-days-heading span{font-size:10px}
+.day-planning .city-days-list{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+.day-planning .city-days-list button{
+  min-height:47px;font-size:11px;line-height:1.1;padding:5px 1px;border-radius:8px
+}
+.day-planning .city-days-list button small{font-size:9px;line-height:1.1}
+.day-planning .city-days-list .city-day-utility{grid-column:span 3;min-height:38px;flex-direction:row;gap:7px}
+.city-day-brief{display:grid;gap:7px;padding:12px 0 0;margin-top:10px;border-top:1px solid #456b60}
+.city-day-brief strong{font-size:14px;line-height:1.4;color:#eafff2}
+.city-day-brief p{font-size:11px;color:#c7e5d6;line-height:1.5;margin:0}
+.city-day-brief-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px}
+.city-day-brief-actions span{font-size:10px;color:#b6d5c7;flex:1}
+#city-day-brief-open{
+  min-height:40px;padding:8px 13px;border-radius:9px;border:1px solid #d1f2d3;
+  background:#a9e2ba;color:#193b29;font-size:12px;font-weight:850
+}
+#city-day-brief-open[hidden]{display:none!important}
+.day-planning .today-panel{max-width:700px}
+.day-planning .today-panel-heading{gap:6px}
+.day-planning .today-panel h2{font-size:15px}
+.day-planning .today-panel-actions{margin-top:8px}
+@media(max-width:760px){
+  .map-day-context{margin:0 8px 6px}
+  .day-planning{margin:9px 8px 13px;padding:11px}
+  .day-planning .city-days-heading span{display:none}
+  .day-planning .city-days-list{gap:4px}
+  .day-planning .city-days-list button{min-height:46px;font-size:10px}
+  .day-planning .city-days-list button small{font-size:9px}
+}
+@media(min-width:761px){
+  main{grid-template-rows:auto auto minmax(400px,1fr) auto;height:auto;min-height:calc(100dvh - 86px)}
+  main>.daily-quick-nav{grid-column:1 / -1;grid-row:1}
+  main>.map-day-context{grid-column:1 / -1;grid-row:2}
+  main>.workspace{grid-column:1;grid-row:3}
+  main>.day-planning{grid-column:1;grid-row:4}
+  main>aside{grid-column:2;grid-row:3 / 5}
+}
