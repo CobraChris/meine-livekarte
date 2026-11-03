@@ -1648,18 +1648,27 @@
   }
   // City dates are an extra filter inside one city, never extra trip sections.
   const cityDaysPanel=$('city-days'),cityDaysList=$('city-days-list');
+  const dayBriefOpen=$('city-day-brief-open');
+  dayBriefOpen.onclick=()=>{
+    const index=MD.days('town-kyoto').indexOf(activeCityDay);
+    if(index<0)return;
+    focusKyotoOverviewDay(index);
+    kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
+  };
   function renderCityDays(){
     cityDaysPanel.hidden=activePlanId!=='town-kyoto';
+    $('map-day-context').hidden=cityDaysPanel.hidden;
     if(cityDaysPanel.hidden)return;
     cityDaysList.replaceChildren();
     const cityPlaces=currentPlaces().filter(p=>p.category!=='hotel');
-    const choices=[MD.ALL,...MD.days('town-kyoto'),MD.UNASSIGNED];
+    const choices=[...MD.days('town-kyoto'),MD.ALL,MD.UNASSIGNED];
     for(const day of choices){
       const count=day===MD.ALL?cityPlaces.length:
         cityPlaces.filter(p=>day===MD.UNASSIGNED
           ?!Object.hasOwn(cityDayAssignments,C.placePlanKey(p))
           :cityDayAssignments[C.placePlanKey(p)]===day).length;
       const button=node('button',MD.dayLabel(day),'city-day-tile');
+      if(day===MD.ALL||day===MD.UNASSIGNED)button.classList.add('city-day-utility');
       button.type='button';
       button.dataset.dayDate=day;
       button.setAttribute('data-day-date',day);
@@ -1668,6 +1677,29 @@
       button.onclick=()=>selectCityDay(day);
       cityDaysList.append(button);
     }
+    const selected=MD.days('town-kyoto').includes(activeCityDay);
+    const assigned=cityPlaces.filter(p=>activeCityDay===MD.ALL
+      ||(activeCityDay===MD.UNASSIGNED
+        ?!Object.hasOwn(cityDayAssignments,C.placePlanKey(p))
+        :cityDayAssignments[C.placePlanKey(p)]===activeCityDay));
+    const overviewDay=selected
+      ?kyotoOverview.querySelectorAll('details.kyoto-day')[MD.days('town-kyoto').indexOf(activeCityDay)]
+      :null;
+    const overviewTitle=overviewDay?.querySelector('summary strong')?.textContent?.trim()||'';
+    const shortTitle=overviewTitle.includes(' · ')?overviewTitle.split(' · ').slice(1).join(' · '):overviewTitle;
+    $('city-day-brief-title').textContent=selected
+      ?MD.dayLabel(activeCityDay)+' · '+shortTitle
+      :activeCityDay===MD.ALL?'Alle Reiseziele in Kyoto':'Merkliste · noch ohne Datum';
+    $('city-day-brief-summary').textContent=assigned.length
+      ?assigned.slice(0,4).map(p=>p.name).join(' · ')+(assigned.length>4?' · …':'')
+      :'Keine Reiseziele zugeordnet.';
+    const firstTime=overviewDay?.querySelector('.kyoto-day-timeline time')?.textContent?.trim();
+    $('city-day-brief-time').textContent=selected&&firstTime
+      ?'Planstart: '+firstTime+' · Zeiten Richtwerte':'';
+    dayBriefOpen.hidden=!selected;
+    $('map-day-context').hidden=false;
+    $('map-day-context-title').textContent='Kyoto · '+MD.dayLabel(activeCityDay);
+    $('map-day-context-count').textContent=assigned.length+' Ziele';
     $('city-days-help').textContent=activeCityDay===MD.ALL
       ?'Alle Ziele · wähle einen Tag oder die Merkliste'
       :activeCityDay===MD.UNASSIGNED
@@ -2222,14 +2254,14 @@
     const planned=Object.values(cityDayAssignments).some(day=>future.includes(day));
     kyotoOverview.querySelector('.kyoto-plan-note').textContent=planned
       ?'03.–06.11.: Der bestätigte wetteroptimierte Plan ist in der Tagesauswahl und den Tagesabläufen hinterlegt. Nara und Osaka sind Tagesausflüge per Bahn, nicht reine Fußrundgänge. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.'
-      :'03.–06.11.: Noch keine verbindlichen Stadttage. In der Tagesauswahl oberhalb der Karte kannst du Ziele zuordnen. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.';
+      :'03.–06.11.: Noch keine verbindlichen Stadttage. In der Tagesauswahl unterhalb der Karte kannst du Ziele zuordnen. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.';
     renderNikkoOverview();
     renderTodayDashboard();
   }
   const todayPanel=$('today-panel');
   function renderTodayDashboard(){
     const suggestion=NS.todaySuggestion();
-    todayPanel.hidden=false;
+    todayPanel.hidden=activePlanId==='town-kyoto';
     const date=NS.localDate(),text=date.slice(8,10)+'.'+date.slice(5,7)+'.'+date.slice(0,4);
     $('today-date').textContent=text;
     $('today-title').textContent=suggestion?suggestion.title:'Kein fester Tagesplan hinterlegt';
