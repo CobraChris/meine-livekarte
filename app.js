@@ -273,7 +273,6 @@
   const searchForm=$('place-search-form');
   const searchInput=$('place-search-input');
   const searchGo=$('place-search-go');
-  const searchPrivacy=$('place-search-privacy');
   const searchStatus=$('place-search-status');
   const searchResults=$('place-search-results');
   const searchOnline=$('place-search-online');
@@ -295,11 +294,12 @@
     searchPicked.hidden=true;
     selectedSearchPlace=null;
     searchPreview.clearLayers();
-    if(clearInput){searchInput.value='';searchPrivacy.open=false;}
+    if(clearInput)searchInput.value='';
     searchMessage('');
   }
-  $('place-search-close').onclick=()=>resetPlaceSearch(true);
+  // The native input[type=search] clear control and typing replace the redundant X.
   searchInput.oninput=()=>resetPlaceSearch(false);
+  searchInput.onsearch=()=>{if(!searchInput.value.trim())resetPlaceSearch(true);};
   function pickSearchResult(place){
     selectedSearchPlace=place;
     searchResults.hidden=true;
@@ -415,7 +415,7 @@
   }
   searchForm.onsubmit=async event=>{
     event.preventDefault();
-    searchPrivacy.open=false;
+    if(!searchInput.value.trim()){resetPlaceSearch(true);return;}
     if(!S){searchMessage('Ortssuche nicht geladen. Bitte App aktualisieren.');return;}
     const query=searchInput.value;
     try{S.requestUrl(query,map.getCenter());}
