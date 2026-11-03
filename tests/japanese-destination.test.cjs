@@ -59,7 +59,7 @@ test('dialog and taxi action are available from card, popup, tour assistant and 
  assert.match(app,/const JP=window\.JapaneseDestination/);
  assert.match(app,/function showJapaneseDestination\(place\)/);
  assert.match(app,/const popupJapanese=japaneseButton\(p\)/);
- assert.match(app,/if\(popupJapanese\)quickActions\.append\(popupJapanese\)/);
+ assert.match(app,/if\(popupJapanese\)popupMoreBody\.append\(popupJapanese\)/);
  assert.match(app,/const placeJapanese=japaneseButton\(p\)/);
  assert.match(app,/if\(placeJapanese\)actions\.append\(placeJapanese\)/);
  assert.match(app,/const hotelJapanese=japaneseButton\(/);
