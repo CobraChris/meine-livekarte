@@ -2055,15 +2055,29 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 }
 
 
-/* Map-first Kyoto layout: date context above the map, one compact day card below. */
-.map-day-context{
-  display:flex;align-items:center;justify-content:space-between;gap:9px;
-  margin:0 0 7px;padding:7px 12px;background:#183b38;
-  color:#e8fff1;border:1px solid #6d9d8c;border-radius:10px;font-size:12px
+/* Single section/date bar integrated with the map picker; no redundant top strip. */
+.plan-picker-heading{display:flex;align-items:center;justify-content:space-between;
+  gap:5px;margin:0 3px 3px;min-height:15px}
+.plan-picker .plan-picker-heading label{
+  position:static;width:auto;height:auto;margin:0;padding:0;clip:auto;
+  overflow:visible;white-space:nowrap;border:0;
+  color:#b9e6d1;font-size:10px;font-weight:800;letter-spacing:.015em
 }
-.map-day-context[hidden]{display:none!important}
-.map-day-context strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.map-day-context span{font-size:11px;white-space:nowrap;color:#bfead4}
+#plan-period{color:#e1fff0;font-size:10px;letter-spacing:0}
+#plan-day-summary{color:#d8f4e3;font-size:10px;font-weight:700;white-space:nowrap}
+#plan-day-summary[hidden]{display:none!important}
+.plan-picker{padding:5px 5px 3px}
+.place-search{top:88px}
+.tour-map-tools{top:143px}
+.station-transfer-inset{top:201px}
+@media(max-width:760px){
+  .plan-picker{padding:3px 4px}
+  .plan-picker-heading{min-height:14px;margin:0 2px 2px}
+  .plan-picker .plan-picker-heading label,#plan-period,#plan-day-summary{font-size:9px}
+  .place-search{top:72px}
+  .tour-map-tools{top:130px}
+  .station-transfer-inset{top:182px}
+}
 .day-planning{
   background:#1b3737;color:#eafff1;border:1px solid #77b29b;
   border-radius:13px;padding:12px;margin:10px 0 14px
@@ -2095,7 +2109,6 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .day-planning .today-panel h2{font-size:15px}
 .day-planning .today-panel-actions{margin-top:8px}
 @media(max-width:760px){
-  .map-day-context{margin:0 8px 6px}
   .day-planning{margin:9px 8px 13px;padding:11px}
   .day-planning .city-days-heading span{display:none}
   .day-planning .city-days-list{gap:4px}
@@ -2103,10 +2116,9 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .day-planning .city-days-list button small{font-size:9px}
 }
 @media(min-width:761px){
-  main{grid-template-rows:auto auto minmax(400px,1fr) auto;height:auto;min-height:calc(100dvh - 86px)}
+  main{grid-template-rows:auto minmax(400px,1fr) auto;height:auto;min-height:calc(100dvh - 86px)}
   main>.daily-quick-nav{grid-column:1 / -1;grid-row:1}
-  main>.map-day-context{grid-column:1 / -1;grid-row:2}
-  main>.workspace{grid-column:1;grid-row:3}
-  main>.day-planning{grid-column:1;grid-row:4}
-  main>aside{grid-column:2;grid-row:3 / 5}
+  main>.workspace{grid-column:1;grid-row:2}
+  main>.day-planning{grid-column:1;grid-row:3}
+  main>aside{grid-column:2;grid-row:2 / 4}
 }

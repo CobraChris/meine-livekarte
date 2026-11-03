@@ -1659,7 +1659,7 @@
   };
   function renderCityDays(){
     cityDaysPanel.hidden=activePlanId!=='town-kyoto';
-    $('map-day-context').hidden=cityDaysPanel.hidden;
+    $('plan-day-summary').hidden=cityDaysPanel.hidden;
     if(cityDaysPanel.hidden)return;
     cityDaysList.replaceChildren();
     const cityPlaces=currentPlaces().filter(p=>p.category!=='hotel');
@@ -1699,9 +1699,7 @@
     $('city-day-brief-time').textContent=selected&&firstTime
       ?'Planstart: '+firstTime+' · Zeiten Richtwerte':'';
     dayBriefOpen.hidden=!selected;
-    $('map-day-context').hidden=false;
-    $('map-day-context-title').textContent='Kyoto · '+MD.dayLabel(activeCityDay);
-    $('map-day-context-count').textContent=assigned.length+' Ziele';
+    $('plan-day-summary').textContent=MD.dayLabel(activeCityDay)+' · '+assigned.length+' Ziele';
     $('city-days-help').textContent=activeCityDay===MD.ALL
       ?'Alle Ziele · wähle einen Tag oder die Merkliste'
       :activeCityDay===MD.UNASSIGNED
@@ -3159,15 +3157,24 @@
     updateStationTransfer();
     updateNagoyaTrigger();
   }
+  // Display verified travel-section dates already present in preset labels;
+  // custom sections keep their user-entered names and never gain invented dates.
+  function planPickerLabel(plan){
+    if(!C.planPresets.some(p=>p.id===plan.id))return {name:plan.name,period:''};
+    const match=/^((?:ab\s+)?\d{2}\.(?:\d{2}\.)?(?:[–-]\d{2}\.\d{2}\.)?)\s*·\s*(.+)$/.exec(plan.name);
+    return match?{period:match[1],name:match[2]}:{name:plan.name,period:''};
+  }
   function renderPlanPicker() {
     const pick=$('plan-select'), info=$('plan-summary');
     pick.replaceChildren();
     allPlans().forEach(plan=>{
-      const opt=node('option',plan.name);
+      const opt=node('option',planPickerLabel(plan).name);
       opt.value=plan.id;pick.append(opt);
     });
     pick.value=activePlanId;
     const plan=currentPlan();
+    const period=planPickerLabel(plan).period;
+    $('plan-period').textContent=period?' · '+period:'';
     $('fit').lastElementChild.textContent=plan.kind==='journey' ? 'Route zeigen'
       : plan.kind==='city' ? 'Ziele zeigen' : 'Alle Orte';
     $('fit').setAttribute('aria-label',$('fit').lastElementChild.textContent);
