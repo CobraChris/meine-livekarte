@@ -35,6 +35,14 @@
     <div class="place-search-line">
       <input type="search" id="place-search-input" maxlength="120" placeholder="🔎 Ziel, Adresse, Café …" autocomplete="off" enterkeyhint="search">
       <button id="place-search-go" type="submit">Suchen</button>
+      <details id="place-search-privacy" class="place-search-privacy">
+        <summary aria-label="Datenschutz bei der Ortssuche" title="Datenschutz bei der Ortssuche">ⓘ</summary>
+        <div class="place-search-privacy-content">
+          <strong>Datenschutz bei der Ortssuche</strong>
+          <p>Gespeicherte Orte werden zuerst lokal und ohne Internet gesucht. Nur wenn kein gespeicherter Ort passt oder du auf „Weitere Orte“ tippst, werden Suchbegriff, Kartenmittelpunkt und ein regionaler Ausschnitt an Photon (komoot) übertragen. Es erfolgt keine zusätzliche GPS-Abfrage, kein Tracking und keine Übertragung von Ticketdaten. Der kostenlose Suchdienst ist möglicherweise unvollständig oder zeitweise nicht verfügbar.</p>
+          <a href="https://github.com/komoot/photon" target="_blank" rel="noopener noreferrer">Photon – Dienstinformationen</a>
+        </div>
+      </details>
       <button id="place-search-close" type="button" aria-label="Suche und Markierung schließen" title="Suche schließen">×</button>
     </div>
   </form>
@@ -49,10 +57,6 @@
       <button id="place-search-save" type="button">📌 Ort merken</button>
     </div>
   </div>
-  <details class="place-search-privacy"><summary>OpenStreetMap-Suche · Datenschutzhinweis</summary>
-    <p>Gespeicherte Orte werden zuerst lokal und ohne Internet gesucht. Nur wenn kein gespeicherter Ort passt oder du auf „Weitere Orte“ tippst, werden Suchbegriff, Kartenmittelpunkt und ein regionaler Ausschnitt an Photon (komoot) übertragen. Es erfolgt keine zusätzliche GPS-Abfrage, kein Tracking und keine Übertragung von Ticketdaten. Der kostenlose Suchdienst ist möglicherweise unvollständig oder zeitweise nicht verfügbar.</p>
-    <a href="https://github.com/komoot/photon" target="_blank" rel="noopener noreferrer">Photon – Dienstinformationen</a>
-  </details>
 </section><div id="tour-map-tools" class="tour-map-tools" role="group" aria-label="Tourziele direkt auf der Karte auswählen">
   <button id="tour-map-mode" type="button" aria-pressed="false" title="Orte durch Antippen der Kartenmarkierungen zur Tour hinzufügen">＋ Tour auf Karte</button>
   <button id="map-save-place" type="button" aria-pressed="false" title="Neuen Ort mit einem Tipp auf die Karte markieren">📌 Ort merken</button>
