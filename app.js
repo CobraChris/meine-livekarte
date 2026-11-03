@@ -1743,7 +1743,7 @@
       captured=surface;
       pointerId=event.pointerId;
       lastX=event.clientX;lastY=event.clientY;
-      fromText=!!event.target.closest?.('.place-popup-description');
+      fromText=!!event.target.closest?.('.place-popup-description,.popup-more-body');
       surface.classList.add('is-dragging');
       captured.setPointerCapture?.(pointerId);
     });
@@ -1817,7 +1817,9 @@
       const description=node('p',p.description,'place-popup-description');
       popupMoreBody.append(description,inPopup);
       popupMore.append(popupMoreSummary,popupMoreBody);
-      quickActions.append(walkingButton(p),popupTourButton,popupMore);
+      const popupWalk=walkingButton(p);
+      popupWalk.textContent='🚶 Fußweg';
+      quickActions.append(popupWalk,popupTourButton,popupMore);
       popup.append(quickActions);
       const chosenIndex=tourSelection().findIndex(item=>
         C.placePlanKey(item)===C.placePlanKey(p));
