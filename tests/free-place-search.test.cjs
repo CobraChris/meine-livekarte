@@ -48,7 +48,7 @@ test('results validate geometry, skip malformed values and never treat provider 
 test('search UI is mobile-first with manual submit, location privacy and ephemeral preview',()=>{
  const html=read('index.html'),css=read('style.css'),app=read('app.js');
  for(const id of ['place-search','place-search-form','place-search-input','place-search-go',
-   'place-search-close','place-search-status','place-search-results','place-search-picked',
+   'place-search-close','place-search-privacy','place-search-status','place-search-results','place-search-picked',
    'place-search-picked-name','place-search-picked-info','place-search-walk','place-search-save'])
    assert.ok(html.includes('id="'+id+'"'),id);
  assert.ok(html.includes('type="search" id="place-search-input"'));
@@ -74,6 +74,23 @@ test('search UI is mobile-first with manual submit, location privacy and ephemer
  assert.ok(stamp.includes('("src", "place-search-core.js")'));
  assert.ok(!sw.includes('photon.komoot.io'));
  assert.ok(!sw.includes('routing.openstreetmap.de'));
+});
+
+test('privacy uses a compact accessible disclosure inside the search row, not a permanent map banner',()=>{
+ const html=read('index.html'),css=read('style.css'),app=read('app.js');
+ const line=html.slice(html.indexOf('<div class="place-search-line">'),html.indexOf('</div>',html.indexOf('<div class="place-search-line">')));
+ assert.match(line,/<details id="place-search-privacy" class="place-search-privacy">/);
+ assert.match(line,/<summary aria-label="Datenschutz bei der Ortssuche"[^>]*>ⓘ<\/summary>/);
+ assert.doesNotMatch(html,/OpenStreetMap-Suche · Datenschutzhinweis/);
+ assert.match(html,/Gespeicherte Orte werden zuerst lokal und ohne Internet gesucht/);
+ assert.match(html,/Photon – Dienstinformationen/);
+ assert.match(css,/\.place-search-privacy-content\{\s*position:absolute/);
+ assert.match(css,/\.place-search-privacy>summary:focus-visible/);
+ assert.match(app,/searchPrivacy\.open=false/);
+ // Do not remove or obscure the legal OpenStreetMap credit in the map.
+ assert.match(app,/map\.attributionControl\.setPrefix\(false\)/);
+ assert.match(app,/tile\.openstreetmap\.org/);
+ assert.match(css,/\.leaflet-control-attribution\{/);
 });
 
 test('hotel search prefers the stored Tomoya in the current Kyoto plan without a network call',()=>{
