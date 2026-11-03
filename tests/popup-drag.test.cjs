@@ -5,7 +5,7 @@ const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const app=read('app.js'),css=read('style.css'),sw=read('sw.js');
 
 test('popup retains its marker spacing and auto-pan clearance',()=>{
- assert.match(app,/marker\.bindPopup\(popup,\{\s*maxWidth:320,maxHeight:250,\s*offset:L\.point\(0,-24\)/);
+ assert.match(app,/marker\.bindPopup\(popup,\{[\s\S]*?minWidth:Math\.min\(286,Math\.max\(205,map\.getSize\(\)\.x-76\)\),\s*maxWidth:320,maxHeight:300,\s*offset:L\.point\(0,-24\)/);
  assert.match(app,/autoPan:true,\s*autoPanPaddingTopLeft:L\.point\(18,76\),\s*autoPanPaddingBottomRight:L\.point\(18,40\)/);
 });
 test('user can swipe popup surface without a redundant handle',()=>{
