@@ -38,7 +38,7 @@ test('the button for walking directions is immediately beneath the place name, n
   assert.ok(snippet.indexOf('popupDayPicker=makePlaceDayPicker(p)')<
     snippet.indexOf('quickActions.append(popupWalk'));
   assert.ok(snippet.includes("popupMore.append(popupMoreSummary,popupMoreBody)"));
-  assert.match(app,/marker\.bindPopup\(popup,\{\s*maxWidth:320,maxHeight:250,/);
+  assert.match(app,/marker\.bindPopup\(popup,\{[\s\S]*?minWidth:Math\.min\(286,Math\.max\(205,map\.getSize\(\)\.x-76\)\),\s*maxWidth:320,maxHeight:300,/);
 });
 
 test('PWA can display non-destructive update prompt and reload after user action',()=>{

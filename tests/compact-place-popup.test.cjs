@@ -46,7 +46,7 @@ test('native summary stays clickable while drag gesture and route are preserved'
 });
 test('compact mobile layout limits height until detail expansion and keeps 40px targets',()=>{
  assert.match(css,/\.leaflet-popup-content \.popup-compact-actions\{/);
- assert.match(css,/grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) 66px/);
+ assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(css,/\.leaflet-popup-content \.popup-more\[open\]\{grid-column:1\/-1\}/);
  assert.match(css,/\.leaflet-popup-content \.popup-more-body\{/);
  assert.match(css,/\.leaflet-popup-content \.popup-more>summary\{/);

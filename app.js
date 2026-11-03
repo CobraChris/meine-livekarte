@@ -1840,7 +1840,11 @@
         marker.on('click',()=>{pauseGPSFollow();toggleTourPlace(p,true);});
       }else{
         marker.bindPopup(popup,{
-          maxWidth:320,maxHeight:250,
+          // Leaflet's default minWidth is only 50px: with a CSS grid this
+          // makes the phone popup collapse until its controls overlap.
+          // Bound width against the actual map size for narrow screens.
+          minWidth:Math.min(286,Math.max(205,map.getSize().x-76)),
+          maxWidth:320,maxHeight:300,
           offset:L.point(0,-24), // Marker stays visible below the popup arrow.
           autoPan:true,
           autoPanPaddingTopLeft:L.point(18,76),
