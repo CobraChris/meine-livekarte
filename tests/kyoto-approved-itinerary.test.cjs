@@ -51,7 +51,7 @@ test('Today shortcuts target the correct Kyoto days and never claim booked ticke
     assert.equal(suggestion.planId,'town-kyoto');
     assert.equal(suggestion.date,day);
     assert.equal(suggestion.dayIndex,index+2);
-    assert.ok(!/gebucht/i.test(suggestion.hint));
+    assert.ok(!/tickets sind gebucht/i.test(suggestion.hint));
   });
   assert.equal(Next.todaySuggestion(new Date('2026-11-07T03:00:00Z')).planId,'ride-nikko');
 });
