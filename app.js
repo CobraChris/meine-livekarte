@@ -3537,7 +3537,8 @@
       if(localStorage.getItem(marker)==='1')return;
       const approved=C.presetPlaces('town-kyoto').filter(place=>{
         const day=MD.fromSchedule(place.schedule);
-        return day>='2026-11-03'&&day<='2026-11-06';
+        return day>='2026-11-03'&&day<='2026-11-06'&&
+          !place.schedule.includes('Osaka Souvenir-Einkauf');
       });
       if(approved.length!==17)return;
       const additions=[],matches=[];
@@ -3574,6 +3575,45 @@
     }
   }
   seedApprovedKyotoDays();
+  // Add the three personally requested Osaka shops on 05.11., without
+  // replacing saved place notes, past visits, custom days, drafts or tickets.
+  function seedOsakaSouvenirPlaces(){
+    const marker='livekarte-osaka-shopping-2026-11-05-v1';
+    try{
+      if(localStorage.getItem(marker)==='1')return;
+      const recommended=C.presetPlaces('town-kyoto').filter(place=>
+        place.schedule?.startsWith('05.11.')&&
+        place.schedule.includes('Osaka Souvenir-Einkauf'));
+      if(recommended.length!==3)return;
+      const additions=[],mapped=[];
+      for(const suggested of recommended){
+        const existing=places.find(place=>
+          C.placePlanKey(place)===C.placePlanKey(suggested)||
+          (place.name.toLocaleLowerCase('de-DE')===
+            suggested.name.toLocaleLowerCase('de-DE')&&C.distance(place,suggested)<75));
+        mapped.push(existing||suggested);
+        if(!existing)additions.push(suggested);
+      }
+      const nextPlaces=C.merge(places,additions);
+      const nextPlans=Object.assign(Object.create(null),planAssignments);
+      const nextDays=Object.assign(Object.create(null),cityDayAssignments);
+      for(const place of mapped){
+        const key=C.placePlanKey(place);
+        const tags=Array.isArray(nextPlans[key])?nextPlans[key]:[];
+        nextPlans[key]=[...new Set([...tags,'town-kyoto'])];
+        if(!Object.hasOwn(nextDays,key))
+          nextDays[key]='2026-11-05';
+      }
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(nextPlaces));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(nextPlans));
+      localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(nextDays));
+      localStorage.setItem(marker,'1');
+      places=nextPlaces;planAssignments=nextPlans;cityDayAssignments=nextDays;
+    }catch{
+      say('Die Osaka-Einkaufsstopps konnten nicht ergänzt werden; persönliche Daten bleiben erhalten.');
+    }
+  }
+  seedOsakaSouvenirPlaces();
 
   // Persist only chosen place identifiers, never the GPS start or a route.
   try{
