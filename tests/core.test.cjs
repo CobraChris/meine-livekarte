@@ -271,10 +271,10 @@ test('mobile workspace makes map and trip content primary, without a bulky picke
  const app=readFileSync(join(root,'app.js'),'utf8');
  assert.doesNotMatch(html,/class="map-label"/);
  assert.match(html,/class="plan-picker"/);
- assert.match(html,/<label for="plan-select">Reiseabschnitt<\/label>/);
+ assert.match(html,/<label for="plan-select">Reiseabschnitt<span id="plan-period"><\/span><\/label>/);
  assert.match(html,/<select id="plan-select"/);
  assert.match(html,/id="add-plan"/);
- assert.match(css,/\.plan-picker label\{position:absolute;width:1px/);
+ assert.match(css,/\.plan-picker \.plan-picker-heading label\{\s*position:static/);
  assert.match(css,/aside > \.eyebrow,aside > h1,aside > \.intro\{display:none\}/);
  assert.match(css,/\.workspace\{height:64dvh;min-height:370px\}/);
  assert.match(css,/\.station-transfer-inset\{top:64px\}/);
