@@ -47,6 +47,6 @@ test('section dates come from established preset names and the top date strip is
  assert.equal(JSON.stringify(actualParser(C.planPresets.find(p=>p.id==='town-kyoto'))),JSON.stringify({period:'01.–06.11.',name:'Kyoto'}));
  assert.equal(JSON.stringify(actualParser(C.planPresets.find(p=>p.id==='town-takayama'))),JSON.stringify({period:'30.10.–01.11.',name:'Takayama'}));
  assert.equal(JSON.stringify(actualParser(C.planPresets.find(p=>p.id==='town-nikko'))),JSON.stringify({period:'ab 07.11.',name:'Nikkō'}));
- assert.equal(JSON.stringify(actualParser({id:'custom-trip',name:'Meine Reise'})),JSON.stringify({period:'',name:'Meine Reise'}));
+ assert.deepEqual(JSON.parse(JSON.stringify(actualParser({id:'custom-trip',name:'Meine Reise'}))),{name:'Meine Reise',period:''});
  assert.ok(source.includes('C.planPresets.some'));
 });
