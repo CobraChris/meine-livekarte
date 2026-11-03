@@ -2100,3 +2100,58 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   main>.day-planning{grid-column:1;grid-row:3}
   main>aside{grid-column:2;grid-row:2 / 4}
 }
+
+
+/* One unified map-view / GPS toolbar below Leaflet's separate + / - zoom.
+   Recenter stays hidden until map gestures pause GPS following. */
+.workspace .map-actions{
+  position:absolute;z-index:870;
+  top:132px;right:10px;bottom:auto;left:auto;
+  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  flex-wrap:nowrap;gap:0;width:48px;
+  padding:3px;
+  border:1px solid #63897d;
+  border-radius:13px;background:#142b30ed;
+  box-shadow:0 4px 16px #0006;
+  backdrop-filter:blur(4px)
+}
+.workspace .map-actions button,
+.workspace .map-actions #expand-map,
+.workspace .map-actions #recenter-gps{
+  position:static;
+  z-index:auto;
+  box-sizing:border-box;
+  display:grid;place-items:center;
+  flex:0 0 auto;
+  width:40px;height:43px;min-width:40px;min-height:43px;
+  padding:0;margin:0;
+  border:0;border-radius:8px;
+  box-shadow:none;
+  background:transparent;color:#e2f6e9;
+  font-size:23px;font-weight:700;line-height:1;
+  cursor:pointer
+}
+.workspace .map-actions #recenter-gps[hidden]{display:none!important}
+.workspace .map-actions button + button{border-top:1px solid #426057;border-radius:0}
+.workspace .map-actions button:focus-visible{outline:2px solid #beffd9;outline-offset:-2px}
+.workspace .map-actions #recenter-gps:not([hidden]),
+.workspace .map-actions #gps[aria-pressed="true"],
+.workspace .map-actions #expand-map[aria-pressed="true"]{
+  background:#276a50;color:#eafff2
+}
+.workspace .map-actions #fit:hover,
+.workspace .map-actions button:hover{background:#345e53}
+.workspace .map-actions #fit{font-size:21px}
+.workspace .map-actions #gps{font-size:24px}
+.workspace .map-actions button span{
+  position:absolute!important;width:1px!important;height:1px!important;
+  padding:0!important;margin:-1px!important;overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important
+}
+@media(max-width:760px){
+  .workspace .map-actions{top:132px;right:10px;bottom:auto;left:auto;max-height:calc(100% - 156px)}
+  .workspace.is-expanded .map-actions{top:132px}
+  .workspace .map-actions button,
+  .workspace .map-actions #expand-map,
+  .workspace .map-actions #recenter-gps{width:40px;height:43px;min-width:40px;min-height:43px}
+}

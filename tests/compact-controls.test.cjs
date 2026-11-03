@@ -9,11 +9,18 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 
 test('map uses compact mobile controls while maintaining keyboard and screen-reader labels',()=>{
   const html=read('index.html'),css=read('style.css'),app=read('app.js');
-  assert.match(html,/<div class="map-actions"><button id="fit" type="button" title="Alle Orte" aria-label="Alle Orte">/);
+  assert.match(html,/<div class="map-actions" role="group" aria-label="Kartenansicht und GPS steuern">/);
+  const mapTools=html.slice(html.indexOf('class="map-actions"'),html.indexOf('</div>',html.indexOf('class="map-actions"')));
+  for(const id of ['expand-map','recenter-gps','fit','gps'])
+    assert.match(mapTools,new RegExp('id="'+id+'"'));
+  assert.ok(mapTools.indexOf('id="expand-map"')<mapTools.indexOf('id="recenter-gps"'));
+  assert.ok(mapTools.indexOf('id="recenter-gps"')<mapTools.indexOf('id="fit"'));
+  assert.ok(mapTools.indexOf('id="fit"')<mapTools.indexOf('id="gps"'));
   assert.match(html,/<button id="gps" type="button" aria-pressed="false" aria-label="GPS einschalten"/);
-  assert.match(css,/\.map-actions\{\s*position:absolute;z-index:750;\s*left:auto;right:10px;bottom:68px;/);
-  assert.match(css,/width:44px;display:flex;flex-direction:column/);
-  assert.match(css,/width:44px;height:44px;min-width:44px;min-height:44px/);
+  assert.match(css,/\.workspace \.map-actions\{\s*position:absolute;z-index:870;/);
+  assert.match(css,/top:132px;right:10px;bottom:auto;left:auto/);
+  assert.match(css,/flex-wrap:nowrap;gap:0;width:48px/);
+  assert.match(css,/\.workspace \.map-actions #recenter-gps\[hidden\]\{display:none!important\}/);
   assert.match(css,/\.map-actions button span\{\s*position:absolute!important;/);
   assert.match(app,/\$\('fit'\)\.setAttribute\('aria-label',\$\('fit'\)\.lastElementChild\.textContent\)/);
   assert.match(app,/\$\('gps'\)\.setAttribute\('aria-label','GPS ausschalten/);
