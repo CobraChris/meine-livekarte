@@ -37,10 +37,10 @@ test('Kyoto rail itinerary keeps schematic geometry and includes user-confirmed 
  assert.match(app,/livekarte-ticket-confirmation-kyoto-2026-11-01-v1/);
  assert.match(app,/status:'booked',source:'chat-link'/);
 });
-test('Kyoto city presets provide actual mapped places for the arrival and following day',()=>{
+test('Kyoto city presets include the original days and the newly approved excursions',()=>{
  const places=C.presetPlaces('town-kyoto');
  const names=places.map(p=>p.name);
- assert.equal(places.length,9);
+ assert.equal(places.length,26);
  for(const name of ['Tomoya Residence Hotel Kyoto Nijo Takakura',
   'Kyoto Station','Karasuma Oike Station','Gion Shirakawa / Shinbashi',
   'Tatsumi-Brücke (Gion)','Ponto-chō','Kiyomizu-dera',
@@ -50,7 +50,7 @@ test('Kyoto city presets provide actual mapped places for the arrival and follow
  assert.match(places.find(p=>p.name==='Kiyomizu-dera').schedule,/02\.11.*09:45–11:15/);
  assert.match(places.find(p=>p.name==='Fushimi Inari-Taisha').schedule,/15:15–17:15/);
  assert.match(places.find(p=>p.name==='Ponto-chō').schedule,/01\.11/);
- assert.equal(new Set(places.map(C.placePlanKey)).size,9);
+ assert.equal(new Set(places.map(C.placePlanKey)).size,26);
  assert.ok(places.every(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng)));
 });
 test('Kyoto stops are seeded for existing users without modifying their current tours or tickets',()=>{

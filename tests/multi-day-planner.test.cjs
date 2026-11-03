@@ -89,5 +89,5 @@ test('renaming or deleting a saved place also migrates separate calendar mapping
   const helper=app.slice(app.indexOf('  function appendPlaceTiming(target,p)'),
                          app.indexOf('  function metric(p)'));
   assert.ok(helper.includes('Uhrzeiten nicht automatisch übertragen'));
-  assert.ok(app.includes('Persönlich zugeordnete Ziele findest du in der Tagesauswahl'));
+  assert.ok(app.includes('Der bestätigte wetteroptimierte Plan ist in der Tagesauswahl'));
 });
