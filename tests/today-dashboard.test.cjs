@@ -15,8 +15,8 @@ test('today suggestions use real Japan local date and only confirmed preset trav
     ['2026-11-01T14:59:00Z','ride-kyoto',0],
     ['2026-11-01T15:00:00Z','town-kyoto',1],
     ['2026-11-02T14:59:00Z','town-kyoto',1],
-    ['2026-11-02T15:00:00Z','town-kyoto',null],
-    ['2026-11-05T15:00:00Z','town-kyoto',null],
+    ['2026-11-02T15:00:00Z','town-kyoto',2],
+    ['2026-11-05T15:00:00Z','town-kyoto',5],
     ['2026-11-06T15:00:00Z','ride-nikko',null],
     ['2026-11-07T15:00:00Z','town-nikko',null],
     ['2026-11-08T15:00:00Z',null,null]
