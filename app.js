@@ -109,6 +109,10 @@
     if (/^GPS aktiv\b/.test(text)) {
       $('gps').title = text;
       $('gps').setAttribute('aria-label','GPS ausschalten · '+text);
+      // A GPS fix resolves the preceding "Standort wird ermittelt" notice.
+      // The previous timeout was cleared above, so hide that text explicitly.
+      status.textContent='';
+      status.hidden=true;
       return;
     }
     status.textContent=text;
