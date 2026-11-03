@@ -67,3 +67,23 @@ test('the two visited sights remain under 02 Nov and Nara/Osaka are not rail boo
   assert.match(light.note,/Ticket NICHT gekauft/);
   assert.match(light.schedule,/18:00/);
 });
+
+test('Osaka souvenir stops are added only to 05 Nov and no other trip data is changed',()=>{
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const app=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+  const core=Core.presetPlaces('town-kyoto');
+  const shops=core.filter(p=>p.schedule?.includes('Osaka Souvenir-Einkauf'));
+  assert.equal(shops.length,3);
+  assert.ok(shops.every(p=>Multi.fromSchedule(p.schedule)==='2026-11-05'));
+  assert.ok(shops.every(p=>p.category==='sight'));
+  assert.match(app,/livekarte-osaka-shopping-2026-11-05-v1/);
+  assert.match(app,/if\(!Object\.hasOwn\(nextDays,key\)\)/);
+  const migration=app.slice(app.indexOf('  function seedOsakaSouvenirPlaces(){'),
+    app.indexOf('  seedOsakaSouvenirPlaces();'));
+  assert.ok(!/ticketStatuses\s*=|tourDrafts\s*=|localStorage\.clear|removeItem\(/.test(migration));
+  for(const [text,time] of [['Osaka Shikki','15:00'],['Kagetsudo','15:25'],['Utsuwa Tsukinoshita','15:50']]){
+    assert.match(html,new RegExp('<time>'+time+'</time>[\\s\\S]*?'+text));
+  }
+});
