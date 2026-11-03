@@ -44,6 +44,7 @@ test('four related controls share a rail; recenter is conditional and zoom remai
  assert.deepEqual([...group.matchAll(/id="(expand-map|recenter-gps|fit|gps)"/g)].map(x=>x[1]),
    ['expand-map','recenter-gps','fit','gps']);
  assert.match(group,/id="recenter-gps" type="button" hidden/);
+ assert.match(group,/id="fit"[^>]*>📍 <span>Alle Orte<\/span><\/button>/);
  assert.match(app,/recenterGPS\.hidden = watch === null \|\| following \|\| !position/);
  assert.match(app,/expand\.onclick = \(\) => toggleExpanded\(\)/);
  assert.match(app,/\$\('gps'\)\.onclick = \(\) =>/);

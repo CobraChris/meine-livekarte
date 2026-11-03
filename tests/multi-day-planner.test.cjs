@@ -91,3 +91,36 @@ test('renaming or deleting a saved place also migrates separate calendar mapping
   assert.ok(helper.includes('Uhrzeiten nicht automatisch übertragen'));
   assert.ok(app.includes('Der bestätigte wetteroptimierte Plan ist in der Tagesauswahl'));
 });
+
+test('Nara/Osaka day trips fit only their goals, not the Kyoto hotel',()=>{
+ const preset=C.presetPlaces('town-kyoto');
+ const nara=preset.filter(p=>p.schedule?.startsWith('04.11.'));
+ const osaka=preset.filter(p=>p.schedule?.startsWith('05.11.'));
+ const kyotoHotel=preset.find(p=>p.category==='hotel');
+ assert.ok(kyotoHotel&&nara.length===4&&osaka.length>0);
+ assert.deepEqual(MD.mapFocusPlaces([kyotoHotel,...nara],'2026-11-04'),nara);
+ assert.deepEqual(MD.mapFocusPlaces([kyotoHotel,...osaka],'2026-11-05'),osaka);
+ assert.deepEqual(MD.mapFocusPlaces([kyotoHotel,...nara],'all'),[kyotoHotel,...nara]);
+ assert.deepEqual(MD.mapFocusPlaces([kyotoHotel],'2026-11-04'),[kyotoHotel]);
+});
+test('GPS auto-start keeps far day-trip view while recording location; nearby goals still follow GPS',()=>{
+ const preset=C.presetPlaces('town-kyoto');
+ const nara=preset.filter(p=>p.schedule?.startsWith('04.11.'));
+ const kyoto=preset.filter(p=>p.schedule?.startsWith('03.11.'));
+ const here={lat:35.013,lng:135.765};
+ assert.equal(MD.preferDistantDayView(nara,'2026-11-04',here,C.distance),true);
+ assert.equal(MD.preferDistantDayView(kyoto,'2026-11-03',here,C.distance),false);
+ assert.equal(MD.preferDistantDayView(nara,'all',here,C.distance),false);
+ assert.equal(MD.preferDistantDayView([], '2026-11-04',here,C.distance),false);
+ assert.equal(MD.preferDistantDayView(nara,'2026-11-04',{lat:34.684,lng:135.843},C.distance),false);
+ const source=read('app.js');
+ assert.match(source,/const mapFocusPlaces = \(\) => activePlanId==='town-kyoto'/);
+ assert.match(source,/function fit\(items = mapFocusPlaces\(\)\)/);
+ assert.match(source,/const matching=mapFocusPlaces\(\)/);
+ assert.match(source,/const p=mapFocusPlaces\(\)/);
+ assert.match(source,/if\(automatic && firstFix && following && activePlanId==='town-kyoto' &&/);
+ assert.match(source,/MD\.preferDistantDayView\(visiblePlaces\(\),activeCityDay,position,C\.distance\)/);
+ assert.match(source,/if \(following\) centerOnGPS\(ll,Math\.max\(map\.getZoom\(\),15\)\)/);
+ assert.match(source,/focusLabel=selected\?'Tagesziele zeigen'/);
+ assert.match(source,/\$\('fit'\)\.title=focusLabel/);
+});

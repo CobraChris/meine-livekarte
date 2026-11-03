@@ -26,7 +26,7 @@ test('date filter remains the source of truth and the chosen day drives the brie
   assert.match(app,/todayPanel\.hidden=activePlanId==='town-kyoto'/);
   assert.match(app,/\$\('plan-day-summary'\)\.hidden=cityDaysPanel\.hidden/);
   assert.match(app,/function selectCityDay\(day\)\{/);
-  assert.match(app,/render\(\);\s*const p=visiblePlaces\(\)/);
+  assert.match(app,/render\(\);\s*const p=mapFocusPlaces\(\)/);
 });
 
 test('section dates come from established preset names and the top date strip is removed',()=>{
