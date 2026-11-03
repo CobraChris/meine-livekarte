@@ -275,6 +275,7 @@
   const searchGo=$('place-search-go');
   const searchStatus=$('place-search-status');
   const searchResults=$('place-search-results');
+  const searchOnline=$('place-search-online');
   const searchPicked=$('place-search-picked');
   const searchPreview=L.layerGroup().addTo(map);
   let searchController=null,searchGeneration=0,lastSearchAt=0,selectedSearchPlace=null;
@@ -289,6 +290,7 @@
     searchGo.textContent='Suchen';
     searchResults.replaceChildren();
     searchResults.hidden=true;
+    searchOnline.hidden=true;
     searchPicked.hidden=true;
     selectedSearchPlace=null;
     searchPreview.clearLayers();
@@ -310,48 +312,64 @@
     map.setView([place.lat,place.lng],Math.max(15,Math.min(17,map.getZoom())));
     $('place-search-picked-name').textContent=place.name;
     $('place-search-picked-info').textContent=place.label;
+    const saved=place.saved===true;
+    const saveButton=$('place-search-save');
+    saveButton.disabled=saved;
+    saveButton.textContent=saved?'✓ Bereits gespeichert':'📌 Ort merken';
     searchPicked.hidden=false;
-    searchMessage('📍 Vorschau auf der Karte · noch nicht gespeichert.');
+    searchMessage(saved?'✓ Dieser Ort ist bereits in deiner Live-Karte gespeichert.'
+      :'📍 Vorschau auf der Karte · noch nicht gespeichert.');
     searchInput.blur();
   }
-  function renderPlaceSearchResults(found){
+  function renderPlaceSearchResults(found,notice=''){
     searchResults.replaceChildren();
     searchResults.hidden=!found.length;
     searchPicked.hidden=true;
+    let previousGroup='';
     for(const place of found){
+      const group=place.saved?'✓ Gespeicherte Orte':'📍 Orte in der Kartenregion';
+      if(previousGroup!==group){
+        const heading=node('div',group,'place-search-group-title');
+        searchResults.append(heading);
+        previousGroup=group;
+      }
       const button=node('button',undefined,'place-search-result');
       button.type='button';
-      button.append(node('strong',place.name),node('small',place.label));
+      const symbol=({hotel:'⌂',restaurant:'♨',station:'▤',sight:'◇'})[place.category]||'◇';
+      button.append(node('strong',symbol+' '+place.name),node('small',place.label));
       button.onclick=()=>pickSearchResult(place);
       searchResults.append(button);
     }
-    searchMessage(found.length
-      ?found.length+' Treffer gefunden · einen Ort auswählen.'
-      :'Keine passenden Orte gefunden. Versuche den Namen mit Stadt oder Stadtteil.');
+    searchMessage(notice||(found.length
+      ?found.length+' Treffer in der Kartenregion · einen Ort auswählen.'
+      :'Keine Treffer in der Kartenregion. Verschiebe die Karte zur gesuchten Stadt und versuche es erneut.'));
   }
-  searchForm.onsubmit=async event=>{
-    event.preventDefault();
-    if(!S){searchMessage('Ortssuche nicht geladen. Bitte App aktualisieren.');return;}
+  async function searchOnlinePlaces(query,localResults=[]){
     let url;
-    const query=searchInput.value;
-    try{url=S.requestUrl(query,map.getCenter());}
+    const center=map.getCenter();
+    try{url=S.requestUrl(query,center);}
     catch(error){searchMessage(error.message);return;}
     if(navigator.onLine===false){
-      searchMessage('Für die Ortssuche ist eine Internetverbindung nötig.');
+      searchMessage(localResults.length
+        ?'Gespeicherte Orte sind verfügbar. Für weitere Treffer bitte Internet einschalten.'
+        :'Für die Online-Suche benötigst du Internet.');
       return;
     }
     if(Date.now()-lastSearchAt<1200){
       searchMessage('Bitte kurz warten, bevor du erneut suchst.');
       return;
     }
-    resetPlaceSearch(false);
+    if(searchController)searchController.abort();
     const controller=new AbortController();
     searchController=controller;
     const generation=++searchGeneration;
     lastSearchAt=Date.now();
     searchGo.disabled=true;
+    searchOnline.disabled=true;
     searchGo.textContent='Suche …';
-    searchMessage('Suche in OpenStreetMap (Photon) …');
+    searchMessage(localResults.length
+      ?'Weitere Orte in der Kartenregion werden gesucht …'
+      :'Suche in der Kartenregion (OpenStreetMap) …');
     let timeout;
     try{
       timeout=setTimeout(()=>controller.abort(),13000);
@@ -366,29 +384,57 @@
       }
       const raw=await response.text();
       if(raw.length>500000)throw new Error('Die Suchantwort ist zu groß.');
-      const found=S.parse(JSON.parse(raw));
+      const found=S.nearby(S.parse(JSON.parse(raw)),center);
       if(generation!==searchGeneration)return;
-      renderPlaceSearchResults(found);
+      const unique=found.filter(place=>!localResults.some(saved=>
+        C.distance(place,saved)<100));
+      renderPlaceSearchResults([...localResults,...unique],
+        unique.length
+          ?(localResults.length?localResults.length+' gespeicherte + ':'')+
+            unique.length+' Treffer in der Region.'
+          :localResults.length?'Nur deine gespeicherten Orte gefunden.':
+            'Keine passenden Orte in dieser Region. Karte verschieben oder den Suchbegriff präzisieren.');
+      searchOnline.hidden=true;
     }catch(error){
       if(generation!==searchGeneration)return;
       searchMessage(controller.signal.aborted
         ?'Ortssuche hat zu lange gedauert. Bitte erneut versuchen.'
         :error instanceof SyntaxError?'Der Suchdienst hat eine ungültige Antwort geliefert.'
         :error.message||'Ortssuche derzeit nicht verfügbar. Bitte Internet prüfen.');
+      searchOnline.hidden=!localResults.length;
     }finally{
       clearTimeout(timeout);
       if(generation===searchGeneration){
         searchController=null;
         searchGo.disabled=false;
+        searchOnline.disabled=false;
         searchGo.textContent='Suchen';
       }
     }
+  }
+  searchForm.onsubmit=async event=>{
+    event.preventDefault();
+    if(!S){searchMessage('Ortssuche nicht geladen. Bitte App aktualisieren.');return;}
+    const query=searchInput.value;
+    try{S.requestUrl(query,map.getCenter());}
+    catch(error){searchMessage(error.message);return;}
+    resetPlaceSearch(false);
+    // Local results always win; no provider call for an already saved hotel.
+    const saved=S.savedMatches(query,places,currentPlaces());
+    if(saved.length){
+      renderPlaceSearchResults(saved,
+        saved.length+' bereits gespeicherte Orte gefunden · direkt auswählen.');
+      searchOnline.hidden=false;
+      searchOnline.onclick=()=>{void searchOnlinePlaces(query,saved);};
+      return;
+    }
+    await searchOnlinePlaces(query,[]);
   };
   $('place-search-walk').onclick=()=>{
     if(selectedSearchPlace)void showWalkingRoute(selectedSearchPlace);
   };
   $('place-search-save').onclick=()=>{
-    if(!selectedSearchPlace)return;
+    if(!selectedSearchPlace||selectedSearchPlace.saved)return;
     openMapPlaceDialog(selectedSearchPlace);
     $('map-place-name').value=selectedSearchPlace.name;
     $('map-place-category').value=selectedSearchPlace.category;

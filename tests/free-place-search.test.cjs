@@ -53,7 +53,7 @@ test('search UI is mobile-first with manual submit, location privacy and ephemer
    assert.ok(html.includes('id="'+id+'"'),id);
  assert.ok(html.includes('type="search" id="place-search-input"'));
  assert.ok(html.includes('id="place-search-form"'));
- assert.ok(html.includes('Die Suchanfrage und der Kartenausschnitt'));
+ assert.ok(html.includes('Gespeicherte Orte werden zuerst lokal'));
  assert.ok(css.includes('.place-search-results'));
  assert.ok(css.includes('.place-search[hidden]'));
  assert.ok(app.includes("searchForm.onsubmit=async event=>"));
@@ -74,4 +74,56 @@ test('search UI is mobile-first with manual submit, location privacy and ephemer
  assert.ok(stamp.includes('("src", "place-search-core.js")'));
  assert.ok(!sw.includes('photon.komoot.io'));
  assert.ok(!sw.includes('routing.openstreetmap.de'));
+});
+
+test('hotel search prefers the stored Tomoya in the current Kyoto plan without a network call',()=>{
+ const C=require('../core.js');
+ const hotel=C.presetPlaces('town-kyoto').find(p=>p.name.startsWith('Tomoya Residence'));
+ assert.ok(hotel);
+ const stray={name:'Tomoya sushi',lat:35.70,lng:139.7,category:'restaurant'};
+ const other={name:'My Tomoya hotel',lat:35.1,lng:135.8,category:'hotel'};
+ const hits=S.savedMatches('tomoya',[stray,other,hotel],[hotel]);
+ assert.equal(hits[0].name,hotel.name);
+ assert.equal(hits[0].saved,true);
+ assert.equal(hits[0].inSection,true);
+ assert.match(hits[0].label,/In dieser Karte gespeichert · Hotel/);
+ assert.equal(hits.length,3);
+ assert.deepEqual(S.savedMatches('ReSiDence',[hotel],[hotel]).map(p=>p.name),[hotel.name]);
+ assert.equal(S.savedMatches('unbekannt',[hotel],[hotel]).length,0);
+});
+
+test('Photon query is bounded to visible region, returns English names where possible',()=>{
+ const url=new URL(S.requestUrl('Tomoya',{lat:35.01,lng:135.77}));
+ assert.equal(url.searchParams.get('lang'),'en');
+ assert.equal(url.searchParams.get('countrycode'),'JP');
+ assert.equal(url.searchParams.get('location_bias_scale'),'0.1');
+ const bbox=url.searchParams.get('bbox').split(',').map(Number);
+ assert.equal(bbox.length,4);
+ assert.ok(bbox[0]<135.77&&bbox[2]>135.77);
+ assert.ok(bbox[1]<35.01&&bbox[3]>35.01);
+ const outside=new URL(S.requestUrl('cafe',{lat:53.6,lng:10.0}));
+ assert.equal(outside.searchParams.has('countrycode'),false);
+});
+
+test('results from distant countries are removed even if provider ignores bbox',()=>{
+ const center={lat:35.01,lng:135.77};
+ const candidates=[
+ {name:'Tomoya California',lat:34.15,lng:-118.5},
+ {name:'Kyoto hotel',lat:35.012,lng:135.758},
+ {name:'Osaka hotel',lat:34.67,lng:135.50},
+ {name:'Sydney hotel',lat:-33.9,lng:151.2}
+ ];
+ assert.deepEqual(S.nearby(candidates,center).map(p=>p.name),
+  ['Kyoto hotel','Osaka hotel']);
+});
+
+test('search UI puts saved places first and allows online lookup only by user action',()=>{
+ const app=read('app.js'),html=read('index.html'),css=read('style.css');
+ assert.match(app,/const saved=S.savedMatches\(query,places,currentPlaces\(\)\)/);
+ assert.match(app,/if\(saved.length\)\{/);
+ assert.match(app,/searchOnline.onclick=\(\)=>\{void searchOnlinePlaces\(query,saved\);\}/);
+ assert.match(app,/searchGo.disabled=true/);
+ assert.match(app,/S.nearby\(S.parse\(JSON.parse\(raw\)\),center\)/);
+ assert.match(html,/id="place-search-online"/);
+ assert.match(css,/\.place-search-group-title/);
 });
