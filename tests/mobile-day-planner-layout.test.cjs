@@ -42,9 +42,11 @@ test('section dates come from established preset names and the top date strip is
  assert.ok(C.planPresets.some(p=>p.name==='01.–06.11. · Kyoto'));
  assert.ok(C.planPresets.some(p=>p.name==='ab 07.11. · Nikkō'));
  const source=app.slice(app.indexOf('function planPickerLabel('),app.indexOf('function renderPlanPicker()'));
- const parse=(name)=>{const m=/^((?:ab\s+)?\d{2}\.(?:\d{2}\.)?(?:[–-]\d{2}\.\d{2}\.)?)\s*·\s*(.+)$/.exec(name);return m?{period:m[1],name:m[2]}:null;};
- assert.deepEqual(parse('01.–06.11. · Kyoto'),{period:'01.–06.11.',name:'Kyoto'});
- assert.deepEqual(parse('30.10.–01.11. · Takayama'),{period:'30.10.–01.11.',name:'Takayama'});
- assert.deepEqual(parse('ab 07.11. · Nikkō'),{period:'ab 07.11.',name:'Nikkō'});
+ const vm=require('node:vm');
+ const actualParser=vm.runInNewContext('('+source.trim()+')',{C});
+ assert.equal(JSON.stringify(actualParser(C.planPresets.find(p=>p.id==='town-kyoto'))),JSON.stringify({period:'01.–06.11.',name:'Kyoto'}));
+ assert.equal(JSON.stringify(actualParser(C.planPresets.find(p=>p.id==='town-takayama'))),JSON.stringify({period:'30.10.–01.11.',name:'Takayama'}));
+ assert.equal(JSON.stringify(actualParser(C.planPresets.find(p=>p.id==='town-nikko'))),JSON.stringify({period:'ab 07.11.',name:'Nikkō'}));
+ assert.equal(JSON.stringify(actualParser({id:'custom-trip',name:'Meine Reise'})),JSON.stringify({period:'',name:'Meine Reise'}));
  assert.ok(source.includes('C.planPresets.some'));
 });
