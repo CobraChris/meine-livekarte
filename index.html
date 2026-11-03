@@ -20,26 +20,10 @@
   <button id="quick-map" type="button">🗺 Karte</button>
   <button id="quick-tickets" type="button">🎟 Meine Tickets</button>
 </nav>
-<section id="today-panel" class="today-panel" aria-labelledby="today-title" hidden>
-  <div class="today-panel-heading">
-    <span class="today-kicker">HEUTE · JAPANISCHE ORTSZEIT</span>
-    <strong id="today-date" class="today-date"></strong>
-  </div>
-  <h2 id="today-title">Dein heutiger Reiseplan</h2>
-  <p id="today-summary"></p>
-  <p id="today-hint" class="today-hint"></p>
-  <div class="today-panel-actions">
-    <button id="today-open" type="button">🗓 Heutigen Plan öffnen</button>
-    <span id="today-view-note" role="status" aria-live="polite"></span>
-  </div>
-</section>
-<section id="city-days" class="city-days" aria-label="Reisetage auswählen" hidden>
-  <div class="city-days-heading">
-    <strong id="city-days-title">🗓 Kyoto · Reiseziele nach Tagen</strong>
-    <span id="city-days-help">Tag wählen · Ziele verschieben · Hotel bleibt sichtbar</span>
-  </div>
-  <div id="city-days-list" class="city-days-list" role="group" aria-label="Tagesauswahl"></div>
-</section>
+<div id="map-day-context" class="map-day-context" hidden aria-live="polite">
+  <strong id="map-day-context-title">Kyoto · Tagesauswahl</strong>
+  <span id="map-day-context-count"></span>
+</div>
 <section class="workspace" aria-label="Interaktive Karte"><div id="map" aria-label="Karte mit empfohlenen Orten"></div><div class="plan-picker" role="group" aria-label="Reiseabschnitt auswählen">
   <label for="plan-select">Reiseabschnitt</label><div class="plan-picker-row">
     <select id="plan-select" aria-label="Reiseabschnitt auswählen" title="Reiseabschnitt wechseln"></select>
@@ -118,6 +102,36 @@
   </div>
   <button id="tour-route-close" type="button" title="Rundgang von der Karte entfernen" aria-label="Rundgang beenden">×</button>
 </div></section>
+<section id="day-planning" class="day-planning" aria-label="Tagesplanung unter der Karte">
+<section id="city-days" class="city-days" aria-label="Reisetage auswählen" hidden>
+  <div class="city-days-heading">
+    <strong id="city-days-title">🗓 Kyoto · Reiseziele nach Tagen</strong>
+    <span id="city-days-help">Tag wählen · Ziele verschieben · Hotel bleibt sichtbar</span>
+  </div>
+  <div id="city-days-list" class="city-days-list" role="group" aria-label="Tagesauswahl"></div>
+  <div class="city-day-brief" id="city-day-brief" aria-live="polite">
+    <strong id="city-day-brief-title">Kyoto · Tagesplanung</strong>
+    <p id="city-day-brief-summary">Wähle einen Tag, um die zugehörigen Ziele zu sehen.</p>
+    <div class="city-day-brief-actions">
+      <span id="city-day-brief-time"></span>
+      <button id="city-day-brief-open" type="button">🗓 Tagesplan öffnen</button>
+    </div>
+  </div>
+</section>
+<section id="today-panel" class="today-panel" aria-labelledby="today-title" hidden>
+  <div class="today-panel-heading">
+    <span class="today-kicker">HEUTE · JAPANISCHE ORTSZEIT</span>
+    <strong id="today-date" class="today-date"></strong>
+  </div>
+  <h2 id="today-title">Dein heutiger Reiseplan</h2>
+  <p id="today-summary"></p>
+  <p id="today-hint" class="today-hint"></p>
+  <div class="today-panel-actions">
+    <button id="today-open" type="button">🗓 Heutigen Plan öffnen</button>
+    <span id="today-view-note" role="status" aria-live="polite"></span>
+  </div>
+</section>
+</section>
 <aside>
 <div class="eyebrow">DEIN PERSÖNLICHER REISEBEGLEITER</div><h1>Gute Orte.<br><span>Direkt vor dir.</span></h1><p class="intro">Sammle Empfehlungen von ChatGPT und entdecke sie auf deiner Karte.</p>
 <section id="plan-summary" class="plan-summary" hidden aria-live="polite"></section>
