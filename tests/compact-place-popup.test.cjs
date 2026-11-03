@@ -37,7 +37,7 @@ test('other actions and metadata are present but only under More; no data write 
 test('native summary stays clickable while drag gesture and route are preserved',()=>{
  const drag=app.slice(app.indexOf('  function enablePopupMapDrag(marker,surface){'),
   app.indexOf('  function render() {'));
- assert.match(drag,/summary,details,\[contenteditable/);
+ assert.match(drag,/summary,\[contenteditable/);
  assert.match(drag,/fromText=!!event\.target\.closest\?\.\('\.place-popup-description,\.popup-more-body'\)/);
  assert.match(drag,/map\.panBy\(\[-dx,-dy\]/);
  assert.match(app,/marker\.bindPopup\(popup,\{/);
