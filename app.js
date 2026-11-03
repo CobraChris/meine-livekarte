@@ -21,6 +21,9 @@
   const visiblePlaces = () => activePlanId==='town-kyoto'
     ?MD.selected(currentPlaces(),cityDayAssignments,activeCityDay,C.placePlanKey)
     :currentPlaces();
+  const mapFocusPlaces = () => activePlanId==='town-kyoto'
+    ?MD.mapFocusPlaces(visiblePlaces(),activeCityDay)
+    :visiblePlaces();
   function assignToCurrentPlan(items) {
     if (activePlanId === 'all') return;
     items.forEach(p => {
@@ -1648,7 +1651,7 @@
       inList.textContent = value;
     });
   }
-  function fit(items = visiblePlaces()) {
+  function fit(items = mapFocusPlaces()) {
     const visible = items.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
@@ -1704,6 +1707,11 @@
       ?'Planstart: '+firstTime+' · Zeiten Richtwerte':'';
     dayBriefOpen.hidden=!selected;
     $('plan-day-summary').textContent=MD.dayLabel(activeCityDay)+' · '+assigned.length+' Ziele';
+    const focusLabel=selected?'Tagesziele zeigen':
+      activeCityDay===MD.UNASSIGNED?'Merkliste auf Karte zeigen':'Alle Kyoto-Ziele zeigen';
+    $('fit').lastElementChild.textContent=focusLabel;
+    $('fit').setAttribute('aria-label',focusLabel);
+    $('fit').title=focusLabel;
     $('city-days-help').textContent=activeCityDay===MD.ALL
       ?'Alle Ziele · wähle einen Tag oder die Merkliste'
       :activeCityDay===MD.UNASSIGNED
@@ -1719,7 +1727,7 @@
     try{localStorage.setItem('livekarte-active-city-day-v1',day);}
     catch{say('Tagesauswahl konnte nicht gespeichert werden.');}
     render();
-    const p=visiblePlaces();
+    const p=mapFocusPlaces();
     if(p.length)fit(p);
     say('Kyoto · '+MD.dayLabel(day)+' ausgewählt.');
   }
@@ -3212,7 +3220,7 @@
     if (options.focus!==false) {
       if(journey) fitJourney();
       else {
-        const matching=visiblePlaces();
+        const matching=mapFocusPlaces();
         if(matching.length) fit(matching);
         else if(plan.center) map.setView(plan.center,plan.kind==='city'?14:8);
       }
@@ -3349,7 +3357,14 @@
     try{
       watch = navigator.geolocation.watchPosition(result => {
         if (watch === null) return;
+        const firstFix=position===null;
         position = {lat:result.coords.latitude,lng:result.coords.longitude};
+        // The auto-start GPS fix must not pull the camera back to Kyoto
+        // when the chosen day has goals far away (for example Nara).
+        if(automatic && firstFix && following && activePlanId==='town-kyoto' &&
+          MD.preferDistantDayView(visiblePlaces(),activeCityDay,position,C.distance)){
+          following=false;
+        }
         positionUpdatedAt=Date.now();
         positionAccuracy=result.coords.accuracy;
         updateWalkingNavigation(position,positionAccuracy);
