@@ -3161,7 +3161,7 @@
   // custom sections keep their user-entered names and never gain invented dates.
   function planPickerLabel(plan){
     if(!C.planPresets.some(p=>p.id===plan.id))return {name:plan.name,period:''};
-    const match=/^((?:ab\\s+)?\\d{2}\\.(?:\\d{2}\\.)?(?:[–-]\\d{2}\\.\\d{2}\\.)?)\\s*·\\s*(.+)$/.exec(plan.name);
+    const match=/^((?:ab\s+)?\d{2}\.(?:\d{2}\.)?(?:[–-]\d{2}\.\d{2}\.)?)\s*·\s*(.+)$/.exec(plan.name);
     return match?{period:match[1],name:match[2]}:{name:plan.name,period:''};
   }
   function renderPlanPicker() {
