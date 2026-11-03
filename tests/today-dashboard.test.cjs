@@ -54,10 +54,11 @@ test('past views are archived only for dated travel plans, not current Kyoto or 
   assert.equal(NS.taskBuckets(past.entries,at('2026-11-02T01:00:00Z')).openCount,5);
 });
 
-test('mobile top navigation and date-first suggestion are accessible and visible before the map',()=>{
+test('mobile top navigation precedes map; unified day planner comes after map',()=>{
   const main=html.indexOf('<main>'),nav=html.indexOf('class="daily-quick-nav"'),
-    today=html.indexOf('id="today-panel"'),map=html.indexOf('id="map"');
-  assert.ok(main<nav&&nav<today&&today<map);
+    today=html.indexOf('id="today-panel"'),map=html.indexOf('id="map"'),
+    days=html.indexOf('id="city-days"'),planner=html.indexOf('id="day-planning"');
+  assert.ok(main<nav&&nav<map&&map<planner&&planner<days&&days<today);
   for(const id of ['quick-today','quick-map','quick-tickets','today-date',
     'today-title','today-summary','today-hint','today-open','today-view-note'])
     assert.match(html,new RegExp('id="'+id+'"'),id);
