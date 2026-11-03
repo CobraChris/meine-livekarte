@@ -1877,3 +1877,114 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   main{grid-template-rows:auto auto minmax(0,1fr)}
   main>.city-days{grid-column:1 / -1}
 }
+
+
+/* Compact marker card: only title, calendar, footpath, tour and More at rest. */
+.leaflet-popup-content .place-popup-pan-surface{
+  min-width:0;
+}
+.leaflet-popup-content .place-popup-header{
+  padding-right:24px;
+  margin-bottom:6px;
+}
+.leaflet-popup-content .place-popup-header strong{
+  font-size:15px;
+  line-height:1.25;
+}
+.leaflet-popup-content .place-day-picker{
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  max-width:none;
+  gap:8px;
+  padding:5px 0 6px;
+  margin:0;
+  border:0;
+}
+.leaflet-popup-content .place-day-picker label{
+  margin:0;
+  white-space:nowrap;
+  font-size:11px;
+}
+.leaflet-popup-content .place-day-picker select{
+  min-width:0;
+  width:100%;
+  flex:1;
+  min-height:39px;
+  padding:5px 6px;
+}
+.leaflet-popup-content .popup-compact-actions{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) 66px;
+  align-items:stretch;
+  gap:5px;
+  margin:5px 0 2px;
+}
+.leaflet-popup-content .popup-compact-actions>.walk-start,
+.leaflet-popup-content .popup-compact-actions>.tour-pick{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  min-height:40px;
+  padding:6px 4px;
+  margin:0;
+  font-size:11px;
+  line-height:1.2;
+  white-space:normal;
+  text-align:center;
+}
+.leaflet-popup-content .popup-compact-actions>.popup-more{
+  min-width:0;
+  margin:0;
+  padding:0;
+  border:0;
+  background:none;
+}
+.leaflet-popup-content .popup-more>summary{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:40px;
+  padding:5px 4px;
+  border:1px solid #799c92;
+  border-radius:8px;
+  background:#284449;
+  color:#e9fff4;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+  list-style:none;
+}
+.leaflet-popup-content .popup-more>summary::-webkit-details-marker{display:none}
+.leaflet-popup-content .popup-more[open]{grid-column:1/-1}
+.leaflet-popup-content .popup-more[open]>summary{min-height:34px}
+.leaflet-popup-content .popup-more-body{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+  margin:8px 0 0;
+  padding:9px 0 0;
+  border-top:1px solid #486c65;
+}
+.leaflet-popup-content .popup-more-body>.navigate,
+.leaflet-popup-content .popup-more-body>.place-edit,
+.leaflet-popup-content .popup-more-body>.place-japanese{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0;
+  min-height:39px;
+  min-width:0;
+  text-align:center;
+  padding:6px;
+  font-size:11px;
+  border-radius:8px;
+}
+.leaflet-popup-content .popup-more-body>p{
+  grid-column:1/-1;
+  margin:2px 0;
+  font-size:11px;
+  line-height:1.45;
+}
+.leaflet-popup-content .popup-more-body>p:empty{display:none}

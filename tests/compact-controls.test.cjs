@@ -29,13 +29,15 @@ test('the button for walking directions is immediately beneath the place name, n
   assert.ok(snippet.includes("popup.append(popupHeader)"));
   assert.ok(snippet.indexOf('popup.append(popupHeader)')<snippet.indexOf('popup.append(quickActions)'));
   assert.ok(snippet.includes("popup.append(quickActions)"));
-  assert.ok(snippet.includes("appendPlaceTiming(popup,p)"));
+  assert.ok(snippet.includes("const popupDayPicker=makePlaceDayPicker(p)"));
+  assert.ok(snippet.includes("const popupWalk=walkingButton(p)"));
+  assert.ok(snippet.includes("quickActions.append(popupWalk,popupTourButton,popupMore)"));
+  assert.ok(snippet.includes("appendPlaceTiming(popupMoreBody,p)"));
   assert.ok(snippet.includes("const description=node('p',p.description,'place-popup-description')"));
-  assert.ok(snippet.includes("popup.append(description,inPopup)"));
-  assert.ok(snippet.indexOf('popup.append(quickActions)')<
-    snippet.indexOf('appendPlaceTiming(popup,p)'));
-  assert.ok(snippet.indexOf('popup.append(quickActions)')<
-    snippet.indexOf("const description=node('p',p.description"));
+  assert.ok(snippet.includes("popupMoreBody.append(description,inPopup)"));
+  assert.ok(snippet.indexOf('popupDayPicker=makePlaceDayPicker(p)')<
+    snippet.indexOf('quickActions.append(popupWalk'));
+  assert.ok(snippet.includes("popupMore.append(popupMoreSummary,popupMoreBody)"));
   assert.match(app,/marker\.bindPopup\(popup,\{\s*maxWidth:320,maxHeight:250,/);
 });
 

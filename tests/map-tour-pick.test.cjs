@@ -78,8 +78,9 @@ test('normal map popups still support directions and also have a nearby tour but
  const popup=app.slice(begin,end);
  assert.match(popup,/popupTourButton=node\('button',tourIsSelected\(p\)\?'✓ In Tour':'＋ Tour','tour-pick'\)/);
  assert.match(popup,/popupTourButton\.onclick=\(\)=>toggleTourPlace\(p,true\)/);
- assert.match(popup,/quickActions\.append\(popupTourButton,walkingButton\(p\),route\(p\)\)/);
- assert.match(popup,/appendPlaceTiming\(popup,p\)/);
+ assert.match(popup,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);
+ assert.match(popup,/popupMoreBody\.append\(route\(p\),popupEditButton\)/);
+ assert.match(popup,/appendPlaceTiming\(popupMoreBody,p\)/);
  assert.match(app,/marker\.bindPopup\(popup,\{/);
 });
 

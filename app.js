@@ -1725,7 +1725,7 @@
   function enablePopupMapDrag(marker,surface){
     let pointerId=null,lastX=0,lastY=0,captured=null,fromText=false;
     const ignore='button,a,input,select,textarea,label,[role="button"],'+
-      '[contenteditable="true"],.leaflet-popup-close-button';
+      'summary,[contenteditable="true"],.leaflet-popup-close-button';
     const release=event=>{
       if(pointerId===null||event.pointerId!==pointerId)return;
       const id=pointerId,target=captured;
@@ -1743,7 +1743,7 @@
       captured=surface;
       pointerId=event.pointerId;
       lastX=event.clientX;lastY=event.clientY;
-      fromText=!!event.target.closest?.('.place-popup-description');
+      fromText=!!event.target.closest?.('.place-popup-description,.popup-more-body');
       surface.classList.add('is-dragging');
       captured.setPointerCapture?.(pointerId);
     });
@@ -1791,27 +1791,36 @@
       const popupHeader=node('div',undefined,'place-popup-header');
       popupHeader.append(node('strong',p.name));
       popup.append(popupHeader);
-      const quickActions=node('div',undefined,'popup-quick-actions');
+      // Mobile popup: day first, two direct actions, all extras tucked into
+      // an accessible native disclosure. No additional modal or data changes.
+      const popupDayPicker=makePlaceDayPicker(p);
+      if(popupDayPicker)popup.append(popupDayPicker);
+      const quickActions=node('div',undefined,'popup-quick-actions popup-compact-actions');
       const popupTourButton=node('button',tourIsSelected(p)?'✓ In Tour':'＋ Tour','tour-pick');
       popupTourButton.type='button';
       popupTourButton.title='Ort direkt zum Rundgang hinzufügen oder entfernen';
       popupTourButton.setAttribute('aria-pressed',String(tourIsSelected(p)));
       popupTourButton.onclick=()=>toggleTourPlace(p,true);
-      quickActions.append(popupTourButton,walkingButton(p),route(p));
+      const popupMore=node('details',undefined,'popup-more');
+      const popupMoreSummary=node('summary','⋯ Mehr');
+      popupMoreSummary.setAttribute('aria-label','Weitere Aktionen und Informationen für '+p.name);
+      const popupMoreBody=node('div',undefined,'popup-more-body');
       const popupEditButton=node('button','✎ Bearbeiten','place-edit');
       popupEditButton.type='button';
       popupEditButton.onclick=()=>openPlaceEditor(p);
-      quickActions.append(popupEditButton);
+      popupMoreBody.append(route(p),popupEditButton);
       const popupJapanese=japaneseButton(p);
-      if(popupJapanese)quickActions.append(popupJapanese);
-      popup.append(quickActions);
-      const popupDayPicker=makePlaceDayPicker(p);
-      if(popupDayPicker)popup.append(popupDayPicker);
+      if(popupJapanese)popupMoreBody.append(popupJapanese);
       const metaText = placeMeta(p);
-      if (metaText) popup.append(node('p',metaText,'place-meta'));
-      appendPlaceTiming(popup,p);
+      if (metaText) popupMoreBody.append(node('p',metaText,'place-meta'));
+      appendPlaceTiming(popupMoreBody,p);
       const description=node('p',p.description,'place-popup-description');
-      popup.append(description,inPopup);
+      popupMoreBody.append(description,inPopup);
+      popupMore.append(popupMoreSummary,popupMoreBody);
+      const popupWalk=walkingButton(p);
+      popupWalk.textContent='🚶 Fußweg';
+      quickActions.append(popupWalk,popupTourButton,popupMore);
+      popup.append(quickActions);
       const chosenIndex=tourSelection().findIndex(item=>
         C.placePlanKey(item)===C.placePlanKey(p));
       const badge=chosenIndex<0?'':'<b class="pin-tour-index" aria-hidden="true">'+
