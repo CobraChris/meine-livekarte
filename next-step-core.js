@@ -34,10 +34,26 @@
         title:'Kyoto · Higashiyama & Fushimi Inari',
         summary:'Kiyomizu-dera · Sannenzaka/Ninenzaka · Fushimi Inari',
         hint:'Besichtigungen sind freiwillig; Zeitangaben sind keine Live-Auskunft.'};
-    if(day>='2026-11-03'&&day<='2026-11-06')
-      return {date:day,planId:'town-kyoto',dayIndex:null,
-        title:'Kyoto · flexibel',summary:'Eigene Ziele und Tagesplan auswählen',
-        hint:'Für diesen Tag ist noch keine feste Route hinterlegt.'};
+    if(day==='2026-11-03')
+      return {date:day,planId:'town-kyoto',dayIndex:2,
+        title:'Kyoto · östliche Tempel',
+        summary:'Ginkaku-ji · Philosophenweg · Nanzen-ji · Nishiki-Markt optional',
+        hint:'Bestätigter Tagesplan, Start ca. 10:30. Zeiten sind Richtwerte, keine Reservierungen.'};
+    if(day==='2026-11-04')
+      return {date:day,planId:'town-kyoto',dayIndex:3,
+        title:'Nara · Tagesausflug',
+        summary:'Nara-Park · Tōdai-ji · Kasuga-Taisha · Naramachi',
+        hint:'Abfahrt Kyoto ca. 10:00. Zugverbindungen und Wetter am Tag selbst prüfen.'};
+    if(day==='2026-11-05')
+      return {date:day,planId:'town-kyoto',dayIndex:4,
+        title:'Osaka · wetterflexibler Ausflug',
+        summary:'Osaka Castle · Kuromon-Markt · Shinsaibashi · Dōtonbori',
+        hint:'Morgens möglicherweise Regen; Museum, Markt und Einkaufsstraße lassen sich flexibel nutzen.'};
+    if(day==='2026-11-06')
+      return {date:day,planId:'town-kyoto',dayIndex:5,
+        title:'Kyoto · Arashiyama & Lichterabend',
+        summary:'Kinkaku-ji · Ryōan-ji · Tenryū-ji · Bambuswald · Light-up',
+        hint:'Bamboo Light-up ab 18:00. Eintritt nicht gebucht; Anfahrt und Tickets vor Ort prüfen.'};
     if(day==='2026-11-07')
       return {date:day,planId:'ride-nikko',dayIndex:null,
         title:'Weiterreise Kyoto → Nikkō',
