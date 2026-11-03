@@ -1,3 +1,15 @@
+## Osaka: Drei feste Souvenir-Shoppingstopps am 05.11.2026
+
+Am 05.11. ergänzt die Kyoto-Stadtansicht den bereits bestätigten Tagesausflug nach Osaka um drei zusätzliche Ziele zwischen **Kuromon Market (14:00)** und **Shinsaibashi-suji (16:30)**: **15:00 Osaka Shikki (大阪漆器)** für ein Stäbchenset, **15:25 Kagetsudo (花月堂)** für eine Maneki-neko/Winkekatze und **15:50 Utsuwa Tsukinoshita (うつわ 月乃下) Namba** für weitere Stäbchen bzw. eine mögliche Gravur. Danach bleiben Shinsaibashi (16:30) und Dōtonbori (18:00) erhalten. Die Markierungen gehören zu **town-kyoto@2026-11-05**, nicht zu neuen Reiseabschnitten. Keine Käufe/Buchungen werden als erledigt gesetzt.
+
+Die Daten stammen aus verifizierten Geschäftsadressen. Osaka Shikki: 8-19 Nanbasennichimae, Kartensitz exakt nach MapFan; Kagetsudo: 10-8 Nanbasennichimae und Utsuwa Tsukinoshita: 3-1-19 Namba haben **ungefähre Kartenpositionen**; die Adresse ist für die letzte Wegführung ausschlaggebend. Osaka Shikki/Kagetsudo schließen um ca. 18:00, Utsuwa akzeptiert laut Geschäftsangaben nur bargeldlose Zahlungen. Bei gravierten Stäbchen Zeitbedarf vor Ort klären.
+
+Eine einmalige additive Migration `livekarte-osaka-shopping-2026-11-05-v1` setzt die drei fehlenden Markierungen und ordnet sie, sofern noch nicht ausdrücklich anders zugeordnet, dem 05.11. zu. Sie bewahrt alle bestehenden Ortsnotizen, manuell gesetzten Tagesdaten, Tourentwürfe, QR-/Ticketdaten, Hotelbuchungen und Reiseabschnitte. Der neue Plan löst keine automatischen Routenanfragen aus. Die `Heute`-Ansicht bleibt die bestehende Osaka-Tagesempfehlung.
+
+Quellen: https://www.doguyasuji.or.jp/en/shop/osakashikki/ ; https://kagetudo.com/shop/ ; Osaka-Namba Adresse 3-1-19 für Utsuwa Tsukinoshita.
+
+---
+
 ## Kyoto: Mehrtägige Reiseplanung in einem Stadtabschnitt (02.11.2026)
 
 Die Kyoto-Stadtansicht bleibt ein **einziger Reiseabschnitt (01.–06.11.)**. Darüber gibt es nun eine **Tagesauswahl** mit sechs Datumsschaltflächen, **Alle Tage** und **Merkliste**. Die Auswahl filtert Karte und Ortsliste; die Unterkunft wird als Orientierung unabhängig vom Tag immer angezeigt. Die bisherige Anreise-/02.11.-Timeline bleibt lesbar. Anfangs werden die belegten Kyoto-Orte aus bereits vorhandenen, datierten Ortsangaben für **01.11.** und **02.11.** zugeordnet. Für 03.–06.11. wird nichts erfunden.

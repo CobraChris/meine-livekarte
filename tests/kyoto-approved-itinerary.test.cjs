@@ -6,17 +6,17 @@ const Multi=require('../multi-day-core.js');
 const Next=require('../next-step-core.js');
 
 const days=['2026-11-03','2026-11-04','2026-11-05','2026-11-06'];
-const counts=[4,4,4,5];
+const counts=[4,4,7,5];
 const names={
   '2026-11-03':['Ginkaku-ji (Silberner Pavillon)','Philosophenweg (Tetsugaku no Michi)','Nanzen-ji','Nishiki-Markt (optional)'],
   '2026-11-04':['Nara-Park','Tōdai-ji (Große Buddha-Halle)','Kasuga-Taisha','Naramachi (historisches Viertel)'],
-  '2026-11-05':['Osaka Castle / Burghauptturm','Kuromon Ichiba Market','Shinsaibashi-suji','Dōtonbori (Neonviertel)'],
+  '2026-11-05':['Osaka Castle / Burghauptturm','Kuromon Ichiba Market','Osaka Shikki (大阪漆器) · Stäbchen','Kagetsudo (花月堂) · Winkekatze','Utsuwa Tsukinoshita · Namba (うつわ 月乃下)','Shinsaibashi-suji','Dōtonbori (Neonviertel)'],
   '2026-11-06':['Kinkaku-ji (Goldener Pavillon)','Ryōan-ji (Steingarten)','Tenryū-ji','Arashiyama Bambuswald','Arashiyama Bamboo Light-up (Abend)']
 };
 const preset=Core.presetPlaces('town-kyoto');
 function dateOf(p){return Multi.fromSchedule(p.schedule);}
 
-test('the approved weather itinerary contains exactly the 17 agreed stops',()=>{
+test('the approved weather itinerary includes the three Osaka shopping stops',()=>{
   assert.equal(new Set(preset.map(Core.placePlanKey)).size,preset.length,'distinct place keys');
   days.forEach((date,i)=>{
     const dayStops=preset.filter(p=>dateOf(p)===date);
@@ -66,4 +66,24 @@ test('the two visited sights remain under 02 Nov and Nara/Osaka are not rail boo
   const light=preset.find(p=>p.name==='Arashiyama Bamboo Light-up (Abend)');
   assert.match(light.note,/Ticket NICHT gekauft/);
   assert.match(light.schedule,/18:00/);
+});
+
+test('Osaka souvenir stops are added only to 05 Nov and no other trip data is changed',()=>{
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const app=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+  const core=Core.presetPlaces('town-kyoto');
+  const shops=core.filter(p=>p.schedule?.includes('Osaka Souvenir-Einkauf'));
+  assert.equal(shops.length,3);
+  assert.ok(shops.every(p=>Multi.fromSchedule(p.schedule)==='2026-11-05'));
+  assert.ok(shops.every(p=>p.category==='sight'));
+  assert.match(app,/livekarte-osaka-shopping-2026-11-05-v1/);
+  assert.match(app,/if\(!Object\.hasOwn\(nextDays,key\)\)/);
+  const migration=app.slice(app.indexOf('  function seedOsakaSouvenirPlaces(){'),
+    app.indexOf('  seedOsakaSouvenirPlaces();'));
+  assert.ok(!/ticketStatuses\s*=|tourDrafts\s*=|localStorage\.clear|removeItem\(/.test(migration));
+  for(const [text,time] of [['Osaka Shikki','15:00'],['Kagetsudo','15:25'],['Utsuwa Tsukinoshita','15:50']]){
+    assert.match(html,new RegExp('<time>'+time+'</time>[\\s\\S]*?'+text));
+  }
 });
