@@ -6,17 +6,17 @@ const Multi=require('../multi-day-core.js');
 const Next=require('../next-step-core.js');
 
 const days=['2026-11-03','2026-11-04','2026-11-05','2026-11-06'];
-const counts=[4,4,4,5];
+const counts=[4,4,7,5];
 const names={
   '2026-11-03':['Ginkaku-ji (Silberner Pavillon)','Philosophenweg (Tetsugaku no Michi)','Nanzen-ji','Nishiki-Markt (optional)'],
   '2026-11-04':['Nara-Park','Tōdai-ji (Große Buddha-Halle)','Kasuga-Taisha','Naramachi (historisches Viertel)'],
-  '2026-11-05':['Osaka Castle / Burghauptturm','Kuromon Ichiba Market','Shinsaibashi-suji','Dōtonbori (Neonviertel)'],
+  '2026-11-05':['Osaka Castle / Burghauptturm','Kuromon Ichiba Market','Osaka Shikki (大阪漆器) · Stäbchen','Kagetsudo (花月堂) · Winkekatze','Utsuwa Tsukinoshita · Namba (うつわ 月乃下)','Shinsaibashi-suji','Dōtonbori (Neonviertel)'],
   '2026-11-06':['Kinkaku-ji (Goldener Pavillon)','Ryōan-ji (Steingarten)','Tenryū-ji','Arashiyama Bambuswald','Arashiyama Bamboo Light-up (Abend)']
 };
 const preset=Core.presetPlaces('town-kyoto');
 function dateOf(p){return Multi.fromSchedule(p.schedule);}
 
-test('the approved weather itinerary contains exactly the 17 agreed stops',()=>{
+test('the approved weather itinerary includes the three Osaka shopping stops',()=>{
   assert.equal(new Set(preset.map(Core.placePlanKey)).size,preset.length,'distinct place keys');
   days.forEach((date,i)=>{
     const dayStops=preset.filter(p=>dateOf(p)===date);
