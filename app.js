@@ -1577,6 +1577,10 @@
         :'🗓 '+p.schedule;
       target.append(node('p',label,'place-schedule'));
     }
+    // Both visits on 02.11. were explicitly confirmed by the travellers.
+    if(activePlanId==='town-kyoto'&&
+      (p.name==='Kiyomizu-dera'||p.name==='Fushimi Inari-Taisha'))
+      target.append(node('p','✓ Am 02.11. bereits besucht (bestätigt)','place-visit-confirmed'));
     if (p.note) target.append(node('p','💡 '+p.note,'place-note'));
   }
   function metric(p) {
@@ -2158,7 +2162,7 @@
     const future=MD.days('town-kyoto').slice(2);
     const planned=Object.values(cityDayAssignments).some(day=>future.includes(day));
     kyotoOverview.querySelector('.kyoto-plan-note').textContent=planned
-      ?'03.–06.11.: Persönlich zugeordnete Ziele findest du in der Tagesauswahl oberhalb der Karte. Ihre Reihenfolge und Zeiten kannst du je Tag planen. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.'
+      ?'03.–06.11.: Der bestätigte wetteroptimierte Plan ist in der Tagesauswahl und den Tagesabläufen hinterlegt. Nara und Osaka sind Tagesausflüge per Bahn, nicht reine Fußrundgänge. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.'
       :'03.–06.11.: Noch keine verbindlichen Stadttage. In der Tagesauswahl oberhalb der Karte kannst du Ziele zuordnen. 07.11.: Weiterreise im Abschnitt „Fahrt Kyoto → Nikkō“.';
     renderNikkoOverview();
     renderTodayDashboard();
@@ -3523,6 +3527,53 @@
     activeCityDay=MD.defaultDay('town-kyoto',NS.localDate());
     say('Tageszuordnung konnte nicht geladen werden; die ursprünglichen Ortsdaten bleiben erhalten.');
   }
+
+  // User-approved weather itinerary 03.–06.11.2026. Import the new public
+  // recommendation pins additively; preserve every edited private place,
+  // existing manual day assignment, tour draft, ticket and booking status.
+  function seedApprovedKyotoDays(){
+    const marker='livekarte-kyoto-approved-2026-11-03-v1';
+    try{
+      if(localStorage.getItem(marker)==='1')return;
+      const approved=C.presetPlaces('town-kyoto').filter(place=>{
+        const day=MD.fromSchedule(place.schedule);
+        return day>='2026-11-03'&&day<='2026-11-06';
+      });
+      if(approved.length!==17)return;
+      const additions=[],matches=[];
+      for(const suggested of approved){
+        const found=places.find(existing=>
+          C.placePlanKey(existing)===C.placePlanKey(suggested)||
+          (existing.name.toLocaleLowerCase('de-DE')===
+            suggested.name.toLocaleLowerCase('de-DE')&&C.distance(existing,suggested)<75));
+        const effective=found||suggested;
+        matches.push({suggested,place:effective});
+        if(!found)additions.push(suggested);
+      }
+      const nextPlaces=C.merge(places,additions);
+      const nextPlanAssignments=Object.assign(Object.create(null),planAssignments);
+      const nextDays=Object.assign(Object.create(null),cityDayAssignments);
+      for(const {suggested,place} of matches){
+        const key=C.placePlanKey(place);
+        const tags=Array.isArray(nextPlanAssignments[key])?nextPlanAssignments[key]:[];
+        nextPlanAssignments[key]=[...new Set([...tags,'town-kyoto'])];
+        // The user's pre-existing choice is authoritative, even if it
+        // differs from the approved default itinerary.
+        if(!Object.hasOwn(nextDays,key))
+          nextDays[key]=MD.fromSchedule(suggested.schedule);
+      }
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(nextPlaces));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(nextPlanAssignments));
+      localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(nextDays));
+      localStorage.setItem(marker,'1');
+      places=nextPlaces;
+      planAssignments=nextPlanAssignments;
+      cityDayAssignments=nextDays;
+    }catch{
+      say('Der bestätigte Kyoto-Tagesplan konnte nicht ergänzt werden. Bestehende Daten bleiben erhalten.');
+    }
+  }
+  seedApprovedKyotoDays();
 
   // Persist only chosen place identifiers, never the GPS start or a route.
   try{
