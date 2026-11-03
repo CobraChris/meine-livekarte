@@ -273,6 +273,7 @@
   const searchForm=$('place-search-form');
   const searchInput=$('place-search-input');
   const searchGo=$('place-search-go');
+  const searchPrivacy=$('place-search-privacy');
   const searchStatus=$('place-search-status');
   const searchResults=$('place-search-results');
   const searchOnline=$('place-search-online');
@@ -294,7 +295,7 @@
     searchPicked.hidden=true;
     selectedSearchPlace=null;
     searchPreview.clearLayers();
-    if(clearInput)searchInput.value='';
+    if(clearInput){searchInput.value='';searchPrivacy.open=false;}
     searchMessage('');
   }
   $('place-search-close').onclick=()=>resetPlaceSearch(true);
@@ -414,6 +415,7 @@
   }
   searchForm.onsubmit=async event=>{
     event.preventDefault();
+    searchPrivacy.open=false;
     if(!S){searchMessage('Ortssuche nicht geladen. Bitte App aktualisieren.');return;}
     const query=searchInput.value;
     try{S.requestUrl(query,map.getCenter());}
