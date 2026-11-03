@@ -1823,18 +1823,37 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .place-search-actions button{flex:1;min-width:105px;min-height:43px;
   padding:7px 9px;font-size:12px;font-weight:800;border-color:#94d7b2;
   background:#305d4b;color:#f3ffef}
-.place-search-privacy summary{cursor:pointer;min-height:20px;
-  padding:4px 5px 0;font-size:10px;color:#c4d7ce}
-.place-search-privacy p,.place-search-privacy a{margin:6px 5px;font-size:10px;line-height:1.5;color:#c0e0d0}
-.place-search-privacy a{display:inline-block;min-height:25px}
-.place-search .place-search-privacy{margin:0;border:none;background:transparent}
-.tour-map-tools{top:169px}
-.station-transfer-inset{top:222px}
+/* A single compact disclosure icon keeps search privacy information available
+   without a second persistent OpenStreetMap banner across the map. */
+.place-search .place-search-privacy{margin:0;border:0;background:transparent;flex:0 0 auto}
+.place-search-privacy>summary{
+  display:grid;place-items:center;box-sizing:border-box;list-style:none;
+  cursor:pointer;width:37px;height:40px;min-height:40px;padding:0;
+  border-radius:8px;border:1px solid #668e82;background:#26434b;
+  color:#d5f3e5;font-size:19px;font-weight:800;line-height:1
+}
+.place-search-privacy>summary::-webkit-details-marker{display:none}
+.place-search-privacy>summary::marker{content:""}
+.place-search-privacy>summary:focus-visible{outline:2px solid #a4ecc9;outline-offset:2px}
+.place-search-privacy[open]>summary{background:#a4ecc9;color:#123528}
+.place-search-privacy-content{
+  position:absolute;z-index:5;top:calc(100% + 6px);left:0;right:0;
+  max-height:55dvh;overflow:auto;padding:12px;border:1px solid #83bda3;
+  border-radius:11px;background:#18393a;box-shadow:0 7px 22px #0009
+}
+.place-search-privacy-content strong{display:block;font-size:12px;color:#e9fff1}
+.place-search-privacy-content p,.place-search-privacy-content a{
+  margin:7px 0;font-size:11px;line-height:1.55;color:#d3eadd
+}
+.place-search-privacy-content a{display:inline-block;min-height:30px}
+.tour-map-tools{top:123px}
+.station-transfer-inset{top:181px}
 @media(max-width:760px){
   .place-search{top:54px;left:10px;width:min(370px,calc(100% - 85px));padding:5px}
   .place-search-line input{min-height:39px}
-  .tour-map-tools{top:136px}
-  .station-transfer-inset{top:190px}
+  .place-search-privacy>summary{width:35px;height:39px;min-height:39px}
+  .tour-map-tools{top:112px}
+  .station-transfer-inset{top:164px}
 }
 @media(max-width:380px){
   .place-search{width:calc(100% - 79px)}
