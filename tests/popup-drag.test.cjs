@@ -32,8 +32,8 @@ test('action buttons, links and close stay clickable, with no visible drag butto
  assert.match(app,/const ignore='button,a,input,select,textarea,label/);
  assert.match(app,/if\(event\.target\.closest\?\.\(ignore\)\)return/);
  assert.match(popup,/popupHeader\.append\(node\('strong',p\.name\)\)/);
- assert.match(popup,/quickActions\.append\(popupTourButton,walkingButton\(p\),route\(p\)\)/);
- assert.match(popup,/quickActions\.append\(popupEditButton\)/);
+ assert.match(popup,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);
+ assert.match(popup,/popupMoreBody\.append\(route\(p\),popupEditButton\)/);
  assert.match(app,/enablePopupMapDrag\(marker,popup\)/);
  assert.doesNotMatch(app,/dragHandle|place-popup-drag|⠿ Ziehen/);
  assert.doesNotMatch(css,/\.place-popup-drag/);
@@ -43,7 +43,7 @@ test('action buttons, links and close stay clickable, with no visible drag butto
 test('overflow description scrolls vertically while default swipes pan the map',()=>{
  const body=app.slice(app.indexOf('  function enablePopupMapDrag(marker,surface){'),
     app.indexOf('  function render() {'));
- assert.match(body,/fromText=!!event\.target\.closest\?\.\('\.place-popup-description'\)/);
+ assert.match(body,/fromText=!!event\.target\.closest\?\.\('\.place-popup-description,\.popup-more-body'\)/);
  assert.match(body,/scroll\.scrollHeight>scroll\.clientHeight\+4/);
  assert.match(body,/scroll\.scrollTop-=dy/);
  assert.match(app,/const description=node\('p',p\.description,'place-popup-description'\)/);
