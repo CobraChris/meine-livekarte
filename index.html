@@ -20,12 +20,12 @@
   <button id="quick-map" type="button">🗺 Karte</button>
   <button id="quick-tickets" type="button">🎟 Meine Tickets</button>
 </nav>
-<div id="map-day-context" class="map-day-context" hidden aria-live="polite">
-  <strong id="map-day-context-title">Kyoto · Tagesauswahl</strong>
-  <span id="map-day-context-count"></span>
-</div>
 <section class="workspace" aria-label="Interaktive Karte"><div id="map" aria-label="Karte mit empfohlenen Orten"></div><div class="plan-picker" role="group" aria-label="Reiseabschnitt auswählen">
-  <label for="plan-select">Reiseabschnitt</label><div class="plan-picker-row">
+  <div class="plan-picker-heading">
+    <label for="plan-select">Reiseabschnitt<span id="plan-period"></span></label>
+    <span id="plan-day-summary" role="status" aria-live="polite" hidden></span>
+  </div>
+  <div class="plan-picker-row">
     <select id="plan-select" aria-label="Reiseabschnitt auswählen" title="Reiseabschnitt wechseln"></select>
     <button type="button" id="add-plan" aria-label="Neuen Reiseabschnitt anlegen" title="Neuen Reiseabschnitt anlegen">＋</button>
   </div>
@@ -109,7 +109,7 @@
 <section id="day-planning" class="day-planning" aria-label="Tagesplanung unter der Karte">
 <section id="city-days" class="city-days" aria-label="Reisetage auswählen" hidden>
   <div class="city-days-heading">
-    <strong id="city-days-title">🗓 Kyoto · Reiseziele nach Tagen</strong>
+    <strong id="city-days-title">🗓 Tagesplanung</strong>
     <span id="city-days-help">Tag wählen · Ziele verschieben · Hotel bleibt sichtbar</span>
   </div>
   <div id="city-days-list" class="city-days-list" role="group" aria-label="Tagesauswahl"></div>
