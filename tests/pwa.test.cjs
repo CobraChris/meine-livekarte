@@ -121,10 +121,11 @@ test('service worker has a strict shell-only allowlist and never intercepts sync
 test('GitHub Pages workflow builds PNGs and includes only needed public assets',()=>{
  const workflow=read('.github/workflows/pages.yml');
  assert.match(workflow,/node --check sw\.js/);
+ assert.match(workflow,/node --check map-popup-core\.js/);
  assert.match(workflow,/node --check pwa\.js/);
  assert.match(workflow,/CairoSVG==2\.8\.2/);
  assert.match(workflow,/python scripts\/build_pwa_icons\.py/);
- assert.match(workflow,/cp index\.html style\.css core\.js(?: walking-core\.js)?(?: day-plan-core\.js)?(?: route-discovery\.js)? app\.js sync\.js outbox-core\.js sync-out\.js pwa\.js sw\.js manifest\.json public\//);
+ assert.match(workflow,/cp index\.html style\.css map-popup-core\.js core\.js(?: walking-core\.js)?(?: day-plan-core\.js)?(?: route-discovery\.js)? app\.js sync\.js outbox-core\.js sync-out\.js pwa\.js sw\.js manifest\.json public\//);
  assert.match(workflow,/cp next-step-core\.js japanese-destination\.js public\//);
  assert.match(workflow,/cp icons\/livekarte\.svg public\/icons\//);
  assert.match(workflow,/cp -r sync public\//);
