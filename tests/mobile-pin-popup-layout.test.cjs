@@ -9,9 +9,10 @@ const app=read('app.js'),css=read('style.css');
 test('Nanzen-ji popup has a usable minimum width on narrow maps',()=>{
   const markerCode=app.slice(app.indexOf('const marker = L.marker([p.lat,p.lng]'),
     app.indexOf('const card = node(',app.indexOf('const marker = L.marker([p.lat,p.lng]')));
-  assert.match(markerCode,/marker\.bindPopup\(popup,\{/);
-  assert.match(markerCode,/minWidth:Math\.min\(286,Math\.max\(205,map\.getSize\(\)\.x-76\)\)/);
-  assert.match(markerCode,/maxWidth:320,maxHeight:300/);
+  assert.match(markerCode,/bindMapPopup\(marker,popup\)/);
+  const common=read('map-popup-core.js');
+  assert.match(common,/minWidth:Math\.min\(286,Math\.max\(205,map\.getSize\(\)\.x-76\)\)/);
+  assert.match(common,/maxWidth:320,maxHeight:300/);
   // The layout stays inside the map even when screen width is < 320px.
   const width=mapWidth=>Math.min(286,Math.max(205,mapWidth-76));
   assert.equal(width(393),286);
