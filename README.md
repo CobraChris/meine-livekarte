@@ -1,3 +1,11 @@
+## Google-Ortsmarkierungen: Bewertungen ohne kostenpflichtige API öffnen (04.11.2026)
+
+Beim Antippen eines selbst gespeicherten Google-Kartenmarkers öffnet sich ein kompaktes Infofenster mit drei Aktionen: **Bewertungen/Details in Google Maps öffnen**, **Fußweg (OSM)** und **In Tour**. Das erste ist ein offizieller `https://www.google.com/maps/search/?api=1&query=...`-Link mit Ortsname und optional vorhandener Adresse beziehungsweise bekanntem Place ID. Google Maps URLs benötigen keinen API-Schlüssel und verursachen keine Google-Maps-Platform-API-Gebühren; sie können auf Android die installierte Google-Maps-App oder alternativ einen Browser öffnen. Ein **nicht eindeutiger Name** kann mehrere Suchtreffer liefern – der Nutzer muss dann den korrekten Eintrag wählen. Nicht alle Sehenswürdigkeiten/Unternehmen besitzen Bewertungen.
+
+**Wichtig:** Der Demo-Key ermöglicht weiterhin **keine direkt in der Live-Karte ausgelesenen Google-Sterne, Rezensionen oder Nutzerfotos**. Diese Daten werden ausschließlich in der regulären Google-Maps-Oberfläche angesehen. Dafür gibt es **keine neue Google Places-API**, keine Billing-Aktivierung und keinen zusätzlichen Netzwerkabruf beim Öffnen des Kartenmarkers. Fußweg und Tour bearbeiten ausschließlich den bereits vorhandenen OSM-/lokalen Planungszustand; der Nutzer kann die Funktionen ohne externe Suche nutzen. Der Demo-Key, der Kartenumschalter, Tickets und Tagesdaten bleiben unverändert.
+
+---
+
 ## Tagesziele vollständig sichtbar & Google-Linienkontrast (04.11.2026)
 
 Die ausgewählten Tagesziele werden beim Wechsel zwischen **OpenStreetMap** und **Google Demo** mit einem sichereren Kartenrand eingepasst. Die OSM-Ansicht misst die Höhe des Reiseabschnitts und anderer Bedienelemente, anstatt eine starre `45px`-Randzugabe zu verwenden. Die Google-Ansicht erhält dieselben ausgewählten Tagesziele und berechnet damit einen eigenen, an die Kartengröße angepassten `fitBounds`-Ausschnitt mit Freiräumen für Reiseselektor, Marker, Google-Steuerelemente und Quellenangaben. Hotelmarker in Kyoto strecken den Kartenausschnitt für Tagesausflüge nach Nara nicht. Das Einpassen geschieht bei bewusstem Kartenanbieterwechsel beziehungsweise bei neu ausgewähltem Reisetag, nicht bei jeder GPS-Aktualisierung.
