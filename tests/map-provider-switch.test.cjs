@@ -49,6 +49,8 @@ function appFixture(options={}){
     map:leafletMap,places:()=>options.places||fallback,
     stops:typeof options.stops==='function'?options.stops:()=>options.stops||[],
     route:typeof options.route==='function'?options.route:()=>options.route||null,
+    goals:typeof options.goals==='function'?options.goals:()=>options.goals||[],
+    fitOSM:options.fitOSM||(()=>{}),
     placeKey:options.placeKey
   });
   assert.ok(widget);
@@ -247,12 +249,18 @@ test('Google preview displays the same two+ day goals as honest dashed air-line 
  assert.equal(lines[0].options.strokeOpacity,0);
  assert.equal(lines[0].options.geodesic,false);
  assert.equal(lines[0].options.clickable,false);
- assert.equal(lines[0].options.icons[0].repeat,'20px');
+ assert.equal(lines[0].options.icons[0].repeat,'26px');
+ assert.equal(lines[0].options.icons.length,2);
+ assert.equal(lines[0].options.icons[0].icon.strokeColor,'#203F3C');
+ assert.equal(lines[0].options.icons[1].icon.strokeColor,'#FFC13E');
+ assert.ok(lines[0].options.icons[0].icon.strokeWeight>
+   lines[0].options.icons[1].icon.strokeWeight);
  assert.equal(lines[0].options.icons[0].icon.path,'M 0,-1 0,1');
  assert.equal(lines[0].options.path.length,2);
  assert.deepEqual(Array.from(lines[0].options.path,p=>[p.lat,p.lng]),current.points);
  assert.equal(t.get('google-demo-route-legend').hidden,false);
- assert.match(t.get('google-demo-route-legend').textContent,/Luftlinie, kein Fußweg/);
+ assert.match(t.get('google-demo-route-meaning').textContent,/Luftlinie/);
+ assert.equal(t.get('google-demo-route-legend').open,false);
  // A verified OSRM route replaces, rather than adds over, the preview.
  current={real:true,points:[[35.01,135.79],[35.012,135.8],[35.03,135.82]]};
  t.widget.refreshRoute();
@@ -262,7 +270,7 @@ test('Google preview displays the same two+ day goals as honest dashed air-line 
  assert.equal(lines[1].options.strokeWeight,5);
  assert.equal(lines[1].options.icons,undefined);
  assert.equal(lines[1].options.path.length,3);
- assert.match(t.get('google-demo-route-legend').textContent,/Berechneter Fußweg/);
+ assert.match(t.get('google-demo-route-meaning').textContent,/Berechneter Fußweg/);
  // When a different day is selected, the old route must vanish entirely.
  current=null;
  t.widget.refresh();
@@ -282,7 +290,9 @@ test('no Google routing/search/billing requests are introduced for day line',()=
  assert.match(app,/route:\(\)=>\{\s*const ordered=dailyStops\(\)/);
  assert.match(app,/dayFootRoute\?\.key===dailyRouteKey\(ordered\)\?dayFootRoute:null/);
  assert.match(app,/points:actual\?\.points\|\|ordered\.map\(p=>\[p\.lat,p\.lng\]\)/);
- assert.match(html,/id="google-demo-route-legend"[^>]*hidden/);
+ assert.match(html,/<details id="google-demo-route-legend"[^>]*hidden/);
+ assert.match(html,/id="google-demo-route-meaning"/);
+ assert.match(css,/\.google-demo-route-legend>summary\{/);
  assert.match(css,/\.google-demo-route-legend\[hidden\]\{display:none!important\}/);
  assert.doesNotMatch(source,/fetch\(|computeRoutes|DirectionsService|PlacesService/);
 });
