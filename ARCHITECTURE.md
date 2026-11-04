@@ -81,3 +81,23 @@ verlassen jeden aktiven Kamera-Modus. GPS-Updates bewegen die Karte nur im
 `map.fitBounds`-Aufrufe in Spezialabläufen (Bahnhöfe, Import, Tour)
 inkrementell durch dieselbe Kamera-API ersetzen. Nicht stillschweigend
 davon ausgehen, dass `app.js` insgesamt bereits modular ist.
+
+## Kartensteuerung – Architekturbaustein 3
+
+Die früheren direkten Kameraänderungen aus Bahnhofsmodi, Touren, Routing,
+Suche, Import und Ortskarten laufen nun durch zwei einheitliche Adapter:
+`focusMapPoint(point,zoom)` für eine einzelne Zielposition (Kameramodus
+`manual`) und `fitMapArea(bounds,options)` für Routen und mehrere Ziele
+(Kameramodus `day-goals`). Die Adapter rufen den `map-camera-core.js`-
+Controller auf; Zoom- und Verschiebeereignisse während einer absichtlichen
+Kameraänderung werden nicht irrtümlich als Fingerbewegung erkannt.
+`animate:false` verhindert nachlaufende animierte Zoom-Ereignisse.
+
+GPS-Folgen und die kombinierte Übersicht bleiben eigene gemeinsame Modi.
+Die initiale Leaflet-Weltkarte und GPS-Zentrierung nutzen ihre dafür
+vorgesehenen bisherigen Initialisierungs-/Folgefunktionen. Keine Änderung
+der gespeicherten Reisen, Tickets, Orte oder Datenschutzeinstellungen.
+
+**Nächste strukturelle Etappe:** Tageskontext (Reiseabschnitt, Datum, Ziele)
+als ein einheitliches Datenobjekt ableiten, anschließend weitere Teile der
+großen `app.js` modularisieren und mobile Browser-End-to-End-Tests ergänzen.
