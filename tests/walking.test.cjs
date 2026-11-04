@@ -72,7 +72,10 @@ test('GPS centers automatically at launch and respects manual opt-out without st
  assert.match(code,/void autoStartGPS\(\)/);
  assert.match(code,/navigator\.permissions\.query\(\{name:'geolocation'\}\)/);
  assert.match(code,/livekarte-gps-autostart-v1/);
- assert.match(code,/if\(watch!==null\)\{setAutoGPSAllowed\(false\);stopGPS\(\);return;\}/);
+ assert.match(code,/\$\('gps-privacy-toggle'\)\.onclick = \(\) =>/);
+ assert.match(code,/setAutoGPSAllowed\(false\);\s*stopGPS\(\);/);
+ assert.match(code,/if\(!position\)\{say\('Standort wird ermittelt …'\);return;\}/);
+ assert.match(html,/id="gps-privacy-toggle"/);
  assert.match(code,/setAutoGPSAllowed\(true\);\s*startGPS\(false\)/);
  assert.match(code,/if \(following\) centerOnGPS/);
  assert.match(html,/Beim Öffnen startet GPS automatisch/);
