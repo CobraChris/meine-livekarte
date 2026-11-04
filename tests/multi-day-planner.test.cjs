@@ -121,6 +121,50 @@ test('GPS auto-start keeps far day-trip view while recording location; nearby go
  assert.match(source,/if\(automatic && firstFix && following && activePlanId==='town-kyoto' &&/);
  assert.match(source,/MD\.preferDistantDayView\(visiblePlaces\(\),activeCityDay,position,C\.distance\)/);
  assert.match(source,/if \(following\) centerOnGPS\(ll,Math\.max\(map\.getZoom\(\),15\)\)/);
- assert.match(source,/focusLabel=selected\?'Tagesziele zeigen'/);
+ assert.match(source,/focusLabel=selected\?'Standort und Tagesziele zeigen'/);
  assert.match(source,/\$\('fit'\)\.title=focusLabel/);
+});
+
+test('one-tap 📍 overview includes live GPS and all Nara day goals',()=>{
+ const vm=require('node:vm');
+ const app=read('app.js');
+ const begin=app.indexOf('  function fitDayGoalsAndPosition() {');
+ const end=app.indexOf('  // City dates are an extra filter',begin);
+ assert.ok(begin>=0&&end>begin);
+ const part=app.slice(begin,end);
+ const preset=C.presetPlaces('town-kyoto');
+ const nara=preset.filter(p=>p.schedule?.startsWith('04.11.'));
+ const hotel=preset.find(p=>p.category==='hotel');
+ assert.equal(nara.length,4);
+ const now=Date.now(), kyoto={lat:35.011,lng:135.765};
+ const calls=[];
+ const ctx={
+  mapFocusPlaces:()=>MD.mapFocusPlaces([hotel,...nara],'2026-11-04'),
+  filter:'all',watch:1,position:kyoto,positionUpdatedAt:now,
+  Date,Math,map:{
+    getSize:()=>({x:395,y:760}),
+    fitBounds:(coords,options)=>calls.push({coords,options})
+  }
+ };
+ vm.runInNewContext(part+'\nthis.fitTogether=fitDayGoalsAndPosition;',ctx);
+ assert.equal(ctx.fitTogether(),true);
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].coords.length,5,'four day goals and own position');
+ for(const goal of nara){
+   assert.ok(calls[0].coords.some(p=>p[0]===goal.lat&&p[1]===goal.lng),goal.name);
+ }
+ assert.ok(calls[0].coords.some(p=>p[0]===kyoto.lat&&p[1]===kyoto.lng));
+ assert.ok(calls[0].options.paddingTopLeft[1]>100,'leave room for mobile UI');
+ assert.ok(calls[0].options.paddingBottomRight[0]>=75,'avoid right control rail');
+ assert.ok(!calls[0].coords.some(p=>p[0]===hotel.lat&&p[1]===hotel.lng),
+   'hotel does not expand goals in daily excursion');
+ ctx.watch=null;ctx.position=null;calls.length=0;
+ assert.equal(ctx.fitTogether(),false);
+ assert.equal(calls[0].coords.length,4,'without GPS show day goals only');
+ ctx.watch=1;ctx.position=kyoto;ctx.positionUpdatedAt=now-120000;calls.length=0;
+ assert.equal(ctx.fitTogether(),false);
+ assert.equal(calls[0].coords.length,4,'stale GPS cannot masquerade as live');
+ assert.match(app,/\$\('fit'\)\.onclick = \(\) => \{\s*pauseGPSFollow\(\)/);
+ assert.match(app,/if\(!fitDayGoalsAndPosition\(\)\)/);
+ assert.match(app,/map\.on\('dragstart', pauseGPSFollow\)/);
 });
