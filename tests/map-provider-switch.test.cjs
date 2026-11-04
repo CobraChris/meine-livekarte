@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 
-function appFixture(){
+function appFixture(options={}){
   const els=Object.create(null),scripts=[],storage=new Map(),providerEvents=[];
   function element(id){
     const listeners=Object.create(null);
@@ -44,9 +44,12 @@ function appFixture(){
   vm.createContext(context);
   vm.runInContext(read('google-demo.js'),context);
   const module=context.module.exports;
-  const widget=module.init({map:leafletMap,places:()=>[
-    {name:'Nanzen-ji',lat:35.011,lng:135.795}
-  ]});
+  const fallback=[{name:'Nanzen-ji',lat:35.011,lng:135.795}];
+  const widget=module.init({
+    map:leafletMap,places:()=>options.places||fallback,
+    stops:typeof options.stops==='function'?options.stops:()=>options.stops||[],
+    placeKey:options.placeKey
+  });
   assert.ok(widget);
   return {get,scripts,storage,context,leafletMap,widget};
 }
@@ -131,4 +134,85 @@ test('Google mode hides Leaflet-only map controls but preserves day picker/fulls
   assert.match(app,/googleDemo\?\.syncFromOSM\(\)/);
   assert.match(app,/\$\('day-route-foot'\)\.onclick=\(\)=>\{\s*googleDemo\?\.forceOSM\(\)/);
   assert.doesNotMatch(read('sw.js'),/maps\.googleapis\.com/);
+});
+
+
+test('provider dock sits inside workspace but outside Google/Leaflet canvas and copyright',()=>{
+ const html=read('index.html'),css=read('style.css');
+ const workspace=html.indexOf('<section class="workspace"');
+ const switchAt=html.indexOf('id="map-provider-switch"');
+ const dayPlan=html.indexOf('id="day-planning"');
+ assert.ok(workspace>=0&&switchAt>workspace&&dayPlan>switchAt);
+ assert.match(html,/<div id="map-provider-switch"[\s\S]*?<\/div><\/section>\s*<section id="day-planning"/);
+ assert.match(css,/\.workspace\{padding-bottom:48px\}/);
+ assert.match(css,/\.workspace>\.google-demo-map\{bottom:48px\}/);
+ assert.match(css,/\.workspace>\.map-provider-switch\{[\s\S]*?bottom:0/);
+ assert.match(css,/#google-demo-control:not\(\[open\]\)\{display:none!important\}/);
+ assert.equal(html.match(/id="provider-settings"/g)?.length,1);
+ assert.equal(html.match(/id="google-demo-control"/g)?.length,1);
+});
+test('same local day-stop ordering produces numbered Google marker artwork',()=>{
+ const G=require('../google-demo.js');
+ const svg4=decodeURIComponent(G.markerSvg(4));
+ assert.match(svg4,/<svg /);
+ assert.match(svg4,/a4ecc9/i);
+ assert.match(svg4,/>4<\/text>/);
+ assert.doesNotMatch(decodeURIComponent(G.markerSvg(null)),/<text /);
+ const p1={id:'a',name:'First',lat:35.01,lng:135.79};
+ const p2={id:'b',name:'Second',lat:35.02,lng:135.80};
+ const p3={id:'c',name:'Third',lat:35.03,lng:135.81};
+ let order=[p3,p1,p2];
+ const t=appFixture({places:[p1,p2,p3],stops:()=>order,placeKey:p=>p.id});
+ const added=[];
+ const googleMap={
+  center:{lat:35.02,lng:135.78},zoom:14,
+  getCenter(){return {lat:()=>this.center.lat,lng:()=>this.center.lng};},
+  getZoom(){return this.zoom;},
+  setCenter(pos){this.center=pos;},setZoom(z){this.zoom=z;}
+ };
+ t.context.google={maps:{
+   Map:class{constructor(){return googleMap;}},
+   Marker:class{constructor(config){added.push(config);}addListener(){}setMap(){}},
+   InfoWindow:class{},
+   Size:class{constructor(width,height){this.width=width;this.height=height;}},
+   Point:class{constructor(x,y){this.x=x;this.y=y;}}
+ }};
+ t.get('google-demo-key').value='AIza'+'x'.repeat(35);
+ t.get('google-demo-start').click();
+ assert.deepEqual(added.map(x=>x.title),['2. First','3. Second','1. Third']);
+ assert.ok(added.every(x=>x.icon.url.startsWith('data:image/svg+xml')));
+ for(const config of added)assert.match(decodeURIComponent(config.icon.url),
+   new RegExp('>'+config.title[0]+'<\\/text>'));
+ order=[p2,p3,p1];
+ t.widget.refresh();
+ assert.deepEqual(added.slice(-3).map(x=>x.title),['3. First','1. Second','2. Third']);
+ const app=read('app.js');
+ assert.match(app,/stops:\(\)=>\{\s*const ordered=dailyStops\(\)/);
+ assert.match(app,/dayFootRoute\?\.key===dailyRouteKey\(ordered\)\?dayFootRoute\.stops:ordered/);
+});
+test('camera handoff preserves fractional zoom where Google map supports it',()=>{
+ const t=appFixture();
+ t.leafletMap.getZoom=()=>14.5;
+ let googleMapConfig=null;
+ const googleMap={
+  center:{lat:35.02,lng:135.78},zoom:14.5,
+  setCenter(x){this.center=x;},setZoom(z){this.zoom=z;},
+  getCenter(){return {lat:()=>this.center.lat,lng:()=>this.center.lng};},
+  getZoom(){return this.zoom;}
+ };
+ t.context.google={maps:{
+   Map:class{constructor(_el,opts){googleMapConfig=opts;return googleMap;}},
+   Marker:class{addListener(){}setMap(){}},
+   InfoWindow:class{}
+ }};
+ t.get('google-demo-key').value='AIza'+'x'.repeat(35);
+ t.get('google-demo-start').click();
+ assert.equal(googleMapConfig.zoom,14.5);
+ googleMap.center={lat:35.11,lng:135.91};
+ googleMap.zoom=15.25;
+ t.get('provider-osm').click();
+ assert.equal(t.leafletMap.setViews.at(-1).zoom,15.25);
+ assert.deepEqual(t.leafletMap.setViews.at(-1).center,[35.11,135.91]);
+ t.widget.syncFromOSM();
+ assert.equal(t.get('workspace').dataset.provider,'osm');
 });
