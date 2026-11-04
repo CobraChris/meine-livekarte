@@ -2254,3 +2254,19 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 
 /* Keep Leaflet status messages above the reserved provider strip. */
 .workspace #status{bottom:76px}
+
+
+/* Day-route legend: stays above the Google copyright and below the plan
+   controls; never catches map taps or covers the provider switch. */
+.google-demo-route-legend{
+  position:absolute;z-index:760;
+  left:9px;bottom:75px;
+  max-width:min(320px,calc(100% - 95px));
+  padding:6px 9px;
+  border:1px solid #5d8577;border-radius:8px;
+  background:#163039ed;color:#f6edce;
+  font-size:10px;line-height:1.3;font-weight:700;
+  box-shadow:0 3px 11px #0006;
+  pointer-events:none
+}
+.google-demo-route-legend[hidden]{display:none!important}
