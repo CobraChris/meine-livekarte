@@ -48,6 +48,7 @@ function appFixture(options={}){
   const widget=module.init({
     map:leafletMap,places:()=>options.places||fallback,
     stops:typeof options.stops==='function'?options.stops:()=>options.stops||[],
+    route:typeof options.route==='function'?options.route:()=>options.route||null,
     placeKey:options.placeKey
   });
   assert.ok(widget);
@@ -216,4 +217,72 @@ test('camera handoff preserves fractional zoom where Google map supports it',()=
  assert.deepEqual(Array.from(t.leafletMap.setViews.at(-1).center),[35.11,135.91]);
  t.widget.syncFromOSM();
  assert.equal(t.get('workspace').dataset.provider,'osm');
+});
+
+
+test('Google preview displays the same two+ day goals as honest dashed air-line segments',()=>{
+ const G=require('../google-demo.js');
+ assert.equal(G.normalizedDayRoute(null),null);
+ assert.equal(G.normalizedDayRoute({real:false,points:[[35,135]]}),null);
+ assert.equal(G.normalizedDayRoute({real:true,points:[[120,135],[36,135]]}),null);
+ assert.equal(G.normalizedDayRoute({real:true,points:[[35,135],[36,Infinity]]}),null);
+ const point1={name:'Start',lat:35.01,lng:135.79},
+   point2={name:'Ziel',lat:35.03,lng:135.82};
+ let current={real:false,points:[[point1.lat,point1.lng],[point2.lat,point2.lng]]};
+ const t=appFixture({places:[point1,point2],stops:[point1,point2],route:()=>current});
+ const lines=[];
+ const gm={setCenter(){},setZoom(){}};
+ t.context.google={maps:{
+   Map:class{constructor(){return gm;}},
+   Marker:class{addListener(){}setMap(){}},
+   InfoWindow:class{},
+   Polyline:class{
+     constructor(o){this.options=o;this.removed=false;lines.push(this);}
+     setMap(x){this.removed=x===null;}
+   }
+ }};
+ t.get('google-demo-key').value='AIza'+'x'.repeat(35);
+ t.get('google-demo-start').click();
+ assert.equal(lines.length,1);
+ assert.equal(lines[0].options.strokeOpacity,0);
+ assert.equal(lines[0].options.geodesic,false);
+ assert.equal(lines[0].options.clickable,false);
+ assert.equal(lines[0].options.icons[0].repeat,'20px');
+ assert.equal(lines[0].options.icons[0].icon.path,'M 0,-1 0,1');
+ assert.equal(lines[0].options.path.length,2);
+ assert.deepEqual(Array.from(lines[0].options.path,p=>[p.lat,p.lng]),current.points);
+ assert.equal(t.get('google-demo-route-legend').hidden,false);
+ assert.match(t.get('google-demo-route-legend').textContent,/Luftlinie, kein Fußweg/);
+ // A verified OSRM route replaces, rather than adds over, the preview.
+ current={real:true,points:[[35.01,135.79],[35.012,135.8],[35.03,135.82]]};
+ t.widget.refreshRoute();
+ assert.equal(lines.length,2);
+ assert.equal(lines[0].removed,true);
+ assert.equal(lines[1].options.strokeOpacity,.95);
+ assert.equal(lines[1].options.strokeWeight,5);
+ assert.equal(lines[1].options.icons,undefined);
+ assert.equal(lines[1].options.path.length,3);
+ assert.match(t.get('google-demo-route-legend').textContent,/Berechneter Fußweg/);
+ // When a different day is selected, the old route must vanish entirely.
+ current=null;
+ t.widget.refresh();
+ assert.equal(lines[1].removed,true);
+ assert.equal(t.get('google-demo-route-legend').hidden,true);
+ t.get('provider-osm').click();
+ assert.equal(t.get('google-demo-route-legend').hidden,true);
+ assert.equal(lines.length,2,'switching to OSM never creates an extra overlay');
+});
+test('no Google routing/search/billing requests are introduced for day line',()=>{
+ const source=read('google-demo.js'),app=read('app.js'),html=read('index.html'),css=read('style.css');
+ assert.match(source,/function normalizedDayRoute\(source\)/);
+ assert.match(source,/new google\.maps\.Polyline\(options\)/);
+ assert.match(source,/if\(!real\)options\.icons=/);
+ assert.match(source,/routeLegend\.hidden=false/);
+ assert.match(source,/function clearRoute\(\)/);
+ assert.match(app,/route:\(\)=>\{\s*const ordered=dailyStops\(\)/);
+ assert.match(app,/dayFootRoute\?\.key===dailyRouteKey\(ordered\)\?dayFootRoute:null/);
+ assert.match(app,/points:actual\?\.points\|\|ordered\.map\(p=>\[p\.lat,p\.lng\]\)/);
+ assert.match(html,/id="google-demo-route-legend"[^>]*hidden/);
+ assert.match(css,/\.google-demo-route-legend\[hidden\]\{display:none!important\}/);
+ assert.doesNotMatch(source,/fetch\(|computeRoutes|DirectionsService|PlacesService/);
 });

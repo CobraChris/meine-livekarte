@@ -141,6 +141,12 @@
     stops:()=>{
       const ordered=dailyStops();
       return dayFootRoute?.key===dailyRouteKey(ordered)?dayFootRoute.stops:ordered;
+    },
+    route:()=>{
+      const ordered=dailyStops();
+      if(ordered.length<2)return null;
+      const actual=dayFootRoute?.key===dailyRouteKey(ordered)?dayFootRoute:null;
+      return {real:!!actual,points:actual?.points||ordered.map(p=>[p.lat,p.lng])};
     }
   });
   let tileWarning = false;
