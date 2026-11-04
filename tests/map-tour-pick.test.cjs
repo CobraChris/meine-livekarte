@@ -30,7 +30,7 @@ test('single tap on each normal place marker toggles selection rather than openi
  assert.match(marker,/className:'pin'\+\(chosenIndex>=0\?' pin-tour-selected'/);
  assert.match(marker,/if\(mapTourPickMode\)\{/);
  assert.match(marker,/marker\.on\('click',\(\)=>\{pauseGPSFollow\(\);toggleTourPlace\(p,true\);\}\)/);
- assert.match(marker,/else\{\s*marker\.bindPopup\(popup/);
+ assert.match(marker,/else\{\s*bindMapPopup\(marker,popup\)/);
  assert.doesNotMatch(marker,/fetch\(|navigator\.geolocation|localStorage/);
  const pick=app.slice(app.indexOf('  function toggleTourPlace('),app.indexOf('  function renderTourBuilder('));
  assert.match(pick,/if\(at<0 && selected\.length>=6\)/);
@@ -81,7 +81,7 @@ test('normal map popups still support directions and also have a nearby tour but
  assert.match(popup,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);
  assert.match(popup,/popupMoreBody\.append\(route\(p\),popupEditButton\)/);
  assert.match(popup,/appendPlaceTiming\(popupMoreBody,p\)/);
- assert.match(app,/marker\.bindPopup\(popup,\{/);
+ assert.match(app,/bindMapPopup\(marker,popup\)/);
 });
 
 test('map picking is local-only and preserves previously deployed tour and offline shell',()=>{
