@@ -271,8 +271,7 @@
       const savedPoint={...mapPlacePoint};
       mapPlaceDialog.close();
       render();
-      setCameraMode('manual');refreshGPSFollowControl();
-      map.setView([savedPoint.lat,savedPoint.lng],Math.max(map.getZoom(),16));
+      focusMapPoint([savedPoint.lat,savedPoint.lng],Math.max(map.getZoom(),16));
       say('📌 '+bookmark.name+' gespeichert · '+currentPlan().name+'.');
     }catch(e){
       mapPlaceError.textContent=e.message||'Der Ort konnte nicht gespeichert werden.';
@@ -320,9 +319,7 @@
       radius:11,color:'#ffffff',weight:3,fillColor:'#6cddbb',
       fillOpacity:.94,interactive:false
     }).addTo(searchPreview);
-    pauseGPSFollow();
-    setCameraMode('manual');refreshGPSFollowControl();
-    map.setView([place.lat,place.lng],Math.max(15,Math.min(17,map.getZoom())));
+    focusMapPoint([place.lat,place.lng],Math.max(15,Math.min(17,map.getZoom())));
     $('place-search-picked-name').textContent=place.name;
     $('place-search-picked-info').textContent=place.label;
     const saved=place.saved===true;
@@ -729,8 +726,7 @@
           showWalkingDetails();
         }catch(e){stopWalkingNavigation();say(e.message);}
       }else{
-        setCameraMode('manual');refreshGPSFollowControl();
-        map.fitBounds(L.latLngBounds(result.points),{padding:[55,55],maxZoom:17});
+        fitMapArea(L.latLngBounds(result.points),{padding:[55,55],maxZoom:17});
       }
     }catch(e){
       if(generation!==walkRequestGeneration)return;
@@ -860,8 +856,7 @@
       const focus=node('button','Auf Karte');
       focus.type='button';
       focus.onclick=()=>{
-        setCameraMode('manual');refreshGPSFollowControl();
-        map.setView([item.lat,item.lng],17);
+        focusMapPoint([item.lat,item.lng],17);
         item._marker?.openPopup();
         $('map').scrollIntoView({behavior:'smooth',block:'start'});
       };
@@ -1488,9 +1483,8 @@
         ?'Reihenfolge anhand echter Fußwege optimiert und gespeichert. Gelbe Ziffern zeigen die neuen Stopps.'
         :'Rundgang auf der Karte eingezeichnet. Gelbe Ziffern zeigen die Stopps.';
       renderNextAction();
-      setCameraMode('manual');refreshGPSFollowControl();
       map.closePopup();
-      map.fitBounds(L.latLngBounds(result.points),{padding:[52,52],maxZoom:16});
+      fitMapArea(L.latLngBounds(result.points),{padding:[52,52],maxZoom:16});
       $('map').scrollIntoView({behavior:'smooth',block:'start'});
     }catch(error){
       if(generation!==tourRequestGeneration)return;
@@ -1811,8 +1805,7 @@
         distance:result.distance,duration:result.duration
       };
       renderDayRoutePreview();
-      pauseGPSFollow();
-      map.fitBounds(result.points,{paddingTopLeft:[38,170],
+      fitMapArea(result.points,{paddingTopLeft:[38,170],
         paddingBottomRight:[78,50],maxZoom:16});
       $('map').scrollIntoView({behavior:'smooth',block:'start'});
     }catch(error){
@@ -2013,7 +2006,7 @@
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
       title.append(node('div',C.categories[p.category], 'category'),node('h3',p.name)); top.append(node('span',symbols[p.category],'place-icon'), title);
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
-      show.onclick = () => { setCameraMode('manual'); map.setView([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
+      show.onclick = () => { focusMapPoint([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
       const distance = node('span',metric(p),'distance');
       const tourButton=node('button',tourIsSelected(p)?'✓ Tour':'＋ Tour','tour-pick');
       tourButton.type='button';
@@ -2532,7 +2525,7 @@
     // Never claim the user has moved indoors when only map/GPS data changed.
     pauseGPSFollow();
     if(map.getZoom()<16 || !map.getBounds().contains(nagoya))
-      map.setView(nagoya,16.75,{animate:false});
+      focusMapPoint(nagoya,16.75);
     renderNagoyaStep();
     if(!ngDialog.open) ngDialog.showModal();
   }
@@ -2592,8 +2585,7 @@
   function fitJourney() {
     if (!journey) return;
     const coords = journey.stops.flatMap(stop => [[stop.lat,stop.lng], ...stop.via]);
-    setCameraMode('manual');
-    if (coords.length) map.fitBounds(coords, {padding:[38,38],maxZoom:13});
+    if (coords.length) fitMapArea(coords,{padding:[38,38],maxZoom:13});
   }
   const ticketSymbols={unknown:'❗',missing:'⛔',booked:'◔',ready:'✓'};
   const kyotoRailInfographic=$('kyoto-rail-infographic');
@@ -3262,21 +3254,19 @@
       if (stop.name === 'Hakone-Yumoto') {
         const details = node('button','Umstieg im Detail anzeigen','transfer-details-button');
         details.onclick = () => {
-          setCameraMode('manual');
           transferDismissed = false;
           marker.closePopup();
-          map.setView([stop.lat,stop.lng],18.25);
+          focusMapPoint([stop.lat,stop.lng],18.25);
           updateStationTransfer();
         };
         popup.append(details);
       }
       item.addEventListener('click',()=>{
-        setCameraMode('manual');
         if (stop.name === 'Hakone-Yumoto') {
           transferDismissed=false;
-          map.setView([stop.lat,stop.lng],18.25);
+          focusMapPoint([stop.lat,stop.lng],18.25);
           updateStationTransfer();
-        } else { map.setView([stop.lat,stop.lng],14); marker.openPopup(); }
+        } else { focusMapPoint([stop.lat,stop.lng],14); marker.openPopup(); }
       });
     });
     info.append(node('p','Gestrichelte Linien verbinden Stationen nur schematisch – nicht entlang der tatsächlichen Gleise. Fahrpläne vor Abfahrt nochmals prüfen.','journey-warning'));
@@ -3337,7 +3327,7 @@
       else {
         const matching=mapFocusPlaces();
         if(matching.length) fit(matching);
-        else if(plan.center) map.setView(plan.center,plan.kind==='city'?14:8);
+        else if(plan.center) focusMapPoint(plan.center,plan.kind==='city'?14:8);
       }
     }
     if (options.save!==false) persistPlanState();
@@ -3413,7 +3403,7 @@
           say('Tagesziele angezeigt. GPS-Position noch nicht verfügbar – nach der Ortung erneut auf 📍 tippen.');
         }
       }else fit();
-    }else if(currentPlan().center) map.setView(currentPlan().center,currentPlan().kind==='city'?14:8);
+    }else if(currentPlan().center) focusMapPoint(currentPlan().center,currentPlan().kind==='city'?14:8);
   };
   function setCameraMode(mode){
     if(camera.transition(mode))refreshGPSFollowControl();
@@ -3422,6 +3412,15 @@
     const output=camera.move(mode,action);
     refreshGPSFollowControl();
     return output;
+  }
+  // The ONLY adapters for deliberate marker focus and non-GPS route bounds.
+  // All travel sections go through these functions; synchronous Leaflet moves
+  // avoid a delayed zoom event turning a programmatic fit into "manual".
+  function focusMapPoint(point,zoom,options={}){
+    return withCameraView('manual',()=>map.setView(point,zoom,{...options,animate:false}));
+  }
+  function fitMapArea(bounds,options={}){
+    return withCameraView('day-goals',()=>map.fitBounds(bounds,{...options,animate:false}));
   }
   function refreshGPSFollowControl() {
     // "Mein Standort" is a single control: enable GPS if off, or resume
