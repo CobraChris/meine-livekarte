@@ -172,6 +172,7 @@
   function setMapPlacePicking(value){
     mapPlacePicking=!!value;
     if(mapPlacePicking){
+      googleDemo?.forceOSM();
       pauseGPSFollow();
       if(mapTourPickMode)setMapTourPickMode(false);
       map.closePopup();
@@ -960,6 +961,7 @@
   }
   function setMapTourPickMode(enabled,focusMap=false){
     mapTourPickMode=!!enabled;
+    if(mapTourPickMode)googleDemo?.forceOSM();
     if(mapTourPickMode&&mapPlacePicking)setMapPlacePicking(false);
     if(mapTourPickMode)pauseGPSFollow();
     if(mapTourPickMode&&filter!=='all'){
@@ -1822,7 +1824,10 @@
       }
     }
   }
-  $('day-route-foot').onclick=()=>{void calculateDailyFootRoute();};
+  $('day-route-foot').onclick=()=>{
+    googleDemo?.forceOSM();
+    void calculateDailyFootRoute();
+  };
   function renderCityDays(){
     cityDaysPanel.hidden=activePlanId!=='town-kyoto';
     $('plan-day-summary').hidden=cityDaysPanel.hidden;
@@ -1892,6 +1897,7 @@
     render();
     const p=mapFocusPlaces();
     if(p.length)fit(p);
+    googleDemo?.syncFromOSM();
     say('Kyoto · '+MD.dayLabel(day)+' ausgewählt.');
   }
   function setDayAssignment(place,day){
@@ -3330,6 +3336,7 @@
         else if(plan.center) focusMapPoint(plan.center,plan.kind==='city'?14:8);
       }
     }
+    googleDemo?.syncFromOSM();
     if (options.save!==false) persistPlanState();
     if(options.url!==false) {
       const url=new URL(location.href);
