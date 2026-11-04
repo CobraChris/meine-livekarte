@@ -30,7 +30,7 @@ test('GPS first fix clears stale locating notice without losing precision access
  ctx.sayForTest('GPS aktiv · Genauigkeit ca. 9 m');
  assert.equal(nodes.status.hidden,true,'successful fix must dismiss stale toast immediately');
  assert.equal(nodes.status.textContent,'');
- assert.equal(nodes.gps.title,'GPS aktiv · Genauigkeit ca. 9 m');
+ assert.equal(nodes.gps.title,'Mein Standort · GPS aktiv · Genauigkeit ca. 9 m');
  assert.match(nodes.gps.attributes['aria-label'],/9 m/);
  assert.equal(timers.size,0,'stale timer must be cleared');
  ctx.sayForTest('Standort derzeit nicht verfügbar. Bitte erneut versuchen.');
