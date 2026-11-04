@@ -60,3 +60,24 @@ Die Aufteilung der großen `app.js` in Kartensteuerung, Tagesansicht,
 Reisestrecken und persistente Einstellungen ist als **mehrstufiger Refactor**
 zu betrachten. Die erste Stufe vereinheitlicht Pop-ups; sie bedeutet nicht,
 dass bereits die gesamte Anwendung vollständig modularisiert wäre.
+
+## Kartensteuerung – Architekturbaustein 2
+
+`map-camera-core.js` verwaltet vier mutually exclusive Kamera-Modi:
+`manual` (Karte vom Nutzer verschoben),
+`gps-follow` (Standort immer zentrieren),
+`day-goals` (Ziele des Tages im Fokus) und
+`overview` (Standort und Ziele zusammen).
+Die Kartenansicht ist flüchtiger UI-Zustand und enthält keinerlei gespeicherte
+GPS-Koordinaten. `app.js` enthält nur noch eine gemeinsame Adapterstelle
+`setCameraMode`/`withCameraView` und ruft keine eigenen booleschen
+Folge-Modi pro Reiseabschnitt auf. Programmatische `fitBounds`-/
+`setView`-Aktionen sind als solche gekennzeichnet, sodass sie nicht
+versehentlich manuelles Verschieben auslösen. Manuelle Drag-/Zoom-Gesten
+verlassen jeden aktiven Kamera-Modus. GPS-Updates bewegen die Karte nur im
+`gps-follow`-Modus.
+
+**Noch zu erledigen:** Die verbleibenden alten `map.setView`-/
+`map.fitBounds`-Aufrufe in Spezialabläufen (Bahnhöfe, Import, Tour)
+inkrementell durch dieselbe Kamera-API ersetzen. Nicht stillschweigend
+davon ausgehen, dass `app.js` insgesamt bereits modular ist.
