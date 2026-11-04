@@ -73,3 +73,56 @@ test('the shared camera governs view changes across the app, not destination nam
  const camera=require('../map-camera-core.js');
  assert.deepEqual(camera.MODES,['manual','gps-follow','day-goals','overview']);
 });
+
+test('all specialised travel views use the same programmatic camera adapters',()=>{
+ const app=read('app.js');
+ assert.match(app,/function focusMapPoint\(point,zoom,options=\{\}\)\{/);
+ assert.match(app,/function fitMapArea\(bounds,options=\{\}\)\{/);
+ assert.match(app,/withCameraView\('manual',\(\)=>map\.setView\(point,zoom,\{\.\.\.options,animate:false\}\)\)/);
+ assert.match(app,/withCameraView\('day-goals',\(\)=>map\.fitBounds\(bounds,\{\.\.\.options,animate:false\}\)\)/);
+ for(const pattern of [
+   /focusMapPoint\(\[savedPoint\.lat,savedPoint\.lng\]/,
+   /focusMapPoint\(\[place\.lat,place\.lng\]/,
+   /focusMapPoint\(\[item\.lat,item\.lng\],17\)/,
+   /focusMapPoint\(nagoya,16\.75\)/,
+   /focusMapPoint\(\[stop\.lat,stop\.lng\],18\.25\)/,
+   /focusMapPoint\(\[stop\.lat,stop\.lng\],14\)/,
+   /fitMapArea\(L\.latLngBounds\(result\.points\),\{padding:\[55,55\],maxZoom:17\}\)/,
+   /fitMapArea\(L\.latLngBounds\(result\.points\),\{padding:\[52,52\],maxZoom:16\}\)/,
+   /fitMapArea\(coords,\{padding:\[38,38\],maxZoom:13\}\)/
+ ])assert.match(app,pattern);
+ const direct=app.split('\n').filter(line=>/map\.(?:setView|fitBounds)\(/.test(line));
+ assert.equal(direct.length,5,'view changes should only remain in initialization, shared fit actions and adapters');
+ assert.ok(direct.every(line=>
+   /\.setView\(\[25, 0\], 2\)/.test(line)||
+   /withCameraView\(/.test(line)||
+   /return withCameraView\(/.test(line)||
+   /^\s*visible\.map\(/.test(line)
+ ),'no view changes bypass central mode controller');
+});
+test('station, search, route and tour focus never accidentally enable GPS following',()=>{
+ const vm=require('node:vm');
+ const app=read('app.js');
+ const start=app.indexOf('  function focusMapPoint(point,zoom,options={})');
+ const end=app.indexOf('  function refreshGPSFollowControl()',start);
+ assert.ok(start>0&&end>start);
+ const fragment=app.slice(start,end);
+ const Camera=require('../map-camera-core.js');
+ const camera=Camera.create('gps-follow'),calls=[];
+ const map={
+   setView:(...args)=>{calls.push(['point',...args]);return 'point-ok';},
+   fitBounds:(...args)=>{calls.push(['bounds',...args]);return 'bounds-ok';}
+ };
+ const ctx={camera,map,
+   withCameraView:(mode,action)=>camera.move(mode,action)};
+ vm.runInNewContext(fragment+'\nthis.focusMapPoint=focusMapPoint;this.fitMapArea=fitMapArea;',ctx);
+ assert.equal(ctx.focusMapPoint([35,135],16),'point-ok');
+ assert.equal(camera.mode,'manual');
+ assert.equal(calls[0][3].animate,false);
+ camera.transition('gps-follow');
+ assert.equal(ctx.fitMapArea([[34.7,135.8],[35.0,135.7]],{maxZoom:16}),'bounds-ok');
+ assert.equal(camera.mode,'day-goals');
+ assert.equal(calls[1][2].maxZoom,16);
+ assert.equal(calls[1][2].animate,false);
+ assert.equal(camera.isProgrammatic(),false);
+});
