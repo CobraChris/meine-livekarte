@@ -57,7 +57,7 @@ test('the shared camera governs view changes across the app, not destination nam
  assert.match(app,/const camera=window\.LivekarteMapCamera\.create\(\)/);
  assert.match(app,/function setCameraMode\(mode\)\{/);
  assert.match(app,/function withCameraView\(mode,action\)\{/);
- assert.match(app,/function fit\(items = mapFocusPlaces\(\)\)\{/);
+ assert.match(app,/function fit\(items = mapFocusPlaces\(\)\)\s*\{/);
  assert.match(app,/withCameraView\('day-goals',\(\)=>map\.fitBounds\(/);
  assert.match(app,/withCameraView\('overview',\(\)=>map\.fitBounds\(/);
  assert.match(app,/withCameraView\('gps-follow',\(\)=>map\.setView\(/);
