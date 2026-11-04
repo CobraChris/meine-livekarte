@@ -36,6 +36,7 @@ assets = [
     ("src", "walking-core.js"),
     ("src", "day-plan-core.js"),
     ("src", "multi-day-core.js"),
+    ("src", "day-context-core.js"),
     ("src", "route-discovery.js"),
     ("src", "place-search-core.js"),
     ("src", "next-step-core.js"),
