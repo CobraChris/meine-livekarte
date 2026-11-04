@@ -2251,3 +2251,6 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 }
 /* The gear is the only entrance to the key panel: no redundant summary row. */
 #google-demo-control:not([open]){display:none!important}
+
+/* Keep Leaflet status messages above the reserved provider strip. */
+.workspace #status{bottom:76px}
