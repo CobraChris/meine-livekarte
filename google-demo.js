@@ -39,11 +39,27 @@
     }
     return {path,real:source.real===true};
   }
+  // Google Maps URLs are free and need no Places API or billing account.
+  // Without a trusted Place ID, a name search may show several matches;
+  // the user can choose the correct listing and read its current reviews.
+  function placeDetailsUrl(place){
+    const name=typeof place?.name==='string'?place.name.trim().slice(0,160):'';
+    if(!name)return null;
+    const address=typeof place.address==='string'?place.address.trim().slice(0,180):'';
+    const query=address?name+', '+address:name;
+    const params=new URLSearchParams({api:'1',query});
+    const placeId=typeof place.googlePlaceId==='string'
+      ?place.googlePlaceId.trim():'';
+    if(/^[A-Za-z0-9_-]{15,160}$/.test(placeId))
+      params.set('query_place_id',placeId);
+    return 'https://www.google.com/maps/search/?'+params.toString();
+  }
   let instance=null;
   function init(options){
     if(instance)return instance;
     const {map,places,stops=()=>[],route=()=>null,
-      goals=()=>[],fitOSM=()=>{},placeKey}=options;
+      goals=()=>[],fitOSM=()=>{},onWalk=()=>{},onToggleTour=()=>{},
+      tourSelected=()=>false,placeKey}=options;
     const $=id=>document.getElementById(id);
     const panel=$('google-demo-control'), googleEl=$('google-demo-map'),
       routeLegend=$('google-demo-route-legend'),
@@ -138,6 +154,7 @@
     }
     function refreshPins(){
       if(!googleMap||!root.google?.maps)return;
+      if(info?.close)info.close();
       for(const marker of markers)marker.setMap(null);
       markers=[];
       const all=places().slice(0,250);
@@ -163,9 +180,30 @@
           const node=document.createElement('div');
           const title=document.createElement('strong');
           title.textContent=number?number+'. '+place.name:place.name;
+          node.className='google-place-popup';
           const note=document.createElement('p');
-          note.textContent='Für Tagesplanung und Fußweg bitte auf OpenStreetMap wechseln.';
-          node.append(title,note);
+          note.textContent='Die Google-Demo zeigt hier noch keine Sterne oder Rezensionen.';
+          const actions=document.createElement('div');
+          actions.className='google-place-actions';
+          const details=document.createElement('a');
+          details.href=placeDetailsUrl(place);
+          details.target='_blank';
+          details.rel='noopener noreferrer';
+          details.textContent=place.category==='restaurant'
+            ?'⭐ Bewertungen in Google Maps':'↗ Details in Google Maps';
+          details.setAttribute('aria-label','Google Maps zu '+place.name+' öffnen');
+          actions.append(details);
+          const walk=document.createElement('button');
+          walk.type='button';
+          walk.textContent='🚶 Fußweg (OSM)';
+          walk.addEventListener('click',()=>onWalk(place));
+          actions.append(walk);
+          const tour=document.createElement('button');
+          tour.type='button';
+          tour.textContent=tourSelected(place)?'✓ In Tour':'＋ In Tour';
+          tour.addEventListener('click',()=>onToggleTour(place));
+          actions.append(tour);
+          node.append(title,note,actions);
           info.setContent(node);
           info.open({map:googleMap,anchor:marker});
         });
@@ -319,7 +357,7 @@
     };
     return instance;
   }
-  const api={init,keyLooksValid,scriptUrl,markerSvg,normalizedDayRoute};
+  const api={init,keyLooksValid,scriptUrl,markerSvg,normalizedDayRoute,placeDetailsUrl};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LivekarteGoogleDemo=api;
 })(globalThis);

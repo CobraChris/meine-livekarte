@@ -9,14 +9,14 @@ function appFixture(options={}){
     const listeners=Object.create(null);
     const el={
       id,hidden:false,disabled:false,open:false,value:'',textContent:'',
-      dataset:{},attributes:{},focused:false,scrolled:false,events:listeners,
+      dataset:{},attributes:{},children:[],focused:false,scrolled:false,events:listeners,
       addEventListener(name,fn){(listeners[name]||=[]).push(fn);},
       setAttribute(name,value){this.attributes[name]=value;},
       focus(){this.focused=true;},
       scrollIntoView(){this.scrolled=true;},
       closest(selector){return selector==='.workspace'?get('workspace'):null;},
       click(){for(const fn of listeners.click||[])fn();},
-      setMap(){},addListener(){},append(){},
+      setMap(){},addListener(){},append(...nodes){this.children.push(...nodes);},
     };
     return el;
   }
@@ -51,6 +51,9 @@ function appFixture(options={}){
     route:typeof options.route==='function'?options.route:()=>options.route||null,
     goals:typeof options.goals==='function'?options.goals:()=>options.goals||[],
     fitOSM:options.fitOSM||(()=>{}),
+    onWalk:options.onWalk||(()=>{}),
+    onToggleTour:options.onToggleTour||(()=>{}),
+    tourSelected:options.tourSelected||(()=>false),
     placeKey:options.placeKey
   });
   assert.ok(widget);
@@ -357,4 +360,90 @@ test('Google chip stays tiny until tapped and route contrast does not mimic foot
  assert.match(g,/strokeColor:'#203F3C'/);
  assert.match(g,/strokeColor:'#FFC13E'/);
  assert.doesNotMatch(g,/DirectionsService|PlacesService|fetch\(/);
+});
+
+
+test('official Google Maps URL opens location details without any billable Places API',()=>{
+ const G=require('../google-demo.js');
+ const restaurant={name:'Hida Beef Omakase',address:'Takayama, Gifu, Japan',
+  lat:36.14,lng:137.25,category:'restaurant'};
+ const u=new URL(G.placeDetailsUrl(restaurant));
+ assert.equal(u.origin,'https://www.google.com');
+ assert.equal(u.pathname,'/maps/search/');
+ assert.equal(u.searchParams.get('api'),'1');
+ assert.equal(u.searchParams.get('query'),'Hida Beef Omakase, Takayama, Gifu, Japan');
+ assert.equal(u.searchParams.get('key'),null);
+ assert.equal(u.searchParams.get('query_place_id'),null);
+ const id='ChIJ'+'A'.repeat(25);
+ const withPlace=new URL(G.placeDetailsUrl({...restaurant,googlePlaceId:id}));
+ assert.equal(withPlace.searchParams.get('query_place_id'),id);
+ assert.equal(G.placeDetailsUrl({name:''}),null);
+ const hostile=new URL(G.placeDetailsUrl({name:'Sushi & Friends?x=1',
+   address:'Tokyo&key=NEVER'}));
+ assert.equal(hostile.searchParams.get('query'),'Sushi & Friends?x=1, Tokyo&key=NEVER');
+ assert.equal(hostile.searchParams.get('key'),null);
+ const source=read('google-demo.js');
+ assert.doesNotMatch(source,/new google\.maps\.places\.|PlacesService|places\.googleapis|fetch\(/);
+});
+test('tapping Google restaurant marker offers real Google reviews link and OSM actions',()=>{
+ const point={name:'Restaurant Nanzen',address:'Kyoto Japan',lat:35.01,lng:135.81,
+   category:'restaurant'};
+ const walks=[],tours=[],created=[];
+ const t=appFixture({places:[point],onWalk:p=>walks.push(p),
+   onToggleTour:p=>tours.push(p),tourSelected:()=>true});
+ let latestInfo;
+ t.context.google={maps:{
+   Map:class{setCenter(){}setZoom(){}},
+   Marker:class{
+     constructor(o){this.options=o;this.callbacks={};created.push(this);}
+     addListener(name,fn){this.callbacks[name]=fn;}
+     setMap(){}
+   },
+   InfoWindow:class{
+     constructor(){latestInfo=this;}
+     setContent(content){this.content=content;}
+     open(){this.opened=true;}
+     close(){this.closed=true;}
+   }
+ }};
+ t.get('google-demo-key').value='AIza'+'x'.repeat(35);
+ t.get('google-demo-start').click();
+ assert.equal(created.length,1);
+ created[0].callbacks.click();
+ assert.equal(latestInfo.opened,true);
+ const [title,note,actions]=latestInfo.content.children;
+ assert.equal(title.textContent,'Restaurant Nanzen');
+ assert.match(note.textContent,/noch keine Sterne/);
+ const [reviews,walk,tour]=actions.children;
+ assert.equal(reviews.textContent,'⭐ Bewertungen in Google Maps');
+ assert.equal(reviews.target,'_blank');
+ assert.equal(reviews.rel,'noopener noreferrer');
+ const maps=new URL(reviews.href);
+ assert.equal(maps.origin,'https://www.google.com');
+ assert.equal(maps.searchParams.get('query'),'Restaurant Nanzen, Kyoto Japan');
+ assert.equal(maps.searchParams.get('api'),'1');
+ assert.equal(tour.textContent,'✓ In Tour');
+ walk.click();tour.click();
+ assert.deepEqual(walks,[point]);
+ assert.deepEqual(tours,[point]);
+ assert.equal(t.scripts.length,0,'existing provider SDK requires no additional call');
+ t.widget.refresh();
+ assert.equal(latestInfo.closed,true,'stale popups close after rendering new markers');
+});
+test('non-restaurant marker is correctly labelled as external place details',()=>{
+ const place={name:'Nara Park',lat:34.68,lng:135.84,category:'sight'};
+ const t=appFixture({places:[place]});
+ const created=[];
+ let win;
+ t.context.google={maps:{
+   Map:class{},
+   Marker:class{constructor(){created.push(this);}addListener(_,fn){this.click=fn;}setMap(){}},
+   InfoWindow:class{constructor(){win=this;}setContent(x){this.content=x;}open(){}}
+ }};
+ t.get('google-demo-key').value='AIza'+'x'.repeat(35);
+ t.get('google-demo-start').click();
+ created[0].click();
+ const external=win.content.children[2].children[0];
+ assert.match(external.textContent,/Details in Google Maps/);
+ assert.doesNotMatch(external.textContent,/Bewertungen/);
 });

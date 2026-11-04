@@ -150,7 +150,10 @@
     },
     // Same day-goal set on both providers; no hotel stretching a Nara day trip.
     goals:()=>dailyStops(),
-    fitOSM:()=>fit(mapFocusPlaces())
+    fitOSM:()=>fit(mapFocusPlaces()),
+    onWalk:place=>{void showWalkingRoute(place);},
+    onToggleTour:place=>toggleTourPlace(place,true),
+    tourSelected:place=>tourIsSelected(place)
   });
   let tileWarning = false;
   tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
