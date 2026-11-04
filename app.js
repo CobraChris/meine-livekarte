@@ -137,6 +137,8 @@
   const pins = L.layerGroup().addTo(map);
   const walkingLayers=L.layerGroup().addTo(map);
   const tourLayers=L.layerGroup().addTo(map);
+  const dayRouteLayers=L.layerGroup().addTo(map);
+  let dayFootRoute=null,dayFootController=null,dayFootGeneration=0;
   const discoveryLayers=L.layerGroup().addTo(map);
   const mapPlacePreview=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
@@ -1705,6 +1707,120 @@
     focusKyotoOverviewDay(index);
     kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
   };
+  // The first planned stop is kept fixed (e.g. Nara Park after the train).
+  // Optimize the rest by straight-line distances on this device. Never pretend
+  // the dashed line is a walking street or a railway connection from Kyoto.
+  function dailyStops(){
+    if(activePlanId!=='town-kyoto'||!MD.days('town-kyoto').includes(activeCityDay))return [];
+    const goals=mapFocusPlaces().filter(p=>p.category!=='hotel');
+    return MD.optimizeDayOrder(goals,C.distance);
+  }
+  function dailyRouteKey(stops){
+    return activeCityDay+'|'+stops.map(C.placePlanKey).join('|');
+  }
+  function renderDayRoutePreview(){
+    const panel=$('day-route-preview'),ordered=dailyStops();
+    dayRouteLayers.clearLayers();
+    panel.hidden=ordered.length<2;
+    if(panel.hidden)return;
+    const key=dailyRouteKey(ordered);
+    const actual=dayFootRoute?.key===key?dayFootRoute:null;
+    const stops=actual?.stops||ordered;
+    const path=actual?.points||stops.map(p=>[p.lat,p.lng]);
+    L.polyline(path,{
+      color:actual?'#ffda79':'#ffcf78',weight:actual?5:3,
+      opacity:actual?.95:.85,dashArray:actual?null:'5 10',
+      lineCap:'round',lineJoin:'round',interactive:false
+    }).addTo(dayRouteLayers);
+    stops.forEach((p,i)=>{
+      // Numbered labels are offset beside the existing tappable place pins.
+      L.marker([p.lat,p.lng],{
+        interactive:false,zIndexOffset:1100,
+        icon:L.divIcon({
+          className:'day-route-label',
+          html:'<span class="day-route-number">'+(i+1)+'</span>',
+          iconSize:[25,25],iconAnchor:[-13,39]
+        })
+      }).addTo(dayRouteLayers);
+    });
+    const list=$('day-route-stops');
+    list.replaceChildren();
+    stops.forEach((place,i)=>{
+      const li=node('li');
+      li.append(node('span',String(i+1),'day-route-index'),node('span',place.name));
+      list.append(li);
+    });
+    $('day-route-heading').textContent=actual
+      ?'🚶 Fußweg · optimierte Reihenfolge'
+      :'📍 Vorgeschlagene Reihenfolge';
+    $('day-route-status').textContent=actual
+      ?W.distanceText(actual.distance)+' · '+W.durationText(actual.duration)+
+        ' zu Fuß. Gelbe Linie = berechnete Wege, Anreise mit Bahn separat.'
+      :'Gestrichelte Linie = Luftlinie, kein begehbarer Weg. Reihenfolge nach '+
+        'Entfernung optimiert; Besuchszeiten prüfen. Anreise mit Bahn separat.';
+    $('day-route-foot').textContent=actual?'↻ Fußroute erneut berechnen':
+      '🚶 Echte Fußroute berechnen';
+  }
+  async function calculateDailyFootRoute(){
+    if(dayFootController)return;
+    const ordered=dailyStops();
+    if(ordered.length<3||!W){
+      $('day-route-status').textContent='Für die Fußweg-Optimierung werden mindestens drei Ziele benötigt.';
+      return;
+    }
+    const from=ordered[0],remaining=ordered.slice(1),key=dailyRouteKey(ordered);
+    let url;
+    try{url=W.optimizedTourRequestUrl(from,remaining);}
+    catch(error){$('day-route-status').textContent=error.message;return;}
+    if(Date.now()-Math.max(lastTourRequestedAt,lastWalkingRequestAt)<1200){
+      $('day-route-status').textContent='Bitte kurz warten und die Berechnung erneut starten.';
+      return;
+    }
+    lastTourRequestedAt=Date.now();
+    const controller=new AbortController();
+    dayFootController=controller;
+    const generation=++dayFootGeneration;
+    $('day-route-foot').disabled=true;
+    $('day-route-status').textContent='Echte Fußwege und Stoppreihenfolge werden berechnet …';
+    let timeout;
+    try{
+      timeout=setTimeout(()=>controller.abort(),18000);
+      const response=await fetch(url,{
+        method:'GET',mode:'cors',credentials:'omit',referrerPolicy:'origin',
+        headers:{Accept:'application/json'},signal:controller.signal
+      });
+      if(!response.ok)throw new Error(response.status===429
+        ?'Routingdienst ausgelastet. Bitte später erneut versuchen.'
+        :'Routingdienst nicht erreichbar (HTTP '+response.status+').');
+      const raw=await response.text();
+      if(raw.length>2500000)throw new Error('Die Fußwegantwort ist ungewöhnlich groß.');
+      const result=W.parseOptimizedTour(JSON.parse(raw),from,remaining);
+      if(generation!==dayFootGeneration||dailyRouteKey(dailyStops())!==key)return;
+      dayFootRoute={
+        key,points:result.points,
+        stops:[from,...result.orderedStops],
+        distance:result.distance,duration:result.duration
+      };
+      renderDayRoutePreview();
+      pauseGPSFollow();
+      map.fitBounds(result.points,{paddingTopLeft:[38,170],
+        paddingBottomRight:[78,50],maxZoom:16});
+      $('map').scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(error){
+      if(generation!==dayFootGeneration)return;
+      $('day-route-status').textContent=controller.signal.aborted
+        ?'Routingdienst hat zu lange gebraucht. Die Luftlinienvorschau bleibt sichtbar.'
+        :error instanceof SyntaxError?'Ungültige Routenantwort. Bitte später erneut versuchen.'
+        :error.message||'Fußroute gerade nicht verfügbar.';
+    }finally{
+      clearTimeout(timeout);
+      if(generation===dayFootGeneration){
+        dayFootController=null;
+        $('day-route-foot').disabled=false;
+      }
+    }
+  }
+  $('day-route-foot').onclick=()=>{void calculateDailyFootRoute();};
   function renderCityDays(){
     cityDaysPanel.hidden=activePlanId!=='town-kyoto';
     $('plan-day-summary').hidden=cityDaysPanel.hidden;
@@ -1761,6 +1877,10 @@
   }
   function selectCityDay(day){
     if(!MD.allowed('town-kyoto',day)||day===activeCityDay)return;
+    ++dayFootGeneration;
+    if(dayFootController)dayFootController.abort();
+    dayFootController=null;dayFootRoute=null;
+    $('day-route-foot').disabled=false;
     clearTourRoute();
     if(mapTourPickMode)mapTourPickMode=false;
     activeCityDay=day;
@@ -1983,6 +2103,7 @@
       distanceDisplays.push({ place:p, inPopup, inList:distance });
     });
     if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
+    renderDayRoutePreview();
     renderTourBuilder();
     renderNextAction();
   }
