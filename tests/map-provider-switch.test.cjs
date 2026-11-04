@@ -146,6 +146,7 @@ test('provider dock sits inside workspace but outside Google/Leaflet canvas and 
  assert.match(html,/<div id="map-provider-switch"[\s\S]*?<\/div><\/section>\s*<section id="day-planning"/);
  assert.match(css,/\.workspace\{padding-bottom:48px\}/);
  assert.match(css,/\.workspace>\.google-demo-map\{bottom:48px\}/);
+ assert.match(css,/\.workspace #status\{bottom:76px\}/);
  assert.match(css,/\.workspace>\.map-provider-switch\{[\s\S]*?bottom:0/);
  assert.match(css,/#google-demo-control:not\(\[open\]\)\{display:none!important\}/);
  assert.equal(html.match(/id="provider-settings"/g)?.length,1);
