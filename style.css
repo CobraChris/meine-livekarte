@@ -2270,3 +2270,41 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   pointer-events:none
 }
 .google-demo-route-legend[hidden]{display:none!important}
+
+
+/* Compact, accessible Google day-route info: a small i button at rest.
+   It opens on tap and remains entirely separate from map interaction. */
+.google-demo-route-legend{
+  left:10px;bottom:76px;
+  display:block;width:34px;min-height:34px;
+  max-width:min(300px,calc(100% - 92px));
+  padding:0;border-radius:50%;
+  background:#1c3b3deb;border:1px solid #9ab8a7;
+  box-shadow:0 3px 10px #0007;
+  pointer-events:auto;box-sizing:border-box;
+}
+.google-demo-route-legend>summary{
+  display:grid;place-items:center;
+  width:32px;height:32px;min-height:32px;
+  border-radius:50%;cursor:pointer;
+  list-style:none;
+  font-size:16px;font-weight:800;
+  color:#ffe39b;
+}
+.google-demo-route-legend>summary::-webkit-details-marker{display:none}
+.google-demo-route-legend>summary:focus-visible{
+  outline:3px solid #ffda79;outline-offset:3px;
+}
+.google-demo-route-legend[open]{
+  width:max-content;min-width:180px;max-width:min(310px,calc(100% - 92px));
+  border-radius:11px;padding:3px;
+}
+.google-demo-route-legend[open]>summary{
+  width:31px;height:31px;float:left;
+}
+.google-demo-route-legend>span{
+  display:none;color:#fff1ce;
+  padding:5px 8px 6px 0;font-size:11px;
+  line-height:1.35;font-weight:650;
+}
+.google-demo-route-legend[open]>span{display:block}
