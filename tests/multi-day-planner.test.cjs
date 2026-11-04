@@ -128,7 +128,7 @@ test('GPS auto-start keeps far day-trip view while recording location; nearby go
 test('one-tap 📍 overview includes live GPS and all Nara day goals',()=>{
  const vm=require('node:vm');
  const app=read('app.js');
- const begin=app.indexOf('  function fitDayGoalsAndPosition() {');
+ const begin=app.indexOf('  function mapOverviewPadding() {');
  const end=app.indexOf('  // City dates are an extra filter',begin);
  assert.ok(begin>=0&&end>begin);
  const part=app.slice(begin,end);
@@ -138,7 +138,19 @@ test('one-tap 📍 overview includes live GPS and all Nara day goals',()=>{
  assert.equal(nara.length,4);
  const now=Date.now(), kyoto={lat:35.011,lng:135.765};
  const calls=[];
+ const mapRect={left:0,right:395,top:55,bottom:815,width:395,height:760};
+ const rect=(left,top,right,bottom)=>({
+   left,top,right,bottom,width:right-left,height:bottom-top
+ });
+ const overlays={
+   '.plan-picker':{hidden:false,getBoundingClientRect:()=>rect(15,70,365,166)},
+   '#place-search':{hidden:false,getBoundingClientRect:()=>rect(15,175,365,269)},
+   '#tour-map-tools':{hidden:false,getBoundingClientRect:()=>rect(15,283,315,370)},
+   '.map-actions':{hidden:false,getBoundingClientRect:()=>rect(333,280,385,430)}
+ };
  const ctx={
+  $:id=>id==='map'?{getBoundingClientRect:()=>mapRect}:null,
+  document:{querySelector:selector=>overlays[selector]||null},
   mapFocusPlaces:()=>MD.mapFocusPlaces([hotel,...nara],'2026-11-04'),
   filter:'all',watch:1,position:kyoto,positionUpdatedAt:now,
   Date,Math,map:{
@@ -154,8 +166,9 @@ test('one-tap 📍 overview includes live GPS and all Nara day goals',()=>{
    assert.ok(calls[0].coords.some(p=>p[0]===goal.lat&&p[1]===goal.lng),goal.name);
  }
  assert.ok(calls[0].coords.some(p=>p[0]===kyoto.lat&&p[1]===kyoto.lng));
- assert.ok(calls[0].options.paddingTopLeft[1]>100,'leave room for mobile UI');
- assert.ok(calls[0].options.paddingBottomRight[0]>=75,'avoid right control rail');
+ assert.equal(calls[0].options.paddingTopLeft[1],357,
+   'topmost location must clear 370px overlay bottom relative to map at 55px plus 42px');
+ assert.ok(calls[0].options.paddingBottomRight[0]>=84,'avoid right control rail');
  assert.ok(!calls[0].coords.some(p=>p[0]===hotel.lat&&p[1]===hotel.lng),
    'hotel does not expand goals in daily excursion');
  ctx.watch=null;ctx.position=null;calls.length=0;
@@ -167,4 +180,40 @@ test('one-tap 📍 overview includes live GPS and all Nara day goals',()=>{
  assert.match(app,/\$\('fit'\)\.onclick = \(\) => \{\s*pauseGPSFollow\(\)/);
  assert.match(app,/if\(!fitDayGoalsAndPosition\(\)\)/);
  assert.match(app,/map\.on\('dragstart', pauseGPSFollow\)/);
+});
+
+test('combined map overview adapts to tall controls, short viewports and hidden overlays',()=>{
+ const vm=require('node:vm'),app=read('app.js');
+ const begin=app.indexOf('  function mapOverviewPadding() {');
+ const end=app.indexOf('  // The pin is a combined day-trip overview',begin);
+ assert.ok(begin>=0&&end>begin);
+ const overlays={};
+ const rect=(left,top,right,bottom)=>({
+   left,top,right,bottom,width:right-left,height:bottom-top
+ });
+ const frame=rect(0,0,390,940);
+ let size={x:390,y:940};
+ const ctx={
+  $:id=>id==='map'?{getBoundingClientRect:()=>frame}:null,
+  document:{querySelector:s=>overlays[s]||null},
+  map:{getSize:()=>size},Math
+ };
+ vm.runInNewContext(app.slice(begin,end)+'\nthis.paddingForTest=mapOverviewPadding;',ctx);
+ overlays['.plan-picker']={hidden:false,getBoundingClientRect:()=>rect(10,16,335,116)};
+ overlays['#place-search']={hidden:false,getBoundingClientRect:()=>rect(10,120,335,221)};
+ overlays['#tour-map-tools']={hidden:false,getBoundingClientRect:()=>rect(10,232,280,312)};
+ overlays['.map-actions']={hidden:false,getBoundingClientRect:()=>rect(318,270,382,480)};
+ let result=ctx.paddingForTest();
+ assert.equal(result.paddingTopLeft[1],354,'marker clears real toolbar bottom plus GPS icon margin');
+ assert.ok(result.paddingBottomRight[0]>=94,'side rail keeps eastern marker clear');
+ overlays['#tour-map-tools'].getBoundingClientRect=()=>rect(10,232,280,390);
+ result=ctx.paddingForTest();
+ assert.equal(result.paddingTopLeft[1],432,'expanded top tools get extra clearance');
+ overlays['#tour-map-tools'].hidden=true;
+ result=ctx.paddingForTest();
+ assert.equal(result.paddingTopLeft[1],263,'hidden controls do not reserve space');
+ size={x:390,y:390};
+ result=ctx.paddingForTest();
+ assert.ok(result.paddingTopLeft[1]<=Math.round(390*0.62),
+   'tiny fullscreen layouts must still retain space for the destination points');
 });
