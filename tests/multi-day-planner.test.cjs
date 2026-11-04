@@ -57,7 +57,8 @@ test('UI and deployment preserve itinerary while adding per-day tours',()=>{
  const html=read('index.html'),app=read('app.js'),css=read('style.css');
  for(const id of ['city-days','city-days-title','city-days-list','city-days-help'])
    assert.ok(html.includes('id="'+id+'"'));
- assert.ok(app.includes('MD.selected(currentPlaces()'));
+ assert.ok(app.includes('const currentDayContext=()=>DC.resolve('));
+ assert.ok(app.includes('const visiblePlaces = () => currentDayContext().visiblePlaces'));
  assert.ok(app.includes("livekarte-city-day-assignments-v1"));
  assert.ok(app.includes("tourContextKey()"));
  assert.ok(app.includes('renderCityDays()'));
@@ -114,7 +115,7 @@ test('GPS auto-start keeps far day-trip view while recording location; nearby go
  assert.equal(MD.preferDistantDayView([], '2026-11-04',here,C.distance),false);
  assert.equal(MD.preferDistantDayView(nara,'2026-11-04',{lat:34.684,lng:135.843},C.distance),false);
  const source=read('app.js');
- assert.match(source,/const mapFocusPlaces = \(\) => activePlanId==='town-kyoto'/);
+ assert.match(source,/const mapFocusPlaces = \(\) => currentDayContext\(\)\.mapFocusPlaces/);
  assert.match(source,/function fit\(items = mapFocusPlaces\(\)\)/);
  assert.match(source,/const matching=mapFocusPlaces\(\)/);
  assert.match(source,/const p=mapFocusPlaces\(\)/);
@@ -243,7 +244,7 @@ test('auto day itinerary is local, numbered and honest; foot-route is a delibera
  for(const id of ['day-route-preview','day-route-stops','day-route-status','day-route-foot'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(app,/renderDayRoutePreview\(\);\s*renderTourBuilder\(\)/);
- assert.match(app,/MD\.optimizeDayOrder\(goals,C\.distance\)/);
+ assert.match(app,/return currentDayContext\(\)\.orderedStops/);
  assert.match(app,/dashArray:actual\?null:'5 10'/);
  assert.match(app,/className:'day-route-label'/);
  assert.match(app,/dayRouteLayers\.clearLayers\(\)/);
