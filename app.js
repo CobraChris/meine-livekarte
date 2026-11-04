@@ -132,7 +132,12 @@
   // Keep the required OpenStreetMap map-data credit, omit optional Leaflet prefix.
   map.attributionControl.setPrefix(false);
   const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>' }).addTo(map);
-  let tileWarning = false;
+  // Only initialized UI: no Google network request until user explicitly taps
+  // "Google Demo testen"; the OSM app remains fully usable without a key.
+  const googleDemo=window.LivekarteGoogleDemo?.init({
+    map,places:()=>visiblePlaces()
+  });
+    let tileWarning = false;
   tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
   const pins = L.layerGroup().addTo(map);
   const walkingLayers=L.layerGroup().addTo(map);
@@ -632,6 +637,7 @@
   // User-triggered ONLY: we never post GPS coordinates on watchPosition updates,
   // while showing a place, or merely by opening the app.
   async function showWalkingRoute(place){
+    googleDemo?.forceOSM();
     if(!W) { say('Fußwegfunktion ist noch nicht geladen. Bitte App aktualisieren.');return; }
     if(watch===null||!position||!positionUpdatedAt){
       say('Bitte zuerst GPS einschalten und den Standort abwarten, um einen Fußweg anzuzeigen.');
@@ -1386,6 +1392,7 @@
   };
   $('tour-calculate').onclick=()=>{void calculateTour();};
   async function calculateTour(optimized=false,remaining=false){
+    googleDemo?.forceOSM();
     if(tourController)return;
     const selected=remaining&&tourNavigation&&tourRoute
       ?tourRoute.stops.slice(tourNavigation.stage):tourSelection();
@@ -1931,6 +1938,7 @@
     });
   }
   function render() {
+    googleDemo?.refresh();
     pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = [];
     renderCityDays();
     const planPlaces=visiblePlaces();
