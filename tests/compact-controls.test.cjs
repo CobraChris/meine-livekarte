@@ -84,7 +84,7 @@ test('GitHub publish script stamps unique current SHA on every app asset and pro
     fs.writeFileSync(path.join(dir,'scripts/stamp_pwa_version.py'),stamp);
     const assetTags=[
       ['href','style.css'],['href','vendor/leaflet.css'],
-      ['src','vendor/leaflet.js'],['src','map-popup-core.js'],['src','core.js'],
+      ['src','vendor/leaflet.js'],['src','map-popup-core.js'],['src','map-camera-core.js'],['src','core.js'],
       ['src','walking-core.js'],['src','day-plan-core.js'],['src','multi-day-core.js'],['src','route-discovery.js'],['src','place-search-core.js'],
       ['src','next-step-core.js'],['src','japanese-destination.js'],['src','app.js'],
       ['src','sync.js'],['src','outbox-core.js'],

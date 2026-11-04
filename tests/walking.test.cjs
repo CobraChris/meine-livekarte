@@ -77,7 +77,7 @@ test('GPS centers automatically at launch and respects manual opt-out without st
  assert.match(code,/if\(!position\)\{say\('Standort wird ermittelt …'\);return;\}/);
  assert.match(html,/id="gps-privacy-toggle"/);
  assert.match(code,/setAutoGPSAllowed\(true\);\s*startGPS\(false\)/);
- assert.match(code,/if \(following\) centerOnGPS/);
+ assert.match(code,/if \(camera\.isFollowing\(\)\) centerOnGPS/);
  assert.match(html,/Beim Öffnen startet GPS automatisch/);
 });
 

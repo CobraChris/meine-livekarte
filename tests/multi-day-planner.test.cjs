@@ -118,9 +118,9 @@ test('GPS auto-start keeps far day-trip view while recording location; nearby go
  assert.match(source,/function fit\(items = mapFocusPlaces\(\)\)/);
  assert.match(source,/const matching=mapFocusPlaces\(\)/);
  assert.match(source,/const p=mapFocusPlaces\(\)/);
- assert.match(source,/if\(automatic && firstFix && following && activePlanId==='town-kyoto' &&/);
+ assert.match(source,/if\(automatic && firstFix && camera\.isFollowing\(\) && activePlanId==='town-kyoto' &&/);
  assert.match(source,/MD\.preferDistantDayView\(visiblePlaces\(\),activeCityDay,position,C\.distance\)/);
- assert.match(source,/if \(following\) centerOnGPS\(ll,Math\.max\(map\.getZoom\(\),15\)\)/);
+ assert.match(source,/if \(camera\.isFollowing\(\)\) centerOnGPS\(ll,Math\.max\(map\.getZoom\(\),15\)\)/);
  assert.match(source,/focusLabel=selected\?'Standort und Tagesziele zeigen'/);
  assert.match(source,/\$\('fit'\)\.title=focusLabel/);
 });
@@ -153,6 +153,7 @@ test('one-tap 📍 overview includes live GPS and all Nara day goals',()=>{
   document:{querySelector:selector=>overlays[selector]||null},
   mapFocusPlaces:()=>MD.mapFocusPlaces([hotel,...nara],'2026-11-04'),
   filter:'all',watch:1,position:kyoto,positionUpdatedAt:now,
+  withCameraView:(mode,action)=>action(),
   Date,Math,map:{
     getSize:()=>({x:395,y:760}),
     fitBounds:(coords,options)=>calls.push({coords,options})
@@ -179,7 +180,7 @@ test('one-tap 📍 overview includes live GPS and all Nara day goals',()=>{
  assert.equal(calls[0].coords.length,4,'stale GPS cannot masquerade as live');
  assert.match(app,/\$\('fit'\)\.onclick = \(\) => \{\s*pauseGPSFollow\(\)/);
  assert.match(app,/if\(!fitDayGoalsAndPosition\(\)\)/);
- assert.match(app,/map\.on\('dragstart', pauseGPSFollow\)/);
+ assert.match(app,/map\.on\('dragstart', \(\) => \{ if \(!camera\.isProgrammatic\(\)\) pauseGPSFollow\(\); \}\)/);
 });
 
 test('combined map overview adapts to tall controls, short viewports and hidden overlays',()=>{

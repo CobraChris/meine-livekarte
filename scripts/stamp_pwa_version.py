@@ -31,6 +31,7 @@ assets = [
     ("href", "vendor/leaflet.css"),
     ("src", "vendor/leaflet.js"),
     ("src", "map-popup-core.js"),
+    ("src", "map-camera-core.js"),
     ("src", "core.js"),
     ("src", "walking-core.js"),
     ("src", "day-plan-core.js"),

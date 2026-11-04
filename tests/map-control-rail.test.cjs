@@ -61,7 +61,7 @@ test('three map controls are distinct and GPS shutoff lives in privacy help',()=
 
 test('one map GPS button resumes following and privacy button alone stops GPS',()=>{
  const app=read('app.js');
- const controlBegin=app.indexOf('  let automaticGPSView = false;');
+ const controlBegin=app.indexOf('  function setCameraMode(mode){');
  const controlEnd=app.indexOf('  function pauseGPSFollow()',controlBegin);
  assert.ok(controlBegin>=0&&controlEnd>controlBegin);
  const node=(name)=>({
@@ -72,14 +72,14 @@ test('one map GPS button resumes following and privacy button alone stops GPS',(
    'gps-privacy-state':node('gps-privacy-state')};
  const ctx={
   $:id=>nodes[id],
-  watch:1,following:true,position:{lat:35.01,lng:135.77}
+  camera:require('../map-camera-core.js').create('gps-follow'),watch:1,position:{lat:35.01,lng:135.77}
  };
  vm.runInNewContext(app.slice(controlBegin,controlEnd)+
    '\nthis.refresh=refreshGPSFollowControl;',ctx);
  ctx.refresh();
  assert.equal(nodes.gps.attrs['aria-pressed'],'true');
  assert.match(nodes.gps.attrs['aria-label'],/folgen/);
- ctx.following=false;ctx.refresh();
+ ctx.camera.transition('manual');ctx.refresh();
  assert.equal(nodes.gps.attrs['aria-pressed'],'false');
  assert.match(nodes.gps.attrs['aria-label'],/zentrieren/);
  assert.equal(nodes['gps-privacy-toggle'].textContent,'GPS ausschalten');
@@ -91,13 +91,14 @@ test('one map GPS button resumes following and privacy button alone stops GPS',(
  const clickEnd=app.indexOf('  async function autoStartGPS()',clickStart);
  assert.ok(clickStart>=0&&clickEnd>clickStart);
  const events=[],clickCtx={
-  watch:null,following:false,position:null,
+  watch:null,position:null,
   $:id=>nodes[id],
   setAutoGPSAllowed:v=>events.push(['preference',v]),
   startGPS:v=>events.push(['start',v]),
   stopGPS:()=>events.push(['stop']),
   say:t=>events.push(['status',t]),
   refreshGPSFollowControl:()=>events.push(['refresh']),
+  setCameraMode:mode=>events.push(['mode',mode]),
   centerOnGPS:(p,z)=>events.push(['center',p,z]),
   map:{getZoom:()=>15}
  };
@@ -107,7 +108,7 @@ test('one map GPS button resumes following and privacy button alone stops GPS',(
  events.length=0;
  clickCtx.watch=1;clickCtx.position={lat:35,lng:135};
  nodes.gps.onclick();
- assert.equal(clickCtx.following,true);
+ assert.equal(events.some(e=>e[0]==='mode'&&e[1]==='gps-follow'),true);
  assert.equal(events.filter(e=>e[0]==='stop').length,0);
  assert.equal(events.some(e=>e[0]==='center'),true);
  events.length=0;
