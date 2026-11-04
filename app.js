@@ -1655,6 +1655,26 @@
     const visible = items.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
+  // The pin is a combined day-trip overview, not an alternative to GPS.
+  // Fit the selected goals and the last recent GPS fix together, while leaving
+  // the actual location marker and all place markers untouched.
+  function fitDayGoalsAndPosition() {
+    const goals=mapFocusPlaces().filter(p=>filter==='all'||p.category===filter);
+    if(!goals.length)return false;
+    const bounds=goals.map(p=>[p.lat,p.lng]);
+    const hasFix=watch!==null && position!==null && positionUpdatedAt>0 &&
+      Date.now()-positionUpdatedAt<60000;
+    if(hasFix)bounds.push([position.lat,position.lng]);
+    // On phones the controls occupy the top of the map and part of the right
+    // side: reserve space so all selected markers remain visibly tappable.
+    const topPadding=Math.min(235,Math.round(map.getSize().y*0.27));
+    map.fitBounds(bounds,{
+      paddingTopLeft:[27,topPadding],
+      paddingBottomRight:[78,54],
+      maxZoom:16
+    });
+    return hasFix;
+  }
   // City dates are an extra filter inside one city, never extra trip sections.
   const cityDaysPanel=$('city-days'),cityDaysList=$('city-days-list');
   const dayBriefOpen=$('city-day-brief-open');
@@ -1707,7 +1727,7 @@
       ?'Planstart: '+firstTime+' · Zeiten Richtwerte':'';
     dayBriefOpen.hidden=!selected;
     $('plan-day-summary').textContent=MD.dayLabel(activeCityDay)+' · '+assigned.length+' Ziele';
-    const focusLabel=selected?'Tagesziele zeigen':
+    const focusLabel=selected?'Standort und Tagesziele zeigen':
       activeCityDay===MD.UNASSIGNED?'Merkliste auf Karte zeigen':'Alle Kyoto-Ziele zeigen';
     $('fit').lastElementChild.textContent=focusLabel;
     $('fit').setAttribute('aria-label',focusLabel);
@@ -3292,8 +3312,13 @@
   $('fit').onclick = () => {
     pauseGPSFollow();
     if(journey) fitJourney();
-    else if(currentPlaces().length) fit();
-    else if(currentPlan().center) map.setView(currentPlan().center,currentPlan().kind==='city'?14:8);
+    else if(currentPlaces().length){
+      if(activePlanId==='town-kyoto'&&MD.days('town-kyoto').includes(activeCityDay)){
+        if(!fitDayGoalsAndPosition()){
+          say('Tagesziele angezeigt. GPS-Position noch nicht verfügbar – nach der Ortung erneut auf 📍 tippen.');
+        }
+      }else fit();
+    }else if(currentPlan().center) map.setView(currentPlan().center,currentPlan().kind==='city'?14:8);
   };
   let automaticGPSView = false;
   function refreshGPSFollowControl() {
