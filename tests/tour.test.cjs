@@ -179,7 +179,7 @@ test('tour sends GPS only on explicit calculation and does not save routes or lo
  assert.match(block,/referrerPolicy:'origin'/);
  assert.match(block,/controller\.abort\(\)/);
  assert.match(block,/tourRequestGeneration/);
- assert.match(block,/map\.fitBounds/);
+ assert.match(block,/fitMapArea\(L\.latLngBounds\(result\.points\)/);
  assert.match(app,/livekarte-tour-drafts-v1/);
  const saveStart=app.indexOf('  function persistTourDrafts(){');
  const saveEnd=app.indexOf('  function clearTourRoute(){',saveStart);
