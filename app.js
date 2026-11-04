@@ -2012,7 +2012,7 @@
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
       title.append(node('div',C.categories[p.category], 'category'),node('h3',p.name)); top.append(node('span',symbols[p.category],'place-icon'), title);
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
-      show.onclick = () => { focusMapPoint([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
+      show.onclick = () => { googleDemo?.forceOSM(); focusMapPoint([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
       const distance = node('span',metric(p),'distance');
       const tourButton=node('button',tourIsSelected(p)?'✓ Tour':'＋ Tour','tour-pick');
       tourButton.type='button';
