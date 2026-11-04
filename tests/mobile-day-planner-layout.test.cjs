@@ -17,8 +17,10 @@ test('map precedes exactly one merged Kyoto day selector and today card',()=>{
 });
 
 test('date filter remains the source of truth and the chosen day drives the brief and map chip',()=>{
-  assert.match(app,/const choices=\[\.\.\.MD\.days\('town-kyoto'\),MD\.ALL,MD\.UNASSIGNED\]/);
-  assert.match(app,/cityDayAssignments\[C\.placePlanKey\(p\)\]===activeCityDay/);
+  assert.match(app,/const context=currentDayContext\(\)/);
+  assert.match(app,/const choices=\[\.\.\.context\.days,MD\.ALL,MD\.UNASSIGNED\]/);
+  assert.match(app,/const count=context\.counts\[day\]\|\|0/);
+  assert.match(app,/const assigned=context\.displayGoals/);
   assert.match(app,/\$\('city-day-brief-summary'\)\.textContent=assigned\.length/);
   assert.match(app,/\$\('plan-day-summary'\)\.textContent=MD\.dayLabel\(activeCityDay\)\+' · '\+assigned\.length\+' Ziele'/);
   assert.match(app,/dayBriefOpen\.onclick=/);
