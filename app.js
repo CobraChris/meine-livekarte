@@ -4,11 +4,11 @@
   const symbols = { restaurant: '♨', sight: '◇', station: '▤', hotel: '⌂' };
   const JP=window.JapaneseDestination;
   const MD=window.LivekarteMultiDay;
+  const DC=window.LivekarteDayContext;
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
   let activeCityDay=MD.ALL;
-  const tourContextKey=()=>activePlanId==='town-kyoto'&&MD.days('town-kyoto').includes(activeCityDay)
-    ?'town-kyoto@'+activeCityDay:activePlanId;
+  const tourContextKey=()=>currentDayContext().tourKey;
   let places = [], filter = 'all', position = null, watch = null, userDot, accuracy;
   let distanceDisplays = [];
   let customPlans = [], planAssignments = Object.create(null), planJourneys = Object.create(null);
@@ -18,13 +18,17 @@
   let kyotoPickupDone=false; // Explicitly confirmed paper ticket handover only.
   const allPlans = () => [...C.planPresets,...customPlans];
   const currentPlan = () => allPlans().find(p=>p.id===activePlanId) || C.planPresets[0];
-  const currentPlaces = () => C.placesForPlan(places,planAssignments,activePlanId);
-  const visiblePlaces = () => activePlanId==='town-kyoto'
-    ?MD.selected(currentPlaces(),cityDayAssignments,activeCityDay,C.placePlanKey)
-    :currentPlaces();
-  const mapFocusPlaces = () => activePlanId==='town-kyoto'
-    ?MD.mapFocusPlaces(visiblePlaces(),activeCityDay)
-    :visiblePlaces();
+  // One reactive, read-only day context for map markers, sidebar, route preview,
+  // Google fallback and saved tour drafts. Always recompute from current data.
+  const currentDayContext=()=>DC.resolve({
+    planId:activePlanId,day:activeCityDay,plan:currentPlan(),
+    journey:activeJourney(),places,assignments:planAssignments,
+    dayAssignments:cityDayAssignments,placeKey:C.placePlanKey,
+    placesForPlan:C.placesForPlan,calendar:MD,distance:C.distance
+  });
+  const currentPlaces = () => currentDayContext().planPlaces;
+  const visiblePlaces = () => currentDayContext().visiblePlaces;
+  const mapFocusPlaces = () => currentDayContext().mapFocusPlaces;
   function assignToCurrentPlan(items) {
     if (activePlanId === 'all') return;
     items.forEach(p => {
@@ -1740,12 +1744,10 @@
   // Optimize the rest by straight-line distances on this device. Never pretend
   // the dashed line is a walking street or a railway connection from Kyoto.
   function dailyStops(){
-    if(activePlanId!=='town-kyoto'||!MD.days('town-kyoto').includes(activeCityDay))return [];
-    const goals=mapFocusPlaces().filter(p=>p.category!=='hotel');
-    return MD.optimizeDayOrder(goals,C.distance);
+    return currentDayContext().orderedStops;
   }
   function dailyRouteKey(stops){
-    return activeCityDay+'|'+stops.map(C.placePlanKey).join('|');
+    return currentDayContext().routeKey(stops);
   }
   function renderDayRoutePreview(){
     const panel=$('day-route-preview'),ordered=dailyStops();
@@ -1857,13 +1859,10 @@
     $('plan-day-summary').hidden=cityDaysPanel.hidden;
     if(cityDaysPanel.hidden)return;
     cityDaysList.replaceChildren();
-    const cityPlaces=currentPlaces().filter(p=>p.category!=='hotel');
-    const choices=[...MD.days('town-kyoto'),MD.ALL,MD.UNASSIGNED];
+    const context=currentDayContext();
+    const choices=[...context.days,MD.ALL,MD.UNASSIGNED];
     for(const day of choices){
-      const count=day===MD.ALL?cityPlaces.length:
-        cityPlaces.filter(p=>day===MD.UNASSIGNED
-          ?!Object.hasOwn(cityDayAssignments,C.placePlanKey(p))
-          :cityDayAssignments[C.placePlanKey(p)]===day).length;
+      const count=context.counts[day]||0;
       const button=node('button',MD.dayLabel(day),'city-day-tile');
       if(day===MD.ALL||day===MD.UNASSIGNED)button.classList.add('city-day-utility');
       button.type='button';
@@ -1874,11 +1873,8 @@
       button.onclick=()=>selectCityDay(day);
       cityDaysList.append(button);
     }
-    const selected=MD.days('town-kyoto').includes(activeCityDay);
-    const assigned=cityPlaces.filter(p=>activeCityDay===MD.ALL
-      ||(activeCityDay===MD.UNASSIGNED
-        ?!Object.hasOwn(cityDayAssignments,C.placePlanKey(p))
-        :cityDayAssignments[C.placePlanKey(p)]===activeCityDay));
+    const selected=context.isDated;
+    const assigned=context.displayGoals;
     const overviewDay=selected
       ?kyotoOverview.querySelectorAll('details.kyoto-day')[MD.days('town-kyoto').indexOf(activeCityDay)]
       :null;
