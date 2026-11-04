@@ -14,10 +14,22 @@
   const scriptUrl=key=>ONLY_GOOGLE_JS+'?'+new URLSearchParams({
     key,loading:'async',callback:CALLBACK,auth_referrer_policy:'origin',v:'weekly',language:'de'
   }).toString();
+  // Same teal map pin and yellow 1..N badge as the Leaflet day route.
+  // Created locally from the user's existing stop order; no Places/Routes API.
+  function markerSvg(number){
+    const value=Number.isInteger(number)&&number>0&&number<=99?String(number):'';
+    const badge=value?'<circle cx="42" cy="13" r="11.5" fill="#ffe09c" stroke="#173b36" stroke-width="2.6"/>'+
+      '<text x="42" y="18" font-family="Arial,sans-serif" font-size="15" font-weight="800" text-anchor="middle" fill="#19372e">'+value+'</text>':'';
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="56" height="70" viewBox="0 0 56 70">'+
+      '<path d="M26 6C13 6 4 15 4 27c0 18 22 37 22 37s22-19 22-37C48 15 39 6 26 6z" fill="#a4ecc9" stroke="#19473e" stroke-width="3"/>'+
+      '<path d="M26 18l10 10-10 10-10-10z" fill="none" stroke="#23675a" stroke-width="2"/>'+
+      badge+'</svg>';
+    return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
+  }
   let instance=null;
   function init(options){
     if(instance)return instance;
-    const {map,places}=options;
+    const {map,places,stops=()=>[],placeKey}=options;
     const $=id=>document.getElementById(id);
     const panel=$('google-demo-control'), googleEl=$('google-demo-map');
     const input=$('google-demo-key'),open=$('google-demo-start'),
@@ -70,17 +82,28 @@
       for(const marker of markers)marker.setMap(null);
       markers=[];
       const all=places().slice(0,250);
+      const ordered=stops().slice(0,20);
+      const keyOf=p=>typeof placeKey==='function'
+        ?placeKey(p):String(p.name)+'|'+p.lat+'|'+p.lng;
+      const byKey=new Map(ordered.map((p,i)=>[keyOf(p),i+1]));
       for(const place of all){
         if(!Number.isFinite(place.lat)||!Number.isFinite(place.lng))continue;
+        const number=byKey.get(keyOf(place))||null;
         const marker=new google.maps.Marker({
           map:googleMap,position:{lat:place.lat,lng:place.lng},
-          title:place.name
+          title:number?number+'. '+place.name:place.name,
+          zIndex:number?1500+number:1200,
+          icon:{
+            url:markerSvg(number),
+            scaledSize:google.maps.Size?new google.maps.Size(48,60):{width:48,height:60},
+            anchor:google.maps.Point?new google.maps.Point(23,55):{x:23,y:55}
+          }
         });
         marker.addListener('click',()=>{
           if(!info)info=new google.maps.InfoWindow();
           const node=document.createElement('div');
           const title=document.createElement('strong');
-          title.textContent=place.name;
+          title.textContent=number?number+'. '+place.name:place.name;
           const note=document.createElement('p');
           note.textContent='Für Tagesplanung und Fußweg bitte auf OpenStreetMap wechseln.';
           node.append(title,note);
@@ -92,7 +115,7 @@
     }
     function showGoogle(){
       if(!root.google?.maps?.Map)throw new Error('Google-Kartenbibliothek ist nicht verfügbar.');
-      const center=map.getCenter(),zoom=Math.max(2,Math.min(19,Math.round(map.getZoom())));
+      const center=map.getCenter(),zoom=Math.max(2,Math.min(19,map.getZoom()));
       active=true;
       updateUI();
       if(!googleMap){
@@ -201,14 +224,14 @@
         if(!active||!googleMap)return;
         const center=map.getCenter();
         googleMap.setCenter({lat:center.lat,lng:center.lng});
-        googleMap.setZoom(Math.max(2,Math.min(19,Math.round(map.getZoom()))));
+        googleMap.setZoom(Math.max(2,Math.min(19,map.getZoom())));
       },
       forceOSM(){if(active)resetToOSM('Für unsere eigenen Routen verwenden wir OpenStreetMap.');},
       isGoogle(){return active;}
     };
     return instance;
   }
-  const api={init,keyLooksValid,scriptUrl};
+  const api={init,keyLooksValid,scriptUrl,markerSvg};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LivekarteGoogleDemo=api;
 })(globalThis);
