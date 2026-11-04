@@ -844,7 +844,9 @@
           title:item.name,
           icon:L.divIcon({className:'route-discovery-marker',html:'<span>◇</span>',
             iconSize:[27,33],iconAnchor:[13,30]})
-        }).bindPopup(popup,{maxWidth:260}).addTo(discoveryLayers);
+        });
+        bindMapPopup(marker,popup,{maxWidth:260});
+        marker.addTo(discoveryLayers);
         item._marker=marker;
       }
       const card=node('div',undefined,'route-discovery-card');
@@ -1456,7 +1458,7 @@
           icon:L.divIcon({className:'tour-stop-marker',
             html:'<span>'+(i+1)+'</span>',iconSize:[30,38],iconAnchor:[15,34]})
         });
-        marker.bindPopup(node('strong','Stopp '+(i+1)+': '+place.name));
+        bindMapPopup(marker,node('strong','Stopp '+(i+1)+': '+place.name));
         marker.addTo(tourLayers);
       });
       const walkSummary=W.distanceText(result.distance)+' · ca. '+
@@ -1922,56 +1924,10 @@
     return box;
   }
 
-  // A popup stays attached to its marker. Dragging its explicit handle
-  // pans the map underneath, rather than detaching the popup from the place.
-  // The normal map, popup buttons and close control retain their gestures.
-  // Swipe on the non-interactive popup surface pans the map while keeping
-  // popup and marker anchored to the same coordinates. Buttons/links still click.
-  function enablePopupMapDrag(marker,surface){
-    let pointerId=null,lastX=0,lastY=0,captured=null,fromText=false;
-    const ignore='button,a,input,select,textarea,label,[role="button"],'+
-      'summary,[contenteditable="true"],.leaflet-popup-close-button';
-    const release=event=>{
-      if(pointerId===null||event.pointerId!==pointerId)return;
-      const id=pointerId,target=captured;
-      pointerId=null;captured=null;fromText=false;
-      surface.classList.remove('is-dragging');
-      if(target?.hasPointerCapture?.(id))target.releasePointerCapture(id);
-    };
-    surface.addEventListener('pointerdown',event=>{
-      if((event.pointerType==='mouse'&&event.button!==0)||
-         !marker.isPopupOpen()||pointerId!==null)return;
-      // Buttons, links and the close control still receive ordinary clicks.
-      if(event.target.closest?.(ignore))return;
-      event.preventDefault();event.stopPropagation();
-      pauseGPSFollow();
-      captured=surface;
-      pointerId=event.pointerId;
-      lastX=event.clientX;lastY=event.clientY;
-      fromText=!!event.target.closest?.('.place-popup-description,.popup-more-body');
-      surface.classList.add('is-dragging');
-      captured.setPointerCapture?.(pointerId);
-    });
-    surface.addEventListener('pointermove',event=>{
-      if(pointerId!==event.pointerId||!marker.isPopupOpen())return;
-      event.preventDefault();event.stopPropagation();
-      const dx=event.clientX-lastX,dy=event.clientY-lastY;
-      lastX=event.clientX;lastY=event.clientY;
-      if(!Number.isFinite(dx)||!Number.isFinite(dy)||
-         Math.abs(dx)>110||Math.abs(dy)>110)return;
-      // Keep scrolling for overflowing descriptions; elsewhere move the map.
-      const scroll=marker.getPopup()?.getElement()?.querySelector('.leaflet-popup-content');
-      if(fromText&&scroll&&scroll.scrollHeight>scroll.clientHeight+4&&
-         Math.abs(dy)>Math.abs(dx)*1.4){
-        scroll.scrollTop-=dy;
-        return;
-      }
-      if(dx||dy)map.panBy([-dx,-dy],{animate:false});
-    });
-    for(const eventName of ['pointerup','pointercancel','lostpointercapture'])
-      surface.addEventListener(eventName,release);
-    marker.on('popupclose',()=>{
-      if(pointerId!==null)release({pointerId});
+  // All marker types share the same popup behavior, regardless of destination.
+  function bindMapPopup(marker,content,options={}){
+    return window.LivekarteMapPopup.bind({
+      marker,content,map,L,onPanStart:pauseGPSFollow,options
     });
   }
   function render() {
@@ -2044,19 +2000,7 @@
         // While picking, one marker tap selects immediately instead of opening a popup.
         marker.on('click',()=>{pauseGPSFollow();toggleTourPlace(p,true);});
       }else{
-        marker.bindPopup(popup,{
-          // Leaflet's default minWidth is only 50px: with a CSS grid this
-          // makes the phone popup collapse until its controls overlap.
-          // Bound width against the actual map size for narrow screens.
-          minWidth:Math.min(286,Math.max(205,map.getSize().x-76)),
-          maxWidth:320,maxHeight:300,
-          offset:L.point(0,-24), // Marker stays visible below the popup arrow.
-          autoPan:true,
-          autoPanPaddingTopLeft:L.point(18,76),
-          autoPanPaddingBottomRight:L.point(18,40)
-        });
-        enablePopupMapDrag(marker,popup);
-        marker.on('popupopen', () => { following = false; });
+        bindMapPopup(marker,popup);
       }
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
       title.append(node('div',C.categories[p.category], 'category'),node('h3',p.name)); top.append(node('span',symbols[p.category],'place-icon'), title);
@@ -3295,8 +3239,9 @@
       label.append(node('span',String(i+1),'trip-number'),node('span',stop.name,'trip-marker-name'));
       const marker = L.marker([stop.lat,stop.lng],{zIndexOffset:500,icon:L.divIcon({
         className:'trip-pin',html:label,iconSize:[30,30],iconAnchor:[15,15]
-      })}).bindPopup(popup).addTo(journeyLayer);
-      marker.on('popupopen',()=>{following=false;});
+      })});
+      bindMapPopup(marker,popup);
+      marker.addTo(journeyLayer);
       if(stop.name==='Nagoya' && journey.stops[i-1]?.leg?.includes('Hikari 637')) {
         item.append(node('span','Umstieg: Hikari 637 → Hida 9 · Gleis 11','stop-note'));
         const btn=node('button','Bahnhofsmodus · Gleis 11','transfer-details-button');
