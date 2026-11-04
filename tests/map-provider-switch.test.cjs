@@ -266,7 +266,7 @@ test('Google preview displays the same two+ day goals as honest dashed air-line 
  t.widget.refreshRoute();
  assert.equal(lines.length,2);
  assert.equal(lines[0].removed,true);
- assert.equal(lines[1].options.strokeOpacity,.95);
+ assert.equal(lines[1].options.strokeOpacity,.99);
  assert.equal(lines[1].options.strokeWeight,5);
  assert.equal(lines[1].options.icons,undefined);
  assert.equal(lines[1].options.path.length,3);
