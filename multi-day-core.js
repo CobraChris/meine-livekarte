@@ -64,6 +64,30 @@
     const goals=visible.filter(p=>p.category!=='hotel');
     return goals.length>0&&goals.every(p=>distance(position,p)>12000);
   }
+  // Exact shortest open chain by geographic distances with the day's planned
+  // first stop fixed. A dashed preview is NOT road geometry or travel time.
+  function optimizeDayOrder(stops,distance){
+    if(!Array.isArray(stops)||stops.length<2||stops.length>7||
+       typeof distance!=='function')return [];
+    const origin=stops[0],remaining=stops.slice(1);
+    let best=Infinity,bestOrder=null;
+    function search(at,used,length,order){
+      if(length>=best)return;
+      if(order.length===remaining.length){
+        best=length;bestOrder=order.slice();return;
+      }
+      for(let i=0;i<remaining.length;i++){
+        if(used.has(i))continue;
+        const step=distance(at,remaining[i]);
+        if(!Number.isFinite(step)||step<0)continue;
+        used.add(i);order.push(remaining[i]);
+        search(remaining[i],used,length+step,order);
+        order.pop();used.delete(i);
+      }
+    }
+    search(origin,new Set(),0,[]);
+    return bestOrder?[origin,...bestOrder]:stops.slice();
+  }
   function change(assignments,key,day,planId='town-kyoto'){
     if(!allowed(planId,day))throw new Error('Ungültiger Kalendertag.');
     const next=Object.assign(Object.create(null),assignments);
@@ -72,7 +96,7 @@
     return next;
   }
   const api={CITY_DAYS,ALL,UNASSIGNED,days,allowed,defaultDay,dayLabel,
-    fromSchedule,seedDayAssignments,cleanAssignments,selected,mapFocusPlaces,preferDistantDayView,change};
+    fromSchedule,seedDayAssignments,cleanAssignments,selected,mapFocusPlaces,preferDistantDayView,optimizeDayOrder,change};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LivekarteMultiDay=api;
 })(globalThis);
