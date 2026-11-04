@@ -38,7 +38,8 @@ test('Google is never loaded on app startup, key only from manual local browser 
 test('OSM remains default and Google controls sit below rather than over map',()=>{
  const html=read('index.html'),css=read('style.css'),app=read('app.js');
  for(const id of ['google-demo-map','google-demo-control','google-demo-key',
- 'google-demo-start','google-demo-osm','google-demo-forget','google-demo-status'])
+ 'google-demo-start','provider-osm','provider-google','provider-settings',
+ 'provider-notice','google-demo-forget','google-demo-status'])
    assert.ok(html.includes('id="'+id+'"'),id);
  assert.match(html,/src="google-demo\.js"/);
  assert.match(html,/Google-Bewertungen und Rezensionen sind mit dem Demo-Key nicht verfügbar/);
@@ -46,6 +47,8 @@ test('OSM remains default and Google controls sit below rather than over map',()
  assert.match(app,/googleDemo\?\.refresh\(\)/);
  assert.match(css,/\.google-demo-map\[hidden\]\{display:none!important\}/);
  assert.match(css,/\.google-demo-control\{/);
+ assert.match(css,/\.map-provider-switch\{/);
+ assert.match(app,/googleDemo\?\.syncFromOSM\(\)/);
  assert.match(css,/\.google-demo-map\{position:absolute;inset:0;z-index:350/);
 });
 test('build ships only first-party module, never user key or external Google assets',()=>{

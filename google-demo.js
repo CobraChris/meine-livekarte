@@ -21,9 +21,12 @@
     const $=id=>document.getElementById(id);
     const panel=$('google-demo-control'), googleEl=$('google-demo-map');
     const input=$('google-demo-key'),open=$('google-demo-start'),
-      osm=$('google-demo-osm'),forget=$('google-demo-forget'),
-      state=$('google-demo-status'),heading=$('google-demo-summary');
-    if(!panel||!googleEl||!input||!open||!osm||!forget||!state||!heading)
+      forget=$('google-demo-forget'),state=$('google-demo-status'),
+      osm=$('provider-osm'),googleButton=$('provider-google'),
+      settings=$('provider-settings'),notice=$('provider-notice'),
+      heading=$('google-demo-summary'),workspace=googleEl.closest('.workspace');
+    if(!panel||!googleEl||!input||!open||!forget||!state||
+       !osm||!googleButton||!settings||!notice||!heading||!workspace)
       return null;
     let googleMap=null,markers=[],info=null,active=false,loading=false;
     let sdkKey=null,pending=null,expiry=null;
@@ -32,9 +35,15 @@
     const setKey=key=>{localStorage.setItem(KEY_STORE,key);};
     const clearKey=()=>{try{localStorage.removeItem(KEY_STORE);}catch{}};
     function updateUI(){
-      panel.dataset.provider=active?'google':'osm';
-      heading.textContent=active?'🗺 Karte: Google (Demo)':'🗺 Karte: OpenStreetMap';
-      osm.disabled=!active&&!loading;
+      const provider=active?'google':'osm';
+      workspace.dataset.provider=provider;
+      panel.dataset.provider=provider;
+      heading.textContent='⚙ Google-Demo-Einstellungen';
+      osm.setAttribute('aria-pressed',String(!active));
+      googleButton.setAttribute('aria-pressed',String(active));
+      googleButton.disabled=loading;
+      googleButton.textContent=loading?'Google lädt …':'Google';
+      settings.setAttribute('aria-expanded',String(panel.open));
       open.disabled=loading;
       open.textContent=loading?'Google wird geladen …':active?'Google aktualisieren':'Google Demo testen';
       forget.disabled=!haveKey();
@@ -42,8 +51,8 @@
       $('map').setAttribute('aria-hidden',String(active));
     }
     function resetToOSM(message){
-      const center=googleMap?.getCenter?.();
-      const zoom=googleMap?.getZoom?.();
+      const center=active?googleMap?.getCenter?.():null;
+      const zoom=active?googleMap?.getZoom?.():null;
       active=false;
       if(center&&typeof center.lat==='function'&&typeof center.lng==='function'&&
          Number.isFinite(zoom)){
@@ -53,6 +62,8 @@
       updateUI();
       map.invalidateSize();
       if(message)say(message);
+      notice.textContent='';
+      notice.hidden=true;
     }
     function refreshPins(){
       if(!googleMap||!root.google?.maps)return;
@@ -95,7 +106,11 @@
         googleMap.setZoom(zoom);
       }
       refreshPins();
-      say('Google-Demokarte aktiv. Für Fußwege und die Tagesplanung OSM wählen.');
+      panel.open=false;
+      notice.textContent='';
+      notice.hidden=true;
+      say('Google-Demokarte aktiv. Eigene Touren und Fußwege bleiben in OSM.');
+      updateUI();
     }
     function fail(reason){
       loading=false;
@@ -103,7 +118,10 @@
       pending=null;
       if(active)resetToOSM();
       updateUI();
-      say(reason||'Google-Demo nicht verfügbar. OpenStreetMap bleibt nutzbar.');
+      const message=reason||'Google-Demo nicht verfügbar. OpenStreetMap bleibt nutzbar.';
+      say(message);
+      notice.textContent=message;
+      notice.hidden=false;
     }
     function ready(){
       if(!pending)return;
@@ -149,6 +167,24 @@
       document.head.append(script);
     });
     osm.addEventListener('click',()=>resetToOSM('OpenStreetMap aktiv. Google wird nicht erneut geladen.'));
+    googleButton.addEventListener('click',()=>{
+      if(active||loading)return;
+      if(!haveKey()){
+        panel.open=true;
+        updateUI();
+        notice.textContent='Google-Demo-Key einmalig unter Einstellungen eintragen.';
+        notice.hidden=false;
+        input.focus();
+        return;
+      }
+      open.click();
+    });
+    settings.addEventListener('click',()=>{
+      panel.open=!panel.open;
+      updateUI();
+      if(panel.open)panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+    panel.addEventListener('toggle',updateUI);
     forget.addEventListener('click',()=>{
       clearKey();input.value='';
       resetToOSM('Demo-Key nur auf diesem Gerät aus dem Browser-Speicher entfernt.');
@@ -161,6 +197,12 @@
     updateUI();
     instance={
       refresh(){if(active)refreshPins();},
+      syncFromOSM(){
+        if(!active||!googleMap)return;
+        const center=map.getCenter();
+        googleMap.setCenter({lat:center.lat,lng:center.lng});
+        googleMap.setZoom(Math.max(2,Math.min(19,Math.round(map.getZoom()))));
+      },
       forceOSM(){if(active)resetToOSM('Für unsere eigenen Routen verwenden wir OpenStreetMap.');},
       isGoogle(){return active;}
     };

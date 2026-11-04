@@ -172,6 +172,7 @@
   function setMapPlacePicking(value){
     mapPlacePicking=!!value;
     if(mapPlacePicking){
+      googleDemo?.forceOSM();
       pauseGPSFollow();
       if(mapTourPickMode)setMapTourPickMode(false);
       map.closePopup();
@@ -960,6 +961,7 @@
   }
   function setMapTourPickMode(enabled,focusMap=false){
     mapTourPickMode=!!enabled;
+    if(mapTourPickMode)googleDemo?.forceOSM();
     if(mapTourPickMode&&mapPlacePicking)setMapPlacePicking(false);
     if(mapTourPickMode)pauseGPSFollow();
     if(mapTourPickMode&&filter!=='all'){
@@ -1822,7 +1824,10 @@
       }
     }
   }
-  $('day-route-foot').onclick=()=>{void calculateDailyFootRoute();};
+  $('day-route-foot').onclick=()=>{
+    googleDemo?.forceOSM();
+    void calculateDailyFootRoute();
+  };
   function renderCityDays(){
     cityDaysPanel.hidden=activePlanId!=='town-kyoto';
     $('plan-day-summary').hidden=cityDaysPanel.hidden;
@@ -1892,6 +1897,7 @@
     render();
     const p=mapFocusPlaces();
     if(p.length)fit(p);
+    googleDemo?.syncFromOSM();
     say('Kyoto · '+MD.dayLabel(day)+' ausgewählt.');
   }
   function setDayAssignment(place,day){
@@ -2006,7 +2012,7 @@
       const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
       title.append(node('div',C.categories[p.category], 'category'),node('h3',p.name)); top.append(node('span',symbols[p.category],'place-icon'), title);
       const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
-      show.onclick = () => { focusMapPoint([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
+      show.onclick = () => { googleDemo?.forceOSM(); focusMapPoint([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
       const distance = node('span',metric(p),'distance');
       const tourButton=node('button',tourIsSelected(p)?'✓ Tour':'＋ Tour','tour-pick');
       tourButton.type='button';
@@ -3330,6 +3336,7 @@
         else if(plan.center) focusMapPoint(plan.center,plan.kind==='city'?14:8);
       }
     }
+    googleDemo?.syncFromOSM();
     if (options.save!==false) persistPlanState();
     if(options.url!==false) {
       const url=new URL(location.href);

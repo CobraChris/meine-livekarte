@@ -102,8 +102,14 @@
   <button id="tour-route-close" type="button" title="Rundgang von der Karte entfernen" aria-label="Rundgang beenden">×</button>
 </div></section>
 <section id="day-planning" class="day-planning" aria-label="Tagesplanung unter der Karte">
+<div id="map-provider-switch" class="map-provider-switch" role="group" aria-label="Kartenanbieter auswählen">
+  <button id="provider-osm" type="button" aria-pressed="true">OpenStreetMap</button>
+  <button id="provider-google" type="button" aria-pressed="false">Google</button>
+  <button id="provider-settings" type="button" aria-label="Google-Demo-Einstellungen öffnen" aria-controls="google-demo-control" aria-expanded="false" title="Google-Einstellungen">⚙</button>
+</div>
+<p id="provider-notice" class="provider-notice" role="status" aria-live="polite" hidden></p>
 <details id="google-demo-control" class="google-demo-control">
-  <summary id="google-demo-summary">🗺 Karte: OpenStreetMap</summary>
+  <summary id="google-demo-summary">⚙ Google-Demo-Einstellungen</summary>
   <div class="google-demo-inner">
     <label for="google-demo-key">Google Maps Demo-Key (nur auf deinem Handy)</label>
     <input id="google-demo-key" type="password" autocomplete="off" spellcheck="false"
@@ -113,7 +119,6 @@
       Google-Bewertungen und Rezensionen sind mit dem Demo-Key nicht verfügbar.</p>
     <div class="google-demo-actions">
       <button id="google-demo-start" type="button">Google Demo testen</button>
-      <button id="google-demo-osm" type="button">OpenStreetMap</button>
       <button id="google-demo-forget" type="button">Key entfernen</button>
     </div>
     <p id="google-demo-status" role="status" aria-live="polite"></p>
