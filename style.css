@@ -2161,3 +2161,24 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   min-height:42px;padding:8px 13px;background:#254b44;
   border:1px solid #88bea6;color:#e8fff1;font-weight:700;font-size:12px
 }
+
+
+/* Immediate, local-only day-tour order below the Kyoto day selector. */
+.day-route-preview{display:grid;gap:8px;padding:11px 0 0;margin-top:10px;
+  border-top:1px solid #486d60}
+.day-route-preview[hidden]{display:none!important}
+.day-route-preview strong{font-size:13px;color:#d9f4e3}
+.day-route-preview ol{margin:0;padding:0;display:grid;gap:4px;list-style:none;counter-reset:daystop}
+.day-route-preview li{display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;line-height:1.4;color:#e3f3e9}
+.day-route-preview li .day-route-index{display:grid;place-items:center;
+  width:20px;height:20px;min-width:20px;border-radius:50%;
+  font-size:10px;font-weight:850;color:#20382b;background:#ffe29c}
+.day-route-preview p{font-size:10px;line-height:1.5;color:#c5ddcf;margin:0}
+#day-route-foot{justify-self:start;min-height:38px;padding:8px 12px;
+  border:1px solid #a8d5b3;background:#28594b;color:#e6fbea;
+  border-radius:9px;font-size:12px;font-weight:780}
+#day-route-foot:disabled{opacity:.6}
+.day-route-number{display:grid;place-items:center;width:23px;height:23px;
+  border-radius:50%;border:2px solid #203b33;background:#ffe09c;color:#21352b;
+  box-shadow:0 2px 5px #0007;font-size:12px;font-weight:900}
