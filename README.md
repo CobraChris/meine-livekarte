@@ -1,3 +1,11 @@
+## Tagesziele vollständig sichtbar & Google-Linienkontrast (04.11.2026)
+
+Die ausgewählten Tagesziele werden beim Wechsel zwischen **OpenStreetMap** und **Google Demo** mit einem sichereren Kartenrand eingepasst. Die OSM-Ansicht misst die Höhe des Reiseabschnitts und anderer Bedienelemente, anstatt eine starre `45px`-Randzugabe zu verwenden. Die Google-Ansicht erhält dieselben ausgewählten Tagesziele und berechnet damit einen eigenen, an die Kartengröße angepassten `fitBounds`-Ausschnitt mit Freiräumen für Reiseselektor, Marker, Google-Steuerelemente und Quellenangaben. Hotelmarker in Kyoto strecken den Kartenausschnitt für Tagesausflüge nach Nara nicht. Das Einpassen geschieht bei bewusstem Kartenanbieterwechsel beziehungsweise bei neu ausgewähltem Reisetag, nicht bei jeder GPS-Aktualisierung.
+
+Die gelb gestrichelte **Luftlinien-Vorschau** hat für Google jetzt einen kontrastreichen dunklen Rand, und die bisher große Legende wurde durch ein kleines antippbares **i-Symbol** ersetzt. Erst beim Antippen erscheint der Hinweis „Luftlinie, kein berechneter Fußweg“ beziehungsweise „Berechneter Fußweg aus OpenStreetMap-Routing“. Es werden weiterhin keine Google Places-, Directions- oder Routes-APIs aufgerufen.
+
+---
+
 ## Gleichwertigere Google-Demokartenansicht (04.11.2026)
 
 Der Kartenumschalter **OpenStreetMap | Google | ⚙** ist jetzt in einer eigenen 48-px-Leiste **direkt am unteren Rand des Kartenbereichs** untergebracht. Diese schmale Leiste ist auch im Vollbild erreichbar und lässt die Google- und OSM-Quellenangaben frei. Die separate, leere Zeile „Google-Demo-Einstellungen“ unter der Karte ist verborgen; nur das Zahnrad öffnet die Eingabe zum Ändern oder Löschen des bereits lokal gespeicherten Demo-Schlüssels.
