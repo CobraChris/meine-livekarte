@@ -1,3 +1,13 @@
+## Kostenfreier Google-Kartenprototyp (Demoschlüssel)
+
+Unter der Karte gibt es eine zunächst geschlossene Einstellung **„Karte: OpenStreetMap“**. Dort kann auf dem eigenen Gerät ein **Google Maps Demo Key** eingegeben und der Kartentest gestartet werden. Der Schlüssel wird ausschließlich im lokalen Browserspeicher \`livekarte-google-demo-key-v1\` gehalten (nicht in GitHub, keinem App-Backend und nicht an ChatGPT geschickt). Die Karten-JavaScript-API wird **erst nach aktivem Klick** geladen. Bei einem Google-Lade- oder Authentifizierungsfehler bleibt OpenStreetMap als Alternative vorhanden. Schaltflächen bieten den Rückwechsel sowie das lokale Löschen des Schlüssels.
+
+Die Demokarte verwendet den offiziellen \`https://maps.googleapis.com/maps/api/js\`-Loader und zeigt die ausgewählten gespeicherten Orte als Marker. **Keine Abrechnung, keine kostenpflichtigen Dienste aktivieren.** Das Google-Demokontingent wird von Google begrenzt. Google Demo Keys sind laut Google **nur für Tests/Prototypen**, nicht den produktiven Einsatz gedacht und enthalten **keine Nutzerbewertungen, Rezensionen oder Nutzerfotos**. Die eigenen Tagesplanungen, Routen, Buchungen und detaillierten Popups bleiben in der OpenStreetMap-Ansicht. Beim Start der App bleibt OSM Standard.
+
+Der Prototyp ist **keine Freigabe**, einen normalen abrechenbaren Google-API-Schlüssel zu hinterlegen. Für Google-Bewertungen in einer produktiven App wäre eine getrennte, explizite Entscheidung über ein aktiviertes Billing-Projekt und dessen unvermeidliches Restrisiko nötig.
+
+---
+
 ## Zielsuche: eigene Orte zuerst, regionale Ergebnisse statt weltweiter Treffer (03.11.2026)
 
 Bei der Suche nach `Tomoya` erschien das bereits in Kyoto gespeicherte Hotel bislang erst nach weltweiten Photon-Treffern. Die Suche priorisiert ab jetzt die **auf dem Gerät gespeicherten Ortsnamen** (aktueller Reiseabschnitt zuerst), ohne dafür eine Netzwerkanfrage auszulösen. Ein Antippen zeigt die Position und den vorhandenen Fußweg-Zugang; `Ort merken` ist für bereits gespeicherte Treffer deaktiviert, um Duplikate zu verhindern. Wer trotz lokalem Treffer weitere Vorschläge sucht, kann **„Weitere Orte in der Region suchen“** explizit antippen.
