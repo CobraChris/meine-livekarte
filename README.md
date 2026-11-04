@@ -1,3 +1,11 @@
+## Gleichwertigere Google-Demokartenansicht (04.11.2026)
+
+Der Kartenumschalter **OpenStreetMap | Google | ⚙** ist jetzt in einer eigenen 48-px-Leiste **direkt am unteren Rand des Kartenbereichs** untergebracht. Diese schmale Leiste ist auch im Vollbild erreichbar und lässt die Google- und OSM-Quellenangaben frei. Die separate, leere Zeile „Google-Demo-Einstellungen“ unter der Karte ist verborgen; nur das Zahnrad öffnet die Eingabe zum Ändern oder Löschen des bereits lokal gespeicherten Demo-Schlüssels.
+
+Google zeichnet nun **dieselben Tagesziele mit teal-farbenen Markern und nummerierten gelben Badges** wie die vorhandene OpenStreetMap-Tagesroute. Die Reihenfolge kommt von der bereits vorhandenen optimierten Tagesplanung; nach einer berechneten Reihenfolge wird deren Stopp-Reihenfolge übernommen. Position und Zoom (auch Zwischenstufen soweit möglich) werden beim Umschalten übertragen. Der Google-Demo-Modus nutzt weiterhin ausschließlich die Maps JavaScript API, **keine** Google Places-/Routes-Abfragen und **keine Google-Bewertungen**. Die Fußwegberechnung und bearbeitbare Tagesrouten bleiben in OSM.
+
+---
+
 ## Kostenfreier Google-Kartenprototyp (Demoschlüssel)
 
 Unter der Karte gibt es eine zunächst geschlossene Einstellung **„Karte: OpenStreetMap“**. Dort kann auf dem eigenen Gerät ein **Google Maps Demo Key** eingegeben und der Kartentest gestartet werden. Der Schlüssel wird ausschließlich im lokalen Browserspeicher \`livekarte-google-demo-key-v1\` gehalten (nicht in GitHub, keinem App-Backend und nicht an ChatGPT geschickt). Die Karten-JavaScript-API wird **erst nach aktivem Klick** geladen. Bei einem Google-Lade- oder Authentifizierungsfehler bleibt OpenStreetMap als Alternative vorhanden. Schaltflächen bieten den Rückwechsel sowie das lokale Löschen des Schlüssels.

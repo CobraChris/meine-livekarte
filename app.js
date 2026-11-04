@@ -134,7 +134,15 @@
   map.attributionControl.setPrefix(false);
   const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>' }).addTo(map);
   // Explicit opt-in only: OSM stays usable without a Demo Key.
-  const googleDemo=window.LivekarteGoogleDemo?.init({map,places:()=>visiblePlaces()});
+  const googleDemo=window.LivekarteGoogleDemo?.init({
+    map,places:()=>visiblePlaces(),placeKey:C.placePlanKey,
+    // The same stop order used by renderDayRoutePreview() on Leaflet.
+    // After a real foot-route optimization, preserve its displayed order.
+    stops:()=>{
+      const ordered=dailyStops();
+      return dayFootRoute?.key===dailyRouteKey(ordered)?dayFootRoute.stops:ordered;
+    }
+  });
   let tileWarning = false;
   tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
   const pins = L.layerGroup().addTo(map);
