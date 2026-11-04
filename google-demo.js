@@ -26,21 +26,35 @@
       badge+'</svg>';
     return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
   }
+  // Only reuse locally available Leaflet/OSRM geometry; never Google Routes.
+  function normalizedDayRoute(source){
+    if(!source||!Array.isArray(source.points)||source.points.length<2||
+       source.points.length>12000)return null;
+    const path=[];
+    for(const point of source.points){
+      if(!Array.isArray(point)||point.length<2||
+         !Number.isFinite(point[0])||!Number.isFinite(point[1])||
+         Math.abs(point[0])>90||Math.abs(point[1])>180)return null;
+      path.push({lat:point[0],lng:point[1]});
+    }
+    return {path,real:source.real===true};
+  }
   let instance=null;
   function init(options){
     if(instance)return instance;
-    const {map,places,stops=()=>[],placeKey}=options;
+    const {map,places,stops=()=>[],route=()=>null,placeKey}=options;
     const $=id=>document.getElementById(id);
-    const panel=$('google-demo-control'), googleEl=$('google-demo-map');
+    const panel=$('google-demo-control'), googleEl=$('google-demo-map'),
+      routeLegend=$('google-demo-route-legend');
     const input=$('google-demo-key'),open=$('google-demo-start'),
       forget=$('google-demo-forget'),state=$('google-demo-status'),
       osm=$('provider-osm'),googleButton=$('provider-google'),
       settings=$('provider-settings'),notice=$('provider-notice'),
       heading=$('google-demo-summary'),workspace=googleEl.closest('.workspace');
-    if(!panel||!googleEl||!input||!open||!forget||!state||
+    if(!panel||!googleEl||!routeLegend||!input||!open||!forget||!state||
        !osm||!googleButton||!settings||!notice||!heading||!workspace)
       return null;
-    let googleMap=null,markers=[],info=null,active=false,loading=false;
+    let googleMap=null,markers=[],routeLine=null,info=null,active=false,loading=false;
     let sdkKey=null,pending=null,expiry=null;
     const say=text=>{state.textContent=text;};
     const haveKey=()=>{try{return localStorage.getItem(KEY_STORE)||'';}catch{return '';}};
@@ -63,6 +77,7 @@
       $('map').setAttribute('aria-hidden',String(active));
     }
     function resetToOSM(message){
+      clearRoute();
       const center=active?googleMap?.getCenter?.():null;
       const zoom=active?googleMap?.getZoom?.():null;
       active=false;
@@ -76,6 +91,38 @@
       if(message)say(message);
       notice.textContent='';
       notice.hidden=true;
+    }
+    function clearRoute(){
+      if(routeLine)routeLine.setMap(null);
+      routeLine=null;
+      routeLegend.textContent='';
+      routeLegend.hidden=true;
+    }
+    function refreshRoute(){
+      clearRoute();
+      if(!active||!googleMap||!root.google?.maps?.Polyline)return;
+      let prepared;
+      try{prepared=normalizedDayRoute(route());}
+      catch{return;}
+      if(!prepared)return;
+      const {path,real}=prepared;
+      const options={
+        map:googleMap,path,geodesic:false,clickable:false,zIndex:800,
+        strokeColor:real?'#ffda79':'#ffcf78',
+        strokeWeight:real?5:3,strokeOpacity:real?0.95:0
+      };
+      // Google's standard repeating line symbols, not walking geometry.
+      if(!real)options.icons=[{
+        icon:{path:'M 0,-1 0,1',strokeColor:'#ffcf78',
+          strokeOpacity:0.9,strokeWeight:2,scale:4},
+        offset:'0',repeat:'20px'
+      }];
+      try{routeLine=new google.maps.Polyline(options);}
+      catch{clearRoute();return;}
+      routeLegend.textContent=real
+        ?'━ Berechneter Fußweg · OpenStreetMap-Routing'
+        :'┄ Reihenfolge der Tagesziele · Luftlinie, kein Fußweg';
+      routeLegend.hidden=false;
     }
     function refreshPins(){
       if(!googleMap||!root.google?.maps)return;
@@ -112,6 +159,7 @@
         });
         markers.push(marker);
       }
+      refreshRoute();
     }
     function showGoogle(){
       if(!root.google?.maps?.Map)throw new Error('Google-Kartenbibliothek ist nicht verfügbar.');
@@ -220,6 +268,7 @@
     updateUI();
     instance={
       refresh(){if(active)refreshPins();},
+      refreshRoute(){if(active)refreshRoute();},
       syncFromOSM(){
         if(!active||!googleMap)return;
         const center=map.getCenter();
@@ -231,7 +280,7 @@
     };
     return instance;
   }
-  const api={init,keyLooksValid,scriptUrl,markerSvg};
+  const api={init,keyLooksValid,scriptUrl,markerSvg,normalizedDayRoute};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LivekarteGoogleDemo=api;
 })(globalThis);
