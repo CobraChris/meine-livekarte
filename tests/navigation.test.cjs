@@ -75,6 +75,7 @@ function navigationHarness(){
   walkController:null,walkRequestGeneration:0,
   watch:1,position:pos(36.14,137.25),positionAccuracy:9,
   positionUpdatedAt:Date.now(),following:false,
+  setCameraMode(mode){ctx.following=mode==='gps-follow';},
   W,Date,say(){},
   centerCalls,centerOnGPS(ll,zoom){centerCalls.push({ll,zoom})},
   refreshGPSFollowControl(){},
@@ -153,8 +154,8 @@ test('routing privacy, existing GPS follow controls and PWA deployment remain in
  assert.match(app,/updateWalkingNavigation\(position,positionAccuracy\);/);
  assert.match(app,/function startWalkingNavigation\(\)/);
  assert.match(app,/function stopWalkingNavigation\(\)/);
- assert.match(app,/if\s*\(following\)\s*centerOnGPS/);
- assert.match(app,/map\.on\('dragstart',\s*pauseGPSFollow\)/);
+ assert.match(app,/if\s*\(camera\.isFollowing\(\)\)\s*centerOnGPS/);
+ assert.match(app,/map\.on\('dragstart',\s*\(\)\s*=>\s*\{\s*if\s*\(!camera\.isProgrammatic\(\)\)\s*pauseGPSFollow\(\)/);
  assert.match(app,/GPS-Navigation aktiv/);
  assert.doesNotMatch(app.slice(app.indexOf('function updateWalkingNavigation('),
    app.indexOf('function startWalkingNavigation(')),/fetch\(|localStorage|indexedDB|routing\.openstreetmap\.de/);
