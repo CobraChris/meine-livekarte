@@ -217,3 +217,43 @@ test('combined map overview adapts to tall controls, short viewports and hidden 
  assert.ok(result.paddingTopLeft[1]<=Math.round(390*0.62),
    'tiny fullscreen layouts must still retain space for the destination points');
 });
+
+test('daily stop order is exact shortest open route while preserving scheduled first stop',()=>{
+ const nara=C.presetPlaces('town-kyoto').filter(p=>p.schedule?.startsWith('04.11.'));
+ assert.equal(nara.length,4);
+ const result=MD.optimizeDayOrder(nara,C.distance);
+ assert.equal(result.length,4);
+ assert.equal(result[0].name,'Nara-Park');
+ assert.deepEqual(result.map(x=>x.name).sort(),nara.map(x=>x.name).sort());
+ const pathDistance=arr=>arr.slice(1).reduce((sum,p,i)=>sum+C.distance(arr[i],p),0);
+ function permutations(items){
+  if(!items.length)return [[]];
+  return items.flatMap((x,i)=>permutations(items.filter((_,j)=>j!==i)).map(rest=>[x,...rest]));
+ }
+ const optimum=Math.min(...permutations(nara.slice(1)).map(rest=>
+   pathDistance([nara[0],...rest])));
+ assert.ok(Math.abs(pathDistance(result)-optimum)<0.01,'exact optimal length after first stop');
+ assert.deepEqual(MD.optimizeDayOrder([],C.distance),[]);
+ assert.deepEqual(MD.optimizeDayOrder([nara[0]],C.distance),[]);
+});
+
+test('auto day itinerary is local, numbered and honest; foot-route is a deliberate request',()=>{
+ const html=read('index.html'),app=read('app.js'),css=read('style.css');
+ for(const id of ['day-route-preview','day-route-stops','day-route-status','day-route-foot'])
+  assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(app,/renderDayRoutePreview\(\);\s*renderTourBuilder\(\)/);
+ assert.match(app,/MD\.optimizeDayOrder\(goals,C\.distance\)/);
+ assert.match(app,/dashArray:actual\?null:'5 10'/);
+ assert.match(app,/className:'day-route-label'/);
+ assert.match(app,/dayRouteLayers\.clearLayers\(\)/);
+ assert.match(app,/\$\('day-route-foot'\)\.onclick=\(\)=>\{void calculateDailyFootRoute\(\);\}/);
+ const fn=app.slice(app.indexOf('  async function calculateDailyFootRoute(){'),
+    app.indexOf("  $('day-route-foot').onclick=",app.indexOf('  async function calculateDailyFootRoute(){')));
+ assert.match(fn,/W\.optimizedTourRequestUrl\(from,remaining\)/);
+ assert.match(fn,/W\.parseOptimizedTour\(JSON\.parse\(raw\),from,remaining\)/);
+ assert.doesNotMatch(fn,/position\.lat|position\.lng|navigator\.geolocation/);
+ assert.match(fn,/if\(generation!==dayFootGeneration\|\|dailyRouteKey\(dailyStops\(\)\)!==key\)return/);
+ assert.match(app,/if\(dayFootController\)dayFootController\.abort\(\)/);
+ assert.match(html,/Die Tagesplanung zeigt ohne Netzwerk zunächst eine gestrichelte Luftlinienvorschau/);
+ assert.match(css,/\.day-route-number\{/);
+});
