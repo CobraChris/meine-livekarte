@@ -147,7 +147,7 @@ test('goal arrival requires two accurate position samples, never automatically e
 
 test('routing privacy, existing GPS follow controls and PWA deployment remain intact',()=>{
  const html=read('index.html'),app=read('app.js'),css=read('style.css'),sw=read('sw.js');
- for(const id of ['walk-route-nav','walk-route-nav-state','walk-route-mini','recenter-gps'])
+ for(const id of ['walk-route-nav','walk-route-nav-state','walk-route-mini','gps'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(app,/walkingNavButton\.onclick=/);
  assert.match(app,/updateWalkingNavigation\(position,positionAccuracy\);/);

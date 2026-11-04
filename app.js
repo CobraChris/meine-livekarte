@@ -110,8 +110,8 @@
     // The GPS precision remains available on the GPS button without a
     // permanent full-width toast obscuring the map.
     if (/^GPS aktiv\b/.test(text)) {
-      $('gps').title = text;
-      $('gps').setAttribute('aria-label','GPS ausschalten · '+text);
+      $('gps').title = 'Mein Standort · '+text;
+      $('gps').setAttribute('aria-label','Mein Standort · '+text);
       // A GPS fix resolves the preceding "Standort wird ermittelt" notice.
       // The previous timeout was cleared above, so hide that text explicitly.
       status.textContent='';
@@ -3295,11 +3295,22 @@
     else if(currentPlaces().length) fit();
     else if(currentPlan().center) map.setView(currentPlan().center,currentPlan().kind==='city'?14:8);
   };
-  const recenterGPS = $('recenter-gps');
   let automaticGPSView = false;
   function refreshGPSFollowControl() {
-    // When the user moves the map, show a one-tap way to resume auto-follow.
-    recenterGPS.hidden = watch === null || following || !position;
+    // "Mein Standort" is a single control: enable GPS if off, or resume
+    // following and center on the current fix. Green means FOLLOWING, not
+    // merely that background GPS measurements continue.
+    const active=watch!==null && following && !!position;
+    const control=$('gps');
+    control.setAttribute('aria-pressed',String(active));
+    const label=watch===null?'Mein Standort · GPS einschalten'
+      :!position?'Mein Standort · GPS wird ermittelt'
+        :active?'Meinem Standort folgen':'Auf meinen Standort zentrieren';
+    control.setAttribute('aria-label',label);
+    control.title=label;
+    $('gps-privacy-toggle').textContent=watch===null?'GPS einschalten':'GPS ausschalten';
+    $('gps-privacy-state').textContent=watch===null?'GPS ist ausgeschaltet.'
+      :position?'GPS erfasst deinen Standort.':'GPS ermittelt deinen Standort.';
   }
   function pauseGPSFollow() {
     if (!following) return;
@@ -3315,12 +3326,6 @@
   // Only GPS-initiated zooms are exempt. GPS measurements keep updating.
   map.on('zoomstart', () => { if (!automaticGPSView) pauseGPSFollow(); });
   map.on('dragstart', pauseGPSFollow);
-  recenterGPS.onclick = () => {
-    if (!position || watch === null) return;
-    following = true;
-    refreshGPSFollowControl();
-    centerOnGPS([position.lat,position.lng],Math.max(map.getZoom(),16));
-  };
   function stopGPS(message = 'GPS ausgeschaltet. Standort wurde entfernt.') {
     if (watch !== null) navigator.geolocation.clearWatch(watch);
     clearWalkingRoute();
@@ -3329,9 +3334,8 @@
     following = false; stopCompass(); refreshGPSFollowControl();
     if (userDot) { map.removeLayer(userDot); userDot = null; }
     if (accuracy) { map.removeLayer(accuracy); accuracy = null; }
-    $('gps').setAttribute('aria-pressed','false');
-    $('gps').title='GPS einschalten';$('gps').setAttribute('aria-label','GPS einschalten');
-    $('gps').lastElementChild.textContent = 'GPS einschalten'; refreshDistances(); say(message);
+    refreshGPSFollowControl();
+    refreshDistances(); say(message);
   }
   // GPS auto-start is enabled by default. Only the user can opt out using
   // "GPS ausschalten"; leaving/reopening the page does not reset that choice.
@@ -3351,8 +3355,6 @@
       return;
     }
     following = true; refreshGPSFollowControl();
-    $('gps').setAttribute('aria-pressed','true');
-    $('gps').lastElementChild.textContent = 'GPS ausschalten';
     say('Standort wird ermittelt …');
     try{
       watch = navigator.geolocation.watchPosition(result => {
@@ -3394,15 +3396,33 @@
         const messages = {1:'Standortzugriff verweigert. Du kannst GPS in den Website-Einstellungen des Browsers erlauben.',2:'Standort derzeit nicht verfügbar. Bitte erneut versuchen.',3:'Standortabfrage hat zu lange gedauert. Bitte erneut versuchen.'};
         stopGPS(messages[error.code] || 'GPS konnte nicht gestartet werden.');
       }, {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+      refreshGPSFollowControl();
     }catch{stopGPS('GPS konnte nicht gestartet werden. Bitte Berechtigung prüfen.');return;}
     // iOS compass permission must be requested by a deliberate gesture.
     if(!automatic || typeof DeviceOrientationEvent==='undefined' ||
        typeof DeviceOrientationEvent.requestPermission!=='function')startCompass();
   }
   $('gps').onclick = () => {
-    if(watch!==null){setAutoGPSAllowed(false);stopGPS();return;}
-    setAutoGPSAllowed(true);
-    startGPS(false);
+    if(watch===null){
+      setAutoGPSAllowed(true);
+      startGPS(false);
+      return;
+    }
+    if(!position){say('Standort wird ermittelt …');return;}
+    following=true;
+    refreshGPSFollowControl();
+    centerOnGPS([position.lat,position.lng],Math.max(map.getZoom(),16));
+  };
+  // Full GPS shutdown is an explicit privacy setting, not a map-navigation step.
+  $('gps-privacy-toggle').onclick = () => {
+    if(watch!==null){
+      setAutoGPSAllowed(false);
+      stopGPS();
+    }else{
+      setAutoGPSAllowed(true);
+      startGPS(false);
+    }
+    refreshGPSFollowControl();
   };
   async function autoStartGPS() {
     if(!autoGPSAllowed() || !window.isSecureContext || !navigator.geolocation)return;
@@ -3425,7 +3445,10 @@
     $('import-target').textContent = 'Speichern in: '+currentPlan().name;
     $('import-dialog').showModal();
   };
-  $('privacy').onclick = () => $('help-dialog').showModal();
+  $('privacy').onclick = () => {
+    refreshGPSFollowControl();
+    $('help-dialog').showModal();
+  };
   $('import-form').onsubmit = event => {
     event.preventDefault();
     try {
@@ -3867,6 +3890,8 @@
   if (!readTicketUpdate() && !readJourneyLink() && !readLink()) {
     selectPlan(activePlanId,{save:false,url:false,announce:false});
   }
-  // Wait until the saved view is initialized so GPS centering wins on launch.
+  // Preserve the selected day-trip view on launch; the GPS startup helper
+  // already checks distance before enabling map follow.
+  refreshGPSFollowControl();
   void autoStartGPS();
 })();

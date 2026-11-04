@@ -167,15 +167,6 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .station-transfer-inset .station-transfer-connector{line-height:1.45}
 .station-transfer-inset p{line-height:1.5}
 
-/* Manual exploration must never be overwritten by a new GPS fix.
-   Show a separate, easy-to-hit follow-again control only when needed. */
-#recenter-gps{position:absolute;right:20px;top:176px;z-index:850;
-  width:48px;height:48px;padding:0;display:grid;place-items:center;
-  border:1px solid #a4ecc9;border-radius:12px;background:#17392f;
-  color:#b6f1d4;font-size:29px;font-weight:750;box-shadow:0 4px 14px #0007}
-#recenter-gps[hidden]{display:none}
-@media(max-width:760px){#recenter-gps{right:10px;top:176px}}
-
 /* Route/city plan switcher - visible also in map fullscreen. */
 .plan-picker{position:absolute;z-index:860;top:68px;left:20px;
   width:min(395px,calc(100% - 101px));padding:8px 9px 9px;
@@ -2102,8 +2093,8 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 }
 
 
-/* One unified map-view / GPS toolbar below Leaflet's separate + / - zoom.
-   Recenter stays hidden until map gestures pause GPS following. */
+/* Three map functions: fullscreen, selected day goals, and my location.
+   GPS off is available only in Datenschutz & Hilfe. */
 .workspace .map-actions{
   position:absolute;z-index:870;
   top:132px;right:10px;bottom:auto;left:auto;
@@ -2116,8 +2107,7 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   backdrop-filter:blur(4px)
 }
 .workspace .map-actions button,
-.workspace .map-actions #expand-map,
-.workspace .map-actions #recenter-gps{
+.workspace .map-actions #expand-map{
   position:static;
   z-index:auto;
   box-sizing:border-box;
@@ -2131,17 +2121,22 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   font-size:23px;font-weight:700;line-height:1;
   cursor:pointer
 }
-.workspace .map-actions #recenter-gps[hidden]{display:none!important}
 .workspace .map-actions button + button{border-top:1px solid #426057;border-radius:0}
 .workspace .map-actions button:focus-visible{outline:2px solid #beffd9;outline-offset:-2px}
-.workspace .map-actions #recenter-gps:not([hidden]),
 .workspace .map-actions #gps[aria-pressed="true"],
 .workspace .map-actions #expand-map[aria-pressed="true"]{
   background:#276a50;color:#eafff2
 }
-.workspace .map-actions #fit:hover,
-.workspace .map-actions button:hover{background:#345e53}
-.workspace .map-actions #fit{font-size:21px}
+/* Touch screens can retain :hover after a tap. Only true mouse pointers
+   receive hover backgrounds; one-shot fit is never a persistent mode. */
+@media(hover:hover) and (pointer:fine){
+  .workspace .map-actions button:hover{background:#345e53}
+}
+.workspace .map-actions #fit{font-size:21px;background:transparent}
+.workspace .map-actions #fit:active{background:#345e53}
+@media(hover:none){
+  .workspace .map-actions #fit:hover{background:transparent}
+}
 .workspace .map-actions #gps{font-size:24px}
 .workspace .map-actions button span{
   position:absolute!important;width:1px!important;height:1px!important;
@@ -2152,6 +2147,17 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   .workspace .map-actions{top:132px;right:10px;bottom:auto;left:auto;max-height:calc(100% - 156px)}
   .workspace.is-expanded .map-actions{top:132px}
   .workspace .map-actions button,
-  .workspace .map-actions #expand-map,
-  .workspace .map-actions #recenter-gps{width:40px;height:43px;min-width:40px;min-height:43px}
+  .workspace .map-actions #expand-map{width:40px;height:43px;min-width:40px;min-height:43px}
+}
+
+/* Explicit, secondary GPS privacy setting rather than a fourth map button. */
+.gps-privacy-control{
+  margin:12px 0;padding:12px;border:1px solid #557c70;border-radius:11px;
+  background:#193730;display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px
+}
+.gps-privacy-control p{margin:0;flex:1;min-width:125px;color:#d7eddf;font-size:12px}
+.gps-privacy-control button{
+  min-height:42px;padding:8px 13px;background:#254b44;
+  border:1px solid #88bea6;color:#e8fff1;font-weight:700;font-size:12px
 }
