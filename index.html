@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="map-popup-core.js"></script><script defer src="map-camera-core.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="multi-day-core.js"></script><script defer src="route-discovery.js"></script><script defer src="place-search-core.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-share-inbox.js"></script><script defer src="ticket-library-ui.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="map-popup-core.js"></script><script defer src="map-camera-core.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="multi-day-core.js"></script><script defer src="route-discovery.js"></script><script defer src="place-search-core.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="google-demo.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-share-inbox.js"></script><script defer src="ticket-library-ui.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -20,7 +20,7 @@
   <button id="quick-map" type="button">🗺 Karte</button>
   <button id="quick-tickets" type="button">🎟 Meine Tickets</button>
 </nav>
-<section class="workspace" aria-label="Interaktive Karte"><div id="map" aria-label="Karte mit empfohlenen Orten"></div><div class="plan-picker" role="group" aria-label="Reiseabschnitt auswählen">
+<section class="workspace" aria-label="Interaktive Karte"><div id="map" aria-label="Karte mit empfohlenen Orten"></div><div id="google-demo-map" class="google-demo-map" hidden aria-label="Google-Demokarte"></div><div class="plan-picker" role="group" aria-label="Reiseabschnitt auswählen">
   <div class="plan-picker-heading">
     <label for="plan-select">Reiseabschnitt<span id="plan-period"></span></label>
     <span id="plan-day-summary" role="status" aria-live="polite" hidden></span>
@@ -102,6 +102,23 @@
   <button id="tour-route-close" type="button" title="Rundgang von der Karte entfernen" aria-label="Rundgang beenden">×</button>
 </div></section>
 <section id="day-planning" class="day-planning" aria-label="Tagesplanung unter der Karte">
+<details id="google-demo-control" class="google-demo-control">
+  <summary id="google-demo-summary">🗺 Karte: OpenStreetMap</summary>
+  <div class="google-demo-inner">
+    <label for="google-demo-key">Google Maps Demo-Key (nur auf deinem Handy)</label>
+    <input id="google-demo-key" type="password" autocomplete="off" spellcheck="false"
+      placeholder="Demo-Key hier einfügen" aria-describedby="google-demo-help">
+    <p id="google-demo-help">Kostenfreier Test ohne Billing. Der Schlüssel bleibt in diesem Browser,
+      erscheint nicht in GitHub und wird nur für die Google-Kartenanfrage verwendet.
+      Google-Bewertungen und Rezensionen sind mit dem Demo-Key nicht verfügbar.</p>
+    <div class="google-demo-actions">
+      <button id="google-demo-start" type="button">Google Demo testen</button>
+      <button id="google-demo-osm" type="button">OpenStreetMap</button>
+      <button id="google-demo-forget" type="button">Key entfernen</button>
+    </div>
+    <p id="google-demo-status" role="status" aria-live="polite"></p>
+  </div>
+</details>
 <section id="city-days" class="city-days" aria-label="Reisetage auswählen" hidden>
   <div class="city-days-heading">
     <strong id="city-days-title">🗓 Tagesplanung</strong>
