@@ -40,6 +40,7 @@ assets = [
     ("src", "place-search-core.js"),
     ("src", "next-step-core.js"),
     ("src", "japanese-destination.js"),
+    ("src", "google-demo.js"),
     ("src", "app.js"),
     ("src", "sync.js"),
     ("src", "outbox-core.js"),
