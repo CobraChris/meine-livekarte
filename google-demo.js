@@ -42,16 +42,18 @@
   let instance=null;
   function init(options){
     if(instance)return instance;
-    const {map,places,stops=()=>[],route=()=>null,placeKey}=options;
+    const {map,places,stops=()=>[],route=()=>null,
+      goals=()=>[],fitOSM=()=>{},placeKey}=options;
     const $=id=>document.getElementById(id);
     const panel=$('google-demo-control'), googleEl=$('google-demo-map'),
-      routeLegend=$('google-demo-route-legend');
+      routeLegend=$('google-demo-route-legend'),
+      routeMeaning=$('google-demo-route-meaning');
     const input=$('google-demo-key'),open=$('google-demo-start'),
       forget=$('google-demo-forget'),state=$('google-demo-status'),
       osm=$('provider-osm'),googleButton=$('provider-google'),
       settings=$('provider-settings'),notice=$('provider-notice'),
       heading=$('google-demo-summary'),workspace=googleEl.closest('.workspace');
-    if(!panel||!googleEl||!routeLegend||!input||!open||!forget||!state||
+    if(!panel||!googleEl||!routeLegend||!routeMeaning||!input||!open||!forget||!state||
        !osm||!googleButton||!settings||!notice||!heading||!workspace)
       return null;
     let googleMap=null,markers=[],routeLine=null,info=null,active=false,loading=false;
@@ -76,7 +78,7 @@
       googleEl.hidden=!active;
       $('map').setAttribute('aria-hidden',String(active));
     }
-    function resetToOSM(message){
+    function resetToOSM(message,fitDay=false){
       clearRoute();
       const center=active?googleMap?.getCenter?.():null;
       const zoom=active?googleMap?.getZoom?.():null;
@@ -88,6 +90,9 @@
       }
       updateUI();
       map.invalidateSize();
+      if(fitDay&&goals().length>=2){
+        try{fitOSM();}catch{/* Fall back to the synchronized map camera. */}
+      }
       if(message)say(message);
       notice.textContent='';
       notice.hidden=true;
@@ -95,7 +100,8 @@
     function clearRoute(){
       if(routeLine)routeLine.setMap(null);
       routeLine=null;
-      routeLegend.textContent='';
+      routeMeaning.textContent='';
+      routeLegend.open=false;
       routeLegend.hidden=true;
     }
     function refreshRoute(){
@@ -108,20 +114,26 @@
       const {path,real}=prepared;
       const options={
         map:googleMap,path,geodesic:false,clickable:false,zIndex:800,
-        strokeColor:real?'#ffda79':'#ffcf78',
-        strokeWeight:real?5:3,strokeOpacity:real?0.95:0
+        strokeColor:real?'#D58A13':'#FDB72A',
+        strokeWeight:real?6:4,strokeOpacity:real?0.99:0
       };
       // Google's standard repeating line symbols, not walking geometry.
-      if(!real)options.icons=[{
-        icon:{path:'M 0,-1 0,1',strokeColor:'#ffcf78',
-          strokeOpacity:0.9,strokeWeight:2,scale:4},
-        offset:'0',repeat:'20px'
-      }];
+      if(!real)options.icons=[
+        // Dark outline under the yellow dashes keeps them visible over both
+        // Google parks (green) and light streets without implying a road.
+        {icon:{path:'M 0,-1 0,1',strokeColor:'#203F3C',
+          strokeOpacity:0.98,strokeWeight:6,scale:4},offset:'0',repeat:'26px'},
+        {icon:{path:'M 0,-1 0,1',strokeColor:'#FFC13E',
+          strokeOpacity:1,strokeWeight:3,scale:4},offset:'0',repeat:'26px'}
+      ];
       try{routeLine=new google.maps.Polyline(options);}
       catch{clearRoute();return;}
-      routeLegend.textContent=real
-        ?'━ Berechneter Fußweg · OpenStreetMap-Routing'
-        :'┄ Reihenfolge der Tagesziele · Luftlinie, kein Fußweg';
+      routeMeaning.textContent=real
+        ?'━ Berechneter Fußweg aus OpenStreetMap-Routing'
+        :'┄ Luftlinie zwischen Tageszielen – kein berechneter Fußweg';
+      routeLegend.setAttribute('aria-label',real
+        ?'Information zur berechneten Fußroute'
+        :'Information zur gestrichelten Luftlinien-Vorschau');
       routeLegend.hidden=false;
     }
     function refreshPins(){
@@ -161,6 +173,30 @@
       }
       refreshRoute();
     }
+    function fitGoogleGoals(){
+      if(!active||!googleMap?.fitBounds||!root.google?.maps?.LatLngBounds)return false;
+      const selected=goals().filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
+      if(selected.length<2)return false;
+      const bounds=new google.maps.LatLngBounds();
+      for(const p of selected)bounds.extend({lat:p.lat,lng:p.lng});
+      const height=googleEl.clientHeight||map.getSize?.().y||650;
+      const width=googleEl.clientWidth||map.getSize?.().x||380;
+      // The picker covers the top of the Google canvas. Keep large map pins
+      // and Street View controls out of the safe frame, with room for credits.
+      const picker=document.querySelector?.('.plan-picker');
+      const view=googleEl.getBoundingClientRect?.();
+      const pickerRect=picker?.getBoundingClientRect?.();
+      const overlayBottom=view&&pickerRect?Math.max(0,pickerRect.bottom-view.top):0;
+      const padding={
+        top:Math.min(Math.round(height*.46),
+          Math.max(150,Math.ceil(overlayBottom)+48)),
+        bottom:Math.min(95,Math.round(height*.21)),
+        left:Math.min(52,Math.round(width*.16)),
+        right:Math.min(110,Math.round(width*.28))
+      };
+      googleMap.fitBounds(bounds,padding);
+      return true;
+    }
     function showGoogle(){
       if(!root.google?.maps?.Map)throw new Error('Google-Kartenbibliothek ist nicht verfügbar.');
       const center=map.getCenter(),zoom=Math.max(2,Math.min(19,map.getZoom()));
@@ -177,6 +213,7 @@
         googleMap.setZoom(zoom);
       }
       refreshPins();
+      fitGoogleGoals();
       panel.open=false;
       notice.textContent='';
       notice.hidden=true;
@@ -237,7 +274,7 @@
       expiry=setTimeout(()=>fail('Google lädt zu lange. OpenStreetMap bleibt verfügbar.'),18000);
       document.head.append(script);
     });
-    osm.addEventListener('click',()=>resetToOSM('OpenStreetMap aktiv. Google wird nicht erneut geladen.'));
+    osm.addEventListener('click',()=>resetToOSM('OpenStreetMap aktiv. Google wird nicht erneut geladen.',true));
     googleButton.addEventListener('click',()=>{
       if(active||loading)return;
       if(!haveKey()){
@@ -274,7 +311,9 @@
         const center=map.getCenter();
         googleMap.setCenter({lat:center.lat,lng:center.lng});
         googleMap.setZoom(Math.max(2,Math.min(19,map.getZoom())));
+        fitGoogleGoals();
       },
+      fitGoals(){return fitGoogleGoals();},
       forceOSM(){if(active)resetToOSM('Für unsere eigenen Routen verwenden wir OpenStreetMap.');},
       isGoogle(){return active;}
     };

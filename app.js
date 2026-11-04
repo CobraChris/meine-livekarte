@@ -147,7 +147,10 @@
       if(ordered.length<2)return null;
       const actual=dayFootRoute?.key===dailyRouteKey(ordered)?dayFootRoute:null;
       return {real:!!actual,points:actual?.points||ordered.map(p=>[p.lat,p.lng])};
-    }
+    },
+    // Same day-goal set on both providers; no hotel stretching a Nara day trip.
+    goals:()=>dailyStops(),
+    fitOSM:()=>fit(mapFocusPlaces())
   });
   let tileWarning = false;
   tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
@@ -1672,8 +1675,12 @@
   }
   function fit(items = mapFocusPlaces()) {
     const visible = items.filter(p => filter === 'all' || p.category === filter);
-    if (visible.length) withCameraView('day-goals',()=>map.fitBounds(
-      visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 }));
+    // The old uniform 45px padding clipped outer day stops behind the
+    // mobile picker and right-side controls, especially on Nara day trips.
+    const day=activePlanId==='town-kyoto'&&MD.days('town-kyoto').includes(activeCityDay);
+    const padding=day?mapOverviewPadding():{padding:[45,45]};
+    if(visible.length)withCameraView('day-goals',()=>map.fitBounds(
+      visible.map(p=>[p.lat,p.lng]), {...padding,maxZoom:16,animate:false}));
   }
   // Measure the visible overlays rather than guessing their height: phone
   // font sizes, search suggestions and installed-PWA viewport heights differ.
