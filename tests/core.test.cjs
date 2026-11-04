@@ -202,9 +202,11 @@ test('manual zoom pauses GPS camera follow but keeps watchPosition and marker up
  assert.match(app,/if \(following\) centerOnGPS\(ll,Math\.max\(map\.getZoom\(\),15\)\)/);
  assert.match(app,/userDot\.setLatLng\(ll\); accuracy\.setLatLng\(ll\)/);
  assert.match(app,/function pauseGPSFollow\(\)[\s\S]*?following = false;[\s\S]*?refreshGPSFollowControl\(\)/);
- assert.match(app,/recenterGPS\.onclick = \(\) =>/);
- assert.match(html,/id="recenter-gps"[^>]*hidden/);
- assert.match(css,/#recenter-gps\[hidden\]\{display:none\}/);
+ assert.match(app,/\$\('gps'\)\.onclick = \(\) =>/);
+ assert.match(app,/following=true;\s*refreshGPSFollowControl\(\);\s*centerOnGPS/);
+ assert.match(html,/id="gps"[^>]*aria-label="Meinen Standort anzeigen oder GPS starten"/);
+ assert.doesNotMatch(html,/id="recenter-gps"/);
+ assert.match(css,/@media\(hover:none\)/);
  assert.match(html,/unterschiedliche Gleise hintereinander an einem durchgehenden Bahnsteig/);
 });
 
