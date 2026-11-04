@@ -296,3 +296,65 @@ test('no Google routing/search/billing requests are introduced for day line',()=
  assert.match(css,/\.google-demo-route-legend\[hidden\]\{display:none!important\}/);
  assert.doesNotMatch(source,/fetch\(|computeRoutes|DirectionsService|PlacesService/);
 });
+
+
+test('Google camera fits all daily goals with edge-safe padding, then OSM fits too',()=>{
+ const start={name:'Start',lat:34.679,lng:135.823};
+ const middle={name:'Mitte',lat:34.683,lng:135.835};
+ const end={name:'Ende',lat:34.665,lng:135.808};
+ let osmFits=0;
+ const t=appFixture({places:[start,middle,end],goals:[start,middle,end],
+   fitOSM:()=>{osmFits++;}});
+ const recorded=[];
+ const gm={
+   center:{lat:34.68,lng:135.82},zoom:14,
+   fitBounds(bounds,padding){recorded.push({points:bounds.points,padding});},
+   setCenter(v){this.center=v;},setZoom(z){this.zoom=z;},
+   getCenter(){return {lat:()=>this.center.lat,lng:()=>this.center.lng};},
+   getZoom(){return this.zoom;}
+ };
+ t.context.google={maps:{
+   Map:class{constructor(){return gm;}},
+   Marker:class{addListener(){}setMap(){}},
+   InfoWindow:class{},
+   LatLngBounds:class{
+     constructor(){this.points=[];}
+     extend(point){this.points.push(point);}
+   }
+ }};
+ t.get('google-demo-key').value='AIza'+'x'.repeat(35);
+ t.get('google-demo-start').click();
+ assert.equal(recorded.length,1);
+ assert.equal(recorded[0].points.length,3);
+ assert.deepEqual(Array.from(recorded[0].points,p=>p.lat),
+   [start.lat,middle.lat,end.lat]);
+ assert.ok(recorded[0].padding.top>=150);
+ assert.ok(recorded[0].padding.bottom>=50);
+ assert.ok(recorded[0].padding.right>=50);
+ assert.ok(recorded[0].padding.left>=35);
+ // The day map recenters only on deliberate map-provider switching.
+ t.get('provider-osm').click();
+ assert.equal(osmFits,1);
+ t.get('provider-google').click();
+ assert.equal(recorded.length,2);
+ t.widget.syncFromOSM();
+ assert.equal(recorded.length,3);
+ // Non-day views must retain their user-selected camera, without forced fit.
+ const withoutGoals=appFixture();
+ assert.equal(withoutGoals.widget.isGoogle(),false);
+ const app=read('app.js');
+ assert.match(app,/const padding=day\?mapOverviewPadding\(\):\{padding:\[45,45\]\}/);
+ assert.match(app,/goals:\(\)=>dailyStops\(\)/);
+ assert.match(app,/fitOSM:\(\)=>fit\(mapFocusPlaces\(\)\)/);
+});
+test('Google chip stays tiny until tapped and route contrast does not mimic footpath',()=>{
+ const css=read('style.css'),g=read('google-demo.js');
+ assert.match(css,/\.google-demo-route-legend\{\s*left:10px;bottom:76px;/);
+ assert.match(css,/\.google-demo-route-legend>summary\{/);
+ assert.match(css,/\.google-demo-route-legend\[open\]>span\{display:block\}/);
+ assert.match(g,/routeLegend\.open=false/);
+ assert.match(g,/Luftlinie zwischen Tageszielen/);
+ assert.match(g,/strokeColor:'#203F3C'/);
+ assert.match(g,/strokeColor:'#FFC13E'/);
+ assert.doesNotMatch(g,/DirectionsService|PlacesService|fetch\(/);
+});
