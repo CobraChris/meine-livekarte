@@ -45,7 +45,10 @@ test('the button for walking directions is immediately beneath the place name, n
   assert.ok(snippet.indexOf('popupDayPicker=makePlaceDayPicker(p)')<
     snippet.indexOf('quickActions.append(popupWalk'));
   assert.ok(snippet.includes("popupMore.append(popupMoreSummary,popupMoreBody)"));
-  assert.match(app,/marker\.bindPopup\(popup,\{[\s\S]*?minWidth:Math\.min\(286,Math\.max\(205,map\.getSize\(\)\.x-76\)\),\s*maxWidth:320,maxHeight:300,/);
+  assert.match(app,/bindMapPopup\(marker,popup\)/);
+  const popupCore=read('map-popup-core.js');
+  assert.match(popupCore,/minWidth:Math\.min\(286,Math\.max\(205,map\.getSize\(\)\.x-76\)\)/);
+  assert.match(popupCore,/maxWidth:320,maxHeight:300/);
 });
 
 test('PWA can display non-destructive update prompt and reload after user action',()=>{
@@ -81,7 +84,7 @@ test('GitHub publish script stamps unique current SHA on every app asset and pro
     fs.writeFileSync(path.join(dir,'scripts/stamp_pwa_version.py'),stamp);
     const assetTags=[
       ['href','style.css'],['href','vendor/leaflet.css'],
-      ['src','vendor/leaflet.js'],['src','core.js'],
+      ['src','vendor/leaflet.js'],['src','map-popup-core.js'],['src','core.js'],
       ['src','walking-core.js'],['src','day-plan-core.js'],['src','multi-day-core.js'],['src','route-discovery.js'],['src','place-search-core.js'],
       ['src','next-step-core.js'],['src','japanese-destination.js'],['src','app.js'],
       ['src','sync.js'],['src','outbox-core.js'],

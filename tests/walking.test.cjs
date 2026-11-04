@@ -95,7 +95,7 @@ test('walking user interface is explicit opt in and leaves external Google Maps 
  assert.match(app,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);
  assert.match(app,/popupMoreBody\.append\(route\(p\),popupEditButton\)/);
  assert.match(app,/popup\.append\(quickActions\)/);
- assert.match(app,/bindPopup\(popup,\{/);
+ assert.match(app,/bindMapPopup\(marker,popup\)/);
  assert.match(app,/function showWalkingRoute\(place\)/);
  const userBlock=app.slice(app.indexOf('async function showWalkingRoute('),app.indexOf('function placeMeta'));
  assert.match(userBlock,/if\(watch===null\|\|!position\|\|!positionUpdatedAt\)/);

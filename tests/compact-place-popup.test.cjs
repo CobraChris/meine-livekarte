@@ -34,16 +34,17 @@ test('other actions and metadata are present but only under More; no data write 
  assert.match(popup,/popupMore\.append\(popupMoreSummary,popupMoreBody\)/);
  assert.doesNotMatch(popup,/localStorage|fetch\(|geolocation|clearTourRoute\(/);
 });
-test('native summary stays clickable while drag gesture and route are preserved',()=>{
- const drag=app.slice(app.indexOf('  function enablePopupMapDrag(marker,surface){'),
-  app.indexOf('  function render() {'));
- assert.match(drag,/summary,\[contenteditable/);
- assert.match(drag,/fromText=!!event\.target\.closest\?\.\('\.place-popup-description,\.popup-more-body'\)/);
+test('native summary and buttons are shared map gestures with taps preserved',()=>{
+ const drag=read('map-popup-core.js');
+ assert.match(drag,/const NATIVE_INPUT='input,select,textarea,label/);
+ assert.match(drag,/if\(Math\.hypot\(event\.clientX-startX,event\.clientY-startY\)<8\)return/);
+ assert.match(drag,/if\(Date\.now\(\)>skipClickUntil\)return/);
  assert.match(drag,/map\.panBy\(\[-dx,-dy\]/);
- assert.match(app,/marker\.bindPopup\(popup,\{/);
+ assert.match(app,/bindMapPopup\(marker,popup\)/);
  assert.match(app,/const btn=node\('button','🚶 Fußweg anzeigen','walk-start'\)/);
  assert.match(app,/void showWalkingRoute\(p\)/);
 });
+
 test('compact mobile layout limits height until detail expansion and keeps 40px targets',()=>{
  assert.match(css,/\.leaflet-popup-content \.popup-compact-actions\{/);
  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
