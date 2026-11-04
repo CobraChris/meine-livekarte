@@ -212,7 +212,7 @@ test('camera handoff preserves fractional zoom where Google map supports it',()=
  googleMap.zoom=15.25;
  t.get('provider-osm').click();
  assert.equal(t.leafletMap.setViews.at(-1).zoom,15.25);
- assert.deepEqual(t.leafletMap.setViews.at(-1).center,[35.11,135.91]);
+ assert.deepEqual(Array.from(t.leafletMap.setViews.at(-1).center),[35.11,135.91]);
  t.widget.syncFromOSM();
  assert.equal(t.get('workspace').dataset.provider,'osm');
 });
