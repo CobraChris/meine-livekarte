@@ -101,3 +101,28 @@ der gespeicherten Reisen, Tickets, Orte oder Datenschutzeinstellungen.
 **Nächste strukturelle Etappe:** Tageskontext (Reiseabschnitt, Datum, Ziele)
 als ein einheitliches Datenobjekt ableiten, anschließend weitere Teile der
 großen `app.js` modularisieren und mobile Browser-End-to-End-Tests ergänzen.
+
+## Tageskontext – Architekturbaustein 4
+
+`day-context-core.js` liefert für jeden ausgewählten Reiseabschnitt
+eine einzige **rein abgeleitete, schreibgeschützte** Datenansicht mit
+Reiseabschnitt, optionalem Reise-/Bahnplan, Datum, erlaubten Tagen,
+Ortsliste, nach Tag sichtbaren Orten, Tageszielanzahl, Hotel-/Zieltrennung,
+geographischem Kartenfokus und geordneter Routenvorschau.
+`app.js` stellt sie über `currentDayContext()` bereit; Karte,
+Google-Ansicht, Tagesschaltflächen, Routenliste und Tour-Entwürfe
+lesen daraus, statt eigene Tagesfilter und Reihenfolgen zu bilden.
+
+Der Kontext ändert keine Orte, Tickets, lokale Speicherstände,
+GPS-Koordinaten oder Reiseverbindungen. Neue Kalendertage sind erst
+zulässig, wenn `multi-day-core.js` sie ausdrücklich für einen
+Reiseabschnitt definiert; für Reisen ohne Tageskalender bleibt
+der bestehende ungefilterte Abschnitt erhalten. Nur die aktuelle
+Kyoto-Reise besitzt derzeit eine konfigurierten Tageskalender; Nara
+und Osaka sind Untertage dieses Abschnitts, keine getrennten Apps.
+
+**Noch offen:** Die konkrete Tagesdarstellung und Fahr-/Gehwegetappen
+vollständig aus einem gemeinsamen Routenmodell rendern sowie weitere
+UI-Controller aus `app.js` extrahieren. Für neue Reisetypen
+müssen weiterhin eigene Reise-*daten*, aber keine neue Kartennavigation
+angelegt werden.
