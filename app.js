@@ -1655,6 +1655,34 @@
     const visible = items.filter(p => filter === 'all' || p.category === filter);
     if (visible.length) map.fitBounds(visible.map(p => [p.lat,p.lng]), { padding:[45,45], maxZoom:16 });
   }
+  // Measure the visible overlays rather than guessing their height: phone
+  // font sizes, search suggestions and installed-PWA viewport heights differ.
+  // Never place the northernmost GPS marker behind the tour/search controls.
+  function mapOverviewPadding() {
+    const size=map.getSize();
+    const frame=$('map').getBoundingClientRect();
+    let occupiedTop=0;
+    for(const selector of ['.plan-picker','#place-search','#tour-map-tools']) {
+      const element=document.querySelector(selector);
+      if(!element || element.hidden)continue;
+      const rect=element.getBoundingClientRect();
+      if(rect.width<=0 || rect.height<=0 || rect.bottom<=frame.top ||
+         rect.top>=frame.bottom || rect.right<=frame.left ||
+         rect.left>=frame.right)continue;
+      occupiedTop=Math.max(occupiedTop,rect.bottom-frame.top);
+    }
+    // Leave room for the whole GPS icon, the marker pins and their shadows.
+    // On short screens keep enough lower map surface to still show the goals.
+    const top=Math.min(Math.round(size.y*0.62),
+      Math.max(110,Math.ceil(occupiedTop)+42));
+    const toolbar=document.querySelector('.map-actions');
+    const controls=toolbar?.getBoundingClientRect();
+    const occupiedRight=controls && controls.height>0
+      ?Math.max(0,frame.right-controls.left):0;
+    const right=Math.max(78,Math.ceil(occupiedRight)+22);
+    return {paddingTopLeft:[32,top],
+      paddingBottomRight:[right,68]};
+  }
   // The pin is a combined day-trip overview, not an alternative to GPS.
   // Fit the selected goals and the last recent GPS fix together, while leaving
   // the actual location marker and all place markers untouched.
@@ -1665,14 +1693,7 @@
     const hasFix=watch!==null && position!==null && positionUpdatedAt>0 &&
       Date.now()-positionUpdatedAt<60000;
     if(hasFix)bounds.push([position.lat,position.lng]);
-    // On phones the controls occupy the top of the map and part of the right
-    // side: reserve space so all selected markers remain visibly tappable.
-    const topPadding=Math.min(235,Math.round(map.getSize().y*0.27));
-    map.fitBounds(bounds,{
-      paddingTopLeft:[27,topPadding],
-      paddingBottomRight:[78,54],
-      maxZoom:16
-    });
+    map.fitBounds(bounds,{...mapOverviewPadding(),maxZoom:16});
     return hasFix;
   }
   // City dates are an extra filter inside one city, never extra trip sections.
