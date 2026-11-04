@@ -2226,3 +2226,28 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .workspace[data-provider="google"] #nagoya-guide-trigger,
 .workspace[data-provider="google"] #nagoya-kyoto-guide-trigger,
 .workspace[data-provider="google"] #station-transfer{display:none!important}
+
+
+/* Reserve a map-edge dock instead of overlaying Google copyright/logo or
+   Leaflet attribution. The dock remains in the fullscreen .workspace too. */
+.workspace{padding-bottom:48px}
+.workspace>.google-demo-map{bottom:48px}
+.workspace>.map-provider-switch{
+  position:absolute;z-index:900;
+  left:0;right:0;bottom:0;width:100%;
+  height:48px;box-sizing:border-box;
+  margin:0;padding:4px 8px;
+  border:0;border-top:1px solid #608a7c;
+  border-radius:0;background:#173238;
+  box-shadow:none
+}
+.workspace>.map-provider-switch button{
+  height:38px;min-height:38px;
+  padding:4px 8px;border-radius:8px;
+  font-size:12px
+}
+.workspace>.map-provider-switch #provider-settings{
+  width:38px;height:38px;min-height:38px;flex-basis:38px
+}
+/* The gear is the only entrance to the key panel: no redundant summary row. */
+#google-demo-control:not([open]){display:none!important}
