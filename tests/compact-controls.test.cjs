@@ -11,19 +11,19 @@ test('map uses compact mobile controls while maintaining keyboard and screen-rea
   const html=read('index.html'),css=read('style.css'),app=read('app.js');
   assert.match(html,/<div class="map-actions" role="group" aria-label="Kartenansicht und GPS steuern">/);
   const mapTools=html.slice(html.indexOf('class="map-actions"'),html.indexOf('</div>',html.indexOf('class="map-actions"')));
-  for(const id of ['expand-map','recenter-gps','fit','gps'])
+  for(const id of ['expand-map','fit','gps'])
     assert.match(mapTools,new RegExp('id="'+id+'"'));
-  assert.ok(mapTools.indexOf('id="expand-map"')<mapTools.indexOf('id="recenter-gps"'));
-  assert.ok(mapTools.indexOf('id="recenter-gps"')<mapTools.indexOf('id="fit"'));
+  assert.ok(mapTools.indexOf('id="expand-map"')<mapTools.indexOf('id="fit"'));
   assert.ok(mapTools.indexOf('id="fit"')<mapTools.indexOf('id="gps"'));
-  assert.match(html,/<button id="gps" type="button" aria-pressed="false" aria-label="GPS einschalten"/);
+  assert.doesNotMatch(mapTools,/recenter-gps/);
+  assert.match(html,/<button id="gps" type="button" aria-pressed="false" aria-label="Meinen Standort anzeigen oder GPS starten"/);
   assert.match(css,/\.workspace \.map-actions\{\s*position:absolute;z-index:870;/);
   assert.match(css,/top:132px;right:10px;bottom:auto;left:auto/);
   assert.match(css,/flex-wrap:nowrap;gap:0;width:48px/);
-  assert.match(css,/\.workspace \.map-actions #recenter-gps\[hidden\]\{display:none!important\}/);
+  assert.match(css,/\.workspace \.map-actions #gps\[aria-pressed="true"\]/);
   assert.match(css,/\.map-actions button span\{\s*position:absolute!important;/);
   assert.match(app,/\$\('fit'\)\.setAttribute\('aria-label',\$\('fit'\)\.lastElementChild\.textContent\)/);
-  assert.match(app,/\$\('gps'\)\.setAttribute\('aria-label','GPS ausschalten/);
+  assert.match(app,/control\.setAttribute\('aria-label',label\)/);
   assert.match(css,/\.walk-route-panel\{\s*left:10px;bottom:66px;\s*width:calc\(100% - 75px\)/);
 });
 
