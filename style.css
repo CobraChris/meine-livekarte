@@ -2330,3 +2330,10 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .google-place-actions button{background:#edf7f1;color:#1e4131}
 .google-place-actions a:focus-visible,.google-place-actions button:focus-visible{
   outline:3px solid #1c6b45;outline-offset:2px}
+
+/* Compass diagnostics live only in the existing privacy/settings dialog. */
+.compass-diagnostics{margin-top:12px;padding:11px 12px;border:1px solid #446b65;
+  border-radius:12px;background:#17352e}
+.compass-diagnostics p{margin:0 0 9px;font-weight:650;color:#c4f5dd}
+.compass-diagnostics button{min-height:42px}
+.compass-diagnostics small{display:block;margin-top:8px;color:#c0d1ce;line-height:1.5}

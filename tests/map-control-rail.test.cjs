@@ -69,7 +69,7 @@ test('one map GPS button resumes following and privacy button alone stops GPS',(
   setAttribute(key,value){this.attrs[key]=value}
  });
  const nodes={gps:node('gps'),'gps-privacy-toggle':node('gps-privacy-toggle'),
-   'gps-privacy-state':node('gps-privacy-state')};
+   'gps-privacy-state':node('gps-privacy-state'),'compass-test':node('compass-test')};
  const ctx={
   $:id=>nodes[id],
   camera:require('../map-camera-core.js').create('gps-follow'),watch:1,position:{lat:35.01,lng:135.77}
@@ -97,6 +97,8 @@ test('one map GPS button resumes following and privacy button alone stops GPS',(
   startGPS:v=>events.push(['start',v]),
   stopGPS:()=>events.push(['stop']),
   say:t=>events.push(['status',t]),
+  compassDiagnostic:t=>events.push(['compass-status',t]),
+  startCompass:()=>events.push(['compass-start']),
   refreshGPSFollowControl:()=>events.push(['refresh']),
   setCameraMode:mode=>events.push(['mode',mode]),
   centerOnGPS:(p,z)=>events.push(['center',p,z]),
@@ -114,4 +116,8 @@ test('one map GPS button resumes following and privacy button alone stops GPS',(
  events.length=0;
  nodes['gps-privacy-toggle'].onclick();
  assert.deepEqual(events.slice(0,2),[['preference',false],['stop']]);
+ events.length=0;
+ nodes['compass-test'].onclick();
+ assert.equal(events.some(e=>e[0]==='compass-start'),true,
+   'A deliberate compass test should re-check sensors without ending GPS');
 });
