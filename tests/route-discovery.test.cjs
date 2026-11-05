@@ -94,6 +94,6 @@ test('offline shell and deploy include only static search code, never cached OSM
  assert.match(sw,/'route-discovery\.js'/);
  assert.doesNotMatch(sw,/overpass-api\.de|interpreter|routed-foot/);
  assert.match(workflow,/node --check route-discovery\.js/);
- assert.match(workflow,/cp index\.html style\.css core\.js walking-core\.js day-plan-core\.js route-discovery\.js app\.js/);
+ assert.match(workflow,/cp index\.html style\.css core\.js walking-core\.js routing-requests\.js tour-navigation-core\.js day-plan-core\.js route-discovery\.js app\.js/);
  assert.match(stamp,/\("src", "route-discovery\.js"\)/);
 });
