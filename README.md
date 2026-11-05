@@ -1,3 +1,15 @@
+## Größeres Architekturpaket: gemeinsames Routing + GPS-Tourzustand (05.11.2026)
+
+Dieses Paket trennt nach den UI-Modulen #107–#110 auch die wichtigsten **Routing- und Navigationsregeln** von der großen `app.js`:
+
+1. **`routing-requests.js`** ist die zentrale Request-Grenze für **Einzel-Fußwege**, **Rundgänge** und **Optimierung der Tagesroute**. Alle drei nutzen dieselbe vorsichtige **1.200-ms-Anfragesperre** über die gesamte App, sichere `GET`-Anfragen ausschließlich an den bisherigen öffentlichen **FOSSGIS-Fußwegdienst** und konsistente Timeouts (15 s/18 s), Antwortgrößenlimits (2/2,5 Mio. Zeichen), HTTP-429-/Fehlerbehandlung und Abbruchsteuerung. Der Aufruf erfolgt weiterhin **nur per Nutzeraktion**, nie durch GPS-Watches. Abgebrochene oder zwischenzeitlich veraltete Touren werden weiterhin in `app.js` anhand ihrer Generation verworfen.
+2. **`tour-navigation-core.js`** verwaltet ausschließlich im Arbeitsspeicher den **aktuellen Tourstopp, Pause/Fortsetzen, Ankunft und Routenabweichung**. Weiterhin werden mindestens **zwei präzise aufeinanderfolgende GPS-Messungen** benötigt, bevor ein Ziel als erreicht oder eine Routenabweichung als plausibel angezeigt wird. Ungenaue GPS-Fixes setzen den jeweiligen Bestätigungszähler zurück. Eine einmal bestätigte Ankunft bleibt bis zum ausdrücklich gewählten nächsten Stopp erhalten. Beim Pause-/Fortsetzen wird kein Weg neu berechnet.
+3. **`app.js`** ist weiterhin die einzige Verbindungsstelle für bestehende Tour-/Tagesdaten, GPS-Berechtigungen, Kartenkamera, vorhandenes OSRM-Routenmodell und Tour-Speicherung. **`tour-ui.js`** rendert weiterhin nur den Status. Die neuen Kerne greifen weder auf GPS-Hardware noch auf `localStorage`, IndexedDB, Tickets, Google-Dienste oder Telemetrie zu.
+
+Beide neuen Dateien sind Teil der GitHub-Pages-Dateiliste, der versionierten PWA-Dateien und der Offline-Shell. Es gibt **keine Migration, keine neuen kostenpflichtigen Dienste und keine Änderung der bestehenden Tour- oder Tagesdaten**. Zusätzliche Unit- und Regressionstests sichern Antragssperre, Fehler, Zeitüberschreitung, ungültige Anbieter-URLs, Stoppwechsel, Ankunfts-Hysterese und den Schutz der GPS-Daten ab.
+
+---
+
 ## Gemeinsame GPS-Rundgang-Anzeige (05.11.2026)
 
 Die dritte Phase der Touren-UI-Modularisierung verlegt nun auch die **Statusanzeigen der GPS-Rundgang-Führung** in das bereits vorhandene `tour-ui.js`. Der gemeinsame UI-Renderer zeigt Start, fehlendes/ungenaues GPS, Reststrecke, erreichte Ziele, Routenabweichungen, Pause, Fortsetzen, manuelles Weitergehen und den Abschluss des Rundgangs. Auch die drei Bedienelemente „Tour starten/pausieren“, „Nächster Stopp“ und „Restweg neu berechnen“ werden im gemeinsamen Modul an die bestehende App-Logik angebunden.

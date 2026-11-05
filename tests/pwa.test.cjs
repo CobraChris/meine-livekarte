@@ -130,7 +130,7 @@ test('GitHub Pages workflow builds PNGs and includes only needed public assets',
  assert.match(workflow,/node --check pwa\.js/);
  assert.match(workflow,/CairoSVG==2\.8\.2/);
  assert.match(workflow,/python scripts\/build_pwa_icons\.py/);
- assert.match(workflow,/cp index\.html style\.css core\.js(?: walking-core\.js)?(?: day-plan-core\.js)?(?: route-discovery\.js)? app\.js sync\.js outbox-core\.js sync-out\.js pwa\.js sw\.js manifest\.json public\//);
+ assert.match(workflow,/cp index\.html style\.css core\.js walking-core\.js routing-requests\.js tour-navigation-core\.js day-plan-core\.js(?: route-discovery\.js)? app\.js sync\.js outbox-core\.js sync-out\.js pwa\.js sw\.js manifest\.json public\//);
  assert.match(workflow,/cp next-step-core\.js japanese-destination\.js public\//);
  assert.match(workflow,/cp map-popup-core\.js map-camera-core\.js public\//);
  assert.match(workflow,/cp multi-day-core\.js day-context-core\.js day-selector-ui\.js place-ui\.js tour-ui\.js route-model-core\.js public\//);

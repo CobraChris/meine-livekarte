@@ -34,6 +34,8 @@ assets = [
     ("src", "map-camera-core.js"),
     ("src", "core.js"),
     ("src", "walking-core.js"),
+    ("src", "routing-requests.js"),
+    ("src", "tour-navigation-core.js"),
     ("src", "day-plan-core.js"),
     ("src", "multi-day-core.js"),
     ("src", "day-context-core.js"),

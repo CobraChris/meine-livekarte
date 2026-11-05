@@ -250,7 +250,8 @@ test('only the presentation is extracted; app keeps build, GPS/network and persi
  assert.match(app,/tourUI\.renderDaySchedule\(\{schedule,pref,stopsCount:stops\.length\}\)/);
  assert.match(app,/const schedule=D\.build\(/);
  assert.match(app,/const tourView=RM\.walking\(/);
- assert.match(app,/fetch\(request,\{/);
+ assert.match(app,/routeRequests\.request\(\{kind:'tour',url:request,controller\}\)/);
+ assert.match(read('routing-requests.js'),/fetcher\(url,\{/);
  assert.match(app,/localStorage\.setItem\('livekarte-day-plans-v1'/);
  assert.match(app,/localStorage\.setItem\('livekarte-tour-drafts-v1'/);
  assert.doesNotMatch(ui,/fetch\(|localStorage|navigator\.geolocation|indexedDB|window\.location/);
@@ -349,9 +350,10 @@ test('GPS tour UI is shared across dates, never stores coordinates or makes rout
  assert.match(app,/toggleLiveTour:\(\)=>toggleTourNavigation\(\)/);
  assert.match(app,/nextLiveStop:\(\)=>advanceTourNavigation\(\)/);
  assert.match(app,/retryLiveRoute:\(\)=>\{void calculateTour\(false,true\);\}/);
- assert.match(app,/W\.tourLegProgress\(state\.nav,tourRoute\.legs/);
- assert.match(app,/state\.nearReadings>=2/);
- assert.match(app,/state\.offReadings>=2/);
+ assert.match(read('tour-navigation-core.js'),/walkingCore\.tourLegProgress\(prepared,route\.legs/);
+ const nav=read('tour-navigation-core.js');
+ assert.match(nav,/nearReadings>=2/);
+ assert.match(nav,/offReadings>=2/);
  assert.match(app,/tourUI\.renderLiveNavigation\(\{/);
  assert.doesNotMatch(ui,/fetch\(|localStorage|indexedDB|navigator\.geolocation|watchPosition/);
 });

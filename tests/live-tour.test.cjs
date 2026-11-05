@@ -48,20 +48,22 @@ test('GPS location outside the pedestrian corridor warns but does not request ro
 });
 
 test('tour HUD supports manual stages, pause, arrival confirmation and explicit recalculation',()=>{
- const app=read('app.js'),html=read('index.html'),css=read('style.css'),ui=read('tour-ui.js');
+ const app=read('app.js'),html=read('index.html'),css=read('style.css'),ui=read('tour-ui.js'),nav=read('tour-navigation-core.js');
  for(const id of ['tour-live-state','tour-live-step','tour-live-progress','tour-live-message',
     'tour-live-toggle','tour-live-next','tour-live-retry'])
    assert.match(html,new RegExp('id="'+id+'"'));
  for(const fragment of ['function stopTourNavigation()', 'function updateTourNavigation(point,gpsAccuracy)',
    'function startTourNavigation()', 'function toggleTourNavigation()',
-   'function advanceTourNavigation()', 'W.prepareNavigation(tourRoute)',
-   'W.tourLegProgress(state.nav,tourRoute.legs','state.nearReadings>=2',
-   'state.offReadings>=2','tourNavigation.stage++',
-   'tourNavigation.paused=true','tourNavigation.paused=false',
+   'function advanceTourNavigation()', 'TourNav.create(tourRoute,W)',
+   'tourNavigation.update(point,gpsAccuracy)', 'tourNavigation.next()',
+   'tourNavigation.pause()', 'tourNavigation.resume()',
    'tourUI.renderLiveNavigation(', 'updateTourNavigation(position,positionAccuracy);',
    'stopTourNavigation();',
    'retryLiveRoute:()=>{void calculateTour(false,true);}'
  ])assert.ok(app.includes(fragment),'Missing app behavior '+fragment);
+ for(const fragment of ['walkingCore.tourLegProgress(prepared,route.legs',
+   'nearReadings>=2','offReadings>=2','stage++','paused=true','paused=false'])
+   assert.ok(nav.includes(fragment),'Missing pure GPS state logic '+fragment);
  for(const fragment of ['Nächster Stopp','Rundgang abgeschlossen',
    'function renderLiveNavigation({phase,stage,total,name,arrived,status,',
    "'tour-live-toggle').onclick=()=>handlers.toggleLiveTour()",

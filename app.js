@@ -167,6 +167,9 @@
   const discoveryLayers=L.layerGroup().addTo(map);
   const mapPlacePreview=L.layerGroup().addTo(map);
   const W=window.LivekarteWalkingCore;
+  const Routing=window.LivekarteRoutingRequests;
+  const TourNav=window.LivekarteTourNavigation;
+  const routeRequests=Routing.create({fetcher:(url,options)=>fetch(url,options)});
   const D=window.LivekarteDayPlan;
   const R=window.LivekarteRouteDiscovery;
   let discoveryController=null,discoveryGeneration=0,discoveries=[],lastDiscoveryAt=0;
@@ -176,9 +179,8 @@
   let mapTourPickMode=false; // UI only. Tap selected POI markers to toggle tour membership.
   let mapPlacePicking=false,mapPlacePoint=null; // UI only; never store until user confirms.
 
-  let lastTourRequestedAt=0;
   let walkDestination=null,walkController=null,walkRequestGeneration=0;
-  let lastWalkingRequestAt=0,positionUpdatedAt=0,positionAccuracy=null;
+  let positionUpdatedAt=0,positionAccuracy=null;
   const node = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
   const placeUI=PlaceUI.create({
     document,categories:C.categories,symbols,placeKey:C.placePlanKey,
@@ -688,12 +690,10 @@
     let url;
     try{ url=W.requestUrl(position,place); }
     catch(e){say(e.message);return;}
-    const elapsed=Date.now()-Math.max(lastWalkingRequestAt,lastTourRequestedAt);
-    if(elapsed<1200){
+    if(!routeRequests.claim()){
       say('Bitte kurz warten, bevor du einen weiteren Fußweg berechnen lässt.');
       return;
     }
-    lastWalkingRequestAt=Date.now(); // FOSSGIS: never more than 1 request/second.
     if(tourRoute || tourController)clearTourRoute();
     if(walkController)walkController.abort();
     const controller=new AbortController();
@@ -719,21 +719,9 @@
     walkingLink.href=route(place).href;
     const startedAt={...position};
     const startedAccuracy=positionAccuracy;
-    let timeout;
     try{
-      timeout=setTimeout(()=>controller.abort(),15000);
-      const response=await fetch(url,{
-        method:'GET',mode:'cors',credentials:'omit',
-        referrerPolicy:'origin', // identify app origin, not the full URL or query
-        headers:{'Accept':'application/json'},signal:controller.signal
-      });
-      if(!response.ok){
-        if(response.status===429)throw new Error('Routingdienst ist ausgelastet (Limit). Bitte später erneut versuchen.');
-        throw new Error('Routingdienst ist nicht erreichbar (HTTP '+response.status+').');
-      }
-      const raw=await response.text();
-      if(raw.length>2000000)throw new Error('Die Fußwegantwort war ungewöhnlich groß.');
-      const result=W.parse(JSON.parse(raw),startedAt,place);
+      const data=await routeRequests.request({kind:'walk',url,controller});
+      const result=W.parse(data,startedAt,place);
       if(generation!==walkRequestGeneration || watch===null)return;
       walkRouteData=result;
       walkingNavButton.disabled=false;
@@ -786,7 +774,6 @@
       walkingNavButton.disabled=true;
       walkingNote.textContent='Bitte später erneut versuchen oder „Google Maps“ verwenden. Es wird keine Luftlinie als echter Fußweg angezeigt.';
     }finally{
-      clearTimeout(timeout);
       if(generation===walkRequestGeneration){
         walkController=null;
         walkingRetry.disabled=false;
@@ -1167,23 +1154,10 @@
   }
   function updateTourNavigation(point,gpsAccuracy){
     if(!tourNavigation||tourNavigation.paused||!tourRoute)return;
-    const state=tourNavigation;
-    const place=tourRoute.stops[state.stage];
-    if(!place)return;
     let progress;
-    try{progress=W.tourLegProgress(state.nav,tourRoute.legs,
-      state.stage,place,point,gpsAccuracy);}
+    try{progress=tourNavigation.update(point,gpsAccuracy);}
     catch{tourUI.renderLiveNavigation({phase:'progress-error'});return;}
-    state.nearReadings=progress.status==='near-goal'?state.nearReadings+1:0;
-    state.offReadings=progress.status==='off-route'?state.offReadings+1:0;
-    if(state.nearReadings>=2)state.arrived=true;
-    tourUI.renderLiveNavigation({
-      phase:'progress',stage:state.stage+1,total:tourRoute.stops.length,
-      name:place.name,arrived:state.arrived,status:progress.status,
-      remainingMeters:progress.remainingMeters,
-      remainingSeconds:progress.remainingSeconds,
-      offRoute:state.offReadings>=2
-    });
+    if(progress)tourUI.renderLiveNavigation({phase:'progress',...progress});
   }
   function startTourNavigation(){
     if(!tourRoute||!W){say('Bitte zuerst einen Rundgang berechnen.');return;}
@@ -1191,8 +1165,7 @@
       tourUI.renderLiveNavigation({phase:'gps-required'});return;
     }
     try{
-      const nav=W.prepareNavigation(tourRoute);
-      tourNavigation={nav,stage:0,nearReadings:0,offReadings:0,arrived:false,paused:false};
+      tourNavigation=TourNav.create(tourRoute,W);
     }catch(e){say('GPS-Rundgang nicht verfügbar: '+e.message);return;}
     tourUI.renderLiveNavigation({phase:'started'});
     setCameraMode('gps-follow');refreshGPSFollowControl();
@@ -1207,14 +1180,13 @@
         tourUI.renderLiveNavigation({phase:'resume-gps-required'});
         return;
       }
-      tourNavigation.paused=false;
-      tourNavigation.nearReadings=0;tourNavigation.offReadings=0;
+      tourNavigation.resume();
       tourUI.renderLiveNavigation({phase:'resumed'});
       setCameraMode('gps-follow');refreshGPSFollowControl();
       centerOnGPS([position.lat,position.lng],Math.max(16,map.getZoom()));
       updateTourNavigation(position,positionAccuracy);
     }else{
-      tourNavigation.paused=true;
+      tourNavigation.pause();
       tourUI.renderLiveNavigation({phase:'paused'});
       setCameraMode('manual');refreshGPSFollowControl();
     }
@@ -1227,11 +1199,7 @@
       renderNextAction();
       return;
     }
-    tourNavigation.stage++;
-    tourNavigation.nearReadings=0;
-    tourNavigation.offReadings=0;
-    tourNavigation.arrived=false;
-    tourNavigation.paused=false;
+    tourNavigation.next();
     tourUI.renderLiveNavigation({phase:'next'});
     if(position&&Date.now()-positionUpdatedAt<60000)
       updateTourNavigation(position,positionAccuracy);
@@ -1265,11 +1233,10 @@
     catch(error){tourBuilderStatus.textContent=error.message;return;}
     // Public FOSSGIS fair use: at most one deliberate request per 1.2 seconds
     // across both single-destination navigation and multi-stop tours.
-    if(Date.now()-Math.max(lastTourRequestedAt,lastWalkingRequestAt)<1200){
+    if(!routeRequests.claim()){
       tourBuilderStatus.textContent='Bitte kurz warten und den Rundgang danach erneut berechnen.';
       return;
     }
-    lastTourRequestedAt=Date.now();
     clearWalkingRoute();
     clearTourRoute();
     const controller=new AbortController();
@@ -1281,20 +1248,8 @@
       ?'Fußwege und günstigste Stoppreihenfolge werden ermittelt …'
       :'Rundgang wird entlang der Fußwege berechnet …';
     tourBuilder.open=true;
-    let timeout;
     try{
-      timeout=setTimeout(()=>controller.abort(),18000);
-      const response=await fetch(request,{
-        method:'GET',mode:'cors',credentials:'omit',referrerPolicy:'origin',
-        headers:{Accept:'application/json'},signal:controller.signal
-      });
-      if(!response.ok){
-        if(response.status===429)throw new Error('Routingdienst ausgelastet. Bitte später erneut versuchen.');
-        throw new Error('Routingdienst nicht erreichbar (HTTP '+response.status+').');
-      }
-      const raw=await response.text();
-      if(raw.length>2500000)throw new Error('Rundgangantwort ungewöhnlich groß.');
-      const data=JSON.parse(raw);
+      const data=await routeRequests.request({kind:'tour',url:request,controller});
       const result=selected.length===1
         ?(()=>{const single=W.parse(data,from,selected[0]);
           return {...single,legs:[{distance:single.distance,duration:single.duration}]};})()
@@ -1341,7 +1296,6 @@
         :error instanceof SyntaxError?'Ungültige Routenantwort. Bitte später erneut versuchen.'
         :error.message||'Rundgang derzeit nicht verfügbar.';
     }finally{
-      clearTimeout(timeout);
       if(generation===tourRequestGeneration){
         tourController=null;
         $('tour-calculate').disabled=tourSelection().length<2;
@@ -1631,29 +1585,18 @@
     let url;
     try{url=W.optimizedTourRequestUrl(from,remaining);}
     catch(error){$('day-route-status').textContent=error.message;return;}
-    if(Date.now()-Math.max(lastTourRequestedAt,lastWalkingRequestAt)<1200){
+    if(!routeRequests.claim()){
       $('day-route-status').textContent='Bitte kurz warten und die Berechnung erneut starten.';
       return;
     }
-    lastTourRequestedAt=Date.now();
     const controller=new AbortController();
     dayFootController=controller;
     const generation=++dayFootGeneration;
     $('day-route-foot').disabled=true;
     $('day-route-status').textContent='Echte Fußwege und Stoppreihenfolge werden berechnet …';
-    let timeout;
     try{
-      timeout=setTimeout(()=>controller.abort(),18000);
-      const response=await fetch(url,{
-        method:'GET',mode:'cors',credentials:'omit',referrerPolicy:'origin',
-        headers:{Accept:'application/json'},signal:controller.signal
-      });
-      if(!response.ok)throw new Error(response.status===429
-        ?'Routingdienst ausgelastet. Bitte später erneut versuchen.'
-        :'Routingdienst nicht erreichbar (HTTP '+response.status+').');
-      const raw=await response.text();
-      if(raw.length>2500000)throw new Error('Die Fußwegantwort ist ungewöhnlich groß.');
-      const result=W.parseOptimizedTour(JSON.parse(raw),from,remaining);
+      const data=await routeRequests.request({kind:'day',url,controller});
+      const result=W.parseOptimizedTour(data,from,remaining);
       if(generation!==dayFootGeneration||dailyRouteKey(dailyStops())!==key)return;
       dayFootRoute={
         key,points:result.points,
@@ -1671,7 +1614,6 @@
         :error instanceof SyntaxError?'Ungültige Routenantwort. Bitte später erneut versuchen.'
         :error.message||'Fußroute gerade nicht verfügbar.';
     }finally{
-      clearTimeout(timeout);
       if(generation===dayFootGeneration){
         dayFootController=null;
         $('day-route-foot').disabled=false;
