@@ -2072,7 +2072,8 @@
       if (metaText) card.append(node('p',metaText,'place-meta'));
       appendPlaceTiming(card,p);
       const cardDayPicker=makePlaceDayPicker(p);
-      card.append(node('p',p.description),actions,assignRow);
+      // The title/header belongs in every destination card, not only its popup.
+      card.append(top,node('p',p.description),actions,assignRow);
       if(cardDayPicker)card.append(cardDayPicker);
       $('places').append(card);
       distanceDisplays.push({ place:p, inPopup, inList:distance });
