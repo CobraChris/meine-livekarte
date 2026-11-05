@@ -159,6 +159,8 @@ async function verifyManualTouchPan(page){
  await page.locator('#gps').click();
  await page.waitForFunction(()=>document.querySelector('#gps')?.getAttribute('aria-pressed')==='true',
   null,{timeout:10000});
+ assert.match(await page.locator('#map-controls-status').innerText(),/folgt deinem Standort/,
+  'Screen readers must know when the map is GPS-following');
  await page.evaluate(()=>document.getElementById('map').scrollIntoView({block:'center'}));
  await delay(150);
  const box=await page.locator('#map').boundingBox();
@@ -181,7 +183,13 @@ async function verifyManualTouchPan(page){
   'Finger drag on map background must move the actual map');
  assert.equal(await page.locator('#gps').getAttribute('aria-pressed'),'false',
   'Manual map gesture must stop GPS auto-recentering');
- console.log('PASS background touch pan cancels GPS follow without switching off GPS');
+ assert.match(await page.locator('#map-controls-status').innerText(),/manuell verschoben/,
+  'Manual panning is announced independently from GPS background updates');
+ for(const id of ['fit','gps']){
+  const rect=await page.locator('#'+id).boundingBox();
+  assert.ok(rect.width>=48&&rect.height>=48,'Map control '+id+' meets 48px touch target');
+ }
+ console.log('PASS GPS follow and manual pan announce state and retain large touch targets');
 }
 
 async function verifyCompassDiagnostics(page){
