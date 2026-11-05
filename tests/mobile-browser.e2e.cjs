@@ -262,6 +262,17 @@ async function main(){
   assert.equal(await page.locator('.map-actions button').count(),3);
   assert.ok(await page.locator('#journey-panel').isVisible(),
    'Nikkō rail section retains the shared toolbar and schematic route');
+  // Tokyo journey opens the same manual step model as both Nagoya directions,
+  // without inferring arrival/departure platforms or completing any tickets.
+  await page.locator('#nikko-tokyo-transfer summary').first().click();
+  assert.match(await page.locator('#nikko-tokyo-step-count').innerText(),/Schritt 1 von 3/);
+  await page.locator('#nikko-tokyo-next').click();
+  assert.match(await page.locator('#nikko-tokyo-step-count').innerText(),/Schritt 2 von 3/);
+  await page.locator('#nikko-tokyo-prev').click();
+  assert.match(await page.locator('#nikko-tokyo-step-count').innerText(),/Schritt 1 von 3/);
+  assert.match(await page.locator('#nikko-tokyo-platform-note').innerText(),/Gleis vor Ort prüfen/);
+  console.log('PASS generic Tokyo transfer steps with unknown platforms and no ticket claims');
+  await page.locator('#nikko-tokyo-transfer summary').first().click();
   await page.locator('#journey-panel .journey-item').first().click();
   const stationPopup=page.locator('.leaflet-popup-content .place-popup-pan-surface').first();
   await stationPopup.waitFor({state:'visible'});
