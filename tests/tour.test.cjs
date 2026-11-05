@@ -176,11 +176,12 @@ test('tour sends GPS only on explicit calculation and does not save routes or lo
  assert.ok(start>=0 && end>start);
  const block=app.slice(start,end);
  assert.match(block,/if\(watch===null\|\|!position\|\|Date\.now\(\)-positionUpdatedAt>60000\)/);
- assert.match(block,/Date\.now\(\)-Math\.max\(lastTourRequestedAt,lastWalkingRequestAt\)<1200/);
- assert.match(block,/fetch\(request,\{/);
- assert.match(block,/credentials:'omit'/);
- assert.match(block,/referrerPolicy:'origin'/);
- assert.match(block,/controller\.abort\(\)/);
+ assert.match(block,/if\(!routeRequests\.claim\(\)\)/);
+ assert.match(block,/routeRequests\.request\(\{kind:'tour',url:request,controller\}\)/);
+ const routing=read('routing-requests.js');
+ assert.match(routing,/credentials:'omit'/);
+ assert.match(routing,/referrerPolicy:'origin'/);
+ assert.match(routing,/setTimer\(\(\)=>controller\.abort\(\)/);
  assert.match(block,/tourRequestGeneration/);
  assert.match(block,/fitMapArea\(L\.latLngBounds\(result\.points\)/);
  assert.match(app,/livekarte-tour-drafts-v1/);
