@@ -1,3 +1,13 @@
+## Gemeinsame GPS-Rundgang-Anzeige (05.11.2026)
+
+Die dritte Phase der Touren-UI-Modularisierung verlegt nun auch die **Statusanzeigen der GPS-Rundgang-Führung** in das bereits vorhandene `tour-ui.js`. Der gemeinsame UI-Renderer zeigt Start, fehlendes/ungenaues GPS, Reststrecke, erreichte Ziele, Routenabweichungen, Pause, Fortsetzen, manuelles Weitergehen und den Abschluss des Rundgangs. Auch die drei Bedienelemente „Tour starten/pausieren“, „Nächster Stopp“ und „Restweg neu berechnen“ werden im gemeinsamen Modul an die bestehende App-Logik angebunden.
+
+**Sicherheits- und Zuständigkeitsgrenze:** Die `app.js` wertet weiterhin jedes GPS-Signal mit `walking-core.js` aus, verwendet zwei präzise Positionsmessungen zur Bestätigung von Ankunft und Routenabweichung, steuert die GPS-Kameraführung und ruft die Routenberechnung ausschließlich durch eine ausdrückliche Aktion auf. Das UI-Modul erhält nur den bereits ausgewerteten Status und die Restweg-Angaben. Es speichert weder Live-Standorte noch Routen, erzeugt keine eigenen GPS-Watches und startet keine Netzwerkanfragen. Keine Datenmigration, keine neuen Google-Dienste und kein verändertes Kostenmodell.
+
+Zusätzliche interaktive Regressionstests prüfen die Zustände Start, Pause, Fortsetzen, schlechter GPS-Fix, Route verlassen, Nächster Stopp, Ziel erreicht und Tourabschluss. Die Veröffentlichung verwendet dieselbe bereits versionierte PWA-Datei `tour-ui.js`.
+
+---
+
 ## Gemeinsame Tourergebnisse und Tages-Zeitachse (05.11.2026)
 
 Die zweite Phase der Touren-UI-Modularisierung verwendet das bereits vorhandene `tour-ui.js` nun auch für die **berechnete Rundgang-Zusammenfassung** (Stoppanzahl, echte Gehstrecke, Gehzeit, einzelne Etappen und Karten-HUD) und den **berechneten Tagesplan** (Start/Ende, echte Wegezeiten, Besuche, Mittagspause, Puffer, unbekannte Öffnungszeiten und Warnungen). Fehlende Routen und ungültige Eingaben werden zentral behandelt, sodass kein veralteter Zeitplan stehenbleibt.

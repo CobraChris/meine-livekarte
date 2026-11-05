@@ -197,6 +197,86 @@ function create({document,dayPlanCore,walkingCore,handlers}){
       'Zeitplan mit echten Fußwegetappen erstellt · alle Zeiten sind Schätzwerte.';
   }
 
+  // GPS position, arrival hysteresis and routing remain exclusively in app.js.
+  // The common UI only renders already evaluated live-tour state.
+  function renderLiveNavigation({phase,stage,total,name,arrived,status,
+      remainingMeters,remainingSeconds,offRoute}={}){
+    const panel=$('tour-live-state'),step=$('tour-live-step'),
+      progress=$('tour-live-progress'),message=$('tour-live-message'),
+      toggle=$('tour-live-toggle'),next=$('tour-live-next'),
+      retry=$('tour-live-retry');
+    const toggleMode=(caption,pressed)=>{
+      toggle.textContent=caption;
+      toggle.setAttribute('aria-pressed',String(pressed));
+    };
+    switch(phase){
+      case 'reset':
+        panel.hidden=true;
+        step.textContent=progress.textContent=message.textContent='';
+        toggleMode('▶ Tour starten',false);
+        next.hidden=true;
+        retry.hidden=true;
+        break;
+      case 'gps-required':
+        panel.hidden=false;
+        message.textContent='Bitte GPS einschalten und einen aktuellen Standort abwarten.';
+        break;
+      case 'progress-error':
+        message.textContent='GPS-Fortschritt derzeit nicht verfügbar.';
+        break;
+      case 'started':
+        panel.hidden=false;
+        next.hidden=false;
+        retry.hidden=true;
+        toggleMode('Ⅱ Tour pausieren',true);
+        break;
+      case 'progress':
+        step.textContent='Stopp '+stage+' von '+total+' · '+name;
+        progress.textContent=arrived?'✓ Ziel erreicht':
+          status==='poor-gps'?'📍 GPS ungenau':
+          'Noch '+walkingCore.distanceText(remainingMeters)+' · '+
+          walkingCore.durationText(remainingSeconds);
+        message.textContent=arrived
+          ?'Nach deinem Besuch auf „Nächster Stopp“ tippen.'
+          :status==='poor-gps'
+            ?'Auf eine genauere GPS-Messung warten. Manuelles Weitergehen ist möglich.'
+            :offRoute
+              ?'⚠ Vermutlich vom Fußweg abgewichen. Restweg bei Bedarf neu berechnen.'
+              :'GPS-Führung aktiv · keine automatische Neuberechnung.';
+        retry.hidden=!offRoute;
+        next.textContent=stage===total?'✓ Tour abschließen':'Nächster Stopp →';
+        break;
+      case 'resume-gps-required':
+        message.textContent='Zum Fortsetzen wird ein aktueller GPS-Standort benötigt.';
+        break;
+      case 'resumed':
+        toggleMode('Ⅱ Tour pausieren',true);
+        break;
+      case 'paused':
+        toggleMode('▶ Tour fortsetzen',false);
+        message.textContent='Pausiert · die Route bleibt sichtbar.';
+        retry.hidden=true;
+        break;
+      case 'complete':
+        panel.hidden=false;
+        step.textContent='✓ Rundgang abgeschlossen';
+        progress.textContent='Alle Ziele erledigt.';
+        message.textContent='Die Route bleibt auf der Karte. Du kannst sie erneut starten.';
+        toggleMode('↺ Tour erneut starten',false);
+        break;
+      case 'next':
+        toggleMode('Ⅱ Tour pausieren',true);
+        retry.hidden=true;
+        break;
+      case 'next-gps-pending':
+        step.textContent='Stopp '+stage+' von '+total;
+        progress.textContent='Standort wird ermittelt …';
+        break;
+      default:
+        throw new Error('Unbekannter Tour-UI-Zustand');
+    }
+  }
+
   function bind(){
     mapMode.onclick=()=>handlers.selectMapMode();
     mapPick.onclick=()=>handlers.selectMapPick();
@@ -219,10 +299,14 @@ function create({document,dayPlanCore,walkingCore,handlers}){
     $('day-buffer').onchange=()=>handlers.setBuffer($('day-buffer').value);
     $('day-lunch').onchange=()=>handlers.setLunch($('day-lunch').value);
     $('day-plan-refresh').onclick=()=>handlers.refreshDayPlan();
+    $('tour-live-toggle').onclick=()=>handlers.toggleLiveTour();
+    $('tour-live-next').onclick=()=>handlers.nextLiveStop();
+    $('tour-live-retry').onclick=()=>handlers.retryLiveRoute();
   }
 
   return {bind,renderMapControls,renderTourBuilder,renderDayControls,
-    renderCalculatedTour,showDayPlanMissing,showDayPlanError,renderDaySchedule};
+    renderCalculatedTour,showDayPlanMissing,showDayPlanError,renderDaySchedule,
+    renderLiveNavigation};
 }
 const api={create};
 if(typeof module==='object'&&module.exports)module.exports=api;
