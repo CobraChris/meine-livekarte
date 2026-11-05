@@ -255,7 +255,7 @@ test('auto day itinerary is local, numbered and honest; foot-route is a delibera
  const fn=app.slice(app.indexOf('  async function calculateDailyFootRoute(){'),
     app.indexOf("  $('day-route-foot').onclick=",app.indexOf('  async function calculateDailyFootRoute(){')));
  assert.match(fn,/W\.optimizedTourRequestUrl\(from,remaining\)/);
- assert.match(fn,/W\.parseOptimizedTour\(JSON\.parse\(raw\),from,remaining\)/);
+ assert.match(fn,/W\.parseOptimizedTour\(data,from,remaining\)/);
  assert.doesNotMatch(fn,/position\.lat|position\.lng|navigator\.geolocation/);
  assert.match(fn,/if\(generation!==dayFootGeneration\|\|dailyRouteKey\(dailyStops\(\)\)!==key\)return/);
  assert.match(app,/if\(dayFootController\)dayFootController\.abort\(\)/);
