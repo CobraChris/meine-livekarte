@@ -82,7 +82,7 @@ test('GPS centers automatically at launch and respects manual opt-out without st
 });
 
 test('walking user interface is explicit opt in and leaves external Google Maps navigation available',()=>{
- const html=read('index.html'),app=read('app.js'),css=read('style.css');
+ const html=read('index.html'),app=read('app.js'),css=read('style.css'),ui=read('place-ui.js');
  for(const id of ['walk-route-panel','walk-route-title','walk-route-stats','walk-route-note',
    'walk-route-retry','walk-route-close','walk-route-google'])
    assert.match(html,new RegExp('id="'+id+'"'));
@@ -90,11 +90,11 @@ test('walking user interface is explicit opt in and leaves external Google Maps 
  assert.match(app,/const W=window\.LivekarteWalkingCore/);
  assert.match(app,/function walkingButton\(p\)/);
  assert.match(app,/🚶 Fußweg anzeigen/);
- assert.match(app,/actions\.append\(show,walkingButton\(p\),tourButton,route\(p\),distance\)/);
- assert.match(app,/const quickActions=node\('div',undefined,'popup-quick-actions popup-compact-actions'\)/);
- assert.match(app,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);
- assert.match(app,/popupMoreBody\.append\(route\(p\),popupEditButton\)/);
- assert.match(app,/popup\.append\(quickActions\)/);
+ assert.match(ui,/actions\.append\(show,walkingButton\(p\),tourButton,route\(p\),distance\)/);
+ assert.match(ui,/const quickActions=node\('div',undefined,'popup-quick-actions popup-compact-actions'\)/);
+ assert.match(ui,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);
+ assert.match(ui,/popupMoreBody\.append\(route\(p\),popupEditButton\)/);
+ assert.match(ui,/popup\.append\(quickActions\)/);
  assert.match(app,/bindMapPopup\(marker,popup\)/);
  assert.match(app,/function showWalkingRoute\(place\)/);
  const userBlock=app.slice(app.indexOf('async function showWalkingRoute('),app.indexOf('function placeMeta'));
