@@ -100,13 +100,13 @@ test('walking user interface is explicit opt in and leaves external Google Maps 
  const userBlock=app.slice(app.indexOf('async function showWalkingRoute('),app.indexOf('function placeMeta'));
  assert.match(userBlock,/if\(watch===null\|\|!position\|\|!positionUpdatedAt\)/);
  assert.match(userBlock,/Date\.now\(\)-positionUpdatedAt>60000/);
- assert.match(userBlock,/lastWalkingRequestAt/);
- assert.match(userBlock,/elapsed<1200/);
+ assert.match(userBlock,/routeRequests\.claim\(\)/);
  assert.match(userBlock,/W\.requestUrl\(position,place\)/);
- assert.match(userBlock,/fetch\(url/);
- assert.match(userBlock,/credentials:'omit'/);
- assert.match(userBlock,/referrerPolicy:'origin'/);
- assert.match(userBlock,/W\.parse\(JSON\.parse\(raw\),startedAt,place\)/);
+ assert.match(userBlock,/routeRequests\.request\(\{kind:'walk',url,controller\}\)/);
+ const transport=read('routing-requests.js');
+ assert.match(transport,/credentials:'omit'/);
+ assert.match(transport,/referrerPolicy:'origin'/);
+ assert.match(userBlock,/W\.parse\(data,startedAt,place\)/);
  assert.match(userBlock,/const walkingView=RM\.walking\(\{start:startedAt,stops:\[place\],route:result,purpose:'single'\}\)/);
  assert.match(userBlock,/L\.polyline\(walkingView\.points/);
  assert.match(userBlock,/dashArray:'2 13'/);
@@ -129,5 +129,5 @@ test('OSRM foot queries remain online only, never cached by installable app',()=
  assert.doesNotMatch(sw,/routing\.openstreetmap\.de/);
  assert.match(sw,/url\.origin!==scope\.origin/);
  assert.match(workflow,/node --check walking-core\.js/);
- assert.match(workflow,/cp index\.html style\.css core\.js walking-core\.js day-plan-core\.js route-discovery\.js app\.js/);
+ assert.match(workflow,/cp index\.html style\.css core\.js walking-core\.js routing-requests\.js tour-navigation-core\.js day-plan-core\.js route-discovery\.js app\.js/);
 });
