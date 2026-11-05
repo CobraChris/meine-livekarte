@@ -8,7 +8,7 @@ function derive({progress,accuracy,fixAgeMs}={}){
  if(!progress||!finitePositive(fixAgeMs)||fixAgeMs>30000)
    return Object.freeze({kind:'waiting',message:'GPS-Position aktualisieren',canOfferReroute:false,
      distanceMeters:null,durationSeconds:null});
- if(!finitePositive(accuracy)||accuracy>75||progress.status==='gps-imprecise')
+ if(!finitePositive(accuracy)||accuracy>75||['gps-imprecise','poor-gps'].includes(progress.status))
    return Object.freeze({kind:'uncertain',message:'GPS zu ungenau – Richtung vor Ort prüfen',
      canOfferReroute:false,distanceMeters:null,durationSeconds:null});
  const distance=finitePositive(progress.remainingMeters)?Math.round(progress.remainingMeters):null;
