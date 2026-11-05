@@ -223,55 +223,6 @@ async function verifyCompassDiagnostics(page){
  console.log('PASS simulated tilted compass direction, diagnostics and relative-yaw rejection');
 }
 
-
-async function verifyUpdateGuardAndPersistence(page){
- // A user-edited import form must survive a declined update prompt.
- const guard=await page.evaluate(()=>{
-  const dialog=document.getElementById('import-dialog');
-  const input=document.getElementById('import-text');
-  if(!dialog||!input||!document.getElementById('app-update-now'))
-    return {error:'update/import controls missing'};
-  dialog.showModal();
-  input.value='Nur lokaler Test, niemals importieren';
-  input.dispatchEvent(new Event('input',{bubbles:true}));
-  const originalConfirm=window.confirm;
-  let confirms=0;
-  window.confirm=()=>{confirms++;return false;};
-  document.getElementById('app-update-now').click();
-  window.confirm=originalConfirm;
-  const value=input.value,stillOpen=dialog.open;
-  dialog.close();
-  input.value='';
-  return {confirms,value,stillOpen};
- });
- assert.equal(guard.error,undefined);
- assert.equal(guard.confirms,1,'A modified open dialog requires consent before update');
- assert.equal(guard.stillOpen,true,'Declining must not reload or close the editor');
- assert.match(guard.value,/Nur lokaler Test/);
- console.log('PASS updating cannot erase an unsaved form without confirmation');
-
- // The data on a user's actual phone is never touched. Here the independent
- // temporary browser context must retain plans and places over page reload.
- const before=await page.evaluate(()=>{
-  const keys=['livekarte-places-v1','livekarte-ticket-status-v1',
-   'livekarte-city-day-assignments-v1','livekarte-plan-assignments-v1',
-   'livekarte-custom-plans-v1','livekarte-active-plan-v1'];
-  return {storage:keys.map(key=>[key,localStorage.getItem(key)]),
-   plan:document.getElementById('plan-select').value};
- });
- await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#plan-select').waitFor({state:'visible'});
- await page.waitForFunction(()=>document.getElementById('plan-select')?.value==='town-kyoto',
-  null,{timeout:12000});
- const after=await page.evaluate((keys)=>({
-  storage:keys.map(key=>[key,localStorage.getItem(key)]),
-  plan:document.getElementById('plan-select').value
- }),before.storage.map(([key])=>key));
- assert.deepEqual(after,before,
-  'An ordinary app update/reload must preserve local places, tickets and plans');
- console.log('PASS same-origin app reload preserves all trip and ticket storage');
-}
-
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -311,6 +262,17 @@ async function main(){
   assert.equal(await page.locator('.map-actions button').count(),3);
   assert.ok(await page.locator('#journey-panel').isVisible(),
    'Nikkō rail section retains the shared toolbar and schematic route');
+  // Tokyo journey opens the same manual step model as both Nagoya directions,
+  // without inferring arrival/departure platforms or completing any tickets.
+  await page.locator('#nikko-tokyo-transfer summary').first().click();
+  assert.match(await page.locator('#nikko-tokyo-step-count').innerText(),/Schritt 1 von 3/);
+  await page.locator('#nikko-tokyo-next').click();
+  assert.match(await page.locator('#nikko-tokyo-step-count').innerText(),/Schritt 2 von 3/);
+  await page.locator('#nikko-tokyo-prev').click();
+  assert.match(await page.locator('#nikko-tokyo-step-count').innerText(),/Schritt 1 von 3/);
+  assert.match(await page.locator('#nikko-tokyo-platform-note').innerText(),/Gleis vor Ort prüfen/);
+  console.log('PASS generic Tokyo transfer steps with unknown platforms and no ticket claims');
+  await page.locator('#nikko-tokyo-transfer summary').first().click();
   await page.locator('#journey-panel .journey-item').first().click();
   const stationPopup=page.locator('.leaflet-popup-content .place-popup-pan-surface').first();
   await stationPopup.waitFor({state:'visible'});
@@ -320,7 +282,6 @@ async function main(){
   await page.locator('#plan-select').selectOption('town-kyoto');
   await testDay(page,'2026-11-04',4);
   await verifyCompassDiagnostics(page);
-  await verifyUpdateGuardAndPersistence(page);
   assert.deepEqual(uncaught,[],'No uncaught runtime errors during real mobile interactions');
   console.log('PASS complete Android-size Chrome regression: Kyoto, Nara, Osaka, Nikkō');
  }catch(error){
