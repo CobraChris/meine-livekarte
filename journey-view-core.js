@@ -11,7 +11,7 @@ function normalizedStatus(value){
 // A local-clock difference is only meaningful when both explicit times
 // belong to the same calendar day. Never infer an overnight transfer.
 function connectionMinutes(arrival,departure){
- const valid=/^(?:[01]\\d|2[0-3]):[0-5]\\d$/;
+ const valid=/^(?:[01]\d|2[0-3]):[0-5]\d$/;
  if(typeof arrival!=='string'||typeof departure!=='string'||
     !valid.test(arrival)||!valid.test(departure))return null;
  const minutes=value=>Number(value.slice(0,2))*60+Number(value.slice(3));
