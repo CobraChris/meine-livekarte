@@ -23,7 +23,7 @@ function build({station,arrival,departure,steps,sourceUrl='',ticketStatus='unkno
    return Object.freeze({number:index+1,text:step.trim()});
  });
  const source=typeof sourceUrl==='string'&&/^https:\/\//.test(sourceUrl)?sourceUrl:'';
- const knownTicket=['unknown','buy','booked','ready'].includes(ticketStatus)
+ const knownTicket=['unknown','missing','booked','ready'].includes(ticketStatus)
    ?ticketStatus:'unknown';
  return Object.freeze({
    station:station.trim(),sourceUrl:source,
