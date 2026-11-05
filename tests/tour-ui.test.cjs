@@ -351,8 +351,9 @@ test('GPS tour UI is shared across dates, never stores coordinates or makes rout
  assert.match(app,/nextLiveStop:\(\)=>advanceTourNavigation\(\)/);
  assert.match(app,/retryLiveRoute:\(\)=>\{void calculateTour\(false,true\);\}/);
  assert.match(read('tour-navigation-core.js'),/walkingCore\.tourLegProgress\(prepared,route\.legs/);
- assert.match(app,/state\.nearReadings>=2/);
- assert.match(app,/state\.offReadings>=2/);
+ const nav=read('tour-navigation-core.js');
+ assert.match(nav,/nearReadings>=2/);
+ assert.match(nav,/offReadings>=2/);
  assert.match(app,/tourUI\.renderLiveNavigation\(\{/);
  assert.doesNotMatch(ui,/fetch\(|localStorage|indexedDB|navigator\.geolocation|watchPosition/);
 });
