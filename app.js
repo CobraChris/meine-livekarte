@@ -2911,10 +2911,11 @@
         L.polyline(segment.points,railView.style).addTo(journeyLayer);
       }
       const item = node('div',undefined,'journey-item');
-      const times = [row.arrival && row.arrival+' an',row.departure && row.departure+' ab'].filter(Boolean).join(' · ');
+      const times = row.timeLabel;
       item.append(node('span',times,'times'),node('strong',(i+1)+'. '+stop.name));
+      if (row.connectionNote) item.append(node('span',row.connectionNote,'stop-note journey-connection-note'));
       if (stop.description) item.append(node('span',stop.description,'stop-note'));
-      if (stop.leg) item.append(node('span','Weiter: '+stop.leg,'leg'));
+      if (row.nextLeg) item.append(node('span','Weiter: '+row.nextLeg,'leg'));
       if (i<journey.stops.length-1) {
         const state=row.ticket;
         const ticketRow=node('div',undefined,'ticket-row ticket-state-'+state);
