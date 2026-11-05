@@ -136,7 +136,10 @@ test('closing popup mid-swipe releases pointer capture and dragging state',()=>{
  s.dispatch('pointerdown',{target:target('link')});
  s.dispatch('pointermove',{clientX:124,clientY:125});
  assert.equal(s.classList.contains('is-dragging'),true);
- assert.equal(s.hasPointerCapture(1),true);
+ assert.equal(s.hasPointerCapture(1),false,'touch uses implicit capture only');
+ s.dispatch('lostpointercapture',{pointerId:1});
+ assert.equal(s.classList.contains('is-dragging'),true,
+   'lost capture during Leaflet reposition must not cancel a touch swipe');
  f.close();
  assert.equal(s.classList.contains('is-dragging'),false);
  assert.equal(s.hasPointerCapture(1),false);
@@ -170,4 +173,18 @@ test('expanding compact popup details reflows Leaflet popup and avoids clipped a
   if(oldRAF===undefined)delete globalThis.requestAnimationFrame;
   else globalThis.requestAnimationFrame=oldRAF;
  }
+});
+
+test('complete long touch swipe remains active after Leaflet popup loses capture',()=>{
+ const f=setup(),s=f.surface;
+ s.dispatch('pointerdown',{target:target('button'),pointerType:'touch'});
+ for(const x of [108,120,132,145,160]){
+  s.dispatch('pointermove',{clientX:x,clientY:100,pointerType:'touch'});
+  s.dispatch('lostpointercapture',{pointerId:1,pointerType:'touch'});
+ }
+ assert.equal(f.pans.length,5,
+   'each finger movement must pan; never stop after first 8 pixels');
+ assert.equal(f.pans.reduce((total,p)=>total+p.delta[0],0),-60);
+ s.dispatch('pointerup',{clientX:160,clientY:100});
+ assert.equal(s.classList.contains('is-dragging'),false);
 });
