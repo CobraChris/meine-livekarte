@@ -79,8 +79,27 @@
         .then(reg=>reg?.update()).catch(()=>{});
     }
   }
+  // Never discard an open, modified form just because a new Pages build
+  // appeared. This is entirely ephemeral UI state: no form data is read,
+  // copied, persisted or sent to a server.
+  const editedDialogs=new WeakSet();
+  const rememberDraft=event=>{
+    const dialog=event.target?.closest?.('dialog[open]');
+    if(dialog && event.target?.matches?.('input,textarea,select'))
+      editedDialogs.add(dialog);
+  };
+  document.addEventListener('input',rememberDraft,true);
+  document.addEventListener('change',rememberDraft,true);
+  document.addEventListener('close',event=>{
+    if(event.target?.tagName==='DIALOG')editedDialogs.delete(event.target);
+  },true);
   if(updateNow)updateNow.addEventListener('click',()=>{
-    // A normal reload preserves localStorage, IndexedDB and the RSA private key.
+    const unsaved=[...document.querySelectorAll('dialog[open]')]
+      .some(dialog=>editedDialogs.has(dialog));
+    if(unsaved && !window.confirm(
+      'Du hast möglicherweise ungespeicherte Änderungen in einem geöffneten Dialog. Wirklich die App aktualisieren?'
+    ))return;
+    // Reload keeps IndexedDB, localStorage and the private key unchanged.
     window.location.reload();
   });
   document.addEventListener('visibilitychange',()=>{
