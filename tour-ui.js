@@ -200,7 +200,7 @@ function create({document,dayPlanCore,walkingCore,handlers}){
   // GPS position, arrival hysteresis and routing remain exclusively in app.js.
   // The common UI only renders already evaluated live-tour state.
   function renderLiveNavigation({phase,stage,total,name,arrived,status,
-      remainingMeters,remainingSeconds,offRoute}={}){
+      remainingMeters,remainingSeconds,offRoute,guidance}={}){
     const panel=$('tour-live-state'),step=$('tour-live-step'),
       progress=$('tour-live-progress'),message=$('tour-live-message'),
       toggle=$('tour-live-toggle'),next=$('tour-live-next'),
@@ -230,22 +230,33 @@ function create({document,dayPlanCore,walkingCore,handlers}){
         retry.hidden=true;
         toggleMode('Ⅱ Tour pausieren',true);
         break;
-      case 'progress':
+      case 'progress': {
         step.textContent='Stopp '+stage+' von '+total+' · '+name;
-        progress.textContent=arrived?'✓ Ziel erreicht':
+        const kind=guidance?.kind;
+        const uncertain=kind==='waiting'||kind==='uncertain';
+        const safeDistance=guidance&&guidance.distanceMeters!==null
+          ?guidance.distanceMeters:remainingMeters;
+        const safeDuration=guidance&&guidance.durationSeconds!==null
+          ?guidance.durationSeconds:remainingSeconds;
+        progress.textContent=kind==='waiting'?'📍 GPS-Signal wird aktualisiert':
+          kind==='uncertain'?'📍 GPS ungenau':
+          arrived?'✓ Ziel erreicht':
           status==='poor-gps'?'📍 GPS ungenau':
-          'Noch '+walkingCore.distanceText(remainingMeters)+' · '+
-          walkingCore.durationText(remainingSeconds);
-        message.textContent=arrived
-          ?'Nach deinem Besuch auf „Nächster Stopp“ tippen.'
+          'Noch '+walkingCore.distanceText(safeDistance)+' · '+
+          walkingCore.durationText(safeDuration);
+        message.textContent=uncertain?guidance.message+
+          ' · Route bleibt sichtbar; keine automatische Neuberechnung.'
+          :arrived?'Nach deinem Besuch auf „Nächster Stopp“ tippen.'
           :status==='poor-gps'
             ?'Auf eine genauere GPS-Messung warten. Manuelles Weitergehen ist möglich.'
             :offRoute
               ?'⚠ Vermutlich vom Fußweg abgewichen. Restweg bei Bedarf neu berechnen.'
               :'GPS-Führung aktiv · keine automatische Neuberechnung.';
-        retry.hidden=!offRoute;
+        // Only the guidance engine may authorize the optional reroute prompt.
+        retry.hidden=guidance?!guidance.canOfferReroute:!offRoute;
         next.textContent=stage===total?'✓ Tour abschließen':'Nächster Stopp →';
         break;
+      }
       case 'resume-gps-required':
         message.textContent='Zum Fortsetzen wird ein aktueller GPS-Standort benötigt.';
         break;
