@@ -797,7 +797,6 @@
   // (already saved on this device) persist across reloads, never GPS or route
   // geometry. One FOSSGIS route request is made per deliberate calculation.
   const tourBuilder=$('tour-builder');
-  const tourSelectedList=$('tour-stops');
   const tourBuilderStatus=$('tour-builder-status');
   const tourResult=$('tour-result');
   const tourHud=$('tour-route-hud');
@@ -983,24 +982,52 @@
       }
     }
   };
-  const mapTourModeButton=$('tour-map-mode');
-  const mapTourCounter=$('tour-map-counter');
-  const mapTourDone=$('tour-map-done');
-  const planMapPickButton=$('tour-pick-on-map');
+  // One shared tour UI for every city, day and trip; the app retains all
+  // map state, persistence and the only network/GPS routing code.
+  const tourUI=window.LivekarteTourUI.create({document,dayPlanCore:D,handlers:{
+    selectMapMode:()=>setMapTourPickMode(!mapTourPickMode),
+    selectMapPick:()=>setMapTourPickMode(true,true),
+    finishMapPick:()=>setMapTourPickMode(false),
+    selectedCount:()=>tourSelection().length,
+    setSelection:items=>setTourSelection(items),
+    removeStop:place=>toggleTourPlace(place),
+    calculate:optimized=>{void calculateTour(optimized);},
+    dayStopMinutes:place=>dayVisitMinutes(place),
+    setVisitMinutes:(place,raw)=>{
+      const value=Number(raw);
+      if(!Number.isInteger(value)||value<5||value>480){
+        dayPlanAlert.textContent='Besuchsdauer bitte zwischen 5 und 480 Minuten eingeben.';
+        return;
+      }
+      dayStopPrefs(place).minutes=value;
+      persistDayPlans();renderDayPlanSummary();
+    },
+    setOpening:(place,value)=>{
+      dayStopPrefs(place).open=value;
+      persistDayPlans();renderDayPlanSummary();
+    },
+    setClosing:(place,value)=>{
+      dayStopPrefs(place).close=value;
+      persistDayPlans();renderDayPlanSummary();
+    },
+    setStart:time=>{
+      try{D.minuteOf(time);}catch(e){dayPlanAlert.textContent=e.message;return;}
+      dayPlanPrefs().start=time;
+      persistDayPlans();renderDayPlanSummary();
+    },
+    setBuffer:raw=>{
+      dayPlanPrefs().buffer=Number(raw);
+      persistDayPlans();renderDayPlanSummary();
+    },
+    setLunch:raw=>{
+      dayPlanPrefs().lunch=Number(raw);
+      persistDayPlans();renderDayPlanSummary();
+    },
+    refreshDayPlan:()=>renderDayPlanSummary()
+  }});
+  tourUI.bind();
   function updateMapTourControls(){
-    const number=tourSelection().length;
-    mapTourModeButton.setAttribute('aria-pressed',String(mapTourPickMode));
-    mapTourModeButton.textContent=mapTourPickMode?'✓ Tour auswählen':'＋ Tour auf Karte';
-    mapTourModeButton.title=mapTourPickMode
-      ?'Auswahlmodus beenden – markierte Kartenpins zur Tour hinzufügen oder entfernen'
-      :'Markierungen direkt antippen und sofort zur Tour hinzufügen';
-    mapTourCounter.hidden=!mapTourPickMode;
-    mapTourDone.hidden=!mapTourPickMode;
-    mapTourCounter.textContent=number+'/6 Ziele · '+
-      (number===6?'Maximum erreicht':'Kartenpins antippen');
-    mapTourDone.textContent='Fertig'+(number?' · '+number:'');
-    planMapPickButton.textContent=mapTourPickMode?'✓ Kartenauswahl aktiv':'📍 Orte direkt auf Karte auswählen';
-    planMapPickButton.setAttribute('aria-pressed',String(mapTourPickMode));
+    tourUI.renderMapControls({picking:mapTourPickMode,count:tourSelection().length});
   }
   function setMapTourPickMode(enabled,focusMap=false){
     mapTourPickMode=!!enabled;
@@ -1016,17 +1043,6 @@
     render(); // Marker click handlers and visible number badges follow mode.
     if(focusMap)$('map').scrollIntoView({behavior:'smooth',block:'start'});
   }
-  mapTourModeButton.onclick=()=>setMapTourPickMode(!mapTourPickMode);
-  planMapPickButton.onclick=()=>setMapTourPickMode(true,true);
-  mapTourDone.onclick=()=>{
-    setMapTourPickMode(false);
-    tourBuilder.open=true;
-    const number=tourSelection().length;
-    tourBuilderStatus.textContent=number>=2
-      ?number+' Ziele gewählt. Jetzt Route optimieren oder Rundgang berechnen.'
-      :'Bitte mindestens zwei Ziele auf der Karte auswählen.';
-    tourBuilder.scrollIntoView({behavior:'smooth',block:'start'});
-  };
   function tourSelection(){
     const keys=Array.isArray(tourDrafts[tourContextKey()])?tourDrafts[tourContextKey()]:[];
     const byKey=new Map(visiblePlaces().map(p=>[C.placePlanKey(p),p]));
@@ -1078,49 +1094,7 @@
   }
   function renderTourBuilder(){
     const selected=tourSelection();
-    $('tour-count').textContent=selected.length+'/6 Ziele';
-    tourSelectedList.replaceChildren();
-    if(!selected.length){
-      tourSelectedList.append(node('li','Noch keine Ziele ausgewählt.','tour-empty'));
-    }
-    selected.forEach((place,index)=>{
-      const li=node('li',undefined,'tour-stop');
-      li.append(node('span',String(index+1),'tour-stop-number'));
-      const name=node('span',place.name,'tour-stop-name');
-      if(place.duration){
-        const dur=node('small','Besuch: '+place.duration);
-        name.append(dur);
-      }
-      li.append(name);
-      const controls=node('div',undefined,'tour-stop-controls');
-      for(const [label,direction] of [['↑',-1],['↓',1]]){
-        const btn=node('button',label);
-        btn.type='button';
-        btn.setAttribute('aria-label',place.name+' '+(direction<0?'nach oben':'nach unten'));
-        btn.disabled=index+direction<0||index+direction>=selected.length;
-        btn.onclick=()=>{
-          const reordered=selected.slice();
-          const other=index+direction;
-          [reordered[index],reordered[other]]=[reordered[other],reordered[index]];
-          setTourSelection(reordered);
-          tourBuilder.open=true;
-          tourBuilderStatus.textContent='Reihenfolge angepasst. Rundgang neu berechnen.';
-        };
-        controls.append(btn);
-      }
-      const remove=node('button','×');
-      remove.type='button';
-      remove.setAttribute('aria-label',place.name+' aus Rundgang entfernen');
-      remove.onclick=()=>toggleTourPlace(place);
-      controls.append(remove);
-      li.append(controls);
-      tourSelectedList.append(li);
-    });
-    $('tour-calculate').disabled=selected.length<2||!!tourController;
-    $('tour-clear').disabled=!selected.length;
-    $('tour-optimize').disabled=selected.length<2||!!tourController;
-    if(!selected.length && !tourRoute)
-      tourBuilderStatus.textContent='Wähle zunächst zwei bis sechs Orte über „＋ Tour“.';
+    tourUI.renderTourBuilder({selected,calculating:!!tourController,hasRoute:!!tourRoute});
     renderDayPlanControls();
     updateMapTourControls();
   }
@@ -1130,7 +1104,6 @@
   const dayPlanAlert=$('day-plan-alert');
   const dayPlanOutput=$('day-plan-output');
   const dayPlanTimeline=$('day-plan-timeline');
-  const dayStopSettings=$('day-stop-settings');
   function dayPlanPrefs(){
     if(!dayPlans[tourContextKey()]){
       dayPlans[tourContextKey()]={
@@ -1224,81 +1197,10 @@
   }
   function renderDayPlanControls(){
     if(!D)return;
-    const pref=dayPlanPrefs();
-    $('day-start').value=pref.start;
-    $('day-buffer').value=String(pref.buffer);
-    $('day-lunch').value=String(pref.lunch);
-    dayStopSettings.replaceChildren();
-    const stops=dayPlanStops();
-    stops.forEach((place,i)=>{
-      const settings=dayStopPrefs(place);
-      const row=node('div',undefined,'day-stop-row');
-      const title=node('strong',(i+1)+'. '+place.name);
-      const fields=node('div',undefined,'day-stop-fields');
-      const createField=(caption,type,value,onchange)=>{
-        const label=node('label',caption);
-        const input=node('input');
-        input.type=type;
-        input.value=value;
-        if(type==='number'){
-          input.min='5';input.max='480';input.step='5';
-          input.inputMode='numeric';
-        }
-        input.onchange=()=>onchange(input);
-        label.append(input);
-        fields.append(label);
-      };
-      const known=D.visitMinutes(place.duration);
-      createField('Besuch (Min.)','number',String(dayVisitMinutes(place)),input=>{
-        const value=Number(input.value);
-        if(!Number.isInteger(value)||value<5||value>480){
-          dayPlanAlert.textContent='Besuchsdauer bitte zwischen 5 und 480 Minuten eingeben.';
-          return;
-        }
-        settings.minutes=value;
-        persistDayPlans();
-        renderDayPlanSummary();
-      });
-      createField('Öffnet','time',settings.open||'',input=>{
-        settings.open=input.value;
-        persistDayPlans();
-        renderDayPlanSummary();
-      });
-      createField('Schließt','time',settings.close||'',input=>{
-        settings.close=input.value;
-        persistDayPlans();
-        renderDayPlanSummary();
-      });
-      row.append(title);
-      row.append(node('small',known===null
-        ?'45 Min. als Schätzung vorbelegt – bitte anpassen.'
-        :'Übernommen aus Besuchsdauer: '+place.duration+'. Mittelwert bei Zeitspanne.'));
-      row.append(fields);
-      dayStopSettings.append(row);
-    });
+    tourUI.renderDayControls({prefs:dayPlanPrefs(),stops:dayPlanStops(),
+      stopPrefs:dayStopPrefs,visitMinutes:dayVisitMinutes});
     renderDayPlanSummary();
   }
-  $('day-start').onchange=()=>{
-    const time=$('day-start').value;
-    try{D.minuteOf(time);}catch(e){dayPlanAlert.textContent=e.message;return;}
-    dayPlanPrefs().start=time;
-    persistDayPlans();
-    renderDayPlanSummary();
-  };
-  $('day-buffer').onchange=()=>{
-    dayPlanPrefs().buffer=Number($('day-buffer').value);
-    persistDayPlans();renderDayPlanSummary();
-  };
-  $('day-lunch').onchange=()=>{
-    dayPlanPrefs().lunch=Number($('day-lunch').value);
-    persistDayPlans();renderDayPlanSummary();
-  };
-  $('day-plan-refresh').onclick=()=>renderDayPlanSummary();
-  $('tour-clear').onclick=()=>{
-    setTourSelection([]);
-    tourBuilderStatus.textContent='Auswahl geleert. Deine gespeicherten Orte bleiben erhalten.';
-  };
-  $('tour-optimize').onclick=()=>{void calculateTour(true);};
   // Live tour uses only the existing full-route geometry and individual leg
   // metrics; live GPS updates NEVER contact a routing server or store a track.
   const tourLiveState=$('tour-live-state');
@@ -1428,7 +1330,6 @@
     clearTourRoute();
     tourBuilderStatus.textContent='Rundgang von der Karte entfernt. Deine Zielauswahl bleibt erhalten.';
   };
-  $('tour-calculate').onclick=()=>{void calculateTour();};
   async function calculateTour(optimized=false,remaining=false){
     googleDemo?.forceOSM();
     if(tourController)return;
