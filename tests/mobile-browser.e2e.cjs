@@ -76,25 +76,12 @@ async function swipeOverPopupAction(page){
  const button=popup.locator('button.walk-start');
  await button.waitFor({state:'visible'});
  const bbox=await button.boundingBox();
- assert.ok(bbox&&bbox.width>20&&bbox.height>20);
+ const mapBox=await page.locator('#map').boundingBox();
+ assert.ok(bbox&&bbox.width>20&&bbox.height>20,'Popup action has a usable touch target');
+ assert.ok(mapBox&&bbox.y>=mapBox.y+8&&bbox.y+bbox.height<=mapBox.y+mapBox.height-8,
+   'Expanded popup action must stay inside the visible map, not behind page header');
  const x=bbox.x+Math.min(40,bbox.width/2), y=bbox.y+bbox.height/2;
- console.log('SWIPE TARGET',JSON.stringify({bbox,x,y,viewport:page.viewportSize(),
-  popupBox:await popup.boundingBox(),mapBox:await page.locator('#map').boundingBox()}));
  const before=await pane.evaluate(el=>el.style.transform);
- const beforeMarker=await page.locator('.leaflet-marker-icon.pin').first().boundingBox();
- await page.evaluate(()=>{
-  window.__touchDiagnostics=[];
-  const surface=document.querySelector('.leaflet-popup-content .place-popup-pan-surface');
-  for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])
-   surface.addEventListener(type,e=>window.__touchDiagnostics.push({
-    type,x:e.clientX,y:e.clientY,kind:e.pointerType,captured:surface.hasPointerCapture?.(e.pointerId)
-   }));
-  const old=L.Map.prototype.panBy;
-  L.Map.prototype.panBy=function(points,opts){
-   window.__touchDiagnostics.push({type:'panBy',points,opts});
-   return old.call(this,points,opts);
-  };
- });
  const cdp=await page.context().newCDPSession(page);
  const finger=(px)=>[{x:px,y,id:1,radiusX:2,radiusY:2,force:1}];
  try{
@@ -107,16 +94,13 @@ async function swipeOverPopupAction(page){
  }finally{await cdp.detach();}
  await delay(120);
  const after=await pane.evaluate(el=>el.style.transform);
- const afterMarker=await page.locator('.leaflet-marker-icon.pin').first().boundingBox();
- const diagnostic=await page.evaluate(()=>window.__touchDiagnostics);
- console.log('TOUCH DIAGNOSTICS',JSON.stringify({before,after,beforeMarker,afterMarker,diagnostic}));
  const offset=value=>Number(value.slice(value.indexOf('(')+1).split('px')[0]);
  assert.ok(Math.abs(offset(after)-offset(before))>=40,
   'A 56px finger gesture must move the map by at least 40px, not just the first 8px');
  assert.equal(await popup.isVisible(),true,'Popup stays open after pan gesture');
  assert.equal(await page.locator('#walk-route-panel').isVisible(),false,
   'Swipe must NOT accidentally trigger the Fußweg button');
- console.log('PASS real touchscreen swipe over popup button pans map and does not activate button');
+ console.log('PASS full touchscreen swipe over expanded popup button; map moves without activating button');
 }
 async function verifyGPSOverview(page){
  await page.waitForFunction(()=>document.querySelector('.gps-location-icon')!==null,
