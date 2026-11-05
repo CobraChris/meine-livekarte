@@ -141,3 +141,33 @@ test('closing popup mid-swipe releases pointer capture and dragging state',()=>{
  assert.equal(s.classList.contains('is-dragging'),false);
  assert.equal(s.hasPointerCapture(1),false);
 });
+
+test('expanding compact popup details reflows Leaflet popup and avoids clipped actions',async()=>{
+ const doc=docFactory(),content=surface(doc);
+ let updates=0,open=true;
+ const marker={
+  bound:null,
+  isPopupOpen:()=>open,
+  bindPopup(element,options){this.bound={element,options};return this;},
+  on(){return this;},
+  getPopup(){return {update(){updates++;}};}
+ };
+ const map={getSize:()=>({x:393,y:500}),panBy:()=>{}};
+ const frames=[];
+ const oldRAF=globalThis.requestAnimationFrame;
+ try{
+  globalThis.requestAnimationFrame=fn=>frames.push(fn);
+  Popup.bind({marker,content,map,L:{point:(x,y)=>({x,y})}});
+  const target=marker.bound.element;
+  target.dispatch('toggle',{target:{tagName:'DETAILS'}});
+  assert.equal(frames.length,1);
+  frames.pop()();
+  assert.equal(updates,1,'Leaflet must recalculate height and autopan after Mehr expands');
+  open=false;
+  target.dispatch('toggle',{target:{tagName:'DETAILS'}});
+  assert.equal(updates,1,'closed popups must not be updated');
+ }finally{
+  if(oldRAF===undefined)delete globalThis.requestAnimationFrame;
+  else globalThis.requestAnimationFrame=oldRAF;
+ }
+});
