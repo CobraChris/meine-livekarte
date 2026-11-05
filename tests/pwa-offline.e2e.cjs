@@ -97,8 +97,10 @@ async function main(){
   await page.reload({waitUntil:'domcontentloaded',timeout:18000});
   await page.locator('#plan-select').waitFor({state:'visible',timeout:14000});
   assert.equal(await page.locator('#plan-select').inputValue(),'ride-nikko');
-  assert.equal(await page.locator('#nikko-tokyo-step-count').innerText(),
-    'Schritt 1 von 3 · Nozomi 12 verlassen');
+  await page.locator('#nikko-tokyo-transfer').waitFor({state:'visible',timeout:12000});
+  await page.locator('#nikko-tokyo-transfer summary').first().click();
+  assert.match(await page.locator('#nikko-tokyo-step-count').textContent(),
+    /Schritt 1 von 3 · Nozomi 12 verlassen/);
   const after=await page.evaluate(async ticketId=>{
     const shelf=new window.LivekarteTicketLibrary.Library();
     const record=await shelf.get(ticketId);
