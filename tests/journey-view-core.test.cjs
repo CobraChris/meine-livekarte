@@ -33,3 +33,23 @@ test('invalid statuses, missing stops and malformed trips fail safely',()=>{
  assert.throws(()=>build({journey:trip,planId:'',ticketFor:()=>null}),/erforderlich/);
  assert.throws(()=>build({journey:{stops:[{name:'A'},{name:''}]},planId:'x',ticketFor:()=>null}),/Haltepunkt/);
 });
+
+test('planned transfer window uses only explicit same-day station times',()=>{
+ const {connectionMinutes}=require('../journey-view-core.js');
+ assert.equal(connectionMinutes('14:04','14:26'),22);
+ assert.equal(connectionMinutes('11:19','11:25'),6);
+ for(const [a,b] of [['23:55','00:10'],['14:26','14:04'],
+  ['13:99','14:04'],['','14:04'],['11:00','18:00']])
+  assert.equal(connectionMinutes(a,b),null,'Cannot infer journey day or bad clocks');
+ const t={title:'Transfer',date:'06.11.2026',stops:[
+  {name:'Start',departure:'10:00',leg:'Rail'},
+  {name:'Change',arrival:'10:55',departure:'11:01',leg:'Metro'},
+  {name:'End',arrival:'11:35'}]};
+ const view=build({journey:t,planId:'test',ticketFor:()=> 'unknown'});
+ assert.equal(view.rows[1].connectionMinutes,6);
+ assert.match(view.rows[1].connectionNote,/Zeit knapp/);
+ assert.equal(view.rows[1].timeLabel,'10:55 an · 11:01 ab');
+ assert.equal(view.rows[0].connectionMinutes,null);
+ assert.equal(view.rows[2].connectionNote,'');
+ assert.equal(view.rows[1].ticket,'unknown');
+});
