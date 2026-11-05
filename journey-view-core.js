@@ -4,7 +4,7 @@
  */
 (function(root){
 'use strict';
-const TICKET_STATES=Object.freeze(['unknown','buy','booked','ready']);
+const TICKET_STATES=Object.freeze(['unknown','missing','booked','ready']);
 function normalizedStatus(value){
  return TICKET_STATES.includes(value)?value:'unknown';
 }
