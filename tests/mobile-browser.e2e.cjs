@@ -145,7 +145,7 @@ async function verifyLocalSearchAndTourBuilder(page){
  await cards.nth(0).locator('button.tour-pick').click();
  await cards.nth(1).locator('button.tour-pick').click();
  assert.equal(await page.locator('#tour-stops li').count(),2);
- assert.match(await page.locator('#tour-count').innerText(),/2\\/6/);
+ assert.ok((await page.locator('#tour-count').innerText()).includes('2/6'),'The tour counter shows two of six stops');
  assert.equal(await page.locator('#tour-calculate').isEnabled(),true);
  await page.locator('#tour-clear').click();
  assert.equal(await page.locator('#tour-stops li').count(),0);
