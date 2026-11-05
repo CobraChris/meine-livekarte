@@ -2049,6 +2049,34 @@
   });
   window.addEventListener('focus',renderNextAction);
   const kyotoOverview=$('kyoto-overview'),nikkoOverview=$('nikko-overview');
+  // Reuse the same validated station model for the Tokyo transfer.
+  // The known itinerary has NO confirmed Tokyo arrival time or platform:
+  // neither may be inferred from the scheduled 14:00 onward train.
+  const tokyoTransfer=StationTransfer.build({
+    station:'Tokyo',sourceUrl:'https://www.jreast.co.jp/en/estation/stations/1039.html',
+    steps:[
+      {title:'Nozomi 12 verlassen',action:'Am Tōkaidō-Shinkansen aussteigen. Aktuelles Ankunftsgleis und Abfahrtsanzeige prüfen.'},
+      {title:'Passende Umsteigesperre klären',action:'Der Beschilderung für Tōhoku-/Jōetsu-/Hokuriku-Shinkansen folgen. Mit deinem Tickettyp das JR-Personal fragen, welche Sperre verwendet werden soll.'},
+      {title:'Yamabiko 141 finden',action:'Am JR-East-Bereich Zug, Ziel und tatsächliches Gleis auf der elektronischen Anzeige abgleichen. Planabfahrt 14:00 ist keine Livebestätigung.'}
+    ]
+  });
+  let tokyoStep=0;
+  function renderTokyoStep(){
+    const view=StationTransfer.stepState(tokyoTransfer,tokyoStep);
+    $('nikko-tokyo-step-count').textContent='Schritt '+view.number+' von '+view.total+
+      ' · '+view.step.title;
+    $('nikko-tokyo-step-content').textContent=view.step.action;
+    $('nikko-tokyo-prev').disabled=!view.canBack;
+    $('nikko-tokyo-next').textContent=view.finished?'Noch einmal':'Nächster Schritt';
+    $('nikko-tokyo-platform-note').textContent=
+      tokyoTransfer.arrivalPlatform.label+' · '+tokyoTransfer.departurePlatform.label;
+  }
+  $('nikko-tokyo-prev').onclick=()=>{tokyoStep=Math.max(0,tokyoStep-1);renderTokyoStep();};
+  $('nikko-tokyo-next').onclick=()=>{
+    tokyoStep=tokyoStep===tokyoTransfer.steps.length-1?0:tokyoStep+1;
+    renderTokyoStep();
+  };
+  renderTokyoStep();
   function renderNikkoOverview(){
     const visiting=activePlanId==='town-nikko',travel=activePlanId==='ride-nikko';
     nikkoOverview.hidden=!visiting&&!travel;
