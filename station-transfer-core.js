@@ -41,7 +41,20 @@ function build({station,arrival,departure,steps,sourceUrl='',ticketStatus='unkno
    live:false,indoorGps:false
  });
 }
-const api=Object.freeze({build,labelPlatform});
+// Pure step-navigation state for every station. An index is just a UI
+// position; displaying a step never records actual travel or ticket use.
+function stepState(plan,index=0){
+ if(!plan||!Array.isArray(plan.steps)||!plan.steps.length)
+   throw Error('Umstiegsplan fehlt.');
+ const parsed=Number.isInteger(index)?index:0;
+ const current=Math.max(0,Math.min(plan.steps.length-1,parsed));
+ return Object.freeze({
+   number:current+1,total:plan.steps.length,index:current,
+   step:plan.steps[current],canBack:current>0,
+   canNext:current<plan.steps.length-1,finished:current===plan.steps.length-1
+ });
+}
+const api=Object.freeze({build,labelPlatform,stepState});
 if(typeof module==='object'&&module.exports)module.exports=api;
 else root.LivekarteStationTransfer=api;
 })(globalThis);
