@@ -3139,6 +3139,10 @@
     const label=gpsAction.label;
     control.setAttribute('aria-label',label);
     control.title=label;
+    const status=MapToolbar.describe({gpsOn:watch!==null,gpsFix:!!position,
+      cameraMode:camera.mode});
+    const statusEl=$('map-controls-status');
+    if(statusEl&&statusEl.textContent!==status)statusEl.textContent=status;
     $('gps-privacy-toggle').textContent=watch===null?'GPS einschalten':'GPS ausschalten';
     $('gps-privacy-state').textContent=watch===null?'GPS ist ausgeschaltet.'
       :position?'GPS erfasst deinen Standort.':'GPS ermittelt deinen Standort.';
