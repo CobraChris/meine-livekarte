@@ -56,7 +56,14 @@ async function testDay(page,day,expectedCount){
 async function openPlacePopup(page,name){
  const card=page.locator('#places article.place').filter({hasText:name}).first();
  const known=await page.locator('#places article.place h3').allTextContents();
- assert.equal(await card.count(),1,'Place card missing: '+name+'; visible cards: '+JSON.stringify(known));
+ const state=await page.evaluate(()=>({
+  count:document.querySelector('#count')?.textContent,
+  placesChildCount:document.querySelector('#places')?.children.length,
+  placesSample:document.querySelector('#places')?.innerHTML.slice(0,450),
+  daySummary:document.querySelector('#plan-day-summary')?.textContent,
+  activeFilter:[...document.querySelectorAll('[data-filter][aria-pressed="true"]')].map(el=>el.dataset.filter)
+ }));
+ assert.equal(await card.count(),1,'Place card missing: '+name+'; visible cards: '+JSON.stringify(known)+'; state: '+JSON.stringify(state));
  await card.getByRole('button',{name:'Auf Karte'}).click();
  const popup=page.locator('.leaflet-popup-content .place-popup-pan-surface').first();
  await popup.waitFor({state:'visible',timeout:10000});
