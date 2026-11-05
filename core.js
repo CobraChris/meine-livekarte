@@ -59,12 +59,32 @@
     if (hash.length > 30000) throw new Error('Dieser Kartenlink ist zu groß.');
     return parse(decodeURIComponent(hash.slice(8)));
   }
-  // Only absolute, north-referenced compass data is suitable for a map arrow.
-  // Relative deviceorientation alpha must never be treated as a compass heading.
-  function compassHeading(event) {
-    const raw = Number.isFinite(event?.webkitCompassHeading) ? event.webkitCompassHeading
-      : (event?.absolute === true && Number.isFinite(event?.alpha) ? 360 - event.alpha : null);
-    return raw === null ? null : ((raw % 360) + 360) % 360;
+  // A phone held upright is NOT level: 360-alpha alone is only the flat
+  // special case. Use the W3C tilt-compensated projection of its top edge.
+  // Relative deviceorientation yaw has no north reference and is rejected.
+  function compassHeading(event, screenAngle=0) {
+    if (!event) return null;
+    let raw;
+    if (Number.isFinite(event.webkitCompassHeading)) {
+      // iOS already supplies a north-referenced compass heading.
+      raw=event.webkitCompassHeading;
+    } else {
+      if (event.absolute!==true||!Number.isFinite(event.alpha))return null;
+      const alpha=event.alpha*Math.PI/180;
+      if (Number.isFinite(event.beta)&&Number.isFinite(event.gamma)) {
+        const beta=event.beta*Math.PI/180,gamma=event.gamma*Math.PI/180;
+        const vx=-Math.cos(alpha)*Math.sin(gamma)-
+          Math.sin(alpha)*Math.sin(beta)*Math.cos(gamma);
+        const vy=-Math.sin(alpha)*Math.sin(gamma)+
+          Math.cos(alpha)*Math.sin(beta)*Math.cos(gamma);
+        // A horizontally held phone gives no useful projected top edge:
+        // in that case alpha is defined as the azimuth on the flat plane.
+        raw=Math.hypot(vx,vy)>0.0001
+          ?Math.atan2(vx,vy)*180/Math.PI:360-event.alpha;
+      } else raw=360-event.alpha; // Older browsers only expose absolute alpha.
+    }
+    const rotation=Number.isFinite(screenAngle)?screenAngle:0;
+    return ((raw-rotation)%360+360)%360;
   }
   // Timed railway itinerary. Geographical legs are schematic and must never be
   // presented as actual rail tracks or live vehicle positions.
