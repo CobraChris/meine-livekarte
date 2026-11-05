@@ -166,6 +166,7 @@ async function main(){
   await popup.locator('details.popup-more summary').click();
   assert.equal(await popup.locator('details.popup-more').evaluate(el=>el.open),true,
    'More disclosure remains tappable');
+  await delay(300);
   await swipeOverPopupAction(page);
   await verifyGPSOverview(page);
   await testDay(page,'2026-11-05',7);
