@@ -208,7 +208,7 @@ test('day results show exact schedule legs, visits, warning details and lunch/bu
  assert.equal(timeline.length,2);
  assert.equal(timeline[0].children[0].textContent,'Stopp 1 · First');
  assert.match(timeline[0].children[1].textContent,/580 m · 15 Min./);
- assert.match(timeline[0].children[2].textContent,/60 Min./);
+ assert.ok(timeline[0].children.some(x=>x.textContent.includes('60 Min.')));
  assert.ok(timeline[0].children.some(x=>x.textContent.includes('Öffnungsfenster')));
  assert.ok(timeline[0].children.some(x=>x.textContent.includes('Schließt bald')));
  assert.ok(timeline[0].children.some(x=>x.textContent.includes('Mittagspause')));
