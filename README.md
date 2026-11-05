@@ -1,3 +1,13 @@
+## Gemeinsame Tourergebnisse und Tages-Zeitachse (05.11.2026)
+
+Die zweite Phase der Touren-UI-Modularisierung verwendet das bereits vorhandene `tour-ui.js` nun auch für die **berechnete Rundgang-Zusammenfassung** (Stoppanzahl, echte Gehstrecke, Gehzeit, einzelne Etappen und Karten-HUD) und den **berechneten Tagesplan** (Start/Ende, echte Wegezeiten, Besuche, Mittagspause, Puffer, unbekannte Öffnungszeiten und Warnungen). Fehlende Routen und ungültige Eingaben werden zentral behandelt, sodass kein veralteter Zeitplan stehenbleibt.
+
+Die `app.js` berechnet weiterhin die Routen nur nach ausdrücklicher Aktion über dieselben FOSSGIS-/OSRM-Endpunkte, validiert sie mit `walking-core.js`, erzeugt Zeitpläne mit `day-plan-core.js` und speichert weiterhin ausschließlich die bisher freigegebenen lokalen Tages- und Tour-Einstellungen. Das UI-Modul besitzt **keine eigenen GPS-, Netzwerk- oder Speicherzugriffe**. Es wurden keine weiteren Google-APIs und keine neuen Kosten eingeführt. Eine Datenmigration ist nicht erforderlich.
+
+Interaktive Tests prüfen sowohl normale Resultate und jede Etappe als auch Schließzeitenwarnungen, Pausen, leere Zeitpläne und Fehlerzustände. Die PWA-Dateistruktur bleibt unverändert.
+
+---
+
 ## Gemeinsames Touren-UI-Modul (05.11.2026)
 
 Nach der Vereinheitlichung der Ortskarten (`place-ui.js`, PR #107) baut nun auch **`tour-ui.js`** die Touren-Bedienelemente zentral für alle Reiseabschnitte und Tage auf: Kartenauswahl-Modus mit Zähler und Fertig-Schalter, ausgewählte Stoppliste mit Reihenfolge-/Entfernen-Aktionen sowie Tagesplan-Eingabefelder für Besuchsdauer, Öffnungs- und Schließzeiten, Puffer und Mittagspause. Die Aktionen laufen über klar benannte Rückrufe an die bestehende App-Logik.
