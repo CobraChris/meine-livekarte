@@ -2347,3 +2347,15 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .station-stepper-actions button{min-height:44px;flex:1}
 .station-stepper-actions button:disabled{opacity:.45}
 .station-stepper small{display:block;margin-top:9px;color:#c3d9d1}
+
+/* #117: Accessible 48px mobile control targets with keyboard focus. */
+@media (max-width:760px){
+  .workspace .map-actions{width:56px}
+  .workspace .map-actions button,
+  .workspace .map-actions #expand-map{
+    width:48px;height:48px;min-width:48px;min-height:48px;
+  }
+  .workspace .map-actions button:focus-visible{
+    outline:3px solid #b5ffe1;outline-offset:-2px;
+  }
+}
