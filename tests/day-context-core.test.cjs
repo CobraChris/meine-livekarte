@@ -125,6 +125,6 @@ test('UI, daily route, maps and offline shell all use the shared day context',()
  assert.ok(html.indexOf('day-context-core.js')<html.indexOf('app.js'));
  assert.match(sw,/'day-context-core\.js'/);
  assert.match(workflow,/node --check day-context-core\.js/);
- assert.match(workflow,/cp multi-day-core\.js day-context-core\.js day-selector-ui\.js route-model-core\.js public\//);
+ assert.match(workflow,/cp multi-day-core\.js day-context-core\.js day-selector-ui\.js place-ui\.js route-model-core\.js public\//);
  assert.match(stamp,/"src", "day-context-core\.js"/);
 });
