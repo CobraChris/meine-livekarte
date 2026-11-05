@@ -1,6 +1,6 @@
 /* Shared tour-builder presentation for every travel section and calendar day.
  * Owns only DOM rendering and user-initiated control events. It never sees GPS
- * coordinates, calls the network, accesses localStorage or persists routes.
+ * coordinates, calls the network, accesses browser storage or persists routes.
  *
  * All changes to tour selection / day preferences go through the app callbacks:
  * app.js retains the one canonical route, day state and persistence workflow.
