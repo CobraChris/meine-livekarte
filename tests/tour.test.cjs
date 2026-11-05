@@ -163,7 +163,7 @@ test('multistop builder is optional, compact and has reorder/removal/accessibili
  assert.match(app,/const tourView=RM\.walking\(\{start:from,stops:ordered,route:result,purpose:'tour'\}\)/);
  assert.match(app,/L\.polyline\(tourView\.points/);
  assert.match(app,/L\.divIcon\(\{className:'tour-stop-marker'/);
- assert.match(app,/tourHud\.hidden=false/);
+ assert.match(read('tour-ui.js'),/\$\('tour-route-hud'\)\.hidden=false/);
  assert.match(css,/\.tour-builder>summary/);
  assert.match(css,/\.tour-route-hud\[hidden\]\{display:none!important\}/);
  assert.match(css,/\.tour-stop-marker span/);
