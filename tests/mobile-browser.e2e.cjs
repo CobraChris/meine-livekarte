@@ -78,6 +78,8 @@ async function swipeOverPopupAction(page){
  const bbox=await button.boundingBox();
  assert.ok(bbox&&bbox.width>20&&bbox.height>20);
  const x=bbox.x+Math.min(40,bbox.width/2), y=bbox.y+bbox.height/2;
+ console.log('SWIPE TARGET',JSON.stringify({bbox,x,y,viewport:page.viewportSize(),
+  popupBox:await popup.boundingBox(),mapBox:await page.locator('#map').boundingBox()}));
  const before=await pane.evaluate(el=>el.style.transform);
  const beforeMarker=await page.locator('.leaflet-marker-icon.pin').first().boundingBox();
  await page.evaluate(()=>{
