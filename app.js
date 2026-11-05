@@ -216,6 +216,7 @@
   const W=window.LivekarteWalkingCore;
   const Routing=window.LivekarteRoutingRequests;
   const TourNav=window.LivekarteTourNavigation;
+  const NavigationGuidance=window.LivekarteNavigationGuidance;
   const routeRequests=Routing.create({fetcher:(url,options)=>fetch(url,options)});
   const D=window.LivekarteDayPlan;
   const R=window.LivekarteRouteDiscovery;
@@ -1204,7 +1205,14 @@
     let progress;
     try{progress=tourNavigation.update(point,gpsAccuracy);}
     catch{tourUI.renderLiveNavigation({phase:'progress-error'});return;}
-    if(progress)tourUI.renderLiveNavigation({phase:'progress',...progress});
+    if(progress){
+      const guidance=NavigationGuidance.derive({progress,accuracy:gpsAccuracy,
+        fixAgeMs:Math.max(0,Date.now()-positionUpdatedAt)});
+      // A user may request rerouting explicitly, but poor/stale fixes must
+      // never expose an overconfident 'route deviation' action.
+      tourUI.renderLiveNavigation({phase:'progress',...progress,
+        guidance,offRoute:guidance.canOfferReroute});
+    }
   }
   function startTourNavigation(){
     if(!tourRoute||!W){say('Bitte zuerst einen Rundgang berechnen.');return;}
