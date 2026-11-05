@@ -130,7 +130,7 @@ async function main(){
   page=await context.newPage();
   page.setDefaultTimeout(10000);
   const uncaught=[];
-  page.on('pageerror',error=>uncaught.push(error.message));
+  page.on('pageerror',error=>{uncaught.push(error.message);console.error('BROWSER PAGEERROR',error.stack||error.message);});
   await page.goto(origin+'/?view=town-kyoto',{waitUntil:'domcontentloaded',timeout:15000});
   await page.locator('#city-days-list button[data-day-date="2026-11-04"]').waitFor({state:'visible',timeout:15000});
   assert.equal(await page.locator('#plan-select').inputValue(),'town-kyoto');
