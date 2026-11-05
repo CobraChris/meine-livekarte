@@ -1,3 +1,13 @@
+## Gemeinsames Touren-UI-Modul (05.11.2026)
+
+Nach der Vereinheitlichung der Ortskarten (`place-ui.js`, PR #107) baut nun auch **`tour-ui.js`** die Touren-Bedienelemente zentral für alle Reiseabschnitte und Tage auf: Kartenauswahl-Modus mit Zähler und Fertig-Schalter, ausgewählte Stoppliste mit Reihenfolge-/Entfernen-Aktionen sowie Tagesplan-Eingabefelder für Besuchsdauer, Öffnungs- und Schließzeiten, Puffer und Mittagspause. Die Aktionen laufen über klar benannte Rückrufe an die bestehende App-Logik.
+
+**Bewusste Grenze:** `tour-ui.js` besitzt weder Browser-Speicher noch GPS oder Netzwerkanfragen. `app.js` bleibt verantwortlich für die einzigen Routendaten, Statusänderungen und die vorhandenen lokalen Schlüssel `livekarte-tour-drafts-v1` und `livekarte-day-plans-v1`. Das tatsächliche Gehrouten- und Besuchszeitmodell bleibt bei `walking-core.js` und `day-plan-core.js`. Deshalb keine Datenmigration, kein Reset, keine neuen Google-Dienste und kein automatischer Standortversand. Jeder Reisetag verwendet dieselbe UI-Struktur; Kyoto/Osaka/Nikkō-spezifische Daten ändern sich nicht.
+
+Die neue Datei ist Bestandteil des PWA-Offline-Shells, des GitHub-Pages-Deployments und der SHA-Versionierung. Tests prüfen UI-Bedienung und Verdrahtung sowie, dass das Modul keine Routen oder vertrauliche Daten speichert oder versendet.
+
+---
+
 ## Google-Ortsmarkierungen: Bewertungen ohne kostenpflichtige API öffnen (04.11.2026)
 
 Beim Antippen eines selbst gespeicherten Google-Kartenmarkers öffnet sich ein kompaktes Infofenster mit drei Aktionen: **Bewertungen/Details in Google Maps öffnen**, **Fußweg (OSM)** und **In Tour**. Das erste ist ein offizieller `https://www.google.com/maps/search/?api=1&query=...`-Link mit Ortsname und optional vorhandener Adresse beziehungsweise bekanntem Place ID. Google Maps URLs benötigen keinen API-Schlüssel und verursachen keine Google-Maps-Platform-API-Gebühren; sie können auf Android die installierte Google-Maps-App oder alternativ einen Browser öffnen. Ein **nicht eindeutiger Name** kann mehrere Suchtreffer liefern – der Nutzer muss dann den korrekten Eintrag wählen. Nicht alle Sehenswürdigkeiten/Unternehmen besitzen Bewertungen.
