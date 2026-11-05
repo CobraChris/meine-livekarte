@@ -219,3 +219,25 @@ sind weiterhin Voraussetzung für den Merge.
 
 **Noch offen:** Reiseabschnitts-/Tour-Controller und persistente
 Zustandsübergänge weiter in kleine getrennt testbare Einheiten aufteilen.
+
+## Mobiler Interaktionsvertrag – Paket 112 (05.11.2026)
+
+- **Swipe + sofortiger Tap:** Ein Pop-up-Wisch unterdrückt nur den direkt
+  anschließenden künstlichen Klick. Ein neuer `pointerdown` beginnt einen
+  echten neuen Fingertipp, auch innerhalb des 450-ms-Schutzfensters.
+- **Lange Pop-up-Texte:** Vertikale Gesten scrollen den Text bis zum oberen
+  oder unteren Rand. Danach dürfen weitere Bewegungen die Karte verschieben.
+  Buttons, Links und native Formularfelder bleiben benutzbar.
+- **Chrome-Mobiltest (393 × 852, Touch, Tokio-Zeitzone):** Nara-Pop-up-Wisch,
+  manuelles Verschieben nach aktiviertem GPS-Folgen, lokale Offline-Ortssuche,
+  zwei Tourstopps samt Zurücksetzen und Nikkō-Bahnhofs-Pop-up gehören zum
+  verpflichtenden CI-Test. Externe Netzwerkanfragen sind weiterhin blockiert;
+  keine kostenpflichtigen Dienste, keine Ortsaufzeichnung.
+- **Abnahmegrenze:** Chrome auf Linux mit Android-Viewport ersetzt keinen
+  Samsung-Internet- oder installierten PWA-Test. Insbesondere Heading/Kompass,
+  echte GPS-Bewegung und Android-Hintergrundverhalten bleiben eine separate
+  praktische Abnahme nach Issue #74.
+
+Die Änderungen betreffen ausschließlich flüchtige UI-/Testzustände.
+Gespeicherte Orte, Touren, Ticketdateien, Reiseabschnitte und Nutzereinstellungen
+werden nicht migriert oder zurückgesetzt.

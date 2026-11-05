@@ -124,6 +124,66 @@ async function verifyGPSOverview(page){
  assert.equal(result.blocked,false,'GPS marker must not be obscured by map controls');
  console.log('PASS GPS and Nara goals overview: position visible, free of controls');
 }
+
+async function verifyLocalSearchAndTourBuilder(page){
+ // Saved recommendations are searchable even when all third-party traffic is blocked.
+ await page.locator('#place-search-input').fill('Nara-Park');
+ await page.locator('#place-search-go').click();
+ const first=page.locator('#place-search-results button.place-search-result').first();
+ await first.waitFor({state:'visible'});
+ await first.click();
+ assert.equal(await page.locator('#place-search-picked').isVisible(),true);
+ assert.equal(await page.locator('#place-search-save').isDisabled(),true,
+  'Saved place must never create an accidental duplicate');
+ await page.locator('#place-search-input').fill('');
+ assert.equal(await page.locator('#place-search-picked').isVisible(),false,
+  'Clearing search removes the selection and map preview');
+ console.log('PASS offline local search, saved-place preview and safe reset');
+
+ const cards=page.locator('#places article.place');
+ assert.ok(await cards.count()>=2,'There must be two selectable destinations');
+ await cards.nth(0).locator('button.tour-pick').click();
+ await cards.nth(1).locator('button.tour-pick').click();
+ assert.equal(await page.locator('#tour-stops li').count(),2);
+ assert.ok((await page.locator('#tour-count').innerText()).includes('2/6'),'The tour counter shows two of six stops');
+ assert.equal(await page.locator('#tour-calculate').isEnabled(),true);
+ await page.locator('#tour-clear').click();
+ assert.equal(await page.locator('#tour-stops li.tour-stop').count(),0);
+ assert.equal(await page.locator('#tour-stops li.tour-empty').count(),1,
+  'The empty-state hint must replace previous stops');
+ assert.equal(await page.locator('#tour-calculate').isDisabled(),true);
+ console.log('PASS two-stop tour selection, shared counter and full reset');
+}
+async function verifyManualTouchPan(page){
+ // The GPS button explicitly resumes following, a true finger drag cancels it.
+ await page.locator('#gps').click();
+ await page.waitForFunction(()=>document.querySelector('#gps')?.getAttribute('aria-pressed')==='true',
+  null,{timeout:10000});
+ await page.evaluate(()=>document.getElementById('map').scrollIntoView({block:'center'}));
+ await delay(150);
+ const box=await page.locator('#map').boundingBox();
+ assert.ok(box&&box.width>180&&box.height>180);
+ const x=box.x+box.width*.70,y=box.y+box.height*.62;
+ const pane=page.locator('.leaflet-map-pane');
+ const before=await pane.evaluate(el=>el.style.transform);
+ const cdp=await page.context().newCDPSession(page);
+ const finger=(px)=>[{x:px,y,id:2,radiusX:2,radiusY:2,force:1}];
+ try{
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:finger(x)});
+  for(const offset of [14,30,48,68]){
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:finger(x+offset)});
+   await delay(28);
+  }
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ }finally{await cdp.detach();}
+ await delay(200);
+ assert.notEqual(await pane.evaluate(el=>el.style.transform),before,
+  'Finger drag on map background must move the actual map');
+ assert.equal(await page.locator('#gps').getAttribute('aria-pressed'),'false',
+  'Manual map gesture must stop GPS auto-recentering');
+ console.log('PASS background touch pan cancels GPS follow without switching off GPS');
+}
+
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -155,12 +215,20 @@ async function main(){
   await delay(300);
   await swipeOverPopupAction(page);
   await verifyGPSOverview(page);
+  await verifyManualTouchPan(page);
+  await verifyLocalSearchAndTourBuilder(page);
   await testDay(page,'2026-11-05',7);
   await page.locator('#plan-select').selectOption('ride-nikko');
   await page.waitForFunction(()=>document.getElementById('city-days').hidden);
   assert.equal(await page.locator('.map-actions button').count(),3);
   assert.ok(await page.locator('#journey-panel').isVisible(),
    'Nikkō rail section retains the shared toolbar and schematic route');
+  await page.locator('#journey-panel .journey-item').first().click();
+  const stationPopup=page.locator('.leaflet-popup-content .place-popup-pan-surface').first();
+  await stationPopup.waitFor({state:'visible'});
+  assert.ok((await stationPopup.innerText()).length>8,
+   'Rail station must open the same accessible popup surface as day places');
+  console.log('PASS Nikkō station popup uses the shared map-popup contract');
   await page.locator('#plan-select').selectOption('town-kyoto');
   await testDay(page,'2026-11-04',4);
   assert.deepEqual(uncaught,[],'No uncaught runtime errors during real mobile interactions');

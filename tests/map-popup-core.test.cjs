@@ -188,3 +188,44 @@ test('complete long touch swipe remains active after Leaflet popup loses capture
  s.dispatch('pointerup',{clientX:160,clientY:100});
  assert.equal(s.classList.contains('is-dragging'),false);
 });
+
+test('a deliberate tap directly after a swipe is not eaten if no synthetic click fired',()=>{
+ const f=setup({existing:true}),s=f.surface;
+ s.dispatch('pointerdown',{target:target('button')});
+ s.dispatch('pointermove',{clientX:135,clientY:100});
+ s.dispatch('pointerup',{clientX:135,clientY:100});
+ // Chrome may omit the synthetic click after preventDefault during a drag.
+ // The next real pointerdown must disarm the old swipe guard.
+ s.dispatch('pointerdown',{target:target('button'),clientX:135,clientY:100});
+ s.dispatch('pointerup',{target:target('button'),clientX:135,clientY:100});
+ const nextTap=s.dispatch('click',{target:target('button')});
+ assert.equal(nextTap.defaultPrevented,false);
+ assert.equal(nextTap.immediateStopped,false);
+ assert.equal(f.pans.length,1,'the preceding swipe still moved the map');
+});
+
+test('long popup text pans the map at both scrolling boundaries',()=>{
+ for(const [scrollTop,dy] of [[0,45],[580,-45]]){
+  const f=setup({scroll:true}),s=f.surface;
+  f.scrollArea.scrollTop=scrollTop;
+  s.dispatch('pointerdown',{target:target('description')});
+  s.dispatch('pointermove',{target:target('description'),clientY:100+dy});
+  assert.equal(f.scrollArea.scrollTop,scrollTop,
+   'text cannot scroll beyond its top or bottom edge');
+  assert.equal(f.pans.length,1,'at the scroll edge the map must pan');
+  assert.deepEqual(f.pans[0].delta.map(value=>value===0?0:value),[0,-dy]);
+  s.dispatch('pointerup',{clientY:100+dy});
+ }
+});
+
+test('scrolling long text clamps at limits and never overshoots',()=>{
+ const f=setup({scroll:true}),s=f.surface;
+ f.scrollArea.scrollTop=20;
+ s.dispatch('pointerdown',{target:target('description')});
+ s.dispatch('pointermove',{target:target('description'),clientY:165});
+ assert.equal(f.scrollArea.scrollTop,0);
+ assert.equal(f.pans.length,0,'scroll retains priority until the edge is reached');
+ s.dispatch('pointermove',{target:target('description'),clientY:185});
+ assert.equal(f.pans.length,1,'next movement pans after reaching the edge');
+ s.dispatch('pointerup',{clientY:185});
+});

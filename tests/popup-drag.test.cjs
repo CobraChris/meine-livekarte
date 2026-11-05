@@ -29,7 +29,7 @@ test('shared popup contract supports swipes over actions without blocking taps',
  assert.match(core,/map\.panBy\(\[-dx,-dy\],\{animate:false\}\)/);
  assert.match(core,/marker\.on\('popupclose'/);
  assert.match(core,/input,select,textarea,label/);
- assert.match(core,/scroll\.scrollTop-=dy/);
+ assert.match(core,/scroll\.scrollTop=Math\.max\(0,Math\.min\(maxScroll,scroll\.scrollTop-dy\)\)/);
  assert.doesNotMatch(core,/localStorage|navigator\.geolocation|fetch\(/);
  assert.match(css,/\.leaflet-popup-content \.place-popup-pan-surface\{touch-action:none/);
  assert.doesNotMatch(css,/\.place-popup-drag/);

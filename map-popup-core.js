@@ -22,6 +22,9 @@
     surface.addEventListener('pointerdown',event=>{
       if((event.pointerType==='mouse'&&event.button!==0) ||
          pointerId!==null || !marker.isPopupOpen())return;
+      // A new deliberate pointerdown is a new tap, not the synthetic click
+      // from the preceding swipe. Do not swallow it even within 450 ms.
+      skipClickUntil=0;
       // Inputs and select menus have native gestures. Buttons, links and
       // disclosure headers allow *swipes* but retain normal tap behavior.
       if(event.target.closest?.(NATIVE_INPUT))return;
@@ -53,7 +56,13 @@
       const scroll=marker.getPopup?.()?.getElement?.()?.querySelector?.('.leaflet-popup-content');
       if(fromText&&scroll&&scroll.scrollHeight>scroll.clientHeight+4&&
          Math.abs(dy)>Math.abs(dx)*1.4){
-        scroll.scrollTop-=dy;return;
+        const maxScroll=scroll.scrollHeight-scroll.clientHeight;
+        // Scroll long descriptions while content remains. At either end,
+        // let the gesture pan the map instead of trapping the finger.
+        if((dy>0&&scroll.scrollTop>0)||(dy<0&&scroll.scrollTop<maxScroll)){
+          scroll.scrollTop=Math.max(0,Math.min(maxScroll,scroll.scrollTop-dy));
+          return;
+        }
       }
       if(dx||dy)map.panBy([-dx,-dy],{animate:false});
     });
