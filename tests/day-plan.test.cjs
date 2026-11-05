@@ -103,6 +103,7 @@ test('mobile planner is tied to a real calculated tour, and does not transmit GP
  assert.match(html,/Öffnungszeiten werden nur aus deinen eigenen Angaben berücksichtigt/);
  assert.match(app,/const D=window\.LivekarteDayPlan/);
  assert.match(app,/renderDayPlanControls\(\)/);
+ assert.match(read('tour-ui.js'),/function renderDayControls\(\{/);
  assert.match(app,/const matching=tourRoute\?\.planId===activePlanId&&tourRoute\.legs\?\.length===tourRoute\.stops\.length/);
  assert.match(app,/D\.build\(/);
  assert.match(app,/livekarte-day-plans-v1/);
@@ -111,7 +112,7 @@ test('mobile planner is tied to a real calculated tour, and does not transmit GP
  assert.match(app,/if\(!matching\)/);
  assert.match(app,/renderDayPlanControls\(\);\s*tourBuilderStatus\.textContent=remaining/);
  const render=app.slice(app.indexOf('  function renderDayPlanSummary(){'),
-    app.indexOf("  $('day-start').onchange="));
+    app.indexOf('  function renderDayPlanControls(){'));
  assert.doesNotMatch(render,/fetch\(|navigator\.geolocation|\.route\/|routing\.openstreetmap/);
  const persist=app.slice(app.indexOf('  function persistDayPlans(){'),
     app.indexOf('  function dayPlanStops(){'));
