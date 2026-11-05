@@ -45,24 +45,27 @@ test('single tap on each normal place marker toggles selection rather than openi
 });
 
 test('selection overlay keeps the map in place, and finish returns to route planning',()=>{
- const app=read('app.js');
- const start=app.indexOf('  const mapTourModeButton=');
+ const app=read('app.js'),ui=read('tour-ui.js');
+ const start=app.indexOf('  const tourUI=window.LivekarteTourUI.create(');
  const end=app.indexOf('  function tourSelection(){',start);
  assert.ok(start>=0&&end>start);
  const block=app.slice(start,end);
  assert.match(block,/function updateMapTourControls\(\)/);
- assert.match(block,/mapTourCounter\.textContent=number\+'\/6 Ziele/);
- assert.match(block,/mapTourModeButton\.setAttribute\('aria-pressed',String\(mapTourPickMode\)\)/);
+ assert.match(block,/tourUI\.renderMapControls\(/);
+ assert.match(ui,/mapCounter\.textContent=count\+'\/6 Ziele/);
+ assert.match(ui,/mapMode\.setAttribute\('aria-pressed',String\(picking\)\)/);
  assert.match(block,/function setMapTourPickMode\(enabled,focusMap=false\)/);
  assert.match(block,/if\(mapTourPickMode\)pauseGPSFollow\(\)/);
  assert.match(block,/filter='all'/);
  assert.match(block,/map\.closePopup\(\)/);
  assert.match(block,/render\(\)/);
  assert.match(block,/if\(focusMap\)\$\('map'\)\.scrollIntoView/);
- assert.match(block,/mapTourModeButton\.onclick=\(\)=>setMapTourPickMode\(!mapTourPickMode\)/);
- assert.match(block,/planMapPickButton\.onclick=\(\)=>setMapTourPickMode\(true,true\)/);
- assert.match(block,/mapTourDone\.onclick=\(\)=>\{/);
- assert.match(block,/tourBuilder\.scrollIntoView/);
+ assert.match(block,/selectMapMode:\(\)=>setMapTourPickMode\(!mapTourPickMode\)/);
+ assert.match(ui,/mapMode\.onclick=\(\)=>handlers\.selectMapMode\(\)/);
+ assert.match(block,/selectMapPick:\(\)=>setMapTourPickMode\(true,true\)/);
+ assert.match(ui,/mapPick\.onclick=\(\)=>handlers\.selectMapPick\(\)/);
+ assert.match(ui,/mapDone\.onclick=\(\)=>\{/);
+ assert.match(ui,/builder\.scrollIntoView/);
  assert.doesNotMatch(block,/fetch\(|localStorage|navigator\.geolocation/);
  const renderBuilder=app.slice(app.indexOf('  function renderTourBuilder()'),
      app.indexOf('  // Day schedule reuses'));
@@ -86,13 +89,14 @@ test('normal map popups still support directions and also have a nearby tour but
 });
 
 test('map picking is local-only and preserves previously deployed tour and offline shell',()=>{
- const app=read('app.js'),sw=read('sw.js'),html=read('index.html');
+ const app=read('app.js'),sw=read('sw.js'),html=read('index.html'),ui=read('tour-ui.js');
  assert.match(sw,/livekarte-shell-pwa-v22/);
  assert.doesNotMatch(sw,/routed-foot|overpass-api\.de/);
  assert.match(app,/const badge=chosenIndex<0/);
  assert.match(app,/function toggleTourPlace\(place,fromMap=false\)/);
  assert.match(app,/function clearTourRoute\(\)/);
  assert.match(app,/function renderTourBuilder\(\)/);
+ assert.match(ui,/function renderTourBuilder\(\{/);
  assert.match(app,/tourDrafts\[tourContextKey\(\)\]=items\.map\(p=>C\.placePlanKey\(p\)\)/);
  assert.match(html,/id="tour-optimize"/);
  assert.match(html,/id="tour-calculate"/);
