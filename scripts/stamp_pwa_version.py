@@ -43,6 +43,7 @@ assets = [
     ("src", "place-ui.js"),
     ("src", "tour-ui.js"),
     ("src", "route-model-core.js"),
+    ("src", "journey-view-core.js"),
     ("src", "route-discovery.js"),
     ("src", "place-search-core.js"),
     ("src", "next-step-core.js"),
