@@ -8,6 +8,7 @@
   const DayUI=window.LivekarteDaySelectorUI;
   const PlaceUI=window.LivekartePlaceUI;
   const RM=window.LivekarteRouteModel;
+  const MapToolbar=window.LivekarteMapToolbar;
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
   let activeCityDay=MD.ALL;
@@ -2997,8 +2998,7 @@
     const plan=currentPlan();
     const period=planPickerLabel(plan).period;
     $('plan-period').textContent=period?' · '+period:'';
-    $('fit').lastElementChild.textContent=plan.kind==='journey' ? 'Route zeigen'
-      : plan.kind==='city' ? 'Ziele zeigen' : 'Alle Orte';
+    $('fit').lastElementChild.textContent=MapToolbar.build({kind:plan.kind})[1].label;
     $('fit').setAttribute('aria-label',$('fit').lastElementChild.textContent);
     $('fit').title=$('fit').lastElementChild.textContent;
     info.replaceChildren();
@@ -3132,12 +3132,11 @@
     // "Mein Standort" is a single control: enable GPS if off, or resume
     // following and center on the current fix. Green means FOLLOWING, not
     // merely that background GPS measurements continue.
-    const active=watch!==null && camera.isFollowing() && !!position;
+    const gpsAction=MapToolbar.build({kind:currentPlan().kind,
+      gpsOn:watch!==null,gpsFix:!!position,cameraMode:camera.mode})[2];
     const control=$('gps');
-    control.setAttribute('aria-pressed',String(active));
-    const label=watch===null?'Mein Standort · GPS einschalten'
-      :!position?'Mein Standort · GPS wird ermittelt'
-        :active?'Meinem Standort folgen':'Auf meinen Standort zentrieren';
+    control.setAttribute('aria-pressed',String(gpsAction.pressed));
+    const label=gpsAction.label;
     control.setAttribute('aria-label',label);
     control.title=label;
     $('gps-privacy-toggle').textContent=watch===null?'GPS einschalten':'GPS ausschalten';
