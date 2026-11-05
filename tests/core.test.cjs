@@ -61,6 +61,27 @@ test('iOS compass heading takes precedence over relative alpha', () => {
  assert.equal(C.compassHeading({webkitCompassHeading:-10}),350);
 });
 
+
+test('absolute compass projection corrects the phone held at an angle',()=>{
+ const angle=(alpha,beta,gamma)=>C.compassHeading({absolute:true,alpha,beta,gamma});
+ const near=(actual,expected)=>assert.ok(Math.abs(actual-expected)<0.02,
+  'expected '+expected+'°, received '+actual+'°');
+ near(angle(0,45,0),0);
+ near(angle(90,45,0),270);
+ near(angle(0,90,45),315);
+ near(angle(0,45,45),305.26439);
+ near(angle(0,0,90),270);
+ // Level screen is the only case where 360-alpha is a trustworthy shortcut.
+ near(angle(90,0,0),270);
+ assert.equal(C.compassHeading({absolute:false,alpha:25,beta:45,gamma:10}),null);
+});
+test('compass handles screen rotation and ignores invalid angles',()=>{
+ assert.equal(C.compassHeading({absolute:true,alpha:0,beta:90,gamma:0},90),270);
+ assert.equal(C.compassHeading({absolute:true,alpha:0,beta:90,gamma:0},270),90);
+ assert.equal(C.compassHeading({webkitCompassHeading:124},90),34);
+ assert.equal(C.compassHeading({absolute:true,alpha:90},NaN),270);
+ assert.equal(C.compassHeading({absolute:true,alpha:NaN,beta:60,gamma:15}),null);
+});
 test('a timed travel itinerary survives its share link without losing stops or line waypoints', () => {
  const trip = {title:'Hakone nach Takayama',date:'2026-10-30',stops:[
   {name:'Gora',lat:35.25085,lng:139.04826,departure:'08:41',leg:'Tozan'},
