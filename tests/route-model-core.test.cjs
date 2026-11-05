@@ -138,7 +138,7 @@ test('Leaflet, Google, day visit, walking tour and railway all use this route co
  assert.ok(html.indexOf('route-model-core.js')<html.indexOf('app.js'));
  assert.match(sw,/'route-model-core\.js'/);
  assert.match(workflow,/node --check route-model-core\.js/);
- assert.match(workflow,/cp multi-day-core\.js day-context-core\.js day-selector-ui\.js route-model-core\.js public\//);
+ assert.match(workflow,/cp multi-day-core\.js day-context-core\.js day-selector-ui\.js place-ui\.js route-model-core\.js public\//);
  assert.match(stamp,/"src", "route-model-core\.js"/);
 });
 
