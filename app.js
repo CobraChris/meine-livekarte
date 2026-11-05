@@ -8,6 +8,7 @@
   const DayUI=window.LivekarteDaySelectorUI;
   const PlaceUI=window.LivekartePlaceUI;
   const RM=window.LivekarteRouteModel;
+  const StationTransfer=window.LivekarteStationTransfer;
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
   let activeCityDay=MD.ALL;
@@ -2048,6 +2049,34 @@
   });
   window.addEventListener('focus',renderNextAction);
   const kyotoOverview=$('kyoto-overview'),nikkoOverview=$('nikko-overview');
+  // Reuse the same validated station model for the Tokyo transfer.
+  // The known itinerary has NO confirmed Tokyo arrival time or platform:
+  // neither may be inferred from the scheduled 14:00 onward train.
+  const tokyoTransfer=StationTransfer.build({
+    station:'Tokyo',sourceUrl:'https://www.jreast.co.jp/en/estation/stations/1039.html',
+    steps:[
+      {title:'Nozomi 12 verlassen',action:'Am Tōkaidō-Shinkansen aussteigen. Aktuelles Ankunftsgleis und Abfahrtsanzeige prüfen.'},
+      {title:'Passende Umsteigesperre klären',action:'Der Beschilderung für Tōhoku-/Jōetsu-/Hokuriku-Shinkansen folgen. Mit deinem Tickettyp das JR-Personal fragen, welche Sperre verwendet werden soll.'},
+      {title:'Yamabiko 141 finden',action:'Am JR-East-Bereich Zug, Ziel und tatsächliches Gleis auf der elektronischen Anzeige abgleichen. Planabfahrt 14:00 ist keine Livebestätigung.'}
+    ]
+  });
+  let tokyoStep=0;
+  function renderTokyoStep(){
+    const view=StationTransfer.stepState(tokyoTransfer,tokyoStep);
+    $('nikko-tokyo-step-count').textContent='Schritt '+view.number+' von '+view.total+
+      ' · '+view.step.title;
+    $('nikko-tokyo-step-content').textContent=view.step.action;
+    $('nikko-tokyo-prev').disabled=!view.canBack;
+    $('nikko-tokyo-next').textContent=view.finished?'Noch einmal':'Nächster Schritt';
+    $('nikko-tokyo-platform-note').textContent=
+      tokyoTransfer.arrivalPlatform.label+' · '+tokyoTransfer.departurePlatform.label;
+  }
+  $('nikko-tokyo-prev').onclick=()=>{tokyoStep=Math.max(0,tokyoStep-1);renderTokyoStep();};
+  $('nikko-tokyo-next').onclick=()=>{
+    tokyoStep=tokyoStep===tokyoTransfer.steps.length-1?0:tokyoStep+1;
+    renderTokyoStep();
+  };
+  renderTokyoStep();
   function renderNikkoOverview(){
     const visiting=activePlanId==='town-nikko',travel=activePlanId==='ride-nikko';
     nikkoOverview.hidden=!visiting&&!travel;
@@ -2203,9 +2232,11 @@
   // Nagoya station pilot: a manually stepped, source-grounded guide, not indoor GPS.
   const nagoya = L.latLng(35.17073,136.88184);
   const ng = C.stationGuides.nagoya;
+  const ngShared=StationTransfer.build({station:ng.station,
+    steps:ng.steps,sourceUrl:ng.mapUrl});
   const ngDialog = $('nagoya-dialog'), ngTrigger=$('nagoya-guide-trigger');
   let ngStep=0;
-  try {ngStep=Math.max(0,Math.min(ng.steps.length-1,Number(localStorage.getItem('livekarte-nagoya-step-v1'))||0));}catch{}
+  try {ngStep=Math.max(0,Math.min(ngShared.steps.length-1,Number(localStorage.getItem('livekarte-nagoya-step-v1'))||0));}catch{}
   const ngKyotoTrigger=$('nagoya-kyoto-guide-trigger');
   function updateNagoyaTrigger() {
     const nearNagoya=map.getZoom()>=15&&map.getBounds().contains(nagoya);
@@ -2216,16 +2247,19 @@
     ngTrigger.hidden=!legacy||!nearNagoya;
     ngKyotoTrigger.hidden=!kyoto||!nearNagoya;
   }
+  function renderStationStep(prefix,view){
+    const step=view.step;
+    $(prefix+'-progress').textContent='Schritt '+view.number+' von '+view.total;
+    $(prefix+'-floor').textContent=step.level;
+    $(prefix+'-step-title').textContent=step.title;
+    $(prefix+'-step-action').textContent=step.action;
+    $(prefix+'-sign').textContent=step.sign;
+    $(prefix+'-step-caution').textContent=step.caution;
+    $(prefix+'-prev').disabled=!view.canBack;
+    $(prefix+'-next').textContent=view.finished?'Fertig':'Nächster Schritt';
+  }
   function renderNagoyaStep() {
-    const step=ng.steps[ngStep];
-    $('nagoya-progress').textContent='Schritt '+(ngStep+1)+' von '+ng.steps.length;
-    $('nagoya-floor').textContent=step.level;
-    $('nagoya-step-title').textContent=step.title;
-    $('nagoya-step-action').textContent=step.action;
-    $('nagoya-sign').textContent=step.sign;
-    $('nagoya-step-caution').textContent=step.caution;
-    $('nagoya-prev').disabled=ngStep===0;
-    $('nagoya-next').textContent=ngStep===ng.steps.length-1?'Fertig':'Nächster Schritt';
+    renderStationStep('nagoya',StationTransfer.stepState(ngShared,ngStep));
   }
   function openNagoyaGuide() {
     // Never claim the user has moved indoors when only map/GPS data changed.
@@ -2236,14 +2270,14 @@
     if(!ngDialog.open) ngDialog.showModal();
   }
   function setNagoyaStep(n) {
-    ngStep=Math.max(0,Math.min(ng.steps.length-1,n));
+    ngStep=Math.max(0,Math.min(ngShared.steps.length-1,n));
     try{localStorage.setItem('livekarte-nagoya-step-v1',String(ngStep));}catch{}
     renderNagoyaStep();
   }
   ngTrigger.onclick=openNagoyaGuide;
   $('nagoya-close').onclick=()=>ngDialog.close();
   $('nagoya-prev').onclick=()=>setNagoyaStep(ngStep-1);
-  $('nagoya-next').onclick=()=>ngStep===ng.steps.length-1?ngDialog.close():setNagoyaStep(ngStep+1);
+  $('nagoya-next').onclick=()=>ngStep===ngShared.steps.length-1?ngDialog.close():setNagoyaStep(ngStep+1);
   $('nagoya-arrival-track').onchange=()=>{
     try{localStorage.setItem('livekarte-nagoya-arrival-v1',$('nagoya-arrival-track').value);}catch{}
   };
@@ -2254,18 +2288,13 @@
   // 01.11.2026: dedicated JR-to-Shinkansen guide, kept completely separate
   // from the historical Hikari-to-Hida guide and its stored progress.
   const ngKyoto=C.stationGuides.nagoyaKyoto;
+  const ngKyotoShared=StationTransfer.build({station:ngKyoto.station,
+    steps:ngKyoto.steps,sourceUrl:ngKyoto.mapUrl});
   const ngKyotoDialog=$('nagoya-kyoto-dialog');
   let ngKyotoStep=0;
   function renderNagoyaKyotoStep(){
-    const step=ngKyoto.steps[ngKyotoStep];
-    $('nagoya-kyoto-progress').textContent='Schritt '+(ngKyotoStep+1)+' von '+ngKyoto.steps.length;
-    $('nagoya-kyoto-floor').textContent=step.level;
-    $('nagoya-kyoto-step-title').textContent=step.title;
-    $('nagoya-kyoto-step-action').textContent=step.action;
-    $('nagoya-kyoto-sign').textContent=step.sign;
-    $('nagoya-kyoto-step-caution').textContent=step.caution;
-    $('nagoya-kyoto-prev').disabled=ngKyotoStep===0;
-    $('nagoya-kyoto-next').textContent=ngKyotoStep===ngKyoto.steps.length-1?'Fertig':'Nächster Schritt';
+    renderStationStep('nagoya-kyoto',
+      StationTransfer.stepState(ngKyotoShared,ngKyotoStep));
   }
   function openNagoyaKyotoGuide(){
     if(activePlanId!=='ride-kyoto'||!C.isNagoyaKyotoTrip(journey)){
@@ -2283,7 +2312,7 @@
     renderNagoyaKyotoStep();
   };
   $('nagoya-kyoto-next').onclick=()=>{
-    if(ngKyotoStep===ngKyoto.steps.length-1){ngKyotoDialog.close();return;}
+    if(ngKyotoStep===ngKyotoShared.steps.length-1){ngKyotoDialog.close();return;}
     ngKyotoStep++;
     renderNagoyaKyotoStep();
   };
