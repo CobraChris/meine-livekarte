@@ -1023,7 +1023,10 @@
       dayPlanPrefs().lunch=Number(raw);
       persistDayPlans();renderDayPlanSummary();
     },
-    refreshDayPlan:()=>renderDayPlanSummary()
+    refreshDayPlan:()=>renderDayPlanSummary(),
+    toggleLiveTour:()=>toggleTourNavigation(),
+    nextLiveStop:()=>advanceTourNavigation(),
+    retryLiveRoute:()=>{void calculateTour(false,true);}
   }});
   tourUI.bind();
   function updateMapTourControls(){
@@ -1155,24 +1158,10 @@
   }
   // Live tour uses only the existing full-route geometry and individual leg
   // metrics; live GPS updates NEVER contact a routing server or store a track.
-  const tourLiveState=$('tour-live-state');
-  const tourLiveStep=$('tour-live-step');
-  const tourLiveProgress=$('tour-live-progress');
-  const tourLiveMessage=$('tour-live-message');
-  const tourLiveToggle=$('tour-live-toggle');
-  const tourLiveNext=$('tour-live-next');
-  const tourLiveRetry=$('tour-live-retry');
   function stopTourNavigation(){
     const wasFollowing=!!tourNavigation&&!tourNavigation.paused;
     tourNavigation=null;
-    tourLiveState.hidden=true;
-    tourLiveStep.textContent='';
-    tourLiveProgress.textContent='';
-    tourLiveMessage.textContent='';
-    tourLiveToggle.textContent='▶ Tour starten';
-    tourLiveToggle.setAttribute('aria-pressed','false');
-    tourLiveNext.hidden=true;
-    tourLiveRetry.hidden=true;
+    tourUI.renderLiveNavigation({phase:'reset'});
     if(wasFollowing){setCameraMode('manual');refreshGPSFollowControl();}
     renderNextAction();
   }
@@ -1184,80 +1173,57 @@
     let progress;
     try{progress=W.tourLegProgress(state.nav,tourRoute.legs,
       state.stage,place,point,gpsAccuracy);}
-    catch{tourLiveMessage.textContent='GPS-Fortschritt derzeit nicht verfügbar.';return;}
+    catch{tourUI.renderLiveNavigation({phase:'progress-error'});return;}
     state.nearReadings=progress.status==='near-goal'?state.nearReadings+1:0;
     state.offReadings=progress.status==='off-route'?state.offReadings+1:0;
     if(state.nearReadings>=2)state.arrived=true;
-    const offRoute=state.offReadings>=2;
-    tourLiveStep.textContent='Stopp '+(state.stage+1)+' von '+tourRoute.stops.length+
-      ' · '+place.name;
-    tourLiveProgress.textContent=state.arrived?'✓ Ziel erreicht':
-      progress.status==='poor-gps'?'📍 GPS ungenau':
-      'Noch '+W.distanceText(progress.remainingMeters)+' · '+
-      W.durationText(progress.remainingSeconds);
-    tourLiveMessage.textContent=state.arrived
-      ?'Nach deinem Besuch auf „Nächster Stopp“ tippen.':
-      progress.status==='poor-gps'
-        ?'Auf eine genauere GPS-Messung warten. Manuelles Weitergehen ist möglich.'
-      :offRoute
-        ?'⚠ Vermutlich vom Fußweg abgewichen. Restweg bei Bedarf neu berechnen.'
-      :'GPS-Führung aktiv · keine automatische Neuberechnung.';
-    tourLiveRetry.hidden=!offRoute;
-    tourLiveNext.textContent=state.stage===tourRoute.stops.length-1
-      ?'✓ Tour abschließen':'Nächster Stopp →';
+    tourUI.renderLiveNavigation({
+      phase:'progress',stage:state.stage+1,total:tourRoute.stops.length,
+      name:place.name,arrived:state.arrived,status:progress.status,
+      remainingMeters:progress.remainingMeters,
+      remainingSeconds:progress.remainingSeconds,
+      offRoute:state.offReadings>=2
+    });
   }
   function startTourNavigation(){
     if(!tourRoute||!W){say('Bitte zuerst einen Rundgang berechnen.');return;}
     if(watch===null||!position||Date.now()-positionUpdatedAt>60000){
-      tourLiveMessage.textContent='Bitte GPS einschalten und einen aktuellen Standort abwarten.';
-      tourLiveState.hidden=false;return;
+      tourUI.renderLiveNavigation({phase:'gps-required'});return;
     }
     try{
       const nav=W.prepareNavigation(tourRoute);
       tourNavigation={nav,stage:0,nearReadings:0,offReadings:0,arrived:false,paused:false};
     }catch(e){say('GPS-Rundgang nicht verfügbar: '+e.message);return;}
-    tourLiveState.hidden=false;
-    tourLiveNext.hidden=false;
-    tourLiveRetry.hidden=true;
-    tourLiveToggle.textContent='Ⅱ Tour pausieren';
-    tourLiveToggle.setAttribute('aria-pressed','true');
+    tourUI.renderLiveNavigation({phase:'started'});
     setCameraMode('gps-follow');refreshGPSFollowControl();
     centerOnGPS([position.lat,position.lng],Math.max(16,map.getZoom()));
     updateTourNavigation(position,positionAccuracy);
     renderNextAction();
   }
-  tourLiveToggle.onclick=()=>{
+  function toggleTourNavigation(){
     if(!tourNavigation){startTourNavigation();return;}
     if(tourNavigation.paused){
       if(watch===null||!position||Date.now()-positionUpdatedAt>60000){
-        tourLiveMessage.textContent='Zum Fortsetzen wird ein aktueller GPS-Standort benötigt.';
+        tourUI.renderLiveNavigation({phase:'resume-gps-required'});
         return;
       }
       tourNavigation.paused=false;
       tourNavigation.nearReadings=0;tourNavigation.offReadings=0;
-      tourLiveToggle.textContent='Ⅱ Tour pausieren';
-      tourLiveToggle.setAttribute('aria-pressed','true');
+      tourUI.renderLiveNavigation({phase:'resumed'});
       setCameraMode('gps-follow');refreshGPSFollowControl();
       centerOnGPS([position.lat,position.lng],Math.max(16,map.getZoom()));
       updateTourNavigation(position,positionAccuracy);
     }else{
       tourNavigation.paused=true;
-      tourLiveToggle.textContent='▶ Tour fortsetzen';
-      tourLiveToggle.setAttribute('aria-pressed','false');
-      tourLiveMessage.textContent='Pausiert · die Route bleibt sichtbar.';
-      tourLiveRetry.hidden=true;
+      tourUI.renderLiveNavigation({phase:'paused'});
       setCameraMode('manual');refreshGPSFollowControl();
     }
-  };
-  tourLiveNext.onclick=()=>{
+  }
+  function advanceTourNavigation(){
     if(!tourNavigation||!tourRoute)return;
     if(tourNavigation.stage>=tourRoute.stops.length-1){
       stopTourNavigation();
-      tourLiveState.hidden=false;
-      tourLiveStep.textContent='✓ Rundgang abgeschlossen';
-      tourLiveProgress.textContent='Alle Ziele erledigt.';
-      tourLiveMessage.textContent='Die Route bleibt auf der Karte. Du kannst sie erneut starten.';
-      tourLiveToggle.textContent='↺ Tour erneut starten';
+      tourUI.renderLiveNavigation({phase:'complete'});
       renderNextAction();
       return;
     }
@@ -1266,18 +1232,15 @@
     tourNavigation.offReadings=0;
     tourNavigation.arrived=false;
     tourNavigation.paused=false;
-    tourLiveToggle.textContent='Ⅱ Tour pausieren';
-    tourLiveToggle.setAttribute('aria-pressed','true');
+    tourUI.renderLiveNavigation({phase:'next'});
     if(position&&Date.now()-positionUpdatedAt<60000)
       updateTourNavigation(position,positionAccuracy);
-    else{
-      tourLiveStep.textContent='Stopp '+(tourNavigation.stage+1)+' von '+tourRoute.stops.length;
-      tourLiveProgress.textContent='Standort wird ermittelt …';
-    }
-    tourLiveRetry.hidden=true;
+    else tourUI.renderLiveNavigation({
+      phase:'next-gps-pending',stage:tourNavigation.stage+1,
+      total:tourRoute.stops.length
+    });
     renderNextAction();
-  };
-  tourLiveRetry.onclick=()=>{void calculateTour(false,true);};
+  }
   $('tour-route-close').onclick=()=>{
     clearTourRoute();
     tourBuilderStatus.textContent='Rundgang von der Karte entfernt. Deine Zielauswahl bleibt erhalten.';
