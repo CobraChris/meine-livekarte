@@ -110,7 +110,9 @@ async function swipeOverPopupAction(page){
  const afterMarker=await page.locator('.leaflet-marker-icon.pin').first().boundingBox();
  const diagnostic=await page.evaluate(()=>window.__touchDiagnostics);
  console.log('TOUCH DIAGNOSTICS',JSON.stringify({before,after,beforeMarker,afterMarker,diagnostic}));
- assert.notEqual(after,before,'Swipe over popup button must pan map underneath popup');
+ const offset=value=>Number(/translate3d\\((-?[0-9.]+)px/.exec(value)?.[1]??NaN);
+ assert.ok(Math.abs(offset(after)-offset(before))>=40,
+  'A 56px finger gesture must move the map by at least 40px, not just the first 8px');
  assert.equal(await popup.isVisible(),true,'Popup stays open after pan gesture');
  assert.equal(await page.locator('#walk-route-panel').isVisible(),false,
   'Swipe must NOT accidentally trigger the Fußweg button');
