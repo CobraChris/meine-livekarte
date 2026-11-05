@@ -357,3 +357,27 @@ test('GPS tour UI is shared across dates, never stores coordinates or makes rout
  assert.match(app,/tourUI\.renderLiveNavigation\(\{/);
  assert.doesNotMatch(ui,/fetch\(|localStorage|indexedDB|navigator\.geolocation|watchPosition/);
 });
+
+test('navigation HUD suppresses stale and uncertain GPS reroute even when raw progress claims deviation',()=>{
+ const f=fixture();
+ f.ui.renderLiveNavigation({phase:'started'});
+ f.ui.renderLiveNavigation({phase:'progress',stage:2,total:3,name:'Stopp',
+   arrived:false,status:'off-route',remainingMeters:200,remainingSeconds:100,
+   offRoute:true,guidance:{kind:'waiting',message:'GPS-Position aktualisieren',
+     distanceMeters:null,durationSeconds:null,canOfferReroute:false}});
+ assert.equal(f.$('tour-live-progress').textContent,'📍 GPS-Signal wird aktualisiert');
+ assert.match(f.$('tour-live-message').textContent,/GPS-Position aktualisieren/);
+ assert.equal(f.$('tour-live-retry').hidden,true);
+ f.ui.renderLiveNavigation({phase:'progress',stage:2,total:3,name:'Stopp',
+   arrived:false,status:'off-route',remainingMeters:200,remainingSeconds:100,
+   offRoute:true,guidance:{kind:'uncertain',message:'GPS zu ungenau',
+     distanceMeters:null,durationSeconds:null,canOfferReroute:false}});
+ assert.equal(f.$('tour-live-progress').textContent,'📍 GPS ungenau');
+ assert.equal(f.$('tour-live-retry').hidden,true);
+ f.ui.renderLiveNavigation({phase:'progress',stage:2,total:3,name:'Stopp',
+   arrived:false,status:'off-route',remainingMeters:200,remainingSeconds:100,
+   offRoute:true,guidance:{kind:'deviation',message:'Vom Fußweg abgewichen',
+     distanceMeters:198,durationSeconds:99,canOfferReroute:true}});
+ assert.equal(f.$('tour-live-retry').hidden,false);
+ assert.match(f.$('tour-live-progress').textContent,/198 m/);
+});
