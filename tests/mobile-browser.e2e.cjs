@@ -79,6 +79,20 @@ async function swipeOverPopupAction(page){
  assert.ok(bbox&&bbox.width>20&&bbox.height>20);
  const x=bbox.x+Math.min(40,bbox.width/2), y=bbox.y+bbox.height/2;
  const before=await pane.evaluate(el=>el.style.transform);
+ const beforeMarker=await page.locator('.leaflet-marker-icon.pin').first().boundingBox();
+ await page.evaluate(()=>{
+  window.__touchDiagnostics=[];
+  const surface=document.querySelector('.leaflet-popup-content .place-popup-pan-surface');
+  for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])
+   surface.addEventListener(type,e=>window.__touchDiagnostics.push({
+    type,x:e.clientX,y:e.clientY,kind:e.pointerType,captured:surface.hasPointerCapture?.(e.pointerId)
+   }));
+  const old=L.Map.prototype.panBy;
+  L.Map.prototype.panBy=function(points,opts){
+   window.__touchDiagnostics.push({type:'panBy',points,opts});
+   return old.call(this,points,opts);
+  };
+ });
  const cdp=await page.context().newCDPSession(page);
  const finger=(px)=>[{x:px,y,id:1,radiusX:2,radiusY:2,force:1}];
  try{
@@ -91,6 +105,9 @@ async function swipeOverPopupAction(page){
  }finally{await cdp.detach();}
  await delay(120);
  const after=await pane.evaluate(el=>el.style.transform);
+ const afterMarker=await page.locator('.leaflet-marker-icon.pin').first().boundingBox();
+ const diagnostic=await page.evaluate(()=>window.__touchDiagnostics);
+ console.log('TOUCH DIAGNOSTICS',JSON.stringify({before,after,beforeMarker,afterMarker,diagnostic}));
  assert.notEqual(after,before,'Swipe over popup button must pan map underneath popup');
  assert.equal(await popup.isVisible(),true,'Popup stays open after pan gesture');
  assert.equal(await page.locator('#walk-route-panel').isVisible(),false,
