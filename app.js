@@ -8,6 +8,7 @@
   const DayUI=window.LivekarteDaySelectorUI;
   const PlaceUI=window.LivekartePlaceUI;
   const RM=window.LivekarteRouteModel;
+  const JourneyView=window.LivekarteJourneyView;
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
   let activeCityDay=MD.ALL;
@@ -2891,26 +2892,31 @@
     panel.hidden = !journey || activePlanId==='ride-kyoto';
     if (!journey) { renderKyotoRailInfographic();updateStationTransfer(); updateNagoyaTrigger(); return; }
     const railView=RM.rail(journey);
-    info.append(node('h2',journey.title),node('p',journey.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
-    const totalLegs=railView.segments.length;
-    const unresolved=journey.stops.slice(0,-1).filter((_,i)=>ticketStatusFor(activePlanId,journey,i)!=='ready').length;
+    // One immutable snapshot drives both rail ticket summary and station rows.
+    // Ticket/plan persistence remains exclusively in the existing app controller.
+    const journeyView=JourneyView.build({journey,planId:activePlanId,
+      ticketFor:i=>ticketStatusFor(activePlanId,journey,i)});
+    info.append(node('h2',journeyView.title),node('p',journeyView.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
+    const totalLegs=journeyView.legCount;
+    const unresolved=journeyView.openTickets;
     const summary=node('div',unresolved
       ? '❗ '+unresolved+' von '+totalLegs+' Fahrtickets noch nicht als vollständig bestätigt'
       : '✓ Alle '+totalLegs+' Fahrtickets als vorhanden markiert',
       'ticket-summary'+(unresolved?' ticket-summary-warn':' ticket-summary-ready'));
     info.append(summary);
     journey.stops.forEach((stop,i) => {
+      const row=journeyView.rows[i];
       if (i < railView.segments.length) {
         const segment=railView.segments[i];
         L.polyline(segment.points,railView.style).addTo(journeyLayer);
       }
       const item = node('div',undefined,'journey-item');
-      const times = [stop.arrival && stop.arrival+' an',stop.departure && stop.departure+' ab'].filter(Boolean).join(' · ');
+      const times = [row.arrival && row.arrival+' an',row.departure && row.departure+' ab'].filter(Boolean).join(' · ');
       item.append(node('span',times,'times'),node('strong',(i+1)+'. '+stop.name));
       if (stop.description) item.append(node('span',stop.description,'stop-note'));
       if (stop.leg) item.append(node('span','Weiter: '+stop.leg,'leg'));
       if (i<journey.stops.length-1) {
-        const state=ticketStatusFor(activePlanId,journey,i);
+        const state=row.ticket;
         const ticketRow=node('div',undefined,'ticket-row ticket-state-'+state);
         const badge=node('span',ticketSymbols[state]+' '+C.ticketStates[state],'ticket-badge');
         badge.setAttribute('aria-live','polite');
