@@ -7,12 +7,12 @@
   'use strict';
   const NATIVE_INPUT='input,select,textarea,label,[contenteditable="true"],[role="slider"],[data-no-map-pan]';
   function attachPan({marker,surface,map,onPanStart}){
-    let pointerId=null,startX=0,startY=0,lastX=0,lastY=0;
+    let pointerId=null,pointerType=null,startX=0,startY=0,lastX=0,lastY=0;
     let dragging=false,fromText=false,skipClickUntil=0;
     function release(event){
       if(pointerId===null || (event.pointerId!==undefined&&event.pointerId!==pointerId))return;
       const id=pointerId,wasDragging=dragging;
-      pointerId=null;dragging=false;fromText=false;
+      pointerId=null;pointerType=null;dragging=false;fromText=false;
       surface.classList.remove('is-dragging');
       if(wasDragging)skipClickUntil=Date.now()+450;
       try{
@@ -26,6 +26,7 @@
       // disclosure headers allow *swipes* but retain normal tap behavior.
       if(event.target.closest?.(NATIVE_INPUT))return;
       pointerId=event.pointerId;
+      pointerType=event.pointerType;
       startX=lastX=event.clientX;
       startY=lastY=event.clientY;
       fromText=!!event.target.closest?.('.place-popup-description,.popup-more-body,p');
@@ -38,7 +39,12 @@
         dragging=true;
         surface.classList.add('is-dragging');
         onPanStart?.();
-        try{surface.setPointerCapture?.(pointerId);}catch{/* Unsupported; no capture required. */}
+        // Touch already has implicit capture. An explicit capture here may
+        // be revoked when Leaflet repositions the anchored popup on pan,
+        // prematurely ending the swipe after only a few pixels.
+        if(pointerType!=='touch'){
+          try{surface.setPointerCapture?.(pointerId);}catch{/* Optional. */}
+        }
       }
       event.preventDefault();event.stopPropagation();
       lastX=event.clientX;lastY=event.clientY;
@@ -59,8 +65,13 @@
       skipClickUntil=0;
       event.preventDefault();event.stopImmediatePropagation?.();
     },true);
-    for(const type of ['pointerup','pointercancel','lostpointercapture'])
+    for(const type of ['pointerup','pointercancel'])
       surface.addEventListener(type,release);
+    surface.addEventListener('lostpointercapture',event=>{
+      // Moving Leaflet popups can revoke touch capture mid-gesture.
+      // Let pointerup/cancel, not lost capture, terminate that touch.
+      if(pointerType!=='touch')release(event);
+    });
     marker.on('popupclose',()=>release({pointerId}));
   }
   function bind({marker,content,map,L,onPanStart,options={}}){
