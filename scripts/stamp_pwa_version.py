@@ -39,6 +39,7 @@ assets = [
     ("src", "day-context-core.js"),
     ("src", "day-selector-ui.js"),
     ("src", "place-ui.js"),
+    ("src", "tour-ui.js"),
     ("src", "route-model-core.js"),
     ("src", "route-discovery.js"),
     ("src", "place-search-core.js"),
