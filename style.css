@@ -2337,3 +2337,14 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .compass-diagnostics p{margin:0 0 9px;font-weight:650;color:#c4f5dd}
 .compass-diagnostics button{min-height:42px}
 .compass-diagnostics small{display:block;margin-top:8px;color:#c0d1ce;line-height:1.5}
+
+/* #117: accessible one-hand map toolbar, same three buttons and actions.
+ * Touch target >=48px; do not enlarge any map overlay on desktop.
+ */
+@media (max-width:760px){
+  .map-actions{width:48px;gap:9px}
+  .map-actions button{width:48px;height:48px;min-width:48px;min-height:48px}
+  .map-actions button:focus-visible,#expand-map:focus-visible{
+    outline:3px solid #b5ffe1;outline-offset:2px;
+  }
+}
