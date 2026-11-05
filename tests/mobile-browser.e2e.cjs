@@ -148,7 +148,9 @@ async function verifyLocalSearchAndTourBuilder(page){
  assert.ok((await page.locator('#tour-count').innerText()).includes('2/6'),'The tour counter shows two of six stops');
  assert.equal(await page.locator('#tour-calculate').isEnabled(),true);
  await page.locator('#tour-clear').click();
- assert.equal(await page.locator('#tour-stops li').count(),0);
+ assert.equal(await page.locator('#tour-stops li.tour-stop').count(),0);
+ assert.equal(await page.locator('#tour-stops li.tour-empty').count(),1,
+  'The empty-state hint must replace previous stops');
  assert.equal(await page.locator('#tour-calculate').isDisabled(),true);
  console.log('PASS two-stop tour selection, shared counter and full reset');
 }
