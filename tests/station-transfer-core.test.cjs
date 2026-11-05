@@ -36,3 +36,25 @@ test('invalid inputs and accidental ticket claims are rejected',()=>{
  assert.equal(guide.ticketStatus,'unknown');
  assert.ok(Object.isFrozen(guide.steps));
 });
+
+test('Tokyo transfer step sequence has no assumed platform and cannot auto-complete',()=>{
+ const {stepState}=require('../station-transfer-core.js');
+ const guide=build({station:'Tokyo',steps:[
+  {title:'Aussteigen',action:'Anzeigen prüfen'},
+  {title:'Ticket',action:'Richtige Sperre beim Personal prüfen'},
+  {title:'Abfahrt',action:'Zug auf Anzeigetafel prüfen'}]});
+ assert.equal(guide.arrivalPlatform.confidence,'unknown');
+ assert.equal(guide.departurePlatform.confidence,'unknown');
+ const initial=stepState(guide,0),last=stepState(guide,100);
+ assert.equal(initial.number,1);
+ assert.equal(initial.canBack,false);
+ assert.equal(initial.canNext,true);
+ assert.equal(last.number,3);
+ assert.equal(last.canNext,false);
+ assert.equal(last.finished,true);
+ assert.match(last.step.action,/Anzeigetafel/);
+ assert.equal(stepState(guide,NaN).index,0);
+ assert.equal(guide.ticketStatus,'unknown');
+ assert.equal(guide.live,false);
+ assert.ok(Object.isFrozen(last));
+});
