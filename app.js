@@ -984,7 +984,7 @@
   };
   // One shared tour UI for every city, day and trip; the app retains all
   // map state, persistence and the only network/GPS routing code.
-  const tourUI=window.LivekarteTourUI.create({document,dayPlanCore:D,handlers:{
+  const tourUI=window.LivekarteTourUI.create({document,dayPlanCore:D,walkingCore:W,handlers:{
     selectMapMode:()=>setMapTourPickMode(!mapTourPickMode),
     selectMapPick:()=>setMapTourPickMode(true,true),
     finishMapPick:()=>setMapTourPickMode(false),
@@ -1100,10 +1100,7 @@
   }
   // Day schedule reuses only the already calculated OSRM route legs.
   // Store solely explicitly chosen settings, never GPS or route geometry.
-  const dayPlanState=$('day-plan-state');
   const dayPlanAlert=$('day-plan-alert');
-  const dayPlanOutput=$('day-plan-output');
-  const dayPlanTimeline=$('day-plan-timeline');
   function dayPlanPrefs(){
     if(!dayPlans[tourContextKey()]){
       dayPlans[tourContextKey()]={
@@ -1133,14 +1130,11 @@
     if(!D)return;
     const pref=dayPlanPrefs();
     const matching=tourRoute?.planId===activePlanId&&tourRoute.legs?.length===tourRoute.stops.length;
-    if(!matching){
-      dayPlanOutput.hidden=true;
-      dayPlanState.textContent='Route fehlt';
-      dayPlanAlert.textContent='Bitte zuerst den Rundgang berechnen oder optimieren. Ohne echte Gehzeiten ist kein belastbarer Tagesplan möglich.';
-      return;
-    }
+    if(!matching){tourUI.showDayPlanMissing();return;}
     const stops=tourRoute.stops;
     try{
+      // Timetable math remains in the same verified day-plan core.
+      // The shared tour UI only renders the already computed result.
       const schedule=D.build({
         start:pref.start,stops,legs:tourRoute.legs,
         visits:stops.map(p=>dayVisitMinutes(p)),
@@ -1150,50 +1144,8 @@
         }),
         buffer:pref.buffer,lunch:pref.lunch
       });
-      dayPlanOutput.hidden=false;
-      const end=D.clockText(schedule.end);
-      dayPlanState.textContent=D.clockText(schedule.start)+'–'+end;
-      $('day-plan-summary').textContent='🗓 '+D.clockText(schedule.start)+' bis '+end+
-        ' · '+schedule.walkingMinutes+' Min. Gehzeit · '+
-        schedule.visitingMinutes+' Min. Besichtigung';
-      dayPlanTimeline.replaceChildren();
-      schedule.items.forEach(item=>{
-        const li=node('li',undefined,'day-timeline-item');
-        const heading=node('strong','Stopp '+item.index+' · '+item.name);
-        const walking=node('p',D.clockText(item.depart)+'–'+D.clockText(item.arrival)+
-          ' 🚶 Fußweg '+W.distanceText(item.legMeters)+' · '+item.legMinutes+' Min.');
-        const visit=node('p',D.clockText(item.visitStart)+'–'+D.clockText(item.visitEnd)+
-          ' 🏛 Besichtigung '+item.visitMinutes+' Min.');
-        li.append(heading,walking);
-        if(item.wait)li.append(node('p','⏳ '+item.wait+' Min. bis zur eingetragenen Öffnungszeit warten','day-wait'));
-        li.append(visit);
-        if(item.hoursKnown){
-          li.append(node('small','Öffnungsfenster (deine Eingabe): '+
-            D.clockText(item.opening)+'–'+D.clockText(item.closing)));
-        }else li.append(node('small','Öffnungszeiten nicht hinterlegt – vor Ort prüfen.'));
-        if(item.windowWarning)li.append(node('p','⚠ '+item.windowWarning,'day-warning'));
-        if(item.schedule)li.append(node('small','🗓 Hinweis: '+item.schedule));
-        if(item.note)li.append(node('small','💡 '+item.note));
-        if(item.lunchAfter)li.append(node('p','🍽 '+item.lunchAfter+' Min. Mittagspause nach diesem Stopp'));
-        if(item.bufferAfter)li.append(node('p','＋ '+item.bufferAfter+' Min. Zeitpuffer nach diesem Stopp'));
-        dayPlanTimeline.append(li);
-      });
-      const warnings=$('day-plan-warnings');
-      warnings.replaceChildren();
-      if(schedule.unknownHours){
-        warnings.append(node('p','⚠ Für '+schedule.unknownHours+
-          ' von '+stops.length+' Zielen sind keine Öffnungszeiten eingetragen.','day-warning'));
-      }
-      if(pref.lunch>0&&!schedule.lunchScheduled){
-        warnings.append(node('p','Hinweis: Die Mittagspause passt nicht nach einem Stopp ins Zeitfenster 11:30–14:30.','day-warning'));
-      }
-      for(const message of schedule.warnings)warnings.append(node('p','⚠ '+message,'day-warning'));
-      dayPlanAlert.textContent='Zeitplan mit echten Fußwegetappen erstellt · alle Zeiten sind Schätzwerte.';
-    }catch(e){
-      dayPlanOutput.hidden=true;
-      dayPlanState.textContent='Angaben prüfen';
-      dayPlanAlert.textContent=e.message||'Tagesplan konnte nicht berechnet werden.';
-    }
+      tourUI.renderDaySchedule({schedule,pref,stopsCount:stops.length});
+    }catch(error){tourUI.showDayPlanError(error);}
   }
   function renderDayPlanControls(){
     if(!D)return;
@@ -1408,21 +1360,7 @@
         bindMapPopup(marker,node('strong','Stopp '+(i+1)+': '+place.name));
         marker.addTo(tourLayers);
       });
-      const walkSummary=W.distanceText(result.distance)+' · ca. '+
-        W.durationText(result.duration)+' zu Fuß';
-      $('tour-route-title').textContent='🚶 Rundgang · '+ordered.length+' Ziele';
-      $('tour-route-metrics').textContent=walkSummary;
-      $('tour-route-note').textContent='Start am GPS-Punkt bei Berechnung · keine automatische Aktualisierung';
-      tourHud.hidden=false;
-      $('tour-result-summary').textContent=walkSummary;
-      const legs=$('tour-result-legs');
-      legs.replaceChildren();
-      result.legs.forEach((leg,i)=>{
-        const label=(i?'Stopp '+i:'Standort')+' → '+ordered[i].name+
-          ': '+W.distanceText(leg.distance)+' · '+W.durationText(leg.duration);
-        legs.append(node('li',label));
-      });
-      tourResult.hidden=false;
+      tourUI.renderCalculatedTour({ordered,result});
       renderDayPlanControls();
       tourBuilderStatus.textContent=remaining
         ?'Restweg ab deiner aktuellen Position berechnet. GPS-Führung bei Bedarf erneut starten.'

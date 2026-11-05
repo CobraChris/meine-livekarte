@@ -40,8 +40,11 @@ function fixture(){
     setLunch:t=>events.push(['lunch',t]),
     refreshDayPlan:()=>events.push(['refresh'])
   };
-  const dayPlanCore={visitMinutes:duration=>duration==='60 Min.'?60:null};
-  const ui=TourUI.create({document,dayPlanCore,handlers});
+  const dayPlanCore={visitMinutes:duration=>duration==='60 Min.'?60:null,
+    clockText:m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+  const walkingCore={distanceText:m=>m+' m',durationText:seconds=>
+    Math.round(seconds/60)+' Min.'};
+  const ui=TourUI.create({document,dayPlanCore,walkingCore,handlers});
   const first={name:'First',duration:'60 Min.'},second={name:'Second'};
   return {$,ui,events,first,second,handlers};
 }
@@ -153,4 +156,99 @@ test('new UI is wired before app, included in offline shell and has no transport
  assert.match(stamp,/\("src", "tour-ui\.js"\)/);
  assert.doesNotMatch(ui,/\blocalStorage\b|sessionStorage|\bfetch\(|\bgeolocation\b|navigator\.|getCurrentPosition|watchPosition/);
  assert.doesNotMatch(ui,/\bJSON\.stringify\b|indexedDB|setInterval/);
+});
+
+
+test('verified OSRM results render the same multi-stop summary, leg sequence and map HUD',()=>{
+ const f=fixture();
+ f.ui.renderCalculatedTour({
+   ordered:[f.first,f.second],
+   result:{distance:920,duration:660,legs:[
+     {distance:340,duration:240},{distance:580,duration:420}]}
+ });
+ assert.equal(f.$('tour-route-title').textContent,'🚶 Rundgang · 2 Ziele');
+ assert.equal(f.$('tour-route-metrics').textContent,'920 m · ca. 11 Min. zu Fuß');
+ assert.equal(f.$('tour-route-note').textContent,
+   'Start am GPS-Punkt bei Berechnung · keine automatische Aktualisierung');
+ assert.equal(f.$('tour-route-hud').hidden,false);
+ assert.equal(f.$('tour-result').hidden,false);
+ assert.equal(f.$('tour-result-summary').textContent,f.$('tour-route-metrics').textContent);
+ assert.deepEqual(f.$('tour-result-legs').children.map(x=>x.textContent),[
+   'Standort → First: 340 m · 4 Min.',
+   'Stopp 1 → Second: 580 m · 7 Min.'
+ ]);
+ // Rendering a newly calculated tour replaces the old legs, not appends.
+ f.ui.renderCalculatedTour({ordered:[f.second],
+   result:{distance:90,duration:60,legs:[{distance:90,duration:60}]}});
+ assert.equal(f.$('tour-result-legs').children.length,1);
+ assert.equal(f.$('tour-route-title').textContent,'🚶 Rundgang · 1 Ziele');
+});
+test('day results show exact schedule legs, visits, warning details and lunch/buffer',()=>{
+ const f=fixture();
+ const schedule={
+   start:630,end:1030,walkingMinutes:23,visitingMinutes:170,
+   unknownHours:1,lunchScheduled:false,
+   warnings:['Fenster prüfen'],
+   items:[{
+     index:1,name:'First',depart:630,arrival:645,visitStart:650,visitEnd:710,
+     legMeters:580,legMinutes:15,visitMinutes:60,wait:5,
+     hoursKnown:true,opening:650,closing:800,windowWarning:'Schließt bald',
+     schedule:'Nur heute',note:'Sonderzugang',lunchAfter:45,bufferAfter:10
+   },{
+     index:2,name:'Second',depart:765,arrival:773,visitStart:775,visitEnd:885,
+     legMeters:300,legMinutes:8,visitMinutes:110,wait:0,
+     hoursKnown:false,windowWarning:'',schedule:'',note:'',lunchAfter:0,bufferAfter:0
+   }]
+ };
+ f.ui.renderDaySchedule({schedule,pref:{lunch:45},stopsCount:2});
+ assert.equal(f.$('day-plan-output').hidden,false);
+ assert.equal(f.$('day-plan-state').textContent,'10:30–17:10');
+ assert.match(f.$('day-plan-summary').textContent,/23 Min. Gehzeit · 170 Min. Besichtigung/);
+ const timeline=f.$('day-plan-timeline').children;
+ assert.equal(timeline.length,2);
+ assert.equal(timeline[0].children[0].textContent,'Stopp 1 · First');
+ assert.match(timeline[0].children[1].textContent,/580 m · 15 Min./);
+ assert.ok(timeline[0].children.some(x=>x.textContent.includes('60 Min.')));
+ assert.ok(timeline[0].children.some(x=>x.textContent.includes('Öffnungsfenster')));
+ assert.ok(timeline[0].children.some(x=>x.textContent.includes('Schließt bald')));
+ assert.ok(timeline[0].children.some(x=>x.textContent.includes('Mittagspause')));
+ assert.ok(timeline[0].children.some(x=>x.textContent.includes('Zeitpuffer')));
+ assert.ok(timeline[1].children.some(x=>x.textContent.includes('Öffnungszeiten nicht hinterlegt')));
+ assert.equal(f.$('day-plan-warnings').children.length,3);
+ assert.match(f.$('day-plan-warnings').children[0].textContent,/1 von 2 Zielen/);
+ assert.match(f.$('day-plan-warnings').children[1].textContent,/Mittagspause passt nicht/);
+ assert.match(f.$('day-plan-warnings').children[2].textContent,/Fenster prüfen/);
+ assert.match(f.$('day-plan-alert').textContent,/Schätzwerte/);
+ f.ui.renderDaySchedule({schedule:{...schedule,items:[],warnings:[],unknownHours:0,lunchScheduled:true},
+   pref:{lunch:0},stopsCount:0});
+ assert.equal(f.$('day-plan-timeline').children.length,0);
+ assert.equal(f.$('day-plan-warnings').children.length,0);
+});
+test('missing and invalid routes cannot show stale calculated itineraries',()=>{
+ const f=fixture();
+ f.$('day-plan-output').hidden=false;
+ f.ui.showDayPlanMissing();
+ assert.equal(f.$('day-plan-output').hidden,true);
+ assert.equal(f.$('day-plan-state').textContent,'Route fehlt');
+ assert.match(f.$('day-plan-alert').textContent,/Ohne echte Gehzeiten/);
+ f.$('day-plan-output').hidden=false;
+ f.ui.showDayPlanError(new Error('Ungültiges Zeitfenster'));
+ assert.equal(f.$('day-plan-output').hidden,true);
+ assert.equal(f.$('day-plan-state').textContent,'Angaben prüfen');
+ assert.equal(f.$('day-plan-alert').textContent,'Ungültiges Zeitfenster');
+});
+test('only the presentation is extracted; app keeps build, GPS/network and persistence',()=>{
+ const ui=read('tour-ui.js'),app=read('app.js');
+ assert.match(ui,/function renderCalculatedTour\(/);
+ assert.match(ui,/function renderDaySchedule\(/);
+ assert.match(ui,/function showDayPlanMissing\(/);
+ assert.match(ui,/function showDayPlanError\(/);
+ assert.match(app,/tourUI\.renderCalculatedTour\(\{ordered,result\}\)/);
+ assert.match(app,/tourUI\.renderDaySchedule\(\{schedule,pref,stopsCount:stops\.length\}\)/);
+ assert.match(app,/const schedule=D\.build\(/);
+ assert.match(app,/const tourView=RM\.walking\(/);
+ assert.match(app,/fetch\(request,\{/);
+ assert.match(app,/localStorage\.setItem\('livekarte-day-plans-v1'/);
+ assert.match(app,/localStorage\.setItem\('livekarte-tour-drafts-v1'/);
+ assert.doesNotMatch(ui,/fetch\(|localStorage|navigator\.geolocation|indexedDB|window\.location/);
 });
