@@ -136,8 +136,55 @@ test('closing popup mid-swipe releases pointer capture and dragging state',()=>{
  s.dispatch('pointerdown',{target:target('link')});
  s.dispatch('pointermove',{clientX:124,clientY:125});
  assert.equal(s.classList.contains('is-dragging'),true);
- assert.equal(s.hasPointerCapture(1),true);
+ assert.equal(s.hasPointerCapture(1),false,'touch uses implicit capture only');
+ s.dispatch('lostpointercapture',{pointerId:1});
+ assert.equal(s.classList.contains('is-dragging'),true,
+   'lost capture during Leaflet reposition must not cancel a touch swipe');
  f.close();
  assert.equal(s.classList.contains('is-dragging'),false);
  assert.equal(s.hasPointerCapture(1),false);
+});
+
+test('expanding compact popup details reflows Leaflet popup and avoids clipped actions',async()=>{
+ const doc=docFactory(),content=surface(doc);
+ let updates=0,open=true;
+ const marker={
+  bound:null,
+  isPopupOpen:()=>open,
+  bindPopup(element,options){this.bound={element,options};return this;},
+  on(){return this;},
+  getPopup(){return {update(){updates++;}};}
+ };
+ const map={getSize:()=>({x:393,y:500}),panBy:()=>{}};
+ const frames=[];
+ const oldRAF=globalThis.requestAnimationFrame;
+ try{
+  globalThis.requestAnimationFrame=fn=>frames.push(fn);
+  Popup.bind({marker,content,map,L:{point:(x,y)=>({x,y})}});
+  const target=marker.bound.element;
+  target.dispatch('toggle',{target:{tagName:'DETAILS'}});
+  assert.equal(frames.length,1);
+  frames.pop()();
+  assert.equal(updates,1,'Leaflet must recalculate height and autopan after Mehr expands');
+  open=false;
+  target.dispatch('toggle',{target:{tagName:'DETAILS'}});
+  assert.equal(updates,1,'closed popups must not be updated');
+ }finally{
+  if(oldRAF===undefined)delete globalThis.requestAnimationFrame;
+  else globalThis.requestAnimationFrame=oldRAF;
+ }
+});
+
+test('complete long touch swipe remains active after Leaflet popup loses capture',()=>{
+ const f=setup(),s=f.surface;
+ s.dispatch('pointerdown',{target:target('button'),pointerType:'touch'});
+ for(const x of [108,120,132,145,160]){
+  s.dispatch('pointermove',{clientX:x,clientY:100,pointerType:'touch'});
+  s.dispatch('lostpointercapture',{pointerId:1,pointerType:'touch'});
+ }
+ assert.equal(f.pans.length,5,
+   'each finger movement must pan; never stop after first 8 pixels');
+ assert.equal(f.pans.reduce((total,p)=>total+p.delta[0],0),-60);
+ s.dispatch('pointerup',{clientX:160,clientY:100});
+ assert.equal(s.classList.contains('is-dragging'),false);
 });

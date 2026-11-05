@@ -150,3 +150,35 @@ bewährten OSRM-Rohdaten unverändert für die laufende GPS-Navigation.
 **Nächste Etappe:** Die getrennten Karten-Panels und Fußweg-/Bahntageslisten
 weiter in eine durchgängige, generische Routenansicht integrieren; dazu
 echte Touch-End-to-End-Tests für Android-/PWA-Ansichten hinzufügen.
+
+## Mobile End-to-End-Tests – Architekturbaustein 6
+
+Das GitHub-Actions-CI-Gate startet nach den Node-Unit-Tests einen **echten
+headless Google-Chrome-Browser** mit Android-ähnlichem Touch-/Viewport-Profil
+(393 × 852, Geräte-Pixelverhältnis 2). Das Browser-Testskript liegt in
+`tests/mobile-browser.e2e.cjs`; der Test nutzt `playwright-core` und das
+bereits auf dem GitHub-Runner vorhandene Chrome. Ein separater
+Browser-Download oder bezahlter Kartenanbieter ist nicht erforderlich.
+
+- Die Webseite wird lokal von einem kurzlebigen HTTP-Server geladen.
+- Jeder Zugriff auf Drittanbieter (OSM-Kacheln, Routing, Google) wird
+  blockiert; eine simulierte GPS-Position existiert nur im Browserkontext.
+- Testmatrix: Kyoto 03.11., Nara 04.11., Osaka 05.11. und
+  Nikkō (Bahnanreise). Derselbe Tagesschalter und die drei Kartenbuttons
+  müssen überall funktionstüchtig bleiben.
+- Auf Nara werden die Pop-up-Aktionen tatsächlich im Browser angetippt.
+  Ein echtes Chrome-Touchereignis wird auf einer Pop-up-Schaltfläche
+  ausgelöst, die Karte muss sich darunter bewegen, das Pop-up geöffnet
+  bleiben und es darf kein Fußweg versehentlich aktiviert werden.
+- Die Tagesübersicht muss sowohl den simulierten GPS-Punkt als auch
+  Nara-Ziele zeigen. Der GPS-Punkt darf nicht hinter den Kartenbuttons
+  liegen.
+- Browser-Laufzeitfehler lassen den Test scheitern; bei Fehlern wird
+  ein Screenshot für die GitHub-Actions-Diagnose gespeichert.
+- Der Test ist Bestandteil des bereits bestehenden `test`-Jobs.
+  Ein fehlschlagender Mobildurchlauf **blockiert die Veröffentlichung**.
+
+Dies ist ein realer Chrome-Touchtest, **kein Test auf einer echten
+Samsung-Uhr oder einem konkreten Galaxy-Gerät**. Geräteübergreifende
+Unterschiede (Samsung Internet, Android-System-PWA) bleiben weiterhin
+ein begrenztes Restrisiko.
