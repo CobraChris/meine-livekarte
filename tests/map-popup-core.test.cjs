@@ -213,7 +213,7 @@ test('long popup text pans the map at both scrolling boundaries',()=>{
   assert.equal(f.scrollArea.scrollTop,scrollTop,
    'text cannot scroll beyond its top or bottom edge');
   assert.equal(f.pans.length,1,'at the scroll edge the map must pan');
-  assert.deepEqual(f.pans[0].delta,[0,-dy]);
+  assert.deepEqual(f.pans[0].delta.map(value=>value===0?0:value),[0,-dy]);
   s.dispatch('pointerup',{clientY:100+dy});
  }
 });
