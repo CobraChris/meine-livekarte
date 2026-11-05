@@ -122,8 +122,9 @@ test('GPS auto-start keeps far day-trip view while recording location; nearby go
  assert.match(source,/if\(automatic && firstFix && camera\.isFollowing\(\) && activePlanId==='town-kyoto' &&/);
  assert.match(source,/MD\.preferDistantDayView\(visiblePlaces\(\),activeCityDay,position,C\.distance\)/);
  assert.match(source,/if \(camera\.isFollowing\(\)\) centerOnGPS\(ll,Math\.max\(map\.getZoom\(\),15\)\)/);
- assert.match(source,/focusLabel=selected\?'Standort und Tagesziele zeigen'/);
- assert.match(source,/\$\('fit'\)\.title=focusLabel/);
+ const ui=read('day-selector-ui.js');
+ assert.match(ui,/focusLabel=selected\?'Standort und Tagesziele zeigen'/);
+ assert.match(ui,/fit\.title=focusLabel/);
 });
 
 test('one-tap 📍 overview includes live GPS and all Nara day goals',()=>{
