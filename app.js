@@ -8,6 +8,9 @@
   const DayUI=window.LivekarteDaySelectorUI;
   const PlaceUI=window.LivekartePlaceUI;
   const RM=window.LivekarteRouteModel;
+  const JourneyView=window.LivekarteJourneyView;
+  const MapToolbar=window.LivekarteMapToolbar;
+  const StationTransfer=window.LivekarteStationTransfer;
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
   let activeCityDay=MD.ALL;
@@ -216,6 +219,7 @@
   const W=window.LivekarteWalkingCore;
   const Routing=window.LivekarteRoutingRequests;
   const TourNav=window.LivekarteTourNavigation;
+  const NavigationGuidance=window.LivekarteNavigationGuidance;
   const routeRequests=Routing.create({fetcher:(url,options)=>fetch(url,options)});
   const D=window.LivekarteDayPlan;
   const R=window.LivekarteRouteDiscovery;
@@ -1204,7 +1208,12 @@
     let progress;
     try{progress=tourNavigation.update(point,gpsAccuracy);}
     catch{tourUI.renderLiveNavigation({phase:'progress-error'});return;}
-    if(progress)tourUI.renderLiveNavigation({phase:'progress',...progress});
+    if(progress){
+      const guidance=NavigationGuidance.derive({progress,accuracy:gpsAccuracy,
+        fixAgeMs:Math.max(0,Date.now()-positionUpdatedAt)});
+      tourUI.renderLiveNavigation({phase:'progress',...progress,
+        guidance,offRoute:guidance.canOfferReroute});
+    }
   }
   function startTourNavigation(){
     if(!tourRoute||!W){say('Bitte zuerst einen Rundgang berechnen.');return;}
@@ -2048,6 +2057,34 @@
   });
   window.addEventListener('focus',renderNextAction);
   const kyotoOverview=$('kyoto-overview'),nikkoOverview=$('nikko-overview');
+  // Reuse the same validated station model for the Tokyo transfer.
+  // The known itinerary has NO confirmed Tokyo arrival time or platform:
+  // neither may be inferred from the scheduled 14:00 onward train.
+  const tokyoTransfer=StationTransfer.build({
+    station:'Tokyo',sourceUrl:'https://www.jreast.co.jp/en/estation/stations/1039.html',
+    steps:[
+      {title:'Nozomi 12 verlassen',action:'Am Tōkaidō-Shinkansen aussteigen. Aktuelles Ankunftsgleis und Abfahrtsanzeige prüfen.'},
+      {title:'Passende Umsteigesperre klären',action:'Der Beschilderung für Tōhoku-/Jōetsu-/Hokuriku-Shinkansen folgen. Mit deinem Tickettyp das JR-Personal fragen, welche Sperre verwendet werden soll.'},
+      {title:'Yamabiko 141 finden',action:'Am JR-East-Bereich Zug, Ziel und tatsächliches Gleis auf der elektronischen Anzeige abgleichen. Planabfahrt 14:00 ist keine Livebestätigung.'}
+    ]
+  });
+  let tokyoStep=0;
+  function renderTokyoStep(){
+    const view=StationTransfer.stepState(tokyoTransfer,tokyoStep);
+    $('nikko-tokyo-step-count').textContent='Schritt '+view.number+' von '+view.total+
+      ' · '+view.step.title;
+    $('nikko-tokyo-step-content').textContent=view.step.action;
+    $('nikko-tokyo-prev').disabled=!view.canBack;
+    $('nikko-tokyo-next').textContent=view.finished?'Noch einmal':'Nächster Schritt';
+    $('nikko-tokyo-platform-note').textContent=
+      tokyoTransfer.arrivalPlatform.label+' · '+tokyoTransfer.departurePlatform.label;
+  }
+  $('nikko-tokyo-prev').onclick=()=>{tokyoStep=Math.max(0,tokyoStep-1);renderTokyoStep();};
+  $('nikko-tokyo-next').onclick=()=>{
+    tokyoStep=tokyoStep===tokyoTransfer.steps.length-1?0:tokyoStep+1;
+    renderTokyoStep();
+  };
+  renderTokyoStep();
   function renderNikkoOverview(){
     const visiting=activePlanId==='town-nikko',travel=activePlanId==='ride-nikko';
     nikkoOverview.hidden=!visiting&&!travel;
@@ -2203,9 +2240,11 @@
   // Nagoya station pilot: a manually stepped, source-grounded guide, not indoor GPS.
   const nagoya = L.latLng(35.17073,136.88184);
   const ng = C.stationGuides.nagoya;
+  const ngShared=StationTransfer.build({station:ng.station,
+    steps:ng.steps,sourceUrl:ng.mapUrl});
   const ngDialog = $('nagoya-dialog'), ngTrigger=$('nagoya-guide-trigger');
   let ngStep=0;
-  try {ngStep=Math.max(0,Math.min(ng.steps.length-1,Number(localStorage.getItem('livekarte-nagoya-step-v1'))||0));}catch{}
+  try {ngStep=Math.max(0,Math.min(ngShared.steps.length-1,Number(localStorage.getItem('livekarte-nagoya-step-v1'))||0));}catch{}
   const ngKyotoTrigger=$('nagoya-kyoto-guide-trigger');
   function updateNagoyaTrigger() {
     const nearNagoya=map.getZoom()>=15&&map.getBounds().contains(nagoya);
@@ -2216,16 +2255,19 @@
     ngTrigger.hidden=!legacy||!nearNagoya;
     ngKyotoTrigger.hidden=!kyoto||!nearNagoya;
   }
+  function renderStationStep(prefix,view){
+    const step=view.step;
+    $(prefix+'-progress').textContent='Schritt '+view.number+' von '+view.total;
+    $(prefix+'-floor').textContent=step.level;
+    $(prefix+'-step-title').textContent=step.title;
+    $(prefix+'-step-action').textContent=step.action;
+    $(prefix+'-sign').textContent=step.sign;
+    $(prefix+'-step-caution').textContent=step.caution;
+    $(prefix+'-prev').disabled=!view.canBack;
+    $(prefix+'-next').textContent=view.finished?'Fertig':'Nächster Schritt';
+  }
   function renderNagoyaStep() {
-    const step=ng.steps[ngStep];
-    $('nagoya-progress').textContent='Schritt '+(ngStep+1)+' von '+ng.steps.length;
-    $('nagoya-floor').textContent=step.level;
-    $('nagoya-step-title').textContent=step.title;
-    $('nagoya-step-action').textContent=step.action;
-    $('nagoya-sign').textContent=step.sign;
-    $('nagoya-step-caution').textContent=step.caution;
-    $('nagoya-prev').disabled=ngStep===0;
-    $('nagoya-next').textContent=ngStep===ng.steps.length-1?'Fertig':'Nächster Schritt';
+    renderStationStep('nagoya',StationTransfer.stepState(ngShared,ngStep));
   }
   function openNagoyaGuide() {
     // Never claim the user has moved indoors when only map/GPS data changed.
@@ -2236,14 +2278,14 @@
     if(!ngDialog.open) ngDialog.showModal();
   }
   function setNagoyaStep(n) {
-    ngStep=Math.max(0,Math.min(ng.steps.length-1,n));
+    ngStep=Math.max(0,Math.min(ngShared.steps.length-1,n));
     try{localStorage.setItem('livekarte-nagoya-step-v1',String(ngStep));}catch{}
     renderNagoyaStep();
   }
   ngTrigger.onclick=openNagoyaGuide;
   $('nagoya-close').onclick=()=>ngDialog.close();
   $('nagoya-prev').onclick=()=>setNagoyaStep(ngStep-1);
-  $('nagoya-next').onclick=()=>ngStep===ng.steps.length-1?ngDialog.close():setNagoyaStep(ngStep+1);
+  $('nagoya-next').onclick=()=>ngStep===ngShared.steps.length-1?ngDialog.close():setNagoyaStep(ngStep+1);
   $('nagoya-arrival-track').onchange=()=>{
     try{localStorage.setItem('livekarte-nagoya-arrival-v1',$('nagoya-arrival-track').value);}catch{}
   };
@@ -2254,18 +2296,13 @@
   // 01.11.2026: dedicated JR-to-Shinkansen guide, kept completely separate
   // from the historical Hikari-to-Hida guide and its stored progress.
   const ngKyoto=C.stationGuides.nagoyaKyoto;
+  const ngKyotoShared=StationTransfer.build({station:ngKyoto.station,
+    steps:ngKyoto.steps,sourceUrl:ngKyoto.mapUrl});
   const ngKyotoDialog=$('nagoya-kyoto-dialog');
   let ngKyotoStep=0;
   function renderNagoyaKyotoStep(){
-    const step=ngKyoto.steps[ngKyotoStep];
-    $('nagoya-kyoto-progress').textContent='Schritt '+(ngKyotoStep+1)+' von '+ngKyoto.steps.length;
-    $('nagoya-kyoto-floor').textContent=step.level;
-    $('nagoya-kyoto-step-title').textContent=step.title;
-    $('nagoya-kyoto-step-action').textContent=step.action;
-    $('nagoya-kyoto-sign').textContent=step.sign;
-    $('nagoya-kyoto-step-caution').textContent=step.caution;
-    $('nagoya-kyoto-prev').disabled=ngKyotoStep===0;
-    $('nagoya-kyoto-next').textContent=ngKyotoStep===ngKyoto.steps.length-1?'Fertig':'Nächster Schritt';
+    renderStationStep('nagoya-kyoto',
+      StationTransfer.stepState(ngKyotoShared,ngKyotoStep));
   }
   function openNagoyaKyotoGuide(){
     if(activePlanId!=='ride-kyoto'||!C.isNagoyaKyotoTrip(journey)){
@@ -2283,7 +2320,7 @@
     renderNagoyaKyotoStep();
   };
   $('nagoya-kyoto-next').onclick=()=>{
-    if(ngKyotoStep===ngKyoto.steps.length-1){ngKyotoDialog.close();return;}
+    if(ngKyotoStep===ngKyotoShared.steps.length-1){ngKyotoDialog.close();return;}
     ngKyotoStep++;
     renderNagoyaKyotoStep();
   };
@@ -2891,26 +2928,30 @@
     panel.hidden = !journey || activePlanId==='ride-kyoto';
     if (!journey) { renderKyotoRailInfographic();updateStationTransfer(); updateNagoyaTrigger(); return; }
     const railView=RM.rail(journey);
-    info.append(node('h2',journey.title),node('p',journey.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
-    const totalLegs=railView.segments.length;
-    const unresolved=journey.stops.slice(0,-1).filter((_,i)=>ticketStatusFor(activePlanId,journey,i)!=='ready').length;
+    const journeyView=JourneyView.build({journey,planId:activePlanId,
+      ticketFor:i=>ticketStatusFor(activePlanId,journey,i)});
+    info.append(node('h2',journeyView.title),node('p',journeyView.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
+    const totalLegs=journeyView.legCount;
+    const unresolved=journeyView.openTickets;
     const summary=node('div',unresolved
       ? '❗ '+unresolved+' von '+totalLegs+' Fahrtickets noch nicht als vollständig bestätigt'
       : '✓ Alle '+totalLegs+' Fahrtickets als vorhanden markiert',
       'ticket-summary'+(unresolved?' ticket-summary-warn':' ticket-summary-ready'));
     info.append(summary);
     journey.stops.forEach((stop,i) => {
+      const row=journeyView.rows[i];
       if (i < railView.segments.length) {
         const segment=railView.segments[i];
         L.polyline(segment.points,railView.style).addTo(journeyLayer);
       }
       const item = node('div',undefined,'journey-item');
-      const times = [stop.arrival && stop.arrival+' an',stop.departure && stop.departure+' ab'].filter(Boolean).join(' · ');
+      const times = row.timeLabel;
       item.append(node('span',times,'times'),node('strong',(i+1)+'. '+stop.name));
+      if (row.connectionNote) item.append(node('span',row.connectionNote,'stop-note journey-connection-note'));
       if (stop.description) item.append(node('span',stop.description,'stop-note'));
-      if (stop.leg) item.append(node('span','Weiter: '+stop.leg,'leg'));
+      if (row.nextLeg) item.append(node('span','Weiter: '+row.nextLeg,'leg'));
       if (i<journey.stops.length-1) {
-        const state=ticketStatusFor(activePlanId,journey,i);
+        const state=row.ticket;
         const ticketRow=node('div',undefined,'ticket-row ticket-state-'+state);
         const badge=node('span',ticketSymbols[state]+' '+C.ticketStates[state],'ticket-badge');
         badge.setAttribute('aria-live','polite');
@@ -2997,8 +3038,7 @@
     const plan=currentPlan();
     const period=planPickerLabel(plan).period;
     $('plan-period').textContent=period?' · '+period:'';
-    $('fit').lastElementChild.textContent=plan.kind==='journey' ? 'Route zeigen'
-      : plan.kind==='city' ? 'Ziele zeigen' : 'Alle Orte';
+    $('fit').lastElementChild.textContent=MapToolbar.build({kind:plan.kind})[1].label;
     $('fit').setAttribute('aria-label',$('fit').lastElementChild.textContent);
     $('fit').title=$('fit').lastElementChild.textContent;
     info.replaceChildren();
@@ -3132,14 +3172,17 @@
     // "Mein Standort" is a single control: enable GPS if off, or resume
     // following and center on the current fix. Green means FOLLOWING, not
     // merely that background GPS measurements continue.
-    const active=watch!==null && camera.isFollowing() && !!position;
+    const gpsAction=MapToolbar.build({kind:currentPlan().kind,
+      gpsOn:watch!==null,gpsFix:!!position,cameraMode:camera.mode})[2];
     const control=$('gps');
-    control.setAttribute('aria-pressed',String(active));
-    const label=watch===null?'Mein Standort · GPS einschalten'
-      :!position?'Mein Standort · GPS wird ermittelt'
-        :active?'Meinem Standort folgen':'Auf meinen Standort zentrieren';
+    control.setAttribute('aria-pressed',String(gpsAction.pressed));
+    const label=gpsAction.label;
     control.setAttribute('aria-label',label);
     control.title=label;
+    const status=MapToolbar.describe({gpsOn:watch!==null,gpsFix:!!position,
+      cameraMode:camera.mode});
+    const statusEl=$('map-controls-status');
+    if(statusEl&&statusEl.textContent!==status)statusEl.textContent=status;
     $('gps-privacy-toggle').textContent=watch===null?'GPS einschalten':'GPS ausschalten';
     $('gps-privacy-state').textContent=watch===null?'GPS ist ausgeschaltet.'
       :position?'GPS erfasst deinen Standort.':'GPS ermittelt deinen Standort.';

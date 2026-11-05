@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="map-popup-core.js"></script><script defer src="map-camera-core.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="routing-requests.js"></script><script defer src="tour-navigation-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="multi-day-core.js"></script><script defer src="day-context-core.js"></script><script defer src="day-selector-ui.js"></script><script defer src="place-ui.js"></script><script defer src="tour-ui.js"></script><script defer src="route-model-core.js"></script><script defer src="route-discovery.js"></script><script defer src="place-search-core.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="google-demo.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-share-inbox.js"></script><script defer src="ticket-library-ui.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="map-popup-core.js"></script><script defer src="map-camera-core.js"></script><script defer src="map-toolbar-core.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="routing-requests.js"></script><script defer src="tour-navigation-core.js"></script><script defer src="navigation-guidance-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="multi-day-core.js"></script><script defer src="day-context-core.js"></script><script defer src="day-selector-ui.js"></script><script defer src="place-ui.js"></script><script defer src="tour-ui.js"></script><script defer src="route-model-core.js"></script><script defer src="journey-view-core.js"></script><script defer src="route-discovery.js"></script><script defer src="place-search-core.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="station-transfer-core.js"></script><script defer src="google-demo.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-share-inbox.js"></script><script defer src="ticket-library-ui.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -67,6 +67,7 @@
   <button id="expand-map" type="button" aria-pressed="false" aria-label="Karte im Vollbild anzeigen" title="Karte im Vollbild anzeigen">⛶</button>
   <button id="fit" type="button" title="Alle Orte" aria-label="Alle Orte">📍 <span>Alle Orte</span></button>
   <button id="gps" type="button" aria-pressed="false" aria-label="Meinen Standort anzeigen oder GPS starten" title="Meinen Standort anzeigen">◎ <span>Mein Standort</span></button>
+  <span id="map-controls-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">GPS ausgeschaltet. Karte manuell verschiebbar.</span>
 </div><div id="status" role="status" aria-live="polite" hidden></div><div id="walk-route-panel" class="walk-route-panel" hidden role="region" aria-label="Fußweg zum ausgewählten Ziel">
   <div class="walk-route-heading">
     <strong id="walk-route-title">🚶 Fußweg</strong>
@@ -425,6 +426,17 @@
         <li><strong>Richtigen Zugang klären:</strong> Beschilderung „東北・上越・北陸新幹線“ (Tōhoku-/Jōetsu-/Hokuriku-Shinkansen) folgen. Bei elektronischem Ticket oder Unsicherheit die Umsteigesperre <em>vor dem Scannen</em> beim JR-Personal prüfen.</li>
         <li><strong>Yamabiko 141 (Shinkansen-Zug) um 14:00:</strong> JR East, regulärer Gleisbereich 20–23. Das konkrete Gleis und die tatsächliche Umsteigezeit nicht aus dem Plan ableiten; Ticket und Anzeigetafel haben Vorrang.</li>
       </ol>
+      <div id="nikko-tokyo-stepper" class="station-stepper" role="region"
+           aria-label="Umstieg Tokio Schritt für Schritt">
+        <strong>🧭 Interaktive Umstiegshilfe (ohne Gleisbestätigung)</strong>
+        <p id="nikko-tokyo-step-count" aria-live="polite">Schritt 1 von 3</p>
+        <p id="nikko-tokyo-step-content">Hinweise zum Umstieg werden geladen.</p>
+        <div class="station-stepper-actions">
+          <button id="nikko-tokyo-prev" type="button" disabled>Zurück</button>
+          <button id="nikko-tokyo-next" type="button">Nächster Schritt</button>
+        </div>
+        <small id="nikko-tokyo-platform-note">Ankunfts- und Abfahrtsgleis unbekannt · Anzeigen vor Ort prüfen.</small>
+      </div>
       <details class="nikko-staff-japanese">
         <summary>🇯🇵 Hilfetext für das JR-Personal anzeigen</summary>
         <p lang="ja">京都からの「のぞみ12号」で到着しました。14時発の「やまびこ141号」に乗り換えたいです。電子チケットを使っています。どの改札口を通ればいいですか。</p>

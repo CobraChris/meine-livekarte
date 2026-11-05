@@ -2337,3 +2337,25 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .compass-diagnostics p{margin:0 0 9px;font-weight:650;color:#c4f5dd}
 .compass-diagnostics button{min-height:42px}
 .compass-diagnostics small{display:block;margin-top:8px;color:#c0d1ce;line-height:1.5}
+
+/* #118 shared station transfer, contained within the existing Tokyo help panel. */
+.station-stepper{margin:12px 0;padding:12px;border:1px solid #6a9b8c;
+ background:#12342e;border-radius:12px}
+.station-stepper>strong{display:block;color:#b3f5d5;font-size:13px}
+.station-stepper p{margin:8px 0;font-size:13px;line-height:1.5}
+.station-stepper-actions{display:flex;gap:9px}
+.station-stepper-actions button{min-height:44px;flex:1}
+.station-stepper-actions button:disabled{opacity:.45}
+.station-stepper small{display:block;margin-top:9px;color:#c3d9d1}
+
+/* #117: Accessible 48px mobile control targets with keyboard focus. */
+@media (max-width:760px){
+  .workspace .map-actions{width:56px}
+  .workspace .map-actions button,
+  .workspace .map-actions #expand-map{
+    width:48px;height:48px;min-width:48px;min-height:48px;
+  }
+  .workspace .map-actions button:focus-visible{
+    outline:3px solid #b5ffe1;outline-offset:-2px;
+  }
+}
