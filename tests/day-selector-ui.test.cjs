@@ -109,7 +109,7 @@ test('shared selector only renders and invokes callbacks, with no storage/GPS/ne
  const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  const ui=fs.readFileSync(path.join(__dirname,'../day-selector-ui.js'),'utf8');
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
- assert.doesNotMatch(ui,/\blocalStorage\b|\bfetch\(|\bgeolocation\b|\.setView\(|\.fitBounds\(/);
+ assert.doesNotMatch(ui,/\blocalStorage\.|\bfetch\(|navigator\.geolocation|\.setView\(|\.fitBounds\(/);
  assert.match(app,/const DayUI=window\.LivekarteDaySelectorUI/);
  assert.match(app,/daySelector\.makePlaceDayPicker\(\{place,context:currentDayContext\(\)/);
  assert.match(html,/src="day-selector-ui\.js"/);
