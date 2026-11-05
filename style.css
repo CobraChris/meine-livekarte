@@ -2348,3 +2348,15 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
     outline:3px solid #b5ffe1;outline-offset:2px;
   }
 }
+
+@media (max-width:760px){
+  /* Override the late, more specific compact-rail rules. */
+  .workspace .map-actions{width:56px}
+  .workspace .map-actions button,
+  .workspace .map-actions #expand-map{
+    width:48px;height:48px;min-width:48px;min-height:48px;
+  }
+  .workspace .map-actions button:focus-visible{
+    outline:3px solid #b5ffe1;outline-offset:-2px;
+  }
+}
