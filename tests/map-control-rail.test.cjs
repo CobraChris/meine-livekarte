@@ -72,7 +72,9 @@ test('one map GPS button resumes following and privacy button alone stops GPS',(
    'gps-privacy-state':node('gps-privacy-state'),'compass-test':node('compass-test')};
  const ctx={
   $:id=>nodes[id],
-  camera:require('../map-camera-core.js').create('gps-follow'),watch:1,position:{lat:35.01,lng:135.77}
+  camera:require('../map-camera-core.js').create('gps-follow'),
+  MapToolbar:require('../map-toolbar-core.js'),currentPlan:()=>({kind:'city'}),
+  watch:1,position:{lat:35.01,lng:135.77}
  };
  vm.runInNewContext(app.slice(controlBegin,controlEnd)+
    '\nthis.refresh=refreshGPSFollowControl;',ctx);
