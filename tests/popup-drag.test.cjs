@@ -44,9 +44,10 @@ test('the same shared module loads online and is cached for offline PWA travel',
 });
 
 test('Nara day popup is ordinary place popup, including preserved compact actions',()=>{
- const begin=app.indexOf("const popup = node('div',undefined,'place-popup-pan-surface');");
- const until=app.indexOf('const marker = L.marker(',begin);
- const popup=app.slice(begin,until);
+ const ui=read('place-ui.js');
+ const begin=ui.indexOf("const popup=node('div',undefined,'place-popup-pan-surface');");
+ const until=ui.indexOf('return {popup,inPopup};',begin);
+ const popup=ui.slice(begin,until);
  assert.ok(begin>=0&&until>begin);
  assert.match(popup,/popupHeader\.append\(node\('strong',p\.name\)\)/);
  assert.match(popup,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);
