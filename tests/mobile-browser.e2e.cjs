@@ -184,6 +184,37 @@ async function verifyManualTouchPan(page){
  console.log('PASS background touch pan cancels GPS follow without switching off GPS');
 }
 
+async function verifyCompassDiagnostics(page){
+ await page.locator('#privacy').click();
+ await page.locator('#compass-test').waitFor({state:'visible'});
+ await page.locator('#compass-test').click();
+ await page.waitForFunction(()=>document.querySelector('.gps-location-icon')!==null,
+  null,{timeout:10000});
+ await page.evaluate(()=>{
+  const event=new Event('deviceorientationabsolute');
+  Object.defineProperties(event,{
+   absolute:{value:true},alpha:{value:0},beta:{value:90},gamma:{value:45}
+  });
+  window.dispatchEvent(event);
+ });
+ await page.waitForFunction(()=>document.getElementById('compass-diagnostic')?.textContent.includes('315°'),
+  null,{timeout:5000});
+ assert.equal(await page.locator('.gps-location-icon.has-heading').count(),1,
+  'Tilted absolute heading displays a direction cone, not only a blue dot');
+ const before=await page.locator('.gps-bearing').first().evaluate(el=>el.style.transform);
+ await page.evaluate(()=>{
+  const relative=new Event('deviceorientation');
+  Object.defineProperties(relative,{
+   absolute:{value:false},alpha:{value:100},beta:{value:30},gamma:{value:15}
+  });
+  window.dispatchEvent(relative);
+ });
+ assert.equal(await page.locator('.gps-bearing').first().evaluate(el=>el.style.transform),before,
+  'Relative orientation never overwrites a trusted absolute compass bearing');
+ await page.locator('#help-dialog [data-close]').click();
+ console.log('PASS simulated tilted compass direction, diagnostics and relative-yaw rejection');
+}
+
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -231,6 +262,7 @@ async function main(){
   console.log('PASS Nikkō station popup uses the shared map-popup contract');
   await page.locator('#plan-select').selectOption('town-kyoto');
   await testDay(page,'2026-11-04',4);
+  await verifyCompassDiagnostics(page);
   assert.deepEqual(uncaught,[],'No uncaught runtime errors during real mobile interactions');
   console.log('PASS complete Android-size Chrome regression: Kyoto, Nara, Osaka, Nikkō');
  }catch(error){
