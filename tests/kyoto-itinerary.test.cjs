@@ -77,3 +77,23 @@ test('both rail trip and city view show the dated program, without invented rese
  assert.match(read('style.css'),/\.kyoto-overview\[hidden\]/);
  assert.match(read('sw.js'),/livekarte-shell-pwa-v22/);
 });
+
+test('rail itinerary uses shared schematic route contract, not fabricated track geometry',()=>{
+ const RM=require('../route-model-core.js');
+ const trip=C.presetJourney('takayama-kyoto-2026-11-01');
+ const view=RM.rail(trip);
+ assert.equal(view.kind,'rail');
+ assert.equal(view.geometry,'schematic-rail');
+ assert.equal(view.real,false);
+ assert.equal(view.distance,null);
+ assert.equal(view.duration,null);
+ assert.equal(view.segments.length,2);
+ assert.deepEqual(view.stops.map(s=>s.name),['Takayama','Nagoya','Kyoto Station']);
+ assert.equal(view.segments[0].departure,'11:35');
+ assert.equal(view.segments[0].arrival,'14:04');
+ assert.equal(view.segments[1].departure,'14:26');
+ assert.equal(view.segments[1].arrival,'15:00');
+ assert.ok(view.note.includes('keine tatsächlichen Gleise'));
+ assert.match(app,/const railView=RM\.rail\(journey\)/);
+ assert.match(app,/L\.polyline\(segment\.points,railView\.style\)/);
+});

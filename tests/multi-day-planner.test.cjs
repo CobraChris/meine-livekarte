@@ -68,7 +68,7 @@ test('UI and deployment preserve itinerary while adding per-day tours',()=>{
  assert.ok(css.includes('.city-days[hidden]'));
  const workflow=read('.github/workflows/pages.yml'),sw=read('sw.js'),
  stamp=read('scripts/stamp_pwa_version.py');
- assert.ok(workflow.includes('cp multi-day-core.js day-context-core.js public/'));
+ assert.ok(workflow.includes('cp multi-day-core.js day-context-core.js route-model-core.js public/'));
  assert.ok(workflow.includes('node --check multi-day-core.js'));
  assert.ok(sw.includes("'multi-day-core.js'"));
  assert.ok(stamp.includes('("src", "multi-day-core.js")'));
@@ -245,7 +245,9 @@ test('auto day itinerary is local, numbered and honest; foot-route is a delibera
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(app,/renderDayRoutePreview\(\);\s*renderTourBuilder\(\)/);
  assert.match(app,/return currentDayContext\(\)\.orderedStops/);
- assert.match(app,/dashArray:actual\?null:'5 10'/);
+ assert.match(app,/return actual\?RM\.walking\(\{/);
+ assert.match(app,/\}\):RM\.preview\(ordered,key\)/);
+ assert.match(app,/\.\.\.view\.style,lineCap:'round'/);
  assert.match(app,/className:'day-route-label'/);
  assert.match(app,/dayRouteLayers\.clearLayers\(\)/);
  assert.match(app,/\$\('day-route-foot'\)\.onclick=\(\)=>\{\s*googleDemo\?\.forceOSM\(\);\s*void calculateDailyFootRoute\(\);\s*\}/);

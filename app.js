@@ -5,6 +5,7 @@
   const JP=window.JapaneseDestination;
   const MD=window.LivekarteMultiDay;
   const DC=window.LivekarteDayContext;
+  const RM=window.LivekarteRouteModel;
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
   let activeCityDay=MD.ALL;
@@ -142,15 +143,10 @@
     map,places:()=>visiblePlaces(),placeKey:C.placePlanKey,
     // The same stop order used by renderDayRoutePreview() on Leaflet.
     // After a real foot-route optimization, preserve its displayed order.
-    stops:()=>{
-      const ordered=dailyStops();
-      return dayFootRoute?.key===dailyRouteKey(ordered)?dayFootRoute.stops:ordered;
-    },
+    stops:()=>currentDayRoute()?.stops||[],
     route:()=>{
-      const ordered=dailyStops();
-      if(ordered.length<2)return null;
-      const actual=dayFootRoute?.key===dailyRouteKey(ordered)?dayFootRoute:null;
-      return {real:!!actual,points:actual?.points||ordered.map(p=>[p.lat,p.lng])};
+      const view=currentDayRoute();
+      return view?{real:view.real,points:view.points}:null;
     },
     // Same day-goal set on both providers; no hotel stretching a Nara day trip.
     goals:()=>dailyStops(),
@@ -719,11 +715,12 @@
       if(generation!==walkRequestGeneration || watch===null)return;
       walkRouteData=result;
       walkingNavButton.disabled=false;
-      L.polyline(result.points,{color:'#10364e',weight:11,opacity:.90,
+      const walkingView=RM.walking({start:startedAt,stops:[place],route:result,purpose:'single'});
+      L.polyline(walkingView.points,{color:'#10364e',weight:11,opacity:.90,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
-      L.polyline(result.points,{color:'#f5fcff',weight:6,opacity:1,
+      L.polyline(walkingView.points,{color:'#f5fcff',weight:6,opacity:1,
         dashArray:'2 13',lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
-      L.polyline(result.points,{color:'#4da4ff',weight:3,opacity:1,
+      L.polyline(walkingView.points,{color:'#4da4ff',weight:3,opacity:1,
         dashArray:'2 13',lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
       walkingStats.textContent=W.distanceText(result.distance)+' · ca. '+
         W.durationText(result.duration);
@@ -1473,10 +1470,11 @@
         render();
       }
       tourRoute={...result,stops:ordered.map(p=>({...p})),start:from,planId:activePlanId};
+      const tourView=RM.walking({start:from,stops:ordered,route:result,purpose:'tour'});
       renderRouteDiscoveryUI();
-      L.polyline(result.points,{color:'#12313b',opacity:.9,weight:10,
+      L.polyline(tourView.points,{color:'#12313b',opacity:.9,weight:10,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
-      L.polyline(result.points,{color:'#ffdb74',opacity:1,weight:5,
+      L.polyline(tourView.points,{color:'#ffdb74',opacity:1,weight:5,
         dashArray:'4 12',lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
       ordered.forEach((place,i)=>{
         const marker=L.marker([place.lat,place.lng],{
@@ -1749,19 +1747,26 @@
   function dailyRouteKey(stops){
     return currentDayContext().routeKey(stops);
   }
-  function renderDayRoutePreview(){
-    const panel=$('day-route-preview'),ordered=dailyStops();
-    dayRouteLayers.clearLayers();
-    panel.hidden=ordered.length<2;
-    if(panel.hidden)return;
+  // One route contract for day plan, map markers and optional Google view.
+  // A dashed preview is never presented as calculated walking geometry.
+  function currentDayRoute(){
+    const ordered=dailyStops();
+    if(ordered.length<2)return null;
     const key=dailyRouteKey(ordered);
     const actual=dayFootRoute?.key===key?dayFootRoute:null;
-    const stops=actual?.stops||ordered;
-    const path=actual?.points||stops.map(p=>[p.lat,p.lng]);
-    L.polyline(path,{
-      color:actual?'#ffda79':'#ffcf78',weight:actual?5:3,
-      opacity:actual?.95:.85,dashArray:actual?null:'5 10',
-      lineCap:'round',lineJoin:'round',interactive:false
+    return actual?RM.walking({
+      start:actual.stops[0],stops:actual.stops.slice(1),
+      route:actual,key,purpose:'day'
+    }):RM.preview(ordered,key);
+  }
+  function renderDayRoutePreview(){
+    const panel=$('day-route-preview'),view=currentDayRoute();
+    dayRouteLayers.clearLayers();
+    panel.hidden=!view;
+    if(!view)return;
+    const stops=view.stops;
+    L.polyline(view.points,{
+      ...view.style,lineCap:'round',lineJoin:'round',interactive:false
     }).addTo(dayRouteLayers);
     stops.forEach((p,i)=>{
       // Numbered labels are offset beside the existing tappable place pins.
@@ -1781,15 +1786,14 @@
       li.append(node('span',String(i+1),'day-route-index'),node('span',place.name));
       list.append(li);
     });
-    $('day-route-heading').textContent=actual
+    $('day-route-heading').textContent=view.real
       ?'🚶 Fußweg · optimierte Reihenfolge'
       :'📍 Vorgeschlagene Reihenfolge';
-    $('day-route-status').textContent=actual
-      ?W.distanceText(actual.distance)+' · '+W.durationText(actual.duration)+
-        ' zu Fuß. Gelbe Linie = berechnete Wege, Anreise mit Bahn separat.'
-      :'Gestrichelte Linie = Luftlinie, kein begehbarer Weg. Reihenfolge nach '+
-        'Entfernung optimiert; Besuchszeiten prüfen. Anreise mit Bahn separat.';
-    $('day-route-foot').textContent=actual?'↻ Fußroute erneut berechnen':
+    $('day-route-status').textContent=view.real
+      ?W.distanceText(view.distance)+' · '+W.durationText(view.duration)+
+        ' zu Fuß. '+view.note
+      :view.note;
+    $('day-route-foot').textContent=view.real?'↻ Fußroute erneut berechnen':
       '🚶 Echte Fußroute berechnen';
   }
   async function calculateDailyFootRoute(){
@@ -3210,8 +3214,9 @@
     info.replaceChildren();
     panel.hidden = !journey || activePlanId==='ride-kyoto';
     if (!journey) { renderKyotoRailInfographic();updateStationTransfer(); updateNagoyaTrigger(); return; }
+    const railView=RM.rail(journey);
     info.append(node('h2',journey.title),node('p',journey.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
-    const totalLegs=journey.stops.length-1;
+    const totalLegs=railView.segments.length;
     const unresolved=journey.stops.slice(0,-1).filter((_,i)=>ticketStatusFor(activePlanId,journey,i)!=='ready').length;
     const summary=node('div',unresolved
       ? '❗ '+unresolved+' von '+totalLegs+' Fahrtickets noch nicht als vollständig bestätigt'
@@ -3219,11 +3224,9 @@
       'ticket-summary'+(unresolved?' ticket-summary-warn':' ticket-summary-ready'));
     info.append(summary);
     journey.stops.forEach((stop,i) => {
-      if (i < journey.stops.length-1) {
-        const next = journey.stops[i+1];
-        L.polyline([[stop.lat,stop.lng],...stop.via,[next.lat,next.lng]],{
-          color:'#ffdf86',weight:4,opacity:.85,dashArray:'7 7'
-        }).addTo(journeyLayer);
+      if (i < railView.segments.length) {
+        const segment=railView.segments[i];
+        L.polyline(segment.points,railView.style).addTo(journeyLayer);
       }
       const item = node('div',undefined,'journey-item');
       const times = [stop.arrival && stop.arrival+' an',stop.departure && stop.departure+' ab'].filter(Boolean).join(' · ');

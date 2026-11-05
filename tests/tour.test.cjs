@@ -158,7 +158,8 @@ test('multistop builder is optional, compact and has reorder/removal/accessibili
  assert.match(app,/W\.parseOptimizedTour\(data,from,selected\)/);
  assert.match(app,/W\.parseTour\(data,from,selected\)/);
  assert.match(app,/result\.legs\.forEach/);
- assert.match(app,/L\.polyline\(result\.points/);
+ assert.match(app,/const tourView=RM\.walking\(\{start:from,stops:ordered,route:result,purpose:'tour'\}\)/);
+ assert.match(app,/L\.polyline\(tourView\.points/);
  assert.match(app,/L\.divIcon\(\{className:'tour-stop-marker'/);
  assert.match(app,/tourHud\.hidden=false/);
  assert.match(css,/\.tour-builder>summary/);

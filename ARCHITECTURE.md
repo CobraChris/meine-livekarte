@@ -126,3 +126,27 @@ vollständig aus einem gemeinsamen Routenmodell rendern sowie weitere
 UI-Controller aus `app.js` extrahieren. Für neue Reisetypen
 müssen weiterhin eigene Reise-*daten*, aber keine neue Kartennavigation
 angelegt werden.
+
+## Einheitliches Routenmodell – Architekturbaustein 5
+
+`route-model-core.js` normalisiert **drei klar getrennte Geometrietypen**:
+`straight` (lokale Luftlinienvorschau), `routed-foot` (berechnete
+Gehweggeometrie) und `schematic-rail` (schematische Bahnstrecke).
+Jeder Routentyp besitzt dieselbe Schnittstelle mit `stops`, `points`,
+`segments`, `distance`, `duration`, `style`, `note` und `real`.
+Erkennbar fehlende Werte werden `null` und niemals geschätzt.
+Die Bahnverbindung enthält nur verifizierte Haltepunkte, Umstiegszeiten und
+bereits gespeicherte `via`-Punkte, keine vermeintlichen Gleisgeometrien.
+Alle Koordinaten werden vor der Darstellung geprüft.
+
+`currentDayRoute()` verbindet den gemeinsamen Tageskontext mit diesem
+Routenmodell. Leaflet und die optionale Google-Demo nutzen dieselbe
+Stoppreihenfolge und dieselbe Unterscheidung von Vorschau und echter Route.
+Die einzelnen Fußweg- und Tourberechnungen normalisieren ihre
+Darstellungsdaten ebenfalls über dieses Modell, belassen aber die
+bewährten OSRM-Rohdaten unverändert für die laufende GPS-Navigation.
+`renderJourney()` bezieht die Bahnstück-Geometrie aus dem selben Modul.
+
+**Nächste Etappe:** Die getrennten Karten-Panels und Fußweg-/Bahntageslisten
+weiter in eine durchgängige, generische Routenansicht integrieren; dazu
+echte Touch-End-to-End-Tests für Android-/PWA-Ansichten hinzufügen.

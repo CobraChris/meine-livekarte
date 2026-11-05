@@ -107,7 +107,8 @@ test('walking user interface is explicit opt in and leaves external Google Maps 
  assert.match(userBlock,/credentials:'omit'/);
  assert.match(userBlock,/referrerPolicy:'origin'/);
  assert.match(userBlock,/W\.parse\(JSON\.parse\(raw\),startedAt,place\)/);
- assert.match(userBlock,/L\.polyline\(result\.points/);
+ assert.match(userBlock,/const walkingView=RM\.walking\(\{start:startedAt,stops:\[place\],route:result,purpose:'single'\}\)/);
+ assert.match(userBlock,/L\.polyline\(walkingView\.points/);
  assert.match(userBlock,/dashArray:'2 13'/);
  assert.match(userBlock,/fitMapArea\(L\.latLngBounds\(result\.points\)/);
  assert.match(userBlock,/Es wird keine Luftlinie als echter Fußweg angezeigt/);

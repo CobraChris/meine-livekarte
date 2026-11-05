@@ -194,8 +194,9 @@ test('same local day-stop ordering produces numbered Google marker artwork',()=>
  t.widget.refresh();
  assert.deepEqual(added.slice(-3).map(x=>x.title),['3. First','1. Second','2. Third']);
  const app=read('app.js');
- assert.match(app,/stops:\(\)=>\{\s*const ordered=dailyStops\(\)/);
- assert.match(app,/dayFootRoute\?\.key===dailyRouteKey\(ordered\)\?dayFootRoute\.stops:ordered/);
+ assert.match(app,/stops:\(\)=>currentDayRoute\(\)\?\.stops\|\|\[\]/);
+ assert.match(app,/return actual\?RM\.walking\(\{/);
+ assert.match(app,/\}\):RM\.preview\(ordered,key\)/);
 });
 test('camera handoff preserves fractional zoom where Google map supports it',()=>{
  const t=appFixture();
@@ -290,9 +291,9 @@ test('no Google routing/search/billing requests are introduced for day line',()=
  assert.match(source,/if\(!real\)options\.icons=/);
  assert.match(source,/routeLegend\.hidden=false/);
  assert.match(source,/function clearRoute\(\)/);
- assert.match(app,/route:\(\)=>\{\s*const ordered=dailyStops\(\)/);
- assert.match(app,/dayFootRoute\?\.key===dailyRouteKey\(ordered\)\?dayFootRoute:null/);
- assert.match(app,/points:actual\?\.points\|\|ordered\.map\(p=>\[p\.lat,p\.lng\]\)/);
+ assert.match(app,/route:\(\)=>\{\s*const view=currentDayRoute\(\)/);
+ assert.match(app,/return view\?\{real:view\.real,points:view\.points\}:null/);
+ assert.match(app,/const actual=dayFootRoute\?\.key===key\?dayFootRoute:null/);
  assert.match(html,/<details id="google-demo-route-legend"[^>]*hidden/);
  assert.match(html,/id="google-demo-route-meaning"/);
  assert.match(css,/\.google-demo-route-legend>summary\{/);
