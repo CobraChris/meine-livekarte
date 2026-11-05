@@ -16,17 +16,20 @@ test('map precedes exactly one merged Kyoto day selector and today card',()=>{
   assert.match(css,/\.day-planning \.city-days-list\{grid-template-columns:repeat\(6/);
 });
 
-test('date filter remains the source of truth and the chosen day drives the brief and map chip',()=>{
-  assert.match(app,/const context=currentDayContext\(\)/);
-  assert.match(app,/const choices=\[\.\.\.context\.days,MD\.ALL,MD\.UNASSIGNED\]/);
-  assert.match(app,/const count=context\.counts\[day\]\|\|0/);
-  assert.match(app,/const assigned=context\.displayGoals/);
-  assert.match(app,/\$\('city-day-brief-summary'\)\.textContent=assigned\.length/);
-  assert.match(app,/\$\('plan-day-summary'\)\.textContent=MD\.dayLabel\(activeCityDay\)\+' · '\+assigned\.length\+' Ziele'/);
+test('date filter remains shared across map, day picker, day summary and routes',()=>{
+  const dayUI=read('day-selector-ui.js');
+  assert.match(app,/const DayUI=window\.LivekarteDaySelectorUI/);
+  assert.match(app,/const daySelector=DayUI\.create\(\{document,calendar:MD,placeKey:C\.placePlanKey\}\)/);
+  assert.match(app,/function renderCityDays\(\)\{\s*daySelector\.render\(\{/);
+  assert.match(app,/context:currentDayContext\(\),activeDay:activeCityDay/);
+  assert.match(dayUI,/context\.counts\[day\]\|\|0/);
+  assert.match(dayUI,/selected=context\.isDated,assigned=context\.displayGoals/);
+  assert.match(dayUI,/\$\('city-day-brief-summary'\)\.textContent=assigned\.length/);
+  assert.match(dayUI,/\$\('plan-day-summary'\)\.textContent=calendar\.dayLabel\(activeDay\)\+' · '\+assigned\.length\+' Ziele'/);
+  assert.match(dayUI,/\$\('city-day-brief-open'\)\.hidden=!selected/);
   assert.match(app,/dayBriefOpen\.onclick=/);
-  assert.match(app,/dayBriefOpen\.hidden=!selected/);
   assert.match(app,/todayPanel\.hidden=activePlanId==='town-kyoto'/);
-  assert.match(app,/\$\('plan-day-summary'\)\.hidden=cityDaysPanel\.hidden/);
+  assert.match(dayUI,/\$\('plan-day-summary'\)\.hidden=panel\.hidden/);
   assert.match(app,/function selectCityDay\(day\)\{/);
   assert.match(app,/render\(\);\s*const p=mapFocusPlaces\(\)/);
 });
