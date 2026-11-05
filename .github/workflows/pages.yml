@@ -18,6 +18,20 @@ jobs:
         with:
           node-version: '24'
       - run: node --check google-demo.js && node --check map-popup-core.js && node --check map-camera-core.js && node --check core.js && node --check walking-core.js && node --check day-plan-core.js && node --check multi-day-core.js && node --check day-context-core.js && node --check route-model-core.js && node --check route-discovery.js && node --check next-step-core.js && node --check japanese-destination.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --check pwa.js && node --check ticket-vault.js && node --check ticket-library.js && node --check ticket-library-ui.js && node --check ticket-share-inbox.js && node --check sw.js && node --test tests/*.test.cjs
+      - name: Install browser test runner without downloading a browser
+        run: |
+          command -v google-chrome || command -v google-chrome-stable || command -v chromium
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright-core@1.55.1
+      - name: Test real Android-size Chrome touch interactions (offline from third parties)
+        run: node tests/mobile-browser.e2e.cjs
+      - name: Save mobile screenshot if a regression fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-ui-failure-${{ github.run_id }}
+          path: test-results/mobile/
+          if-no-files-found: ignore
+          retention-days: 7
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: test
