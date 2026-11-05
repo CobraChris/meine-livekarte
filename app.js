@@ -2219,16 +2219,19 @@
     ngTrigger.hidden=!legacy||!nearNagoya;
     ngKyotoTrigger.hidden=!kyoto||!nearNagoya;
   }
+  function renderStationStep(prefix,view){
+    const step=view.step;
+    $(prefix+'-progress').textContent='Schritt '+view.number+' von '+view.total;
+    $(prefix+'-floor').textContent=step.level;
+    $(prefix+'-step-title').textContent=step.title;
+    $(prefix+'-step-action').textContent=step.action;
+    $(prefix+'-sign').textContent=step.sign;
+    $(prefix+'-step-caution').textContent=step.caution;
+    $(prefix+'-prev').disabled=!view.canBack;
+    $(prefix+'-next').textContent=view.finished?'Fertig':'Nächster Schritt';
+  }
   function renderNagoyaStep() {
-    const step=ngShared.steps[ngStep];
-    $('nagoya-progress').textContent='Schritt '+(ngStep+1)+' von '+ngShared.steps.length;
-    $('nagoya-floor').textContent=step.level;
-    $('nagoya-step-title').textContent=step.title;
-    $('nagoya-step-action').textContent=step.action;
-    $('nagoya-sign').textContent=step.sign;
-    $('nagoya-step-caution').textContent=step.caution;
-    $('nagoya-prev').disabled=ngStep===0;
-    $('nagoya-next').textContent=ngStep===ngShared.steps.length-1?'Fertig':'Nächster Schritt';
+    renderStationStep('nagoya',StationTransfer.stepState(ngShared,ngStep));
   }
   function openNagoyaGuide() {
     // Never claim the user has moved indoors when only map/GPS data changed.
@@ -2262,15 +2265,8 @@
   const ngKyotoDialog=$('nagoya-kyoto-dialog');
   let ngKyotoStep=0;
   function renderNagoyaKyotoStep(){
-    const step=ngKyotoShared.steps[ngKyotoStep];
-    $('nagoya-kyoto-progress').textContent='Schritt '+(ngKyotoStep+1)+' von '+ngKyotoShared.steps.length;
-    $('nagoya-kyoto-floor').textContent=step.level;
-    $('nagoya-kyoto-step-title').textContent=step.title;
-    $('nagoya-kyoto-step-action').textContent=step.action;
-    $('nagoya-kyoto-sign').textContent=step.sign;
-    $('nagoya-kyoto-step-caution').textContent=step.caution;
-    $('nagoya-kyoto-prev').disabled=ngKyotoStep===0;
-    $('nagoya-kyoto-next').textContent=ngKyotoStep===ngKyotoShared.steps.length-1?'Fertig':'Nächster Schritt';
+    renderStationStep('nagoya-kyoto',
+      StationTransfer.stepState(ngKyotoShared,ngKyotoStep));
   }
   function openNagoyaKyotoGuide(){
     if(activePlanId!=='ride-kyoto'||!C.isNagoyaKyotoTrip(journey)){
