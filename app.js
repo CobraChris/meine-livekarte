@@ -1154,23 +1154,10 @@
   }
   function updateTourNavigation(point,gpsAccuracy){
     if(!tourNavigation||tourNavigation.paused||!tourRoute)return;
-    const state=tourNavigation;
-    const place=tourRoute.stops[state.stage];
-    if(!place)return;
     let progress;
-    try{progress=W.tourLegProgress(state.nav,tourRoute.legs,
-      state.stage,place,point,gpsAccuracy);}
+    try{progress=tourNavigation.update(point,gpsAccuracy);}
     catch{tourUI.renderLiveNavigation({phase:'progress-error'});return;}
-    state.nearReadings=progress.status==='near-goal'?state.nearReadings+1:0;
-    state.offReadings=progress.status==='off-route'?state.offReadings+1:0;
-    if(state.nearReadings>=2)state.arrived=true;
-    tourUI.renderLiveNavigation({
-      phase:'progress',stage:state.stage+1,total:tourRoute.stops.length,
-      name:place.name,arrived:state.arrived,status:progress.status,
-      remainingMeters:progress.remainingMeters,
-      remainingSeconds:progress.remainingSeconds,
-      offRoute:state.offReadings>=2
-    });
+    if(progress)tourUI.renderLiveNavigation({phase:'progress',...progress});
   }
   function startTourNavigation(){
     if(!tourRoute||!W){say('Bitte zuerst einen Rundgang berechnen.');return;}
@@ -1178,8 +1165,7 @@
       tourUI.renderLiveNavigation({phase:'gps-required'});return;
     }
     try{
-      const nav=W.prepareNavigation(tourRoute);
-      tourNavigation={nav,stage:0,nearReadings:0,offReadings:0,arrived:false,paused:false};
+      tourNavigation=TourNav.create(tourRoute,W);
     }catch(e){say('GPS-Rundgang nicht verfügbar: '+e.message);return;}
     tourUI.renderLiveNavigation({phase:'started'});
     setCameraMode('gps-follow');refreshGPSFollowControl();
@@ -1194,14 +1180,13 @@
         tourUI.renderLiveNavigation({phase:'resume-gps-required'});
         return;
       }
-      tourNavigation.paused=false;
-      tourNavigation.nearReadings=0;tourNavigation.offReadings=0;
+      tourNavigation.resume();
       tourUI.renderLiveNavigation({phase:'resumed'});
       setCameraMode('gps-follow');refreshGPSFollowControl();
       centerOnGPS([position.lat,position.lng],Math.max(16,map.getZoom()));
       updateTourNavigation(position,positionAccuracy);
     }else{
-      tourNavigation.paused=true;
+      tourNavigation.pause();
       tourUI.renderLiveNavigation({phase:'paused'});
       setCameraMode('manual');refreshGPSFollowControl();
     }
@@ -1214,11 +1199,7 @@
       renderNextAction();
       return;
     }
-    tourNavigation.stage++;
-    tourNavigation.nearReadings=0;
-    tourNavigation.offReadings=0;
-    tourNavigation.arrived=false;
-    tourNavigation.paused=false;
+    tourNavigation.next();
     tourUI.renderLiveNavigation({phase:'next'});
     if(position&&Date.now()-positionUpdatedAt<60000)
       updateTourNavigation(position,positionAccuracy);
