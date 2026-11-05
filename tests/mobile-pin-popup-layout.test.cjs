@@ -32,7 +32,9 @@ test('popup uses two action columns and a full-width More row',()=>{
 
 test('day selection and More actions remain real accessible controls',()=>{
   assert.match(app,/const popupDayPicker=makePlaceDayPicker\(p\)/);
-  assert.match(app,/select\.onchange=\(\)=>setDayAssignment\(place,select\.value\)/);
+  const ui=read('day-selector-ui.js');
+  assert.match(app,/onAssign:setDayAssignment/);
+  assert.match(ui,/select\.onchange=\(\)=>onAssign\(place,select\.value\)/);
   assert.match(app,/const popupMore=node\('details',undefined,'popup-more'\)/);
   assert.match(app,/const popupMoreSummary=node\('summary','⋯ Mehr'\)/);
   assert.match(app,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);

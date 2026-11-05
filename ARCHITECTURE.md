@@ -182,3 +182,21 @@ Dies ist ein realer Chrome-Touchtest, **kein Test auf einer echten
 Samsung-Uhr oder einem konkreten Galaxy-Gerät**. Geräteübergreifende
 Unterschiede (Samsung Internet, Android-System-PWA) bleiben weiterhin
 ein begrenztes Restrisiko.
+
+## Tagesauswahl als eigenständiges UI-Modul – Architekturbaustein 7
+
+`day-selector-ui.js` rendert Datums-Buttons, Zielanzahl, Tageszusammenfassung,
+Kartenfokus-Beschriftung und die Datumswahl in Orts-Pop-ups aus dem
+zentralen `day-context-core.js`. Es kennt weder GPS noch `localStorage`,
+`fetch`, Leaflet oder Tickets. Tageswechsel und Zuordnungen werden über
+Callbacks an `app.js` zurückgegeben; das UI-Modul verändert die Daten nicht.
+
+`app.js` enthält nur noch dünne Adapter `renderCityDays()` und
+`makePlaceDayPicker()`. Der bewährte persistente Zustand,
+die Reiseabschnittswechsel und die Route-Invalidierung bleiben dort,
+bis sie in einer getrennt getesteten Etappe sicher ausgelagert werden.
+
+Das Modul unterstützt datengetrieben beliebige Reiseabschnitte mit
+explizit definiertem Tageskalender. Die derzeit vorhandenen Kyoto-/Nara-/
+Osaka-Tage bleiben unverändert. Node-DOM-Verhaltenstests und das reale
+mobile Chrome-Gate prüfen gemeinsam die Darstellung.

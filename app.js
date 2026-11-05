@@ -5,6 +5,7 @@
   const JP=window.JapaneseDestination;
   const MD=window.LivekarteMultiDay;
   const DC=window.LivekarteDayContext;
+  const DayUI=window.LivekarteDaySelectorUI;
   const RM=window.LivekarteRouteModel;
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
@@ -1730,7 +1731,7 @@
     return hasFix;
   }
   // City dates are an extra filter inside one city, never extra trip sections.
-  const cityDaysPanel=$('city-days'),cityDaysList=$('city-days-list');
+  const daySelector=DayUI.create({document,calendar:MD,placeKey:C.placePlanKey});
   const dayBriefOpen=$('city-day-brief-open');
   dayBriefOpen.onclick=()=>{
     const index=MD.days('town-kyoto').indexOf(activeCityDay);
@@ -1859,52 +1860,8 @@
     void calculateDailyFootRoute();
   };
   function renderCityDays(){
-    cityDaysPanel.hidden=activePlanId!=='town-kyoto';
-    $('plan-day-summary').hidden=cityDaysPanel.hidden;
-    if(cityDaysPanel.hidden)return;
-    cityDaysList.replaceChildren();
-    const context=currentDayContext();
-    const choices=[...context.days,MD.ALL,MD.UNASSIGNED];
-    for(const day of choices){
-      const count=context.counts[day]||0;
-      const button=node('button',MD.dayLabel(day),'city-day-tile');
-      if(day===MD.ALL||day===MD.UNASSIGNED)button.classList.add('city-day-utility');
-      button.type='button';
-      button.dataset.dayDate=day;
-      button.setAttribute('data-day-date',day);
-      button.setAttribute('aria-pressed',String(activeCityDay===day));
-      button.append(node('small',count+' Ziele'));
-      button.onclick=()=>selectCityDay(day);
-      cityDaysList.append(button);
-    }
-    const selected=context.isDated;
-    const assigned=context.displayGoals;
-    const overviewDay=selected
-      ?kyotoOverview.querySelectorAll('details.kyoto-day')[MD.days('town-kyoto').indexOf(activeCityDay)]
-      :null;
-    const overviewTitle=overviewDay?.querySelector('summary strong')?.textContent?.trim()||'';
-    const shortTitle=overviewTitle.includes(' · ')?overviewTitle.split(' · ').slice(1).join(' · '):overviewTitle;
-    $('city-day-brief-title').textContent=selected
-      ?MD.dayLabel(activeCityDay)+' · '+shortTitle
-      :activeCityDay===MD.ALL?'Alle Reiseziele in Kyoto':'Merkliste · noch ohne Datum';
-    $('city-day-brief-summary').textContent=assigned.length
-      ?assigned.slice(0,4).map(p=>p.name).join(' · ')+(assigned.length>4?' · …':'')
-      :'Keine Reiseziele zugeordnet.';
-    const firstTime=overviewDay?.querySelector('.kyoto-day-timeline time')?.textContent?.trim();
-    $('city-day-brief-time').textContent=selected&&firstTime
-      ?'Planstart: '+firstTime+' · Zeiten Richtwerte':'';
-    dayBriefOpen.hidden=!selected;
-    $('plan-day-summary').textContent=MD.dayLabel(activeCityDay)+' · '+assigned.length+' Ziele';
-    const focusLabel=selected?'Standort und Tagesziele zeigen':
-      activeCityDay===MD.UNASSIGNED?'Merkliste auf Karte zeigen':'Alle Kyoto-Ziele zeigen';
-    $('fit').lastElementChild.textContent=focusLabel;
-    $('fit').setAttribute('aria-label',focusLabel);
-    $('fit').title=focusLabel;
-    $('city-days-help').textContent=activeCityDay===MD.ALL
-      ?'Alle Ziele · wähle einen Tag oder die Merkliste'
-      :activeCityDay===MD.UNASSIGNED
-        ?'Noch nicht verplante Orte · Datum am Ziel wählen'
-        :'Nur '+MD.dayLabel(activeCityDay)+' · Hotel bleibt sichtbar';
+    daySelector.render({context:currentDayContext(),activeDay:activeCityDay,
+      overview:kyotoOverview,onSelect:selectCityDay});
   }
   function selectCityDay(day){
     if(!MD.allowed('town-kyoto',day)||day===activeCityDay)return;
@@ -1938,20 +1895,8 @@
     say('📅 '+place.name+' → '+(day===MD.UNASSIGNED?'Merkliste':MD.dayLabel(day))+'.');
   }
   function makePlaceDayPicker(place){
-    if(activePlanId!=='town-kyoto'||place.category==='hotel')return null;
-    const box=node('div',undefined,'place-day-picker');
-    const label=node('label','Für Tag:');
-    const select=node('select');
-    select.setAttribute('aria-label','Kalendertag für '+place.name);
-    for(const day of [MD.UNASSIGNED,...MD.days('town-kyoto')]){
-      const opt=node('option',MD.dayLabel(day));
-      opt.value=day;
-      select.append(opt);
-    }
-    select.value=cityDayAssignments[C.placePlanKey(place)]||MD.UNASSIGNED;
-    select.onchange=()=>setDayAssignment(place,select.value);
-    box.append(label,select);
-    return box;
+    return daySelector.makePlaceDayPicker({place,context:currentDayContext(),
+      dayAssignments:cityDayAssignments,onAssign:setDayAssignment});
   }
 
   // All marker types share the same popup behavior, regardless of destination.

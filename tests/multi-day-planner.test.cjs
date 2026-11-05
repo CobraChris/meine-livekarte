@@ -62,13 +62,13 @@ test('UI and deployment preserve itinerary while adding per-day tours',()=>{
  assert.ok(app.includes("livekarte-city-day-assignments-v1"));
  assert.ok(app.includes("tourContextKey()"));
  assert.ok(app.includes('renderCityDays()'));
- assert.ok(app.includes("data-day-date"));
+ assert.ok(read('day-selector-ui.js').includes("data-day-date"));
  assert.ok(app.includes('setDayAssignment('));
  assert.ok(html.includes('src="multi-day-core.js"'));
  assert.ok(css.includes('.city-days[hidden]'));
  const workflow=read('.github/workflows/pages.yml'),sw=read('sw.js'),
  stamp=read('scripts/stamp_pwa_version.py');
- assert.ok(workflow.includes('cp multi-day-core.js day-context-core.js route-model-core.js public/'));
+ assert.ok(workflow.includes('cp multi-day-core.js day-context-core.js day-selector-ui.js route-model-core.js public/'));
  assert.ok(workflow.includes('node --check multi-day-core.js'));
  assert.ok(sw.includes("'multi-day-core.js'"));
  assert.ok(stamp.includes('("src", "multi-day-core.js")'));
@@ -122,8 +122,9 @@ test('GPS auto-start keeps far day-trip view while recording location; nearby go
  assert.match(source,/if\(automatic && firstFix && camera\.isFollowing\(\) && activePlanId==='town-kyoto' &&/);
  assert.match(source,/MD\.preferDistantDayView\(visiblePlaces\(\),activeCityDay,position,C\.distance\)/);
  assert.match(source,/if \(camera\.isFollowing\(\)\) centerOnGPS\(ll,Math\.max\(map\.getZoom\(\),15\)\)/);
- assert.match(source,/focusLabel=selected\?'Standort und Tagesziele zeigen'/);
- assert.match(source,/\$\('fit'\)\.title=focusLabel/);
+ const ui=read('day-selector-ui.js');
+ assert.match(ui,/focusLabel=selected\?'Standort und Tagesziele zeigen'/);
+ assert.match(ui,/fit\.title=focusLabel/);
 });
 
 test('one-tap 📍 overview includes live GPS and all Nara day goals',()=>{

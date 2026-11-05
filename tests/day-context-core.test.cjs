@@ -117,13 +117,14 @@ test('UI, daily route, maps and offline shell all use the shared day context',()
  assert.match(app,/const tourContextKey=\(\)=>currentDayContext\(\)\.tourKey/);
  assert.match(app,/return currentDayContext\(\)\.orderedStops/);
  assert.match(app,/return currentDayContext\(\)\.routeKey\(stops\)/);
- assert.match(app,/const context=currentDayContext\(\)/);
- assert.match(app,/const count=context\.counts\[day\]\|\|0/);
- assert.match(app,/const assigned=context\.displayGoals/);
+ const ui=read('day-selector-ui.js');
+ assert.match(app,/context:currentDayContext\(\),activeDay:activeCityDay/);
+ assert.match(ui,/context\.counts\[day\]\|\|0/);
+ assert.match(ui,/assigned=context\.displayGoals/);
  assert.match(html,/src="day-context-core\.js"/);
  assert.ok(html.indexOf('day-context-core.js')<html.indexOf('app.js'));
  assert.match(sw,/'day-context-core\.js'/);
  assert.match(workflow,/node --check day-context-core\.js/);
- assert.match(workflow,/cp multi-day-core\.js day-context-core\.js route-model-core\.js public\//);
+ assert.match(workflow,/cp multi-day-core\.js day-context-core\.js day-selector-ui\.js route-model-core\.js public\//);
  assert.match(stamp,/"src", "day-context-core\.js"/);
 });
