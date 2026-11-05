@@ -335,7 +335,7 @@ test('Nagoya guide is accessible from the travel day and never claims precise in
  assert.match(html,/id="nagoya-next"/);
  assert.match(html,/keine Indoor-GPS-Position/);
  assert.match(app,/stationGuides\.nagoya/);
- assert.match(app,/nagoya\.steps\.length|ng\.steps\.length/);
+ assert.match(app,/nagoya\.steps\.length|ng\.steps\.length|ngShared\.steps\.length/);
  assert.match(app,/map\.on\('moveend zoomend',updateNagoyaTrigger\)/);
  assert.match(app,/pauseGPSFollow\(\);[\s\S]*?renderNagoyaStep\(\)/);
  assert.match(app,/Bahnhofsmodus · Gleis 11/);
