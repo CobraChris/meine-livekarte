@@ -38,7 +38,10 @@ function fixture(){
     setStart:t=>events.push(['start',t]),
     setBuffer:t=>events.push(['buffer',t]),
     setLunch:t=>events.push(['lunch',t]),
-    refreshDayPlan:()=>events.push(['refresh'])
+    refreshDayPlan:()=>events.push(['refresh']),
+    toggleLiveTour:()=>events.push(['live-toggle']),
+    nextLiveStop:()=>events.push(['live-next']),
+    retryLiveRoute:()=>events.push(['live-retry'])
   };
   const dayPlanCore={visitMinutes:duration=>duration==='60 Min.'?60:null,
     clockText:m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
@@ -251,4 +254,104 @@ test('only the presentation is extracted; app keeps build, GPS/network and persi
  assert.match(app,/localStorage\.setItem\('livekarte-day-plans-v1'/);
  assert.match(app,/localStorage\.setItem\('livekarte-tour-drafts-v1'/);
  assert.doesNotMatch(ui,/fetch\(|localStorage|navigator\.geolocation|indexedDB|window\.location/);
+});
+
+
+test('GPS tour status UI binds three controls once to state-owner callbacks',()=>{
+ const f=fixture();f.ui.bind();
+ f.$('tour-live-toggle').onclick();
+ f.$('tour-live-next').onclick();
+ f.$('tour-live-retry').onclick();
+ assert.deepEqual(f.events.slice(-3),[['live-toggle'],['live-next'],['live-retry']]);
+});
+test('GPS tour idle and start states do not leave stale route or GPS warnings',()=>{
+ const f=fixture();
+ f.ui.renderLiveNavigation({phase:'gps-required'});
+ assert.equal(f.$('tour-live-state').hidden,false);
+ assert.match(f.$('tour-live-message').textContent,/aktuellen Standort/);
+ f.ui.renderLiveNavigation({phase:'started'});
+ assert.equal(f.$('tour-live-state').hidden,false);
+ assert.equal(f.$('tour-live-next').hidden,false);
+ assert.equal(f.$('tour-live-retry').hidden,true);
+ assert.equal(f.$('tour-live-toggle').textContent,'Ⅱ Tour pausieren');
+ assert.equal(f.$('tour-live-toggle').attributes['aria-pressed'],'true');
+ f.ui.renderLiveNavigation({phase:'reset'});
+ assert.equal(f.$('tour-live-state').hidden,true);
+ assert.equal(f.$('tour-live-step').textContent,'');
+ assert.equal(f.$('tour-live-progress').textContent,'');
+ assert.equal(f.$('tour-live-message').textContent,'');
+ assert.equal(f.$('tour-live-next').hidden,true);
+ assert.equal(f.$('tour-live-retry').hidden,true);
+ assert.equal(f.$('tour-live-toggle').textContent,'▶ Tour starten');
+ assert.equal(f.$('tour-live-toggle').attributes['aria-pressed'],'false');
+});
+test('live tour progress reflects verified leg distances and manual arrival',()=>{
+ const f=fixture();
+ f.ui.renderLiveNavigation({phase:'started'});
+ f.ui.renderLiveNavigation({phase:'progress',
+   stage:1,total:3,name:'Nara-Park',arrived:false,status:'on-route',
+   remainingMeters:420,remainingSeconds:300,offRoute:false});
+ assert.equal(f.$('tour-live-step').textContent,'Stopp 1 von 3 · Nara-Park');
+ assert.equal(f.$('tour-live-progress').textContent,'Noch 420 m · 5 Min.');
+ assert.match(f.$('tour-live-message').textContent,/keine automatische Neuberechnung/);
+ assert.equal(f.$('tour-live-retry').hidden,true);
+ assert.equal(f.$('tour-live-next').textContent,'Nächster Stopp →');
+ f.ui.renderLiveNavigation({phase:'progress',stage:2,total:3,name:'Tōdai-ji',
+   arrived:false,status:'off-route',remainingMeters:155,remainingSeconds:80,
+   offRoute:true});
+ assert.match(f.$('tour-live-message').textContent,/abgewichen/);
+ assert.equal(f.$('tour-live-retry').hidden,false);
+ f.ui.renderLiveNavigation({phase:'progress',stage:2,total:3,name:'Tōdai-ji',
+   arrived:false,status:'poor-gps',remainingMeters:155,remainingSeconds:80,
+   offRoute:false});
+ assert.equal(f.$('tour-live-progress').textContent,'📍 GPS ungenau');
+ assert.match(f.$('tour-live-message').textContent,/genauere GPS-Messung/);
+ assert.equal(f.$('tour-live-retry').hidden,true);
+ f.ui.renderLiveNavigation({phase:'progress',stage:3,total:3,name:'Kasuga-Taisha',
+   arrived:true,status:'near-goal',remainingMeters:1,remainingSeconds:1,
+   offRoute:false});
+ assert.equal(f.$('tour-live-progress').textContent,'✓ Ziel erreicht');
+ assert.equal(f.$('tour-live-next').textContent,'✓ Tour abschließen');
+ assert.match(f.$('tour-live-message').textContent,/Nächster Stopp/);
+});
+test('pause, resume, pending GPS, explicit retry, finish and error states',()=>{
+ const f=fixture();f.ui.bind();f.ui.renderLiveNavigation({phase:'started'});
+ f.ui.renderLiveNavigation({phase:'paused'});
+ assert.equal(f.$('tour-live-toggle').textContent,'▶ Tour fortsetzen');
+ assert.equal(f.$('tour-live-toggle').attributes['aria-pressed'],'false');
+ assert.equal(f.$('tour-live-retry').hidden,true);
+ assert.match(f.$('tour-live-message').textContent,/Pausiert/);
+ f.ui.renderLiveNavigation({phase:'resume-gps-required'});
+ assert.match(f.$('tour-live-message').textContent,/aktueller GPS-Standort/);
+ f.ui.renderLiveNavigation({phase:'resumed'});
+ assert.equal(f.$('tour-live-toggle').attributes['aria-pressed'],'true');
+ f.ui.renderLiveNavigation({phase:'progress-error'});
+ assert.match(f.$('tour-live-message').textContent,/nicht verfügbar/);
+ f.ui.renderLiveNavigation({phase:'next'});
+ assert.equal(f.$('tour-live-toggle').textContent,'Ⅱ Tour pausieren');
+ f.ui.renderLiveNavigation({phase:'next-gps-pending',stage:2,total:3});
+ assert.equal(f.$('tour-live-step').textContent,'Stopp 2 von 3');
+ assert.equal(f.$('tour-live-progress').textContent,'Standort wird ermittelt …');
+ f.ui.renderLiveNavigation({phase:'reset'});
+ f.ui.renderLiveNavigation({phase:'complete'});
+ assert.equal(f.$('tour-live-state').hidden,false);
+ assert.equal(f.$('tour-live-next').hidden,true);
+ assert.equal(f.$('tour-live-step').textContent,'✓ Rundgang abgeschlossen');
+ assert.equal(f.$('tour-live-progress').textContent,'Alle Ziele erledigt.');
+ assert.equal(f.$('tour-live-toggle').textContent,'↺ Tour erneut starten');
+ assert.equal(f.$('tour-live-toggle').attributes['aria-pressed'],'false');
+ assert.throws(()=>f.ui.renderLiveNavigation({phase:'invented'}),/Unbekannter/);
+});
+test('GPS tour UI is shared across dates, never stores coordinates or makes route requests',()=>{
+ const ui=read('tour-ui.js'),app=read('app.js');
+ assert.match(ui,/function renderLiveNavigation\(/);
+ assert.match(ui,/tour-live-toggle'\)\.onclick=\(\)=>handlers\.toggleLiveTour/);
+ assert.match(app,/toggleLiveTour:\(\)=>toggleTourNavigation\(\)/);
+ assert.match(app,/nextLiveStop:\(\)=>advanceTourNavigation\(\)/);
+ assert.match(app,/retryLiveRoute:\(\)=>\{void calculateTour\(false,true\);\}/);
+ assert.match(app,/W\.tourLegProgress\(state\.nav,tourRoute\.legs/);
+ assert.match(app,/state\.nearReadings>=2/);
+ assert.match(app,/state\.offReadings>=2/);
+ assert.match(app,/tourUI\.renderLiveNavigation\(\{/);
+ assert.doesNotMatch(ui,/fetch\(|localStorage|indexedDB|navigator\.geolocation|watchPosition/);
 });
