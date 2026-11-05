@@ -37,6 +37,7 @@ assets = [
     ("src", "day-plan-core.js"),
     ("src", "multi-day-core.js"),
     ("src", "day-context-core.js"),
+    ("src", "day-selector-ui.js"),
     ("src", "route-model-core.js"),
     ("src", "route-discovery.js"),
     ("src", "place-search-core.js"),
