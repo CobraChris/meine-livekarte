@@ -1211,7 +1211,7 @@
       // A user may request rerouting explicitly, but poor/stale fixes must
       // never expose an overconfident 'route deviation' action.
       tourUI.renderLiveNavigation({phase:'progress',...progress,
-        offRoute:guidance.canOfferReroute});
+        guidance,offRoute:guidance.canOfferReroute});
     }
   }
   function startTourNavigation(){
