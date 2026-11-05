@@ -23,3 +23,13 @@ test('toolbar state is immutable and never stores location coordinates',()=>{
  assert.ok(controls.every(Object.isFrozen));
  assert.doesNotMatch(JSON.stringify(controls),/latitude|longitude|lat|lng/);
 });
+
+test('spoken map status differentiates following, overview and manual movement',()=>{
+ const {describe}=require('../map-toolbar-core.js');
+ assert.match(describe(),/GPS ausgeschaltet/);
+ assert.match(describe({gpsOn:true,gpsFix:false}),/ermittelt/);
+ assert.match(describe({gpsOn:true,gpsFix:true,cameraMode:'gps-follow'}),/folgt deinem Standort/);
+ assert.match(describe({gpsOn:true,gpsFix:true,cameraMode:'manual'}),/manuell verschoben/);
+ assert.match(describe({gpsOn:true,gpsFix:true,cameraMode:'day-goals'}),/Tagesziele/);
+ assert.match(describe({gpsOn:true,gpsFix:true,cameraMode:'overview'}),/Standort und Ziele/);
+});
