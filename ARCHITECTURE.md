@@ -200,3 +200,22 @@ Das Modul unterstützt datengetrieben beliebige Reiseabschnitte mit
 explizit definiertem Tageskalender. Die derzeit vorhandenen Kyoto-/Nara-/
 Osaka-Tage bleiben unverändert. Node-DOM-Verhaltenstests und das reale
 mobile Chrome-Gate prüfen gemeinsam die Darstellung.
+
+## Ortskarten und Orts-Pop-ups – Architekturbaustein 8
+
+`place-ui.js` übernimmt die vollständige **DOM-Darstellung** von
+Ortslisten-Karten und kompakten Karten-Pop-ups einschließlich
+Datums-Picker, Distanzanzeige, Tourschaltflächen, Zusatzinformationen
+und Reiseabschnittszuordnung. Das Modul kennt keine Karte, kein GPS,
+`localStorage`, externe Netzwerkschnittstellen oder Tickets; es ruft
+übergebene Aktionen aus dem Hauptprogramm auf, statt diese selbst zu
+implementieren. Damit werden alle Reiseabschnitte gleich gerendert.
+
+Die eigene Leaflet-Marker-Erzeugung, Popup-Verankerung,
+Kartenbewegung, das Speichern von Reiseständen und das Bearbeiten
+von Orten bleiben weiterhin im bestehenden Controller. Eine
+funktionierende Offline-PWA und der tatsächliche mobile Chrome-Test
+sind weiterhin Voraussetzung für den Merge.
+
+**Noch offen:** Reiseabschnitts-/Tour-Controller und persistente
+Zustandsübergänge weiter in kleine getrennt testbare Einheiten aufteilen.

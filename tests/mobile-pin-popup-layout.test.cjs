@@ -8,7 +8,7 @@ const app=read('app.js'),css=read('style.css');
 
 test('Nanzen-ji popup has a usable minimum width on narrow maps',()=>{
   const markerCode=app.slice(app.indexOf('const marker = L.marker([p.lat,p.lng]'),
-    app.indexOf('const card = node(',app.indexOf('const marker = L.marker([p.lat,p.lng]')));
+    app.indexOf('const {card,distance}=placeUI.buildCard(',app.indexOf('const marker = L.marker([p.lat,p.lng]')));
   assert.match(markerCode,/bindMapPopup\(marker,popup\)/);
   const common=read('map-popup-core.js');
   assert.match(common,/minWidth:Math\.min\(286,Math\.max\(205,map\.getSize\(\)\.x-76\)\)/);
@@ -31,13 +31,14 @@ test('popup uses two action columns and a full-width More row',()=>{
 });
 
 test('day selection and More actions remain real accessible controls',()=>{
-  assert.match(app,/const popupDayPicker=makePlaceDayPicker\(p\)/);
+  const placeUI=read('place-ui.js');
+  assert.match(placeUI,/const popupDayPicker=makePlaceDayPicker\(p\)/);
   const ui=read('day-selector-ui.js');
   assert.match(app,/onAssign:setDayAssignment/);
   assert.match(ui,/select\.onchange=\(\)=>onAssign\(place,select\.value\)/);
-  assert.match(app,/const popupMore=node\('details',undefined,'popup-more'\)/);
-  assert.match(app,/const popupMoreSummary=node\('summary','⋯ Mehr'\)/);
-  assert.match(app,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);
-  assert.match(app,/popupMoreBody\.append\(route\(p\),popupEditButton\)/);
+  assert.match(placeUI,/const popupMore=node\('details',undefined,'popup-more'\)/);
+  assert.match(placeUI,/const popupMoreSummary=node\('summary','⋯ Mehr'\)/);
+  assert.match(placeUI,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);
+  assert.match(placeUI,/popupMoreBody\.append\(route\(p\),popupEditButton\)/);
   assert.match(css,/\.leaflet-popup-content \.place-day-picker\{\s*display:grid;\s*grid-template-columns:auto minmax\(0,1fr\)/);
 });

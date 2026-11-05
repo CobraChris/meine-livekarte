@@ -22,7 +22,7 @@ test('map exposes a compact direct-pin selection switch with accessible count an
 test('single tap on each normal place marker toggles selection rather than opening popup in pick mode',()=>{
  const app=read('app.js');
  const start=app.indexOf('      const chosenIndex=tourSelection().findIndex(item=>');
- const end=app.indexOf("      const card = node('article'",start);
+ const end=app.indexOf("      const {card,distance}=placeUI.buildCard",start);
  assert.ok(start>=0&&end>start,'expected place-marker creation');
  const marker=app.slice(start,end);
  assert.match(marker,/chosenIndex\+1/);
@@ -73,9 +73,10 @@ test('selection overlay keeps the map in place, and finish returns to route plan
 
 test('normal map popups still support directions and also have a nearby tour button',()=>{
  const app=read('app.js');
- const begin=app.indexOf("      const popup = node('div',undefined,'place-popup-pan-surface');",app.indexOf('  function render()'));
- const end=app.indexOf('      const chosenIndex=',begin);
- const popup=app.slice(begin,end);
+ const ui=read('place-ui.js');
+ const begin=ui.indexOf("const popup=node('div',undefined,'place-popup-pan-surface');");
+ const end=ui.indexOf('return {popup,inPopup};',begin);
+ const popup=ui.slice(begin,end);
  assert.match(popup,/popupTourButton=node\('button',tourIsSelected\(p\)\?'✓ In Tour':'＋ Tour','tour-pick'\)/);
  assert.match(popup,/popupTourButton\.onclick=\(\)=>toggleTourPlace\(p,true\)/);
  assert.match(popup,/quickActions\.append\(popupWalk,popupTourButton,popupMore\)/);

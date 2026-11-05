@@ -6,6 +6,7 @@
   const MD=window.LivekarteMultiDay;
   const DC=window.LivekarteDayContext;
   const DayUI=window.LivekarteDaySelectorUI;
+  const PlaceUI=window.LivekartePlaceUI;
   const RM=window.LivekarteRouteModel;
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
@@ -179,6 +180,26 @@
   let walkDestination=null,walkController=null,walkRequestGeneration=0;
   let lastWalkingRequestAt=0,positionUpdatedAt=0,positionAccuracy=null;
   const node = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
+  const placeUI=PlaceUI.create({
+    document,categories:C.categories,symbols,placeKey:C.placePlanKey,
+    handlers:{
+      metric,makePlaceDayPicker,walkingButton,route,japaneseButton,
+      placeMeta,appendPlaceTiming,tourIsSelected,toggleTourPlace,openPlaceEditor,
+      getPlanAssignments:()=>planAssignments,allPlans,
+      showOnMap:(p,marker)=>{
+        googleDemo?.forceOSM();
+        focusMapPoint([p.lat,p.lng],16);
+        marker.openPopup();
+        $('map').scrollIntoView({behavior:'smooth',block:'center'});
+      },
+      saveAssignment:(p,id)=>{
+        const key=C.placePlanKey(p);
+        if(id)planAssignments[key]=[id];else delete planAssignments[key];
+        persistPlanState();render();
+        say('Zuordnung gespeichert. Alle Orte bleiben erhalten.');
+      }
+    }
+  });
   // The map coordinates and any GPS are not stored until "Ort dauerhaft speichern".
   const mapPlaceDialog=$('map-place-dialog');
   const mapPlaceForm=$('map-place-form');
@@ -1907,57 +1928,16 @@
   }
   function render() {
     googleDemo?.refresh();
-    pins.clearLayers(); $('places').replaceChildren(); distanceDisplays = [];
+    pins.clearLayers();distanceDisplays=[];
     renderCityDays();
     const planPlaces=visiblePlaces();
-    $('count').textContent = planPlaces.length;
-    $('empty').hidden = planPlaces.length > 0;
-    $('demo').hidden = activePlanId !== 'all';
-    $('empty').querySelector('h3').textContent = activePlanId === 'all'
-      ? 'Hier beginnt dein nächster Ausflug' : 'Für diesen Abschnitt sind noch keine Orte gespeichert';
-    $('empty').querySelector('p').textContent = activePlanId === 'all'
-      ? 'Füge deine Empfehlungen hinzu oder erkunde eine kleine Beispielroute durch Berlin.'
-      : 'Importiere Ziele, während dieser Abschnitt ausgewählt ist. Deine anderen Ziele bleiben erhalten.';
-    $('share').disabled = !planPlaces.length; $('clear').disabled = !places.length;
-    let shown = 0;
-    planPlaces.forEach(p => {
-      if (filter !== 'all' && p.category !== filter) return;
+    placeUI.begin({planPlacesCount:planPlaces.length,
+      placesCount:places.length,activePlanId});
+    let shown=0;
+    planPlaces.forEach(p=>{
+      if(filter!=='all'&&p.category!==filter)return;
       shown++;
-      const inPopup = node('p',metric(p));
-      const popup = node('div',undefined,'place-popup-pan-surface');
-      const popupHeader=node('div',undefined,'place-popup-header');
-      popupHeader.append(node('strong',p.name));
-      popup.append(popupHeader);
-      // Mobile popup: day first, two direct actions, all extras tucked into
-      // an accessible native disclosure. No additional modal or data changes.
-      const popupDayPicker=makePlaceDayPicker(p);
-      if(popupDayPicker)popup.append(popupDayPicker);
-      const quickActions=node('div',undefined,'popup-quick-actions popup-compact-actions');
-      const popupTourButton=node('button',tourIsSelected(p)?'✓ In Tour':'＋ Tour','tour-pick');
-      popupTourButton.type='button';
-      popupTourButton.title='Ort direkt zum Rundgang hinzufügen oder entfernen';
-      popupTourButton.setAttribute('aria-pressed',String(tourIsSelected(p)));
-      popupTourButton.onclick=()=>toggleTourPlace(p,true);
-      const popupMore=node('details',undefined,'popup-more');
-      const popupMoreSummary=node('summary','⋯ Mehr');
-      popupMoreSummary.setAttribute('aria-label','Weitere Aktionen und Informationen für '+p.name);
-      const popupMoreBody=node('div',undefined,'popup-more-body');
-      const popupEditButton=node('button','✎ Bearbeiten','place-edit');
-      popupEditButton.type='button';
-      popupEditButton.onclick=()=>openPlaceEditor(p);
-      popupMoreBody.append(route(p),popupEditButton);
-      const popupJapanese=japaneseButton(p);
-      if(popupJapanese)popupMoreBody.append(popupJapanese);
-      const metaText = placeMeta(p);
-      if (metaText) popupMoreBody.append(node('p',metaText,'place-meta'));
-      appendPlaceTiming(popupMoreBody,p);
-      const description=node('p',p.description,'place-popup-description');
-      popupMoreBody.append(description,inPopup);
-      popupMore.append(popupMoreSummary,popupMoreBody);
-      const popupWalk=walkingButton(p);
-      popupWalk.textContent='🚶 Fußweg';
-      quickActions.append(popupWalk,popupTourButton,popupMore);
-      popup.append(quickActions);
+      const {popup,inPopup}=placeUI.buildPopup(p);
       const chosenIndex=tourSelection().findIndex(item=>
         C.placePlanKey(item)===C.placePlanKey(p));
       const badge=chosenIndex<0?'':'<b class="pin-tour-index" aria-hidden="true">'+
@@ -1978,52 +1958,11 @@
       }else{
         bindMapPopup(marker,popup);
       }
-      const card = node('article',undefined,'place'), top = node('div',undefined,'place-top'), title = node('div');
-      title.append(node('div',C.categories[p.category], 'category'),node('h3',p.name)); top.append(node('span',symbols[p.category],'place-icon'), title);
-      const actions = node('div',undefined,'place-actions'), show = node('button','Auf Karte');
-      show.onclick = () => { googleDemo?.forceOSM(); focusMapPoint([p.lat,p.lng],16); marker.openPopup(); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
-      const distance = node('span',metric(p),'distance');
-      const tourButton=node('button',tourIsSelected(p)?'✓ Tour':'＋ Tour','tour-pick');
-      tourButton.type='button';
-      tourButton.setAttribute('aria-pressed',String(tourIsSelected(p)));
-      tourButton.title='Ort zu einem Rundgang hinzufügen oder entfernen';
-      tourButton.onclick=()=>toggleTourPlace(p);
-      actions.append(show,walkingButton(p),tourButton,route(p),distance);
-      const editButton=node('button','✎ Bearbeiten','place-edit');
-      editButton.type='button';
-      editButton.onclick=()=>openPlaceEditor(p);
-      actions.append(editButton);
-      const placeJapanese=japaneseButton(p);
-      if(placeJapanese)actions.append(placeJapanese);
-      const assignRow=node('div',undefined,'plan-assign-row');
-      const assignSelect=node('select',undefined,'place-plan-select');
-      assignSelect.setAttribute('aria-label','Ort '+p.name+' einem Reiseabschnitt zuordnen');
-      const tags=planAssignments[C.placePlanKey(p)] || [];
-      const options=[{id:'',name:'Keinem Abschnitt zugeordnet'},...allPlans().filter(section=>section.id!=='all')];
-      options.forEach(section=>{
-        const opt=node('option',section.name);
-        opt.value=section.id;
-        if (section.id=== (tags[0]||'')) opt.selected=true;
-        assignSelect.append(opt);
-      });
-      assignSelect.onchange=()=>{
-        const key=C.placePlanKey(p);
-        if(assignSelect.value) planAssignments[key]=[assignSelect.value];
-        else delete planAssignments[key];
-        persistPlanState(); render();
-        say('Zuordnung gespeichert. Alle Orte bleiben erhalten.');
-      };
-      assignRow.append(assignSelect);
-      if (metaText) card.append(node('p',metaText,'place-meta'));
-      appendPlaceTiming(card,p);
-      const cardDayPicker=makePlaceDayPicker(p);
-      // The title/header belongs in every destination card, not only its popup.
-      card.append(top,node('p',p.description),actions,assignRow);
-      if(cardDayPicker)card.append(cardDayPicker);
-      $('places').append(card);
-      distanceDisplays.push({ place:p, inPopup, inList:distance });
+      const {card,distance}=placeUI.buildCard(p,marker);
+      placeUI.appendCard(card);
+      distanceDisplays.push({place:p,inPopup,inList:distance});
     });
-    if (places.length && !shown) $('places').append(node('p','Keine Orte in dieser Kategorie.'));
+    if(places.length&&!shown)placeUI.showEmptyFilter();
     renderDayRoutePreview();
     renderTourBuilder();
     renderNextAction();

@@ -50,6 +50,7 @@ test('wrong coordinate or unrelated place cannot borrow the hotel address',()=>{
  assert.equal(JP.googleMapsLink(null),'');
 });
 test('dialog and taxi action are available from card, popup, tour assistant and hotel transfer',()=>{
+ const placeUI=read('place-ui.js');
  for(const id of [
   'japanese-driver-dialog','japanese-driver-title','japanese-driver-address',
   'japanese-driver-phone','japanese-driver-copy','japanese-driver-close',
@@ -58,10 +59,10 @@ test('dialog and taxi action are available from card, popup, tour assistant and 
  assert.match(html,/defer src="japanese-destination.js"/);
  assert.match(app,/const JP=window\.JapaneseDestination/);
  assert.match(app,/function showJapaneseDestination\(place\)/);
- assert.match(app,/const popupJapanese=japaneseButton\(p\)/);
- assert.match(app,/if\(popupJapanese\)popupMoreBody\.append\(popupJapanese\)/);
- assert.match(app,/const placeJapanese=japaneseButton\(p\)/);
- assert.match(app,/if\(placeJapanese\)actions\.append\(placeJapanese\)/);
+ assert.match(placeUI,/const popupJapanese=japaneseButton\(p\)/);
+ assert.match(placeUI,/if\(popupJapanese\)popupMoreBody\.append\(popupJapanese\)/);
+ assert.match(placeUI,/const placeJapanese=japaneseButton\(p\)/);
+ assert.match(placeUI,/if\(placeJapanese\)actions\.append\(placeJapanese\)/);
  assert.match(app,/const hotelJapanese=japaneseButton\(/);
  assert.match(app,/nextActionJapanese\.hidden=!JP\.get\(target\)/);
  assert.match(app,/nextActionJapanese\.onclick=\(\)=>showJapaneseDestination\(target\)/);
