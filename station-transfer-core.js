@@ -18,9 +18,16 @@ function build({station,arrival,departure,steps,sourceUrl='',ticketStatus='unkno
     steps.length<1||steps.length>12)
    throw Error('Bahnhofsname und 1–12 Wegschritte erforderlich.');
  const lines=steps.map((step,index)=>{
-   if(typeof step!=='string'||!step.trim()||step.length>240)
+   const action=typeof step==='string'?step:step?.action;
+   if(typeof action!=='string'||!action.trim()||action.length>500)
      throw Error('Ungültiger Umstiegsschritt.');
-   return Object.freeze({number:index+1,text:step.trim()});
+   const safe=key=>step&&typeof step==='object'&&
+     typeof step[key]==='string'?step[key]:'';
+   return Object.freeze({
+     number:index+1,text:action.trim(),action:action.trim(),
+     title:safe('title'),level:safe('level'),
+     sign:safe('sign'),caution:safe('caution')
+   });
  });
  const source=typeof sourceUrl==='string'&&/^https:\/\//.test(sourceUrl)?sourceUrl:'';
  const knownTicket=['unknown','missing','booked','ready'].includes(ticketStatus)
