@@ -187,7 +187,15 @@ async function verifyManualTouchPan(page){
 async function verifyCompassDiagnostics(page){
  await page.locator('#privacy').click();
  await page.locator('#compass-test').waitFor({state:'visible'});
+ // This scenario tests our app's sensor math, not Chrome/OS permission prompts.
+ // An explicit user click with a granted permission enables the listener.
+ await page.evaluate(()=>{
+  if(typeof DeviceOrientationEvent!=='undefined')
+   Object.defineProperty(DeviceOrientationEvent,'requestPermission',{
+    configurable:true,value:()=>Promise.resolve('granted')});
+ });
  await page.locator('#compass-test').click();
+ await delay(150);
  await page.waitForFunction(()=>document.querySelector('.gps-location-icon')!==null,
   null,{timeout:10000});
  await page.evaluate(()=>{
