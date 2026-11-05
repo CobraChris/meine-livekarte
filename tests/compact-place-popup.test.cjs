@@ -2,13 +2,13 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
-const app=read('app.js'),css=read('style.css');
+const app=read('app.js'),css=read('style.css'),ui=read('place-ui.js');
 
 function markerPopup(){
-  const start=app.indexOf("      const popup = node('div',undefined,'place-popup-pan-surface');");
-  const end=app.indexOf('      const chosenIndex=',start);
+  const start=ui.indexOf("const popup=node('div',undefined,'place-popup-pan-surface');");
+  const end=ui.indexOf('return {popup,inPopup};',start);
   assert.ok(start>=0&&end>start);
-  return app.slice(start,end);
+  return ui.slice(start,end);
 }
 test('marker card has day selector above only two direct actions and collapsed More',()=>{
  const popup=markerPopup();
