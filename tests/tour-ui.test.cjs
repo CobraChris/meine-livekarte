@@ -250,7 +250,8 @@ test('only the presentation is extracted; app keeps build, GPS/network and persi
  assert.match(app,/tourUI\.renderDaySchedule\(\{schedule,pref,stopsCount:stops\.length\}\)/);
  assert.match(app,/const schedule=D\.build\(/);
  assert.match(app,/const tourView=RM\.walking\(/);
- assert.match(app,/fetch\(request,\{/);
+ assert.match(app,/routeRequests\.request\(\{kind:'tour',url:request,controller\}\)/);
+ assert.match(read('routing-requests.js'),/fetcher\(url,\{/);
  assert.match(app,/localStorage\.setItem\('livekarte-day-plans-v1'/);
  assert.match(app,/localStorage\.setItem\('livekarte-tour-drafts-v1'/);
  assert.doesNotMatch(ui,/fetch\(|localStorage|navigator\.geolocation|indexedDB|window\.location/);
