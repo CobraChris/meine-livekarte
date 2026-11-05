@@ -62,13 +62,13 @@ test('UI and deployment preserve itinerary while adding per-day tours',()=>{
  assert.ok(app.includes("livekarte-city-day-assignments-v1"));
  assert.ok(app.includes("tourContextKey()"));
  assert.ok(app.includes('renderCityDays()'));
- assert.ok(app.includes("data-day-date"));
+ assert.ok(read('day-selector-ui.js').includes("data-day-date"));
  assert.ok(app.includes('setDayAssignment('));
  assert.ok(html.includes('src="multi-day-core.js"'));
  assert.ok(css.includes('.city-days[hidden]'));
  const workflow=read('.github/workflows/pages.yml'),sw=read('sw.js'),
  stamp=read('scripts/stamp_pwa_version.py');
- assert.ok(workflow.includes('cp multi-day-core.js day-context-core.js route-model-core.js public/'));
+ assert.ok(workflow.includes('cp multi-day-core.js day-context-core.js day-selector-ui.js route-model-core.js public/'));
  assert.ok(workflow.includes('node --check multi-day-core.js'));
  assert.ok(sw.includes("'multi-day-core.js'"));
  assert.ok(stamp.includes('("src", "multi-day-core.js")'));
