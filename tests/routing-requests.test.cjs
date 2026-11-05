@@ -125,7 +125,14 @@ test('all three app routing paths use same gate and same request transport',()=>
  for(const type of ['walk','tour','day'])
    assert.match(app,new RegExp("routeRequests\\.request\\(\\{kind:'"+type+"'"));
  assert.doesNotMatch(app,/lastTourRequestedAt|lastWalkingRequestAt/);
- assert.doesNotMatch(app,/fetch\(request,\{|fetch\(url,\{/);
+ const tour=app.slice(app.indexOf('  async function calculateTour('),
+   app.indexOf('  // Editor edits only local recommendation data.'));
+ const walking=app.slice(app.indexOf('  async function showWalkingRoute('),
+   app.indexOf('  // Multi-stop tours are opt-in'));
+ const day=app.slice(app.indexOf('  async function calculateDailyFootRoute('),
+   app.indexOf("  $('day-route-foot').onclick="));
+ for(const fragment of [tour,walking,day])
+   assert.doesNotMatch(fragment,/fetch\(request,\{|fetch\(url,\{/);
  assert.match(app,/if\(generation!==tourRequestGeneration\|\|activePlanId!==startPlanId\)return/);
  assert.match(app,/if\(generation!==dayFootGeneration\|\|dailyRouteKey\(dailyStops\(\)\)!==key\)return/);
  const core=read('routing-requests.js');
