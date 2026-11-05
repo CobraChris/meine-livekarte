@@ -84,6 +84,17 @@
     });
     attachPan({marker,surface,map,onPanStart});
     marker.on('popupopen',()=>onPanStart?.());
+    // An expanded "Mehr" disclosure changes the popup height AFTER Leaflet's
+    // initial auto-pan calculation. Re-measure and auto-pan it back inside the
+    // visible map, otherwise buttons can disappear behind the app header.
+    surface.addEventListener('toggle',event=>{
+      if(event.target?.tagName!=='DETAILS'||!marker.isPopupOpen())return;
+      const update=()=>{
+        if(marker.isPopupOpen())marker.getPopup?.()?.update?.();
+      };
+      if(typeof root.requestAnimationFrame==='function')root.requestAnimationFrame(update);
+      else setTimeout(update,0);
+    },true);
     return marker;
   }
   const api={bind,attachPan};
