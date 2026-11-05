@@ -68,6 +68,11 @@
   }
 
   let heading = null, visualHeading = null, compassGeneration = 0;
+  let compassSourcePriority=0,compassSampleAt=0,compassProbeTimer=null;
+  const compassDiagnostic=message=>{
+    const element=$('compass-diagnostic');
+    if(element)element.textContent=message;
+  };
   function renderHeading() {
     const el = userDot?.getElement();
     if (!el) return;
@@ -81,34 +86,76 @@
   }
   function onOrientation(e) {
     if (watch === null) return;
-    const next = C.compassHeading(e);
-    if (next === null) return; // Do not show arbitrary relative orientation.
+    const source=Number.isFinite(e.webkitCompassHeading)?2:
+      (e.absolute===true?1:0);
+    if(!source){
+      if(!compassSampleAt)compassDiagnostic(
+        'Nur relative Bewegungssensoren verfügbar. Keine verlässliche Nordrichtung.');
+      return;
+    }
+    // Prefer the north-referenced iOS compass if both event families report.
+    // A lower-priority source may take over if the preferred one falls silent.
+    if(source<compassSourcePriority&&Date.now()-compassSampleAt<3500)return;
+    const screenAngle=window.screen?.orientation?.angle??window.orientation??0;
+    const next = C.compassHeading(e,screenAngle);
+    if (next === null) return;
+    compassSourcePriority=source;
+    compassSampleAt=Date.now();
     heading = next;
     renderHeading();
+    if($('help-dialog').open){
+      const accuracy=Number.isFinite(e.webkitCompassAccuracy)&&e.webkitCompassAccuracy>30
+        ?' · Sensor meldet geringe Genauigkeit':'';
+      compassDiagnostic('Kompass liefert Nordrichtung: '+Math.round(heading)+'°'+accuracy+
+        '. Die blaue Spitze zeigt die Oberkante deines Handys.');
+    }
   }
   function stopCompass() {
     compassGeneration++;
+    clearTimeout(compassProbeTimer);
     window.removeEventListener('deviceorientationabsolute', onOrientation);
     window.removeEventListener('deviceorientation', onOrientation);
     heading = null;
     visualHeading = null;
+    compassSampleAt=0;
+    compassSourcePriority=0;
+    compassDiagnostic('Kompass aus · GPS ausgeschaltet.');
   }
   function startCompass() {
     const generation = ++compassGeneration;
+    clearTimeout(compassProbeTimer);
+    compassDiagnostic('Kompasssensor wird abgefragt …');
     const listen = () => {
       if (watch === null || generation !== compassGeneration) return;
       window.addEventListener('deviceorientationabsolute', onOrientation);
       // Safari may provide webkitCompassHeading on the standard event.
       window.addEventListener('deviceorientation', onOrientation);
+      const startedAt=Date.now();
+      compassProbeTimer=setTimeout(()=>{
+        if(watch!==null&&generation===compassGeneration&&compassSampleAt<startedAt)
+          compassDiagnostic('Keine absolute Kompassrichtung empfangen. Browser-Sensorfreigabe prüfen oder Kompass am Handy kalibrieren (Acht-Bewegung).');
+      },3000);
     };
-    if (typeof DeviceOrientationEvent === 'undefined') return;
+    if (typeof DeviceOrientationEvent === 'undefined') {
+      compassDiagnostic('Dieser Browser stellt keine Geräteausrichtung bereit.');
+      return;
+    }
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-      // Request while the GPS button's user activation is still active.
+      // Request while the GPS / test button's user activation is still active.
       try {
         Promise.resolve(DeviceOrientationEvent.requestPermission(true))
-          .then(result => { if (result === 'granted') listen(); })
-          .catch(() => {}); // GPS remains usable if orientation permission is denied.
-      } catch { /* Browser denied sensor permission. */ }
+          .then(result => {
+            if(result==='granted')listen();
+            else if(generation===compassGeneration)
+              compassDiagnostic('Kompasszugriff abgelehnt. Sensorberechtigung im Browser prüfen.');
+          })
+          .catch(() => {
+            if(generation===compassGeneration)
+              compassDiagnostic('Kompassfreigabe nicht möglich. Sensorberechtigung prüfen.');
+          });
+      } catch {
+        compassDiagnostic('Der Browser hat die Kompassfreigabe blockiert.');
+      }
     } else listen();
   }
   let statusTimer = null;
@@ -3197,6 +3244,13 @@
     centerOnGPS([position.lat,position.lng],Math.max(map.getZoom(),16));
   };
   // Full GPS shutdown is an explicit privacy setting, not a map-navigation step.
+  $('compass-test').onclick=()=>{
+    if(watch===null){
+      compassDiagnostic('GPS ist ausgeschaltet. Zuerst GPS einschalten.');
+      return;
+    }
+    startCompass(); // Explicit user gesture for browsers requiring sensor permission.
+  };
   $('gps-privacy-toggle').onclick = () => {
     if(watch!==null){
       setAutoGPSAllowed(false);
