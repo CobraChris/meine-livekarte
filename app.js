@@ -121,7 +121,7 @@
     compassSourcePriority=0;
     compassDiagnostic('Kompass aus · GPS ausgeschaltet.');
   }
-  function startCompass() {
+  function startCompass(requestPermission=true) {
     const generation = ++compassGeneration;
     clearTimeout(compassProbeTimer);
     compassDiagnostic('Kompasssensor wird abgefragt …');
@@ -140,7 +140,7 @@
       compassDiagnostic('Dieser Browser stellt keine Geräteausrichtung bereit.');
       return;
     }
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    if (requestPermission && typeof DeviceOrientationEvent.requestPermission === 'function') {
       // Request while the GPS / test button's user activation is still active.
       try {
         Promise.resolve(DeviceOrientationEvent.requestPermission(true))
@@ -3228,9 +3228,9 @@
       }, {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
       refreshGPSFollowControl();
     }catch{stopGPS('GPS konnte nicht gestartet werden. Bitte Berechtigung prüfen.');return;}
-    // iOS compass permission must be requested by a deliberate gesture.
-    if(!automatic || typeof DeviceOrientationEvent==='undefined' ||
-       typeof DeviceOrientationEvent.requestPermission!=='function')startCompass();
+    // Listen passively after auto-GPS (when permissions were already granted).
+    // Request new iOS-style sensor permission only inside a user gesture.
+    startCompass(!automatic);
   }
   $('gps').onclick = () => {
     if(watch===null){
