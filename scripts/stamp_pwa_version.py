@@ -32,6 +32,7 @@ assets = [
     ("src", "vendor/leaflet.js"),
     ("src", "map-popup-core.js"),
     ("src", "map-camera-core.js"),
+    ("src", "map-toolbar-core.js"),
     ("src", "core.js"),
     ("src", "walking-core.js"),
     ("src", "routing-requests.js"),
