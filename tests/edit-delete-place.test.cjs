@@ -94,17 +94,17 @@ test('invalid, stale or conflicting edits never silently destroy saved records',
  assert.equal(fixed.updated.lng,old.lng);
 });
 test('mobile editor can open from popup or list and delete only with explicit confirmation',()=>{
- const html=read('index.html'),app=read('app.js'),css=read('style.css');
+ const html=read('index.html'),app=read('app.js'),css=read('style.css'),placeUI=read('place-ui.js');
  for(const id of ['edit-place-dialog','edit-place-form','edit-place-name','edit-place-category',
    'edit-place-note','edit-place-description','edit-place-location','edit-place-close',
    'edit-place-error','edit-place-delete'])
    assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/🗑 Diesen Ort löschen/);
  assert.match(html,/✓ Änderungen speichern/);
- assert.match(app,/const popupEditButton=node\('button','✎ Bearbeiten','place-edit'\)/);
- assert.match(app,/popupEditButton\.onclick=\(\)=>openPlaceEditor\(p\)/);
- assert.match(app,/const editButton=node\('button','✎ Bearbeiten','place-edit'\)/);
- assert.match(app,/editButton\.onclick=\(\)=>openPlaceEditor\(p\)/);
+ assert.match(placeUI,/const popupEditButton=node\('button','✎ Bearbeiten','place-edit'\)/);
+ assert.match(placeUI,/popupEditButton\.onclick=\(\)=>openPlaceEditor\(p\)/);
+ assert.match(placeUI,/const editButton=node\('button','✎ Bearbeiten','place-edit'\)/);
+ assert.match(placeUI,/editButton\.onclick=\(\)=>openPlaceEditor\(p\)/);
  assert.match(app,/editPlaceForm\.onsubmit=event=>/);
  assert.match(app,/if\(confirm\('„'\+old\.name\+/);
  assert.match(css,/#edit-place-dialog/);
