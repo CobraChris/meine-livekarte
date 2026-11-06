@@ -64,15 +64,32 @@
     option.value=f.id;select.append(option);
    }
    $('rail-existing-add').disabled=select.options.length<2;
+   const verified=details.ticketIds.filter(id=>files.some(file=>file.id===id));
+   const missing=details.ticketIds.length-verified.length;
+   const status=$('rail-ticket-file-status');
+   status.classList.toggle('is-saved',verified.length>0 && missing===0);
+   status.classList.toggle('is-missing',missing>0);
+   status.textContent=missing
+     ?'⚠ '+missing+' zugeordnete Datei(en) fehlen auf diesem Gerät. '+
+       verified.length+' Datei(en) sind noch lokal gespeichert.'
+     :verified.length
+       ?'✓ '+verified.length+' Ticketfoto(s)/Datei(en) lokal gespeichert und dieser Fahrt zugeordnet.'
+       :'Noch kein Ticketfoto oder PDF für diese Fahrt gespeichert.';
    list.replaceChildren();
    if(!details.ticketIds.length){
-    list.append(node('p','Noch keine Dateien zugeordnet.','rail-ticket-hint'));
+    list.append(node('p','Zum Speichern ein Foto machen, eine Datei auswählen oder ein vorhandenes Ticket zuordnen.','rail-ticket-hint'));
    }
    for(const id of details.ticketIds){
     const file=files.find(f=>f.id===id);
     const row=node('div',undefined,'rail-ticket-file');
-    row.append(node('span',file?'📎 '+file.title:
-      '⚠ Datei nicht mehr in der Ablage vorhanden'));
+    if(file){
+     const label=node('span',undefined,'rail-ticket-file-label');
+     const heading=node('strong','✓ '+(file.type.startsWith('image/')?'Foto':'Datei')+' gespeichert & zugeordnet');
+     const filename=node('small',file.title);
+     label.append(heading,filename);row.append(label);
+    }else{
+     row.append(node('span','⚠ Datei nicht mehr in der lokalen Ablage vorhanden'));
+    }
     if(file){
      const view=node('button','👁 Anzeigen');view.type='button';
      view.onclick=()=>root.dispatchEvent(
@@ -107,7 +124,7 @@
      await shelf().remove(saved.id);
      throw error;
     }
-    message('✓ Datei zugeordnet. Den Ticketstatus bitte gesondert prüfen.');
+    message('✓ Foto/Datei lokal gespeichert und diesem Fahrtabschnitt zugeordnet. Ticketstatus unverändert.');
     root.dispatchEvent(new Event('livekarte:ticket-library-changed'));
     onUpdated();
     await refreshFiles();
@@ -140,7 +157,7 @@
      note:$('rail-note').value,
      pickupRequired:$('rail-pickup').checked
     });
-    message('✓ Hinweise gespeichert. Ticketstatus und Originaldateien unverändert.');
+    message('✓ Referenzcode, Abholhinweis und Notiz gespeichert. Ticketdateien bleiben separat gespeichert.');
     onUpdated();
    }catch(error){message('⚠ Nicht gespeichert: '+error.message,true);}
   };
