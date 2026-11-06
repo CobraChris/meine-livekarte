@@ -282,8 +282,8 @@ async function verifyCurrentPositionBookmark(page){
  await shortcut.click();
  await page.locator('#map-place-dialog').waitFor({state:'visible'});
  const coord=await page.locator('#map-place-coordinates').innerText();
- assert.match(coord,/35\\.012000, 135\\.763000/,
-  'Bookmark uses real mock GPS position, not the map center');
+ assert.ok(coord.includes('35.012000, 135.763000'),
+  'Bookmark uses real mock GPS position, not the map center: '+coord);
  assert.equal(await page.locator('#map-place-name').inputValue(),'');
  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('livekarte-places-v1')||'[]').length),
   before,'Opening GPS bookmark must not write to localStorage');
