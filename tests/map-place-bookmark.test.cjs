@@ -85,7 +85,7 @@ test('feature stays outside tour-picker and uses offline shell without new netwo
 test('one-tap GPS bookmark has a visible explicit control and does not save without confirmation',()=>{
  for(const id of ['map-save-gps','map-save-gps-status'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/📍 Hier merken/);
+ assert.match(html,/aria-label="Aktuellen GPS-Standort merken"[^>]*>📍 Hier<\/button>/);
  const first=app.indexOf('  mapGpsButton.onclick=async()=>{');
  const end=app.indexOf("  $('map-place-cancel').onclick=",first);
  assert.ok(first>0&&end>first);
