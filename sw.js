@@ -3,7 +3,7 @@
  * private repositories or authenticated requests are ever cached here.
  */
 'use strict';
-const CACHE_NAME='livekarte-shell-pwa-v22';
+const CACHE_NAME='livekarte-shell-pwa-v23';
 const SHELL_FILES=[
   'index.html','style.css','map-popup-core.js','map-camera-core.js','core.js','walking-core.js','routing-requests.js','tour-navigation-core.js','day-plan-core.js','multi-day-core.js','day-context-core.js','day-selector-ui.js','place-ui.js','tour-ui.js','route-model-core.js','route-discovery.js','place-search-core.js','next-step-core.js','japanese-destination.js','google-demo.js','app.js','sync.js',
   'outbox-core.js','sync-out.js','build-version.js','pwa.js','ticket-vault.js','ticket-library.js','ticket-library-ui.js','ticket-share-inbox.js','manifest.json',
