@@ -386,6 +386,8 @@ async function verifyJourneyTicketAttachment(page){
  await page.locator('#journey-info .journey-item').first().locator('.rail-leg-ticket-button').click();
  assert.equal(await page.locator('#rail-reference').inputValue(),'TEST-REF-987');
  assert.equal(await page.locator('#rail-pickup').isChecked(),true);
+ await page.waitForFunction(()=>document.getElementById('rail-ticket-file-status')?.textContent.includes('gespeichert und dieser Fahrt zugeordnet'),
+  null,{timeout:10000});
  assert.match(await page.locator('#rail-ticket-file-status').innerText(),/gespeichert und dieser Fahrt zugeordnet/,
   'Saved photo proof must remain visible after closing and reopening the dialog');
  await page.locator('#rail-ticket-close').click();
