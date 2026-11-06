@@ -8,6 +8,7 @@
   const DayUI=window.LivekarteDaySelectorUI;
   const PlaceUI=window.LivekartePlaceUI;
   const RM=window.LivekarteRouteModel;
+  const RailDetails=window.LivekarteRailLegDetails;
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
   let activeCityDay=MD.ALL;
@@ -2990,6 +2991,20 @@
         ticketRow.addEventListener('click',e=>e.stopPropagation());
         ticketRow.append(ticketLabel,badge,picker);
         item.append(ticketRow);
+        const legKey=C.ticketLegKey(activePlanId,journey,i);
+        const details=RailDetails.get(localStorage,legKey);
+        const addTicket=node('button',
+          '📷 Ticket / Abholinfo'+(details.ticketIds.length?' · 📎 '+details.ticketIds.length:'')+
+          (details.pickupRequired?' · Abholung offen':''),
+          'rail-leg-ticket-button');
+        addTicket.type='button';
+        addTicket.setAttribute('aria-label','Ticket hinzufügen, fotografieren oder Abholhinweise bearbeiten für '+
+          stop.name+' nach '+journey.stops[i+1].name);
+        addTicket.onclick=e=>{
+          e.stopPropagation();
+          void openRailLegTicket(activePlanId,journey,i);
+        };
+        item.append(addTicket);
       }
       info.append(item);
       const popup = node('div');
