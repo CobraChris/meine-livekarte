@@ -6,12 +6,12 @@ const Multi=require('../multi-day-core.js');
 const Next=require('../next-step-core.js');
 
 const days=['2026-11-03','2026-11-04','2026-11-05','2026-11-06'];
-const counts=[4,4,7,5];
+const counts=[4,4,7,6];
 const names={
   '2026-11-03':['Ginkaku-ji (Silberner Pavillon)','Philosophenweg (Tetsugaku no Michi)','Nanzen-ji','Nishiki-Markt (optional)'],
   '2026-11-04':['Nara-Park','Tōdai-ji (Große Buddha-Halle)','Kasuga-Taisha','Naramachi (historisches Viertel)'],
   '2026-11-05':['Osaka Castle / Burghauptturm','Kuromon Ichiba Market','Osaka Shikki (大阪漆器) · Stäbchen','Kagetsudo (花月堂) · Winkekatze','Utsuwa Tsukinoshita · Namba (うつわ 月乃下)','Shinsaibashi-suji','Dōtonbori (Neonviertel)'],
-  '2026-11-06':['Kinkaku-ji (Goldener Pavillon)','Ryōan-ji (Steingarten)','Tenryū-ji','Arashiyama Bambuswald','Arashiyama Bamboo Light-up (Abend)']
+  '2026-11-06':['Kinkaku-ji (Goldener Pavillon)','Ryōan-ji (Steingarten)','Togetsukyō-Brücke (渡月橋)','Tenryū-ji','Arashiyama Bambuswald','Arashiyama Bamboo Light-up (Abend)']
 };
 const preset=Core.presetPlaces('town-kyoto');
 function dateOf(p){return Multi.fromSchedule(p.schedule);}
@@ -86,4 +86,21 @@ test('Osaka souvenir stops are added only to 05 Nov and no other trip data is ch
   for(const [text,time] of [['Osaka Shikki','15:00'],['Kagetsudo','15:25'],['Utsuwa Tsukinoshita','15:50']]){
     assert.match(html,new RegExp('<time>'+time+'</time>[\\s\\S]*?'+text));
   }
+});
+
+test('06 Nov bridge appears with grounded coordinates, timing, and upgrade marker',()=>{
+  const fs=require('node:fs'),path=require('node:path');
+  const app=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+  const bridge=preset.find(p=>p.name==='Togetsukyō-Brücke (渡月橋)');
+  assert.ok(bridge);
+  assert.equal(dateOf(bridge),'2026-11-06');
+  assert.equal(bridge.schedule,'06.11. · 15:40 · Arashiyama');
+  assert.ok(Math.abs(bridge.lat-35.012752)<0.00001);
+  assert.ok(Math.abs(bridge.lng-135.677746)<0.00001);
+  assert.match(app,/livekarte-kyoto-togetsukyo-2026-11-06-v1/);
+  assert.match(app,/seedTogetsukyoBridge\(\)/);
+  assert.match(html,/<time>15:40<\/time>[\s\S]*?Togetsukyō-Brücke/);
+  assert.match(html,/Start 13:00/);
+  assert.match(Next.todaySuggestion(new Date('2026-11-06T03:00:00Z')).summary,/Togetsukyō/);
 });
