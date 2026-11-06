@@ -52,8 +52,8 @@
     if(day==='2026-11-06')
       return {date:day,planId:'town-kyoto',dayIndex:5,
         title:'Kyoto · Arashiyama & Lichterabend',
-        summary:'Kinkaku-ji · Ryōan-ji · Tenryū-ji · Bambuswald · Light-up',
-        hint:'Bamboo Light-up ab 18:00. Eintritt nicht gebucht; Anfahrt und Tickets vor Ort prüfen.'};
+        summary:'Kinkaku-ji · Ryōan-ji · Togetsukyō-Brücke · Tenryū-ji · Bambuswald · Light-up',
+        hint:'Start ca. 13:00. Brücke um 15:40 vor Tenryū-ji, Light-up ab 18:00. Eintritt nicht gebucht; Transfers prüfen.'};
     if(day==='2026-11-07')
       return {date:day,planId:'ride-nikko',dayIndex:null,
         title:'Weiterreise Kyoto → Nikkō',
