@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --check google-demo.js && node --check map-popup-core.js && node --check map-camera-core.js && node --check core.js && node --check walking-core.js && node --check routing-requests.js && node --check tour-navigation-core.js && node --check day-plan-core.js && node --check multi-day-core.js && node --check day-context-core.js && node --check day-selector-ui.js && node --check place-ui.js && node --check tour-ui.js && node --check route-model-core.js && node --check route-discovery.js && node --check next-step-core.js && node --check japanese-destination.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --check pwa.js && node --check ticket-vault.js && node --check ticket-library.js && node --check ticket-library-ui.js && node --check ticket-share-inbox.js && node --check sw.js && node --test tests/*.test.cjs
+      - run: node --check google-demo.js && node --check map-popup-core.js && node --check map-camera-core.js && node --check core.js && node --check walking-core.js && node --check routing-requests.js && node --check tour-navigation-core.js && node --check day-plan-core.js && node --check multi-day-core.js && node --check day-context-core.js && node --check day-selector-ui.js && node --check place-ui.js && node --check tour-ui.js && node --check route-model-core.js && node --check route-discovery.js && node --check next-step-core.js && node --check japanese-destination.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --check pwa.js && node --check ticket-vault.js && node --check ticket-library.js && node --check rail-leg-details-core.js && node --check rail-leg-ticket-ui.js && node --check ticket-library-ui.js && node --check ticket-share-inbox.js && node --check sw.js && node --test tests/*.test.cjs
       - name: Install browser test runner without downloading a browser
         run: |
           command -v google-chrome || command -v google-chrome-stable || command -v chromium
@@ -53,7 +53,7 @@ jobs:
           cp place-search-core.js public/
           cp multi-day-core.js day-context-core.js day-selector-ui.js place-ui.js tour-ui.js route-model-core.js public/
           cp google-demo.js public/
-          cp ticket-vault.js ticket-library.js ticket-library-ui.js ticket-share-inbox.js public/
+          cp ticket-vault.js ticket-library.js rail-leg-details-core.js rail-leg-ticket-ui.js ticket-library-ui.js ticket-share-inbox.js public/
           cp -r vendor public/
           cp -r sync public/
           mkdir -p public/icons
