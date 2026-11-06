@@ -329,6 +329,8 @@ async function verifyJourneyTicketAttachment(page){
  await first.locator('.rail-leg-ticket-button').click();
  await page.locator('#rail-ticket-dialog').waitFor({state:'visible'});
  assert.match(await page.locator('#rail-ticket-route').innerText(),/Kyoto.*Tokyo/);
+ assert.match(await page.locator('#rail-ticket-file-status').innerText(),/Noch kein Ticketfoto oder PDF/,
+  'The empty state must explicitly say nothing is stored yet');
  assert.equal(await page.locator('#rail-camera-input').getAttribute('capture'),'environment');
  await page.locator('#rail-reference').fill('TEST-REF-987');
  await page.locator('#rail-note').fill('Papierfahrkarte am Schalter abholen');
@@ -349,6 +351,10 @@ async function verifyJourneyTicketAttachment(page){
  });
  await page.waitForFunction(()=>document.querySelector('#rail-ticket-files')?.textContent.includes('nikko-test-ticket.png'),
   null,{timeout:15000});
+ assert.match(await page.locator('#rail-ticket-file-status').innerText(),/1 Ticketfoto\(s\)\/Datei\(en\) lokal gespeichert und dieser Fahrt zugeordnet/,
+  'The attached photo must have a persistent saved-and-linked confirmation');
+ assert.match(await page.locator('#rail-ticket-files .rail-ticket-file-label strong').first().innerText(),
+  /Foto gespeichert & zugeordnet/);
  const afterPhoto=await page.evaluate(async()=>{
   const all=JSON.parse(localStorage.getItem('livekarte-rail-leg-details-v1')||'{}');
   const shelf=new window.LivekarteTicketLibrary.Library();
@@ -378,8 +384,10 @@ async function verifyJourneyTicketAttachment(page){
  await page.locator('#journey-info .journey-item').first().locator('.rail-leg-ticket-button').click();
  assert.equal(await page.locator('#rail-reference').inputValue(),'TEST-REF-987');
  assert.equal(await page.locator('#rail-pickup').isChecked(),true);
+ assert.match(await page.locator('#rail-ticket-file-status').innerText(),/gespeichert und dieser Fahrt zugeordnet/,
+  'Saved photo proof must remain visible after closing and reopening the dialog');
  await page.locator('#rail-ticket-close').click();
- console.log('PASS camera-photo ticket, notes, pickup flag, existing-file reuse and reload persistence');
+ console.log('PASS camera-photo ticket, clear saved status, notes, pickup flag and reload persistence');
 }
 async function main(){
  const s=server();let browser,page;
