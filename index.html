@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/livekarte-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
-<script defer src="vendor/leaflet.js"></script><script defer src="map-popup-core.js"></script><script defer src="map-camera-core.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="routing-requests.js"></script><script defer src="tour-navigation-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="multi-day-core.js"></script><script defer src="day-context-core.js"></script><script defer src="day-selector-ui.js"></script><script defer src="place-ui.js"></script><script defer src="tour-ui.js"></script><script defer src="route-model-core.js"></script><script defer src="route-discovery.js"></script><script defer src="place-search-core.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="google-demo.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="ticket-share-inbox.js"></script><script defer src="ticket-library-ui.js"></script>
+<script defer src="vendor/leaflet.js"></script><script defer src="map-popup-core.js"></script><script defer src="map-camera-core.js"></script><script defer src="core.js"></script><script defer src="walking-core.js"></script><script defer src="routing-requests.js"></script><script defer src="tour-navigation-core.js"></script><script defer src="day-plan-core.js"></script><script defer src="multi-day-core.js"></script><script defer src="day-context-core.js"></script><script defer src="day-selector-ui.js"></script><script defer src="place-ui.js"></script><script defer src="tour-ui.js"></script><script defer src="route-model-core.js"></script><script defer src="route-discovery.js"></script><script defer src="place-search-core.js"></script><script defer src="next-step-core.js"></script><script defer src="japanese-destination.js"></script><script defer src="google-demo.js"></script><script defer src="app.js"></script><script defer src="sync.js"></script><script defer src="outbox-core.js"></script><script defer src="sync-out.js"></script><script defer src="build-version.js"></script><script defer src="pwa.js"></script><script defer src="ticket-vault.js"></script><script defer src="ticket-library.js"></script><script defer src="rail-leg-details-core.js"></script><script defer src="ticket-share-inbox.js"></script><script defer src="ticket-library-ui.js"></script>
 </head>
 <body>
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>Meine Live-Karte<small>DEINE ORTE. DEINE WEGE.</small></span></a><span class="live-badge">● &nbsp; Unterwegs entdecken</span></header>
@@ -771,6 +771,34 @@
 <label for="plan-type">Art</label><select id="plan-type"><option value="city">Ort / Aufenthalt</option><option value="journey">Reisetag / Fahrt</option></select>
 <p class="hint">Du kannst später Orte in diesem Abschnitt speichern. Zugzeiten und Strecken werden nicht automatisch erfunden.</p>
 <p id="plan-error" role="alert"></p><button type="submit" class="primary">Abschnitt hinzufügen</button></form></dialog>
+<dialog id="rail-ticket-dialog" aria-labelledby="rail-ticket-title">
+  <div class="rail-ticket-dialog-head">
+    <h2 id="rail-ticket-title">🎟 Tickets zur Zugfahrt</h2>
+    <button id="rail-ticket-close" type="button" aria-label="Ticketfenster schließen">×</button>
+  </div>
+  <p id="rail-ticket-route" class="rail-ticket-route"></p>
+  <p class="rail-ticket-hint">Ticketfotos und PDFs bleiben in „Meine Tickets“ auf diesem Gerät. Ein Foto bestätigt nicht automatisch eine gültige Buchung.</p>
+  <div class="rail-ticket-actions">
+    <button id="rail-camera-button" type="button">📷 Papierticket fotografieren</button>
+    <button id="rail-file-button" type="button">📎 PDF / Bild hinzufügen</button>
+    <input id="rail-camera-input" type="file" accept="image/*" capture="environment" hidden>
+    <input id="rail-file-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" hidden>
+  </div>
+  <label for="rail-existing-select">Bereits gespeichertes Ticket zuordnen</label>
+  <div class="rail-ticket-existing">
+    <select id="rail-existing-select"><option value="">Ticket auswählen …</option></select>
+    <button id="rail-existing-add" type="button">Zuordnen</button>
+  </div>
+  <div id="rail-ticket-files" class="rail-ticket-files" aria-label="Zugeordnete Ticketdateien"></div>
+  <label class="rail-pickup-label"><input id="rail-pickup" type="checkbox"> Ticket am Bahnhof abholen</label>
+  <label for="rail-reference">Buchungs- / Abholcode</label>
+  <input id="rail-reference" type="text" maxlength="120" autocomplete="off" placeholder="Referenzcode, falls vorhanden">
+  <label for="rail-note">Hinweis zum Fahrtabschnitt</label>
+  <textarea id="rail-note" maxlength="500" rows="3" placeholder="z. B. Fahrkarte mit Referenzcode am Schalter abholen"></textarea>
+  <button id="rail-details-save" type="button" class="primary">✓ Hinweise speichern</button>
+  <p id="rail-ticket-message" role="status" aria-live="polite"></p>
+  <p class="rail-ticket-hint">Abholcode und Notiz werden nur im Browserspeicher dieses Geräts gespeichert, nicht verschlüsselt oder synchronisiert. Sie sind nicht im Ticketdateien-Backup enthalten. Bewahre die Originaltickets zusätzlich auf.</p>
+</dialog>
 <dialog id="map-place-dialog" aria-labelledby="map-place-title">
   <form id="map-place-form">
     <div class="dialog-heading"><h2 id="map-place-title">📌 Neuen Ort merken</h2><button type="button" id="map-place-cancel" aria-label="Schließen">×</button></div>
