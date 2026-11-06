@@ -2339,7 +2339,7 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .compass-diagnostics small{display:block;margin-top:8px;color:#c0d1ce;line-height:1.5}
 
 /* Current-position bookmark: explicit opt-in GPS one-shot, never a map gesture. */
-.tour-map-tools #map-save-gps{border-color:#8dc9a9}
+.tour-map-tools #map-save-gps{border-color:#8dc9a9;white-space:nowrap;padding-inline:6px;flex:0 0 auto}
 .tour-map-tools #map-save-gps:disabled{opacity:.65;cursor:progress}
 .tour-map-tools #map-save-gps-status{
   flex-basis:100%;max-width:100%;line-height:1.4;
