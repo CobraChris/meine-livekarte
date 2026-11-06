@@ -2349,3 +2349,9 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 @media(max-width:760px){
   .tour-map-tools #map-save-gps{min-height:36px}
 }
+
+/* Transparent space around floating bookmark controls must not absorb
+ * touch swipes intended for the map and its existing place popups. */
+.tour-map-tools{pointer-events:none}
+.tour-map-tools > button{pointer-events:auto}
+.tour-map-tools > span{pointer-events:none}
