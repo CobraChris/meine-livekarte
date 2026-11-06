@@ -131,7 +131,20 @@
     await refreshFiles();
    }catch(error){message('⚠ '+error.message,true);}
   };
-  // methods
+  $('rail-details-save').onclick=()=>{
+   if(!context)return;
+   try{
+    const before=API.get(localStorage,context.key);
+    API.save(localStorage,context.key,{
+     ...before,reference:$('rail-reference').value,
+     note:$('rail-note').value,
+     pickupRequired:$('rail-pickup').checked
+    });
+    message('✓ Hinweise gespeichert. Ticketstatus und Originaldateien unverändert.');
+    onUpdated();
+   }catch(error){message('⚠ Nicht gespeichert: '+error.message,true);}
+  };
+
   return {open,summary};
  }
  root.LivekarteRailTicketUI=Object.freeze({create});
