@@ -329,6 +329,8 @@ async function verifyJourneyTicketAttachment(page){
  await first.locator('.rail-leg-ticket-button').click();
  await page.locator('#rail-ticket-dialog').waitFor({state:'visible'});
  assert.match(await page.locator('#rail-ticket-route').innerText(),/Kyoto.*Tokyo/);
+ await page.waitForFunction(()=>document.getElementById('rail-ticket-file-status')?.textContent.includes('Noch kein Ticketfoto oder PDF'),
+  null,{timeout:10000});
  assert.match(await page.locator('#rail-ticket-file-status').innerText(),/Noch kein Ticketfoto oder PDF/,
   'The empty state must explicitly say nothing is stored yet');
  assert.equal(await page.locator('#rail-camera-input').getAttribute('capture'),'environment');
