@@ -75,7 +75,7 @@ test('both rail trip and city view show the dated program, without invented rese
  assert.match(app,/kyotoOverview\.hidden=!\['ride-kyoto','town-kyoto'\]\.includes\(activePlanId\)/);
  assert.match(app,/renderPlanPicker\(\);renderJourney\(\);renderKyotoOverview\(\);render\(\)/);
  assert.match(read('style.css'),/\.kyoto-overview\[hidden\]/);
- assert.match(read('sw.js'),/livekarte-shell-pwa-v23/);
+ assert.match(read('sw.js'),/livekarte-shell-pwa-v22/);
 });
 
 test('rail itinerary uses shared schematic route contract, not fabricated track geometry',()=>{
