@@ -3519,7 +3519,7 @@
         return day>='2026-11-03'&&day<='2026-11-06'&&
           !place.schedule.includes('Osaka Souvenir-Einkauf');
       });
-      if(approved.length!==17)return;
+      if(approved.length!==18)return;
       const additions=[],matches=[];
       for(const suggested of approved){
         const found=places.find(existing=>
@@ -3593,6 +3593,50 @@
     }
   }
   seedOsakaSouvenirPlaces();
+  // One-time additive migration for the requested 06.11. Arashiyama bridge.
+  // A previously installed PWA already passed the Kyoto import marker: the
+  // preset alone cannot make this new point appear in local saved day plans.
+  function seedTogetsukyoBridge(){
+    const marker='livekarte-kyoto-togetsukyo-2026-11-06-v1';
+    try{
+      if(localStorage.getItem(marker)==='1')return;
+      const todayPresets=C.presetPlaces('town-kyoto');
+      const bridge=todayPresets.find(p=>p.name==='Togetsukyō-Brücke (渡月橋)');
+      if(!bridge)return;
+      // Adjust only untouched default schedules; user edits stay authoritative.
+      const formerSchedules={
+        'Kinkaku-ji (Goldener Pavillon)':'06.11. · 11:00 · westliches Kyoto',
+        'Ryōan-ji (Steingarten)':'06.11. · 13:30 · westliches Kyoto',
+        'Tenryū-ji':'06.11. · 15:00 · Arashiyama',
+        'Arashiyama Bambuswald':'06.11. · ab 15:45 · Bambuswald'
+      };
+      const updated=places.map(place=>{
+        if(!Object.hasOwn(formerSchedules,place.name)||
+           place.schedule!==formerSchedules[place.name])return place;
+        const preset=todayPresets.find(p=>p.name===place.name);
+        if(!preset)return place;
+        return {...place,schedule:preset.schedule};
+      });
+      const existing=updated.find(place=>
+        C.placePlanKey(place)===C.placePlanKey(bridge)||
+        (/togetsuk|渡月橋/i.test(place.name)&&C.distance(place,bridge)<90));
+      const selected=existing||bridge;
+      const nextPlaces=existing?updated:C.merge(updated,[bridge]);
+      const nextPlans=Object.assign(Object.create(null),planAssignments);
+      const nextDays=Object.assign(Object.create(null),cityDayAssignments);
+      const key=C.placePlanKey(selected);
+      nextPlans[key]=[...new Set([...(nextPlans[key]||[]),'town-kyoto'])];
+      if(!Object.hasOwn(nextDays,key))nextDays[key]='2026-11-06';
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(nextPlaces));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(nextPlans));
+      localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(nextDays));
+      localStorage.setItem(marker,'1');
+      places=nextPlaces;planAssignments=nextPlans;cityDayAssignments=nextDays;
+    }catch{
+      say('Die Togetsukyō-Brücke konnte nicht automatisch ergänzt werden. Eigene Daten bleiben erhalten.');
+    }
+  }
+  seedTogetsukyoBridge();
 
   // Persist only chosen place identifiers, never the GPS start or a route.
   try{
