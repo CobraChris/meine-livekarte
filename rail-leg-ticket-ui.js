@@ -92,6 +92,45 @@
     row.append(unlink);list.append(row);
    }
   }
+  async function importFile(input){
+   const target=context,file=input.files?.[0];
+   if(!target||!file)return;
+   input.disabled=true;
+   message('⏳ Die Datei wird lokal gespeichert …');
+   try{
+    const saved=await shelf().add(file,{
+     title:(target.route+' · '+file.name).slice(0,100),
+     trip:target.title.slice(0,100)
+    });
+    try{API.link(localStorage,target.key,saved.id);}
+    catch(error){
+     await shelf().remove(saved.id);
+     throw error;
+    }
+    message('✓ Datei zugeordnet. Den Ticketstatus bitte gesondert prüfen.');
+    root.dispatchEvent(new Event('livekarte:ticket-library-changed'));
+    onUpdated();
+    await refreshFiles();
+   }catch(error){
+    message('⚠ Nicht gespeichert: '+(error.message||'Datei konnte nicht übernommen werden.'),true);
+   }finally{
+    input.value='';
+    input.disabled=false;
+   }
+  }
+  $('rail-camera-input').addEventListener('change',e=>{void importFile(e.currentTarget);});
+  $('rail-file-input').addEventListener('change',e=>{void importFile(e.currentTarget);});
+  $('rail-existing-add').onclick=async()=>{
+   const target=context,id=$('rail-existing-select').value;
+   if(!target||!id)return;
+   try{
+    await shelf().get(id);
+    API.link(localStorage,target.key,id);
+    message('✓ Vorhandenes Ticket zugeordnet; keine zusätzliche Datei angelegt.');
+    onUpdated();
+    await refreshFiles();
+   }catch(error){message('⚠ '+error.message,true);}
+  };
   // methods
   return {open,summary};
  }
