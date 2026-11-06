@@ -493,6 +493,18 @@
       status('Bereit · Dateien bleiben lokal auf diesem Gerät, ohne Passwort und ohne Cloud.');
     }
   }
+  // A journey leg can request the existing local ticket viewer and can
+  // add a new camera photo to the same IndexedDB shelf.
+  window.addEventListener('livekarte:ticket-open',event=>{
+    const id=event.detail?.id;
+    if(typeof id!=='string'||!id)return;
+    void viewTicket(id).catch(error=>
+      status('Ticket konnte nicht angezeigt werden: '+error.message,true));
+  });
+  window.addEventListener('livekarte:ticket-library-changed',()=>{
+    void render().catch(error=>
+      status('Ticketliste konnte nicht aktualisiert werden: '+error.message,true));
+  });
   window.addEventListener('focus',()=>{
     if(SHARE)void renderShared().catch(e=>status('Geteilte Dateien konnten nicht geladen werden: '+e.message,true));
   });
