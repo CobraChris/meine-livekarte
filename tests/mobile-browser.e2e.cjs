@@ -323,6 +323,64 @@ async function verifyCurrentPositionBookmark(page){
  console.log('PASS one-tap GPS current location saved as named restaurant with no map tap and reload-safe');
 }
 
+async function verifyJourneyTicketAttachment(page){
+ const first=page.locator('#journey-info .journey-item').first();
+ const original=await first.locator('select.ticket-choice').inputValue();
+ await first.locator('.rail-leg-ticket-button').click();
+ await page.locator('#rail-ticket-dialog').waitFor({state:'visible'});
+ assert.match(await page.locator('#rail-ticket-route').innerText(),/Kyoto.*Tokyo/);
+ assert.equal(await page.locator('#rail-camera-input').getAttribute('capture'),'environment');
+ await page.locator('#rail-reference').fill('TEST-REF-987');
+ await page.locator('#rail-note').fill('Papierfahrkarte am Schalter abholen');
+ await page.locator('#rail-pickup').check();
+ await page.locator('#rail-details-save').click();
+ const afterSave=await page.evaluate(()=>{
+  const all=JSON.parse(localStorage.getItem('livekarte-rail-leg-details-v1')||'{}');
+  return Object.values(all).find(x=>x.reference==='TEST-REF-987');
+ });
+ assert.equal(afterSave.pickupRequired,true);
+ assert.match(afterSave.note,/Schalter/);
+ assert.equal(await page.locator('#journey-info .journey-item').first()
+  .locator('select.ticket-choice').inputValue(),original,
+  'Saving pickup notes cannot change ticket readiness');
+ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lQAAAABJRU5ErkJggg==','base64');
+ await page.locator('#rail-camera-input').setInputFiles({
+  name:'nikko-test-ticket.png',mimeType:'image/png',buffer:png
+ });
+ await page.waitForFunction(()=>document.querySelector('#rail-ticket-files')?.textContent.includes('nikko-test-ticket.png'),
+  null,{timeout:15000});
+ const afterPhoto=await page.evaluate(async()=>{
+  const all=JSON.parse(localStorage.getItem('livekarte-rail-leg-details-v1')||'{}');
+  const shelf=new window.LivekarteTicketLibrary.Library();
+  const files=await shelf.list();
+  return {ids:Object.values(all).find(x=>x.reference==='TEST-REF-987')?.ticketIds||[],
+    files:files.map(x=>x.id),statuses:localStorage.getItem('livekarte-ticket-status-v1')};
+ });
+ assert.equal(afterPhoto.ids.length,1);
+ assert.ok(afterPhoto.files.includes(afterPhoto.ids[0]));
+ await page.locator('#rail-ticket-close').click();
+ const second=page.locator('#journey-info .journey-item').nth(1);
+ await second.locator('.rail-leg-ticket-button').click();
+ await page.locator('#rail-existing-select').selectOption(afterPhoto.ids[0]);
+ await page.locator('#rail-existing-add').click();
+ await page.waitForFunction(()=>document.querySelector('#rail-ticket-files')?.textContent.includes('nikko-test-ticket.png'));
+ const afterLink=await page.evaluate(async()=>{
+  const shelf=new window.LivekarteTicketLibrary.Library();
+  return {count:(await shelf.list()).length,
+    vals:Object.values(JSON.parse(localStorage.getItem('livekarte-rail-leg-details-v1')||'{}'))};
+ });
+ assert.equal(afterLink.count,afterPhoto.files.length,
+  'A document attached to two legs must not be duplicated');
+ assert.equal(afterLink.vals.filter(x=>x.ticketIds.includes(afterPhoto.ids[0])).length,2);
+ await page.locator('#rail-ticket-close').click();
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#plan-select').selectOption('ride-nikko');
+ await page.locator('#journey-info .journey-item').first().locator('.rail-leg-ticket-button').click();
+ assert.equal(await page.locator('#rail-reference').inputValue(),'TEST-REF-987');
+ assert.equal(await page.locator('#rail-pickup').isChecked(),true);
+ await page.locator('#rail-ticket-close').click();
+ console.log('PASS camera-photo ticket, notes, pickup flag, existing-file reuse and reload persistence');
+}
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -362,6 +420,7 @@ async function main(){
   assert.equal(await page.locator('.map-actions button').count(),3);
   assert.ok(await page.locator('#journey-panel').isVisible(),
    'Nikkō rail section retains the shared toolbar and schematic route');
+  await verifyJourneyTicketAttachment(page);
   await page.locator('#journey-panel .journey-item').first().click();
   const stationPopup=page.locator('.leaflet-popup-content .place-popup-pan-surface').first();
   await stationPopup.waitFor({state:'visible'});
