@@ -292,6 +292,8 @@ async function verifyCurrentPositionBookmark(page){
  // No map tapping is necessary. No place is saved until form submit.
  const shortcut=page.locator('#map-save-gps');
  assert.ok(await shortcut.isVisible(),'The current-position shortcut is exposed');
+ const toolbar=await page.locator('.tour-map-tools').boundingBox();
+ assert.ok(toolbar.height<=48,'GPS shortcut must not create a second overlay row: '+toolbar.height);
  await shortcut.click();
  await page.locator('#map-place-dialog').waitFor({state:'visible'});
  const coord=await page.locator('#map-place-coordinates').innerText();
