@@ -56,6 +56,8 @@ assets = [
     ("src", "pwa.js"),
     ("src", "ticket-vault.js"),
     ("src", "ticket-library.js"),
+    ("src", "rail-leg-details-core.js"),
+    ("src", "rail-leg-ticket-ui.js"),
     ("src", "ticket-library-ui.js"),
     ("src", "ticket-share-inbox.js"),
 ]
