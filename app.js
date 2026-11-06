@@ -9,6 +9,7 @@
   const PlaceUI=window.LivekartePlaceUI;
   const RM=window.LivekarteRouteModel;
   const RailDetails=window.LivekarteRailLegDetails;
+  const railTicketUI=window.LivekarteRailTicketUI.create({onUpdated:()=>renderJourney()});
   const camera=window.LivekarteMapCamera.create();
   let cityDayAssignments=Object.create(null);
   let activeCityDay=MD.ALL;
@@ -2991,18 +2992,16 @@
         ticketRow.addEventListener('click',e=>e.stopPropagation());
         ticketRow.append(ticketLabel,badge,picker);
         item.append(ticketRow);
-        const legKey=C.ticketLegKey(activePlanId,journey,i);
-        const details=RailDetails.get(localStorage,legKey);
         const addTicket=node('button',
-          '📷 Ticket / Abholinfo'+(details.ticketIds.length?' · 📎 '+details.ticketIds.length:'')+
-          (details.pickupRequired?' · Abholung offen':''),
+          '📷 Ticket / Abholinfo'+railTicketUI.summary(activePlanId,journey,i),
           'rail-leg-ticket-button');
         addTicket.type='button';
         addTicket.setAttribute('aria-label','Ticket hinzufügen, fotografieren oder Abholhinweise bearbeiten für '+
           stop.name+' nach '+journey.stops[i+1].name);
         addTicket.onclick=e=>{
           e.stopPropagation();
-          void openRailLegTicket(activePlanId,journey,i);
+          void railTicketUI.open(activePlanId,journey,i).catch(error=>
+            say('Ticketfenster konnte nicht geöffnet werden: '+error.message));
         };
         item.append(addTicket);
       }
