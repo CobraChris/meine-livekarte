@@ -95,8 +95,21 @@ async function swipeOverPopupAction(page){
  await delay(120);
  const after=await pane.evaluate(el=>el.style.transform);
  const offset=value=>Number(value.slice(value.indexOf('(')+1).split('px')[0]);
+ const hit=await page.evaluate(({x,y})=>{
+  const info=(px,py)=>{
+   const elem=document.elementFromPoint(px,py);
+   return {tag:elem?.tagName,id:elem?.id,className:String(elem?.className||'').slice(0,120),
+     text:elem?.textContent?.trim().slice(0,80)};
+  };
+  const toolbar=document.querySelector('.tour-map-tools');
+  const t=toolbar?.getBoundingClientRect();
+  return {start:info(x,y),end:info(x+56,y),
+   toolbar:t?{x:t.x,y:t.y,width:t.width,height:t.height}:null,
+   popup:document.querySelector('.leaflet-popup')?.getBoundingClientRect()?.toJSON()};
+ },{x,y});
  assert.ok(Math.abs(offset(after)-offset(before))>=40,
-  'A 56px finger gesture must move the map by at least 40px, not just the first 8px');
+  'A 56px finger gesture must move the map by at least 40px, not just the first 8px. '+
+  JSON.stringify({before,after,hit}));
  assert.equal(await popup.isVisible(),true,'Popup stays open after pan gesture');
  assert.equal(await page.locator('#walk-route-panel').isVisible(),false,
   'Swipe must NOT accidentally trigger the Fußweg button');
