@@ -53,7 +53,8 @@ jobs:
           cp place-search-core.js public/
           cp multi-day-core.js day-context-core.js day-selector-ui.js place-ui.js tour-ui.js route-model-core.js public/
           cp google-demo.js public/
-          cp ticket-vault.js ticket-library.js rail-leg-details-core.js rail-leg-ticket-ui.js ticket-library-ui.js ticket-share-inbox.js public/
+          cp ticket-vault.js ticket-library.js ticket-library-ui.js ticket-share-inbox.js public/
+          cp rail-leg-details-core.js rail-leg-ticket-ui.js public/
           cp -r vendor public/
           cp -r sync public/
           mkdir -p public/icons
