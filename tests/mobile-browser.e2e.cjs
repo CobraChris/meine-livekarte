@@ -420,13 +420,13 @@ async function main(){
   assert.equal(await page.locator('.map-actions button').count(),3);
   assert.ok(await page.locator('#journey-panel').isVisible(),
    'Nikkō rail section retains the shared toolbar and schematic route');
-  await verifyJourneyTicketAttachment(page);
   await page.locator('#journey-panel .journey-item').first().click();
   const stationPopup=page.locator('.leaflet-popup-content .place-popup-pan-surface').first();
   await stationPopup.waitFor({state:'visible'});
   assert.ok((await stationPopup.innerText()).length>8,
    'Rail station must open the same accessible popup surface as day places');
   console.log('PASS Nikkō station popup uses the shared map-popup contract');
+  await verifyJourneyTicketAttachment(page);
   await page.locator('#plan-select').selectOption('town-kyoto');
   await testDay(page,'2026-11-04',4);
   await verifyCompassDiagnostics(page);
