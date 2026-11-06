@@ -272,6 +272,42 @@ async function verifyUpdateGuardAndPersistence(page){
  console.log('PASS same-origin app reload preserves all trip and ticket storage');
 }
 
+async function verifyCurrentPositionBookmark(page){
+ const name='CI GPS Restaurant (keine echte Buchung)';
+ const before=await page.evaluate(()=>JSON.parse(
+  localStorage.getItem('livekarte-places-v1')||'[]').length);
+ // No map tapping is necessary. No place is saved until form submit.
+ const shortcut=page.locator('#map-save-gps');
+ assert.ok(await shortcut.isVisible(),'The current-position shortcut is exposed');
+ await shortcut.click();
+ await page.locator('#map-place-dialog').waitFor({state:'visible'});
+ const coord=await page.locator('#map-place-coordinates').innerText();
+ assert.match(coord,/35\\.012000, 135\\.763000/,
+  'Bookmark uses real mock GPS position, not the map center');
+ assert.equal(await page.locator('#map-place-name').inputValue(),'');
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('livekarte-places-v1')||'[]').length),
+  before,'Opening GPS bookmark must not write to localStorage');
+ await page.locator('#map-place-name').fill(name);
+ await page.locator('#map-place-note').fill('Nur automatischer mobiler Test');
+ await page.locator('#map-place-form button[type="submit"]').click();
+ await page.locator('#map-place-dialog').waitFor({state:'hidden'});
+ const saved=await page.evaluate(name=>{
+  const places=JSON.parse(localStorage.getItem('livekarte-places-v1')||'[]');
+  return places.filter(p=>p.name===name);
+ },name);
+ assert.equal(saved.length,1,'The new GPS restaurant is only saved once');
+ assert.ok(Math.abs(saved[0].lat-35.012)<0.00002);
+ assert.ok(Math.abs(saved[0].lng-135.763)<0.00002);
+ assert.equal(saved[0].category,'restaurant');
+ // Current section assigned normally; existing day plans and other places stay.
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#map-save-gps').waitFor({state:'visible'});
+ assert.equal(await page.evaluate(name=>JSON.parse(
+  localStorage.getItem('livekarte-places-v1')||'[]').filter(p=>p.name===name).length,name),1,
+  'The GPS location survives a normal installed-PWA update/reload');
+ console.log('PASS one-tap GPS current location saved as named restaurant with no map tap and reload-safe');
+}
+
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -321,6 +357,7 @@ async function main(){
   await testDay(page,'2026-11-04',4);
   await verifyCompassDiagnostics(page);
   await verifyUpdateGuardAndPersistence(page);
+  await verifyCurrentPositionBookmark(page);
   assert.deepEqual(uncaught,[],'No uncaught runtime errors during real mobile interactions');
   console.log('PASS complete Android-size Chrome regression: Kyoto, Nara, Osaka, Nikkō');
  }catch(error){
