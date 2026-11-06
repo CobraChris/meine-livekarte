@@ -295,6 +295,61 @@
     $('map-place-name').focus();
   }
   mapPlaceButton.onclick=()=>setMapPlacePicking(!mapPlacePicking);
+  // Save the CURRENT location without having to tap a location on the map.
+  // Request one fresh fix only after a deliberate tap. The coordinates stay
+  // in memory until the existing explicit "Ort dauerhaft speichern" submit.
+  const mapGpsButton=$('map-save-gps');
+  const mapGpsStatus=$('map-save-gps-status');
+  const gpsBookmarkMessage=message=>{
+    mapGpsStatus.textContent=message;
+    mapGpsStatus.hidden=!message;
+  };
+  mapGpsButton.onclick=async()=>{
+    if(mapGpsButton.disabled||mapPlaceDialog.open)return;
+    gpsBookmarkMessage('📍 Standort wird ermittelt …');
+    mapGpsButton.disabled=true;
+    mapGpsButton.setAttribute('aria-busy','true');
+    try{
+      if(!window.isSecureContext||!navigator.geolocation)
+        throw Error('GPS ist hier nicht verfügbar. Bitte HTTPS und Standortfreigabe prüfen.');
+      // Fast path: the map already has a recent, accurate live position.
+      // For stale, inaccurate or disabled map GPS, explicitly ask the device
+      // for a ONE-TIME high-accuracy fix without changing the GPS-follow mode.
+      let point;
+      const recent=watch!==null&&position&&
+        Number.isFinite(positionAccuracy)&&positionAccuracy<=35&&
+        Date.now()-positionUpdatedAt<=15000;
+      if(recent){
+        point={...position};
+      }else{
+        const result=await new Promise((resolve,reject)=>
+          navigator.geolocation.getCurrentPosition(resolve,reject,{
+            enableHighAccuracy:true,maximumAge:5000,timeout:12000
+          }));
+        const lat=Number(result?.coords?.latitude),
+          lng=Number(result?.coords?.longitude),
+          accuracy=Number(result?.coords?.accuracy);
+        if(!Number.isFinite(lat)||Math.abs(lat)>90||
+           !Number.isFinite(lng)||Math.abs(lng)>180)
+          throw Error('Der GPS-Standort ist ungültig. Bitte erneut versuchen.');
+        if(!Number.isFinite(accuracy)||accuracy>60)
+          throw Error('Standort noch zu ungenau ('+
+            Math.round(accuracy)+' m). Bitte kurz warten und erneut versuchen oder einen Kartenpunkt wählen.');
+        point={lat,lng};
+      }
+      gpsBookmarkMessage('');
+      openMapPlaceDialog(point);
+    }catch(e){
+      const message=e?.code===1?'Standortzugriff abgelehnt. Bitte die Standortfreigabe für die App prüfen.'
+        :e?.code===2?'Kein GPS-Signal. Bitte im Freien erneut versuchen.'
+        :e?.code===3?'GPS-Zeitüberschreitung. Bitte erneut versuchen.'
+        :e?.message||'Standort konnte nicht ermittelt werden.';
+      gpsBookmarkMessage('⚠ '+message);
+    }finally{
+      mapGpsButton.disabled=false;
+      mapGpsButton.removeAttribute('aria-busy');
+    }
+  };
   $('map-place-cancel').onclick=()=>mapPlaceDialog.close();
   mapPlaceDialog.addEventListener('close',()=>{
     mapPlacePoint=null;

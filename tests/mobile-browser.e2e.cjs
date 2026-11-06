@@ -95,8 +95,21 @@ async function swipeOverPopupAction(page){
  await delay(120);
  const after=await pane.evaluate(el=>el.style.transform);
  const offset=value=>Number(value.slice(value.indexOf('(')+1).split('px')[0]);
+ const hit=await page.evaluate(({x,y})=>{
+  const info=(px,py)=>{
+   const elem=document.elementFromPoint(px,py);
+   return {tag:elem?.tagName,id:elem?.id,className:String(elem?.className||'').slice(0,120),
+     text:elem?.textContent?.trim().slice(0,80)};
+  };
+  const toolbar=document.querySelector('.tour-map-tools');
+  const t=toolbar?.getBoundingClientRect();
+  return {start:info(x,y),end:info(x+56,y),
+   toolbar:t?{x:t.x,y:t.y,width:t.width,height:t.height}:null,
+   popup:document.querySelector('.leaflet-popup')?.getBoundingClientRect()?.toJSON()};
+ },{x,y});
  assert.ok(Math.abs(offset(after)-offset(before))>=40,
-  'A 56px finger gesture must move the map by at least 40px, not just the first 8px');
+  'A 56px finger gesture must move the map by at least 40px, not just the first 8px. '+
+  JSON.stringify({before,after,hit}));
  assert.equal(await popup.isVisible(),true,'Popup stays open after pan gesture');
  assert.equal(await page.locator('#walk-route-panel').isVisible(),false,
   'Swipe must NOT accidentally trigger the Fußweg button');
@@ -272,6 +285,44 @@ async function verifyUpdateGuardAndPersistence(page){
  console.log('PASS same-origin app reload preserves all trip and ticket storage');
 }
 
+async function verifyCurrentPositionBookmark(page){
+ const name='CI GPS Restaurant (keine echte Buchung)';
+ const before=await page.evaluate(()=>JSON.parse(
+  localStorage.getItem('livekarte-places-v1')||'[]').length);
+ // No map tapping is necessary. No place is saved until form submit.
+ const shortcut=page.locator('#map-save-gps');
+ assert.ok(await shortcut.isVisible(),'The current-position shortcut is exposed');
+ const toolbar=await page.locator('.tour-map-tools').boundingBox();
+ assert.ok(toolbar.height<=48,'GPS shortcut must not create a second overlay row: '+toolbar.height);
+ await shortcut.click();
+ await page.locator('#map-place-dialog').waitFor({state:'visible'});
+ const coord=await page.locator('#map-place-coordinates').innerText();
+ assert.ok(coord.includes('35.012000, 135.763000'),
+  'Bookmark uses real mock GPS position, not the map center: '+coord);
+ assert.equal(await page.locator('#map-place-name').inputValue(),'');
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('livekarte-places-v1')||'[]').length),
+  before,'Opening GPS bookmark must not write to localStorage');
+ await page.locator('#map-place-name').fill(name);
+ await page.locator('#map-place-note').fill('Nur automatischer mobiler Test');
+ await page.locator('#map-place-form button[type="submit"]').click();
+ await page.locator('#map-place-dialog').waitFor({state:'hidden'});
+ const saved=await page.evaluate(name=>{
+  const places=JSON.parse(localStorage.getItem('livekarte-places-v1')||'[]');
+  return places.filter(p=>p.name===name);
+ },name);
+ assert.equal(saved.length,1,'The new GPS restaurant is only saved once');
+ assert.ok(Math.abs(saved[0].lat-35.012)<0.00002);
+ assert.ok(Math.abs(saved[0].lng-135.763)<0.00002);
+ assert.equal(saved[0].category,'restaurant');
+ // Current section assigned normally; existing day plans and other places stay.
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#map-save-gps').waitFor({state:'visible'});
+ assert.equal(await page.evaluate(name=>JSON.parse(
+  localStorage.getItem('livekarte-places-v1')||'[]').filter(p=>p.name===name).length,name),1,
+  'The GPS location survives a normal installed-PWA update/reload');
+ console.log('PASS one-tap GPS current location saved as named restaurant with no map tap and reload-safe');
+}
+
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -321,6 +372,7 @@ async function main(){
   await testDay(page,'2026-11-04',4);
   await verifyCompassDiagnostics(page);
   await verifyUpdateGuardAndPersistence(page);
+  await verifyCurrentPositionBookmark(page);
   assert.deepEqual(uncaught,[],'No uncaught runtime errors during real mobile interactions');
   console.log('PASS complete Android-size Chrome regression: Kyoto, Nara, Osaka, Nikkō');
  }catch(error){

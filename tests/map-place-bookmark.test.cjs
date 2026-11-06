@@ -81,3 +81,24 @@ test('feature stays outside tour-picker and uses offline shell without new netwo
  assert.match(sw,/livekarte-shell-pwa-v22/);
  assert.doesNotMatch(sw,/gps|overpass-api\.de|routed-foot/);
 });
+
+test('one-tap GPS bookmark has a visible explicit control and does not save without confirmation',()=>{
+ for(const id of ['map-save-gps','map-save-gps-status'])
+   assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(html,/aria-label="Aktuellen GPS-Standort merken"[^>]*>📍 Hier<\/button>/);
+ const first=app.indexOf('  mapGpsButton.onclick=async()=>{');
+ const end=app.indexOf("  $('map-place-cancel').onclick=",first);
+ assert.ok(first>0&&end>first);
+ const handler=app.slice(first,end);
+ assert.match(handler,/window\.isSecureContext/);
+ assert.match(handler,/navigator\.geolocation\.getCurrentPosition\(resolve,reject/);
+ assert.match(handler,/enableHighAccuracy:true,maximumAge:5000,timeout:12000/);
+ assert.match(handler,/positionAccuracy<=35/);
+ assert.match(handler,/Date\.now\(\)-positionUpdatedAt<=15000/);
+ assert.match(handler,/accuracy>60/);
+ assert.match(handler,/openMapPlaceDialog\(point\)/);
+ assert.match(handler,/mapGpsButton\.disabled=true/);
+ assert.match(handler,/mapGpsButton\.disabled=false/);
+ assert.doesNotMatch(handler,/localStorage|C\.merge\(|persist\(\)|fetch\(/);
+ assert.match(css,/#map-save-gps-status/);
+});
