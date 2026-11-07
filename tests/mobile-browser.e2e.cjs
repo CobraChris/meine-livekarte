@@ -669,8 +669,8 @@ async function verifyProviderParityMatrix(page){
 
 
 async function verifyVisualLayouts(page){
- // 8 deterministic Android views: 2 map providers × 2 journey types ×
- // 2 handset widths. No live tiles/Google calls or user GPS tracks.
+ // 16 deterministic Android views: 2 providers × 2 journeys ×
+ // 2 handset widths × normal/fullscreen. No live tiles or GPS tracks.
  const dir=path.join(root,'test-results','visual','current');
  fs.mkdirSync(dir,{recursive:true});
  const manifest={version:1,scenes:[]};
@@ -724,7 +724,8 @@ async function verifyVisualLayouts(page){
     {key:'nikko-rail',id:'ride-nikko'},
     {key:'nara-day',id:'town-kyoto',day:'2026-11-04'}
    ]){
-    for(const provider of ['osm','google']){
+    for(const expanded of [false,true]){
+     for(const provider of ['osm','google']){
      if(provider==='osm'){
       await page.locator('#provider-osm').click();
      }else{
@@ -741,8 +742,14 @@ async function verifyVisualLayouts(page){
        assert.equal(active,'true');
       });
      }
+     const expand=page.locator('#expand-map');
+     if((await expand.getAttribute('aria-pressed'))!==String(expanded))
+       await expand.click();
+     assert.equal(await expand.getAttribute('aria-pressed'),String(expanded),
+       'Fullscreen state must remain switchable on both providers');
      const state=await measure();
-     const id=plan.key+'-'+viewport.width+'-'+provider;
+     const mode=expanded?'fullscreen':'standard';
+     const id=plan.key+'-'+mode+'-'+viewport.width+'-'+provider;
      const screenshots={};
      for(const [name,selector] of Object.entries(selectors)){
       const filename=id+'-'+name+'.png';
@@ -751,16 +758,19 @@ async function verifyVisualLayouts(page){
       });
       screenshots[name]=filename;
      }
-     manifest.scenes.push({id,key:plan.key,width:viewport.width,
+     manifest.scenes.push({id,key:plan.key+'-'+mode,mode,width:viewport.width,
       provider,...state,screenshots});
+     }
     }
    }
   }
   fs.writeFileSync(path.join(dir,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
-  assert.equal(manifest.scenes.length,8,'Visual matrix must include all required layouts');
-  console.log('PASS captured 8 offline mobile visual snapshots for OSM/Google × journey/day × 393/360px');
+  assert.equal(manifest.scenes.length,16,'Visual matrix must include all required layouts');
+  console.log('PASS captured 16 offline Android snapshots: providers × journeys × widths × fullscreen');
  }finally{
   await page.setViewportSize({width:393,height:852});
+  if(await page.locator('#expand-map').getAttribute('aria-pressed')==='true')
+    await page.locator('#expand-map').click();
   await style.evaluate(el=>el.remove());
  }
 }
