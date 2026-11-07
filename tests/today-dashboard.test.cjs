@@ -18,8 +18,9 @@ test('today suggestions use real Japan local date and only confirmed preset trav
     ['2026-11-02T15:00:00Z','town-kyoto',2],
     ['2026-11-05T15:00:00Z','town-kyoto',5],
     ['2026-11-06T15:00:00Z','ride-nikko',null],
-    ['2026-11-07T15:00:00Z','town-nikko',null],
-    ['2026-11-08T15:00:00Z',null,null]
+    ['2026-11-07T15:00:00Z','town-nikko',1],
+    ['2026-11-08T15:00:00Z','town-nikko',2],
+    ['2026-11-09T15:00:00Z','ride-tokyo',null]
   ];
   for(const [iso,id,dayIndex] of cases){
     const actual=NS.todaySuggestion(at(iso));

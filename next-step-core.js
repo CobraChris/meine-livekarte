@@ -54,16 +54,35 @@
         title:'Kyoto · Arashiyama & Lichterabend',
         summary:'Kinkaku-ji · Ryōan-ji · Togetsukyō-Brücke · Tenryū-ji · Bambuswald · Light-up',
         hint:'Start ca. 13:00. Brücke um 15:40 vor Tenryū-ji, Light-up ab 18:00. Eintritt nicht gebucht; Transfers prüfen.'};
-    if(day==='2026-11-07')
-      return {date:day,planId:'ride-nikko',dayIndex:null,
-        title:'Weiterreise Kyoto → Nikkō',
-        summary:'Kyoto → Tokyo → Utsunomiya → Nikkō (JR)',
-        hint:'Bisherige Planung, keine Live-Fahrzeiten. Zugzeiten und Tickets vor Abfahrt prüfen.'};
+    if(day==='2026-11-07'){
+      const hour=Number(new Intl.DateTimeFormat('en-US',{
+        timeZone:'Asia/Tokyo',hour:'2-digit',hourCycle:'h23'
+      }).format(at));
+      return hour>=16
+        ?{date:day,planId:'town-nikko',dayIndex:0,
+          title:'Nikkō · Light-up-Abend',
+          summary:'HaruNikko New Wing · Shinkyō-Brücke · Shōyō-en-Garten · Futarasan',
+          hint:'Light-up 17:00–21:00, Shōyō-en letzter Einlass 20:30. Kein Live-Navigations- oder Ticketstatus.'}
+        :{date:day,planId:'ride-nikko',dayIndex:null,
+          title:'Weiterreise Kyoto → Nikkō',
+          summary:'Kyoto → Tokyo → Utsunomiya → Nikkō (JR)',
+          hint:'Bisherige Planung, keine Live-Fahrzeiten. Zugzeiten und Tickets vor Abfahrt prüfen.'};
+    }
     if(day==='2026-11-08')
-      return {date:day,planId:'town-nikko',dayIndex:null,
-        title:'Nikkō · flexibel',
-        summary:'Fairfield-Hotel · eigene Ausflugsziele auswählen',
-        hint:'Noch kein verbindlicher Tagesablauf hinterlegt.'};
+      return {date:day,planId:'town-nikko',dayIndex:1,
+        title:'Nikkō · Welterbestätten & Hotelwechsel',
+        summary:'Rinnō-ji · Tōshō-gū · Futarasan · Taiyūin · Fairfield',
+        hint:'Frühestens ca. 09:30 starten; Gepäcktransfer selbst organisieren. Kanmangafuchi optional.'};
+    if(day==='2026-11-09')
+      return {date:day,planId:'town-nikko',dayIndex:2,
+        title:'Nikkō · Wasserfälle und Chūzenji-See',
+        summary:'Bus über Irohazaka · Kegon-Wasserfall · Chūzenji-See',
+        hint:'Start ca. 09:30; Ryūzu-Wasserfall optional, Busfahrplan und Wetter prüfen.'};
+    if(day==='2026-11-10')
+      return {date:day,planId:'ride-tokyo',dayIndex:null,
+        title:'Nikkō → Tokio · SPACIA X 6',
+        summary:'Tōbu-Nikkō 12:55 → Tokyo Skytree 14:40 → SKM Tokyo Hotel',
+        hint:'Fairfield-Check-out und Transfer zum Tōbu-Bahnhof; Cockpit-Reservierung und Grundfahrkarte prüfen.'};
     return null;
   }
   function isPastTravelView(view,at=new Date()){
@@ -72,7 +91,8 @@
       view==='ride-kyoto'&&today>'2026-11-01'||
       view==='town-takayama'&&today>'2026-11-01'||
       view==='town-kyoto'&&today>'2026-11-06'||
-      view==='ride-nikko'&&today>'2026-11-07';
+      view==='ride-nikko'&&today>'2026-11-07'||
+      view==='ride-tokyo'&&today>'2026-11-10';
   }
   // Scheduled milestones only. All minute arithmetic uses Japan local clock,
   // never the device timezone or a guessed real-time train position.

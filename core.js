@@ -216,7 +216,19 @@
           leg:'JR Nikkō-Linie (Regionalzug) · 15:15–15:58 laut bisherigem Reiseplan'},
         {name:'Nikkō Station (JR)',lat:36.74718,lng:139.62194,
           arrival:'15:58',
-          description:'Nikkō (JR-Bahnhof) · Weiterfahrt zum Fairfield by Marriott Tochigi Nikko. Hotel in Tokorono 1541-3, nicht direkt am Bahnhof.'}
+          description:'Nikkō (JR-Bahnhof) · 07.11. zuerst ins HaruNikko New Wing (1323-10 Tokorono), ca. 15–20 Min. Fußweg; Fairfield erst ab 08.11.'}
+      ]
+    },
+    // Tobu SPACIA X 6 is a separate itinerary; rail lines are schematic.
+    'nikko-tokyo-2026-11-10': {
+      title:'10.11. · Nikkō → Tokyo Skytree → Kinshichō',
+      date:'10.11.2026',
+      stops:[
+        {name:'Tōbu-Nikkō Station',lat:36.74806,lng:139.62008,departure:'12:55',
+          description:'Tōbu-Nikkō (Tōbu-Bahnhof) · SPACIA X 6, Cockpit-Sitze laut Buchungsplanung. Express- und Grundfahrkarte separat prüfen.',
+          leg:'SPACIA X 6 (Tōbu-Limited-Express) · 12:55–14:40'},
+        {name:'Tokyo Skytree Station (Tōbu)',lat:35.7109,lng:139.8093,arrival:'14:40',
+          description:'Tōkyō Skytree (Tōbu-Bahnhof) · Weiter zum SKM Tokyo Hotel (Kinshichō); konkrete Nahverkehrsverbindung oder Taxi vor Ort wählen.'}
       ]
     },
     // Timetable plus user-confirmed booking details for the 01.11.2026 itinerary.
@@ -314,9 +326,68 @@
   // once into local browser storage, so users can still edit or clear them.
   const townPlacePresets = {
     'town-nikko': [
+      {name:'HaruNikko New Wing',lat:36.7522,lng:139.6158,category:'hotel',
+        schedule:'07.11. · Übernachtung 07.–08.11. · Check-in ca. 16:20',
+        note:'1323-10 Tokorono, Nikkō. Hotelpunkt näherungsweise; für die Navigation bitte die vollständige Adresse in Google Maps verwenden. Am 08.11. Hotelwechsel zum Fairfield.',
+        description:'Erste Unterkunft in Nikkō. Vom JR-Bahnhof nach der Ankunft am 07.11. zu Fuß ungefähr 15–20 Minuten.'},
+      {name:'Shinkyō-Brücke (Light-up)',lat:36.75333,lng:139.60417,category:'sight',
+        schedule:'07.11. · ab ca. 17:30 · kurzer Fotostopp bei Light-up Nikko',
+        duration:'10–15 Min.',priority:'1',
+        note:'Beleuchtete rote Brücke; Brückenüberquerung tagsüber gesondert. Heute nur Fotostopp. Fußweg vom Hotel oder Bus bis Shinkyō prüfen.',
+        description:'Shinkyō (historische Brücke) · abendlicher Fotostopp im Rahmen Light-up Nikko.'},
+      {name:'Shōyō-en (Lichtergarten)',lat:36.75422,lng:139.60085,category:'sight',
+        schedule:'07.11. · 18:00–19:00 · Light-up bis 21:00, letzter Einlass 20:30',
+        duration:'45–60 Min.',priority:'1',
+        note:'Rinnō-ji: beleuchteter Herbstgarten, 500 ¥ pro Erwachsenem. Nachts separates Gartenticket; bei der Einlasskasse bezahlen. Kein Essen im Garten.',
+        description:'Shōyō-en (japanischer Garten) · Lichtreflexionen im Teich; offiziell 07.11. bis 21:00 geöffnet.'},
+      {name:'Futarasan-Schrein (Light-up)',lat:36.7586,lng:139.5965,category:'sight',
+        schedule:'07.11. · 19:15–20:00 · Light-up Nikko bis 21:00',
+        duration:'30–45 Min.',priority:'1',
+        note:'Beleuchtete Außengebäude und Wege; die Tempel-/Schrein-Innenbesichtigung ist während der Abendbeleuchtung nicht möglich. Foodcourt bei Rinnō-ji optional.',
+        description:'Nikkō Futarasan (Shintō-Schrein) · stimmungsvolle Abendbeleuchtung vom 06.–08.11.'},
+      {name:'Rinnō-ji Sanbutsudō',lat:36.75439,lng:139.60176,category:'sight',
+        schedule:'08.11. · ca. 10:00–10:45 · historische Tempelbesichtigung',
+        duration:'35–45 Min.',priority:'1',
+        note:'Rinnō-ji (buddhistischer Tempel), Innenbesichtigung tagsüber; Eintritt und Schlusszeit vor Ort prüfen.',
+        description:'Großer buddhistischer Tempel in der UNESCO-Welterbestätte.'},
+      {name:'Nikkō Tōshō-gū',lat:36.7577,lng:139.5981,category:'sight',
+        schedule:'08.11. · ca. 11:00–12:30 · Hauptbesichtigung',
+        duration:'75–90 Min.',priority:'1',
+        note:'Tōshō-gū (Shintō-Schrein) · reich verzierte Tore und Gebäude; Besuch tagsüber, Eintritt separat.',
+        description:'Berühmter UNESCO-Schrein zu Ehren Tokugawa Ieyasus.'},
+      {name:'Nikkō Futarasan-Schrein (tagsüber)',lat:36.7586,lng:139.5965,category:'sight',
+        schedule:'08.11. · ca. 13:15–13:50 · Tagesbesichtigung',
+        duration:'30–40 Min.',priority:'1',
+        note:'Futarasan (Shintō-Schrein); nach dem Mittagessen und vor Taiyūin einplanen.',
+        description:'Historischer Shintō-Schrein inmitten der Welterbe-Anlagen.'},
+      {name:'Taiyūin-Mausoleum',lat:36.7584,lng:139.59462,category:'sight',
+        schedule:'08.11. · ca. 14:00–14:45 · Mausoleum',
+        duration:'40–45 Min.',priority:'1',
+        note:'Taiyūin (Mausoleum/Tempel) · im November in der Regel Schließung 16:00; letzten Einlass beachten.',
+        description:'Mausoleum von Tokugawa Iemitsu westlich der Haupttempel.'},
+      {name:'Kanmangafuchi-Schlucht (optional)',lat:36.74883,lng:139.58786,category:'nature',
+        schedule:'08.11. · optional nach Tempeln und Hotelwechsel, nur bei Zeit und Tageslicht',
+        duration:'45–60 Min.',priority:'3',
+        note:'Optionaler Spaziergang an Fluss und Jizō-Statuen. Nicht notwendig; bei Müdigkeit oder später Uhrzeit auslassen.',
+        description:'Kanmangafuchi (Flussschlucht) mit moosigen Jizō-Figuren.'},
+      {name:'Kegon-Wasserfall',lat:36.7389,lng:139.5018,category:'nature',
+        schedule:'09.11. · Vormittag · Bus nach Chūzenji Onsen, dann kurzer Fußweg',
+        duration:'45–60 Min.',priority:'1',
+        note:'Kegon (Wasserfall) · mit dem Bus über Irohazaka (Bergstraße). Fahrzeiten und mögliche November-Staus prüfen; Lift-Aussichtsplattform separat.',
+        description:'97 Meter hoher Wasserfall westlich von Nikkō; mit Bus erreichbar, keine reine Fußtour.'},
+      {name:'Chūzenji-See (Ufer)',lat:36.7395,lng:139.4932,category:'nature',
+        schedule:'09.11. · Mittags/Nachmittag · Seeufer und Mittagessen',
+        duration:'75–90 Min.',priority:'1',
+        note:'Chūzenji-ko (Bergsee) · vom Kegon-Wasserfall zu Fuß erreichbar; Spaziergang und Essen in Ufernähe.',
+        description:'Großer Bergsee am Fuße des Nantai; Seepromenade und Ausblicke.'},
+      {name:'Ryūzu-Wasserfall (optional)',lat:36.75888,lng:139.45149,category:'nature',
+        schedule:'09.11. · optional bei ausreichend Zeit und passender Busverbindung',
+        duration:'30–45 Min.',priority:'3',
+        note:'Zusätzliche Busfahrt Richtung Oku-Nikkō nötig; nur bei gutem Zeitbudget. Nicht durch die App als Fußweg ab Chūzenji verbinden lassen.',
+        description:'Ryūzu (Wasserfall), optionaler Abstecher oberhalb des Sees.'},
       {name:'Fairfield by Marriott Tochigi Nikko',lat:36.76169,lng:139.61775,
         category:'hotel',
-        schedule:'Nikkō · geplantes Hotel nach der Anreise am 07.11. · Check-in ab 15:00',
+        schedule:'08.11. · Hotelwechsel vom HaruNikko New Wing · Check-in ab 15:00',
         note:'1541-3 Tokorono, Nikkō, Tochigi 321-1421. Laut Hotel ca. 5 Min. Auto oder 30 Min. zu Fuß ab Bahnhof; keine Speisen vor Ort, Abendessen vorplanen.',
         description:'Hotel im Tokorono-Viertel. Adresse und Anfahrtsmöglichkeit vor Abfahrt prüfen; keine automatische Taxibuchung.'},
       {name:'Nikkō Station (JR)',lat:36.74718,lng:139.62194,category:'station',
@@ -468,7 +539,8 @@
     {id:'ride-kyoto',name:'01.11. · Fahrt nach Kyoto',kind:'journey',center:[35.55,136.50]},
     {id:'town-kyoto',name:'01.–06.11. · Kyoto',kind:'city',center:[35.0100,135.7710]},
     {id:'ride-nikko',name:'07.11. · Fahrt Kyoto → Nikkō',kind:'journey',center:[36.55916,139.89851]},
-    {id:'town-nikko',name:'ab 07.11. · Nikkō',kind:'city',center:[36.752,139.621]}
+    {id:'town-nikko',name:'07.–10.11. · Nikkō',kind:'city',center:[36.752,139.621]},
+    {id:'ride-tokyo',name:'10.11. · Fahrt Nikkō → Tokio',kind:'journey',center:[36.2,139.72]}
   ];
   function placePlanKey(place) {
     return JSON.stringify([place.name,place.lat,place.lng]);

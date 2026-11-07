@@ -6,7 +6,8 @@
   const CITY_DAYS=Object.freeze({
     'town-kyoto':Object.freeze([
       '2026-11-01','2026-11-02','2026-11-03',
-      '2026-11-04','2026-11-05','2026-11-06'])
+      '2026-11-04','2026-11-05','2026-11-06']),
+    'town-nikko':Object.freeze(['2026-11-07','2026-11-08','2026-11-09','2026-11-10'])
   });
   const UNASSIGNED='unassigned',ALL='all';
   const days=planId=>CITY_DAYS[planId]||[];
@@ -40,7 +41,7 @@
     const result=Object.create(null);
     if(!raw||typeof raw!=='object'||Array.isArray(raw))return result;
     for(const [key,date] of Object.entries(raw).slice(0,250)){
-      if(known.has(key)&&days('town-kyoto').includes(date))result[key]=date;
+      if(known.has(key)&&Object.values(CITY_DAYS).some(calendar=>calendar.includes(date)))result[key]=date;
     }
     return result;
   }
@@ -53,14 +54,14 @@
   // A hotel remains a visible map marker for context, but must not expand
   // the camera bounds for a day trip in Nara or Osaka.
   function mapFocusPlaces(visible,day){
-    if(!days('town-kyoto').includes(day))return visible;
+    if(!Object.values(CITY_DAYS).some(calendar=>calendar.includes(day)))return visible;
     const goals=visible.filter(p=>p.category!=='hotel');
     return goals.length?goals:visible;
   }
   // On automatic GPS startup, keep distant day-trip goals on screen.
   // GPS still records a position and a deliberate "GPS folgen" tap resumes following.
   function preferDistantDayView(visible,day,position,distance){
-    if(!days('town-kyoto').includes(day)||!position)return false;
+    if(!Object.values(CITY_DAYS).some(calendar=>calendar.includes(day))||!position)return false;
     const goals=visible.filter(p=>p.category!=='hotel');
     return goals.length>0&&goals.every(p=>distance(position,p)>12000);
   }

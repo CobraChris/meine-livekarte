@@ -409,12 +409,14 @@ async function verifyFujiNatureCategory(page){
  const nature=page.locator('[data-filter="nature"]');
  await nature.click();
  assert.equal(await nature.getAttribute('aria-pressed'),'true');
- assert.equal(await page.locator('#places .place').count(),1,
-  'Mount Fuji is the sole initial global nature landmark');
- assert.match(await page.locator('#places .place h3').innerText(),/Mount Fuji/);
- assert.equal(await page.locator('.leaflet-marker-icon .pin-nature').count(),1,
-  'Nature pin must use the distinct mountain icon');
- await page.locator('#places .place .place-actions button').first().click();
+ const fujiCard=page.locator('#places .place').filter({hasText:'Mount Fuji'}).first();
+ assert.equal(await fujiCard.count(),1,'Mount Fuji remains one global nature place');
+ assert.ok(await page.locator('#places .place').count()>=1,
+  'Additional Nikko nature stops are valid city places, not duplicate Fuji landmarks');
+ assert.match(await fujiCard.locator('h3').innerText(),/Mount Fuji/);
+ assert.ok(await page.locator('.leaflet-marker-icon .pin-nature').count()>=1,
+  'Nature pins use the distinct mountain icon');
+ await fujiCard.locator('.place-actions button').first().click();
  const center=await page.evaluate(()=>({lat:window.__livekarteMap?.getCenter()?.lat,
   lng:window.__livekarteMap?.getCenter()?.lng}));
  // App does not expose Leaflet globally: the selected popup and card must
