@@ -667,6 +667,104 @@ async function verifyProviderParityMatrix(page){
  console.log('PASS full OSM ↔ Google provider parity, trip matrix, route, GPS, search, tour, bookmark, 360px layout and persistence');
 }
 
+
+async function verifyVisualLayouts(page){
+ // 8 deterministic Android views: 2 map providers × 2 journey types ×
+ // 2 handset widths. No live tiles/Google calls or user GPS tracks.
+ const dir=path.join(root,'test-results','visual','current');
+ fs.mkdirSync(dir,{recursive:true});
+ const manifest={version:1,scenes:[]};
+ const selectors={
+  plan:'.plan-picker',search:'#place-search',
+  tour:'#tour-map-tools',actions:'.map-actions'
+ };
+ // Test-only map masking avoids false positives from changing third-party tiles.
+ // The actual overlays still render in Chrome at their real dimensions.
+ const style=await page.addStyleTag({content:[
+  '#map .leaflet-pane,#map .leaflet-control-container,',
+  '#google-demo-map > * {visibility:hidden!important;}',
+  '#map,#google-demo-map{background:#122e34!important;}',
+  '.plan-picker,.place-search,.tour-map-tools button,.map-actions,',
+  '.map-provider-switch{backdrop-filter:none!important;box-shadow:none!important;}',
+  '*,*::before,*::after{transition:none!important;animation:none!important;',
+  'caret-color:transparent!important;}'
+ ].join('')});
+ const measure=async()=>page.evaluate(selectors=>{
+  const workspace=document.querySelector('.workspace').getBoundingClientRect();
+  function get(selector){
+   const element=document.querySelector(selector);
+   if(!element)return {visible:false};
+   const rect=element.getBoundingClientRect();
+   const cs=getComputedStyle(element);
+   const visible=rect.width>0&&rect.height>0&&cs.display!=='none'&&
+    cs.visibility!=='hidden'&&!element.hidden;
+   return {
+    visible,
+    left:+(rect.left-workspace.left).toFixed(1),
+    right:+(rect.right-workspace.left).toFixed(1),
+    top:+(rect.top-workspace.top).toFixed(1),
+    bottom:+(rect.bottom-workspace.top).toFixed(1),
+    width:+rect.width.toFixed(1),height:+rect.height.toFixed(1)
+   };
+  }
+  return {
+   workspace:{width:workspace.width,height:workspace.height},
+   elements:Object.fromEntries([
+    '.plan-picker','#place-search','#tour-map-tools',
+    '.map-actions','#map-provider-switch'
+   ].map(selector=>[selector,get(selector)])),
+   providerButtons:[...document.querySelectorAll('#map-provider-switch button')]
+    .map(button=>({id:button.id,...get('#'+button.id)}))
+  };
+ },selectors);
+ try{
+  for(const viewport of [{width:393,height:852},{width:360,height:780}]){
+   await page.setViewportSize(viewport);
+   for(const plan of [
+    {key:'nikko-rail',id:'ride-nikko'},
+    {key:'nara-day',id:'town-kyoto',day:'2026-11-04'}
+   ]){
+    for(const provider of ['osm','google']){
+     if(provider==='osm'){
+      await page.locator('#provider-osm').click();
+     }else{
+      await page.locator('#provider-google').click();
+      await page.waitForFunction(()=>document.querySelector('.workspace')?.dataset.provider==='google');
+     }
+     await page.locator('#plan-select').selectOption(plan.id);
+     if(plan.day){
+      // Only day selection for the actual Kyoto day; never fake routing.
+      await page.locator('#city-days-list button[data-day-date="'+plan.day+'"]').click().catch(async()=>{
+       // Already selected: clicking the active day is harmless but may be
+       // intercepted by a long scroll. The chosen day must still be active.
+       const active=await page.locator('#city-days-list button[data-day-date="'+plan.day+'"]').getAttribute('aria-pressed');
+       assert.equal(active,'true');
+      });
+     }
+     const state=await measure();
+     const id=plan.key+'-'+viewport.width+'-'+provider;
+     const screenshots={};
+     for(const [name,selector] of Object.entries(selectors)){
+      const filename=id+'-'+name+'.png';
+      await page.locator(selector).screenshot({
+       path:path.join(dir,filename),animations:'disabled',caret:'hide'
+      });
+      screenshots[name]=filename;
+     }
+     manifest.scenes.push({id,key:plan.key,width:viewport.width,
+      provider,...state,screenshots});
+    }
+   }
+  }
+  fs.writeFileSync(path.join(dir,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
+  assert.equal(manifest.scenes.length,8,'Visual matrix must include all required layouts');
+  console.log('PASS captured 8 offline mobile visual snapshots for OSM/Google × journey/day × 393/360px');
+ }finally{
+  await page.setViewportSize({width:393,height:852});
+  await style.evaluate(el=>el.remove());
+ }
+}
+
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -736,6 +834,7 @@ async function main(){
   await verifyFujiNatureCategory(page);
   await verifyOSMGermanStyle(page);
   await verifyProviderParityMatrix(page);
+  await verifyVisualLayouts(page);
   assert.deepEqual(uncaught,[],'No uncaught runtime errors during real mobile interactions');
   console.log('PASS complete Android-size Chrome regression: Kyoto, Nara, Osaka, Nikkō');
  }catch(error){
