@@ -368,7 +368,9 @@
       notice.hidden=true;
       say(route()?.kind==='rail'
         ?'Google-Karte aktiv. Die schematische Bahnroute wird angezeigt.'
-        :'Google-Demokarte aktiv. Eigene Touren und Fußwege bleiben in OSM.');
+        :route()?.kind==='walking'
+          ?'Google-Karte aktiv. Berechneter OSM-Fußweg sichtbar.'
+          :'Google-Karte aktiv. Für Wegberechnungen wird OSM-Routing verwendet.');
       updateUI();
     }
     function fail(reason){
