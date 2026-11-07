@@ -669,14 +669,15 @@ async function verifyProviderParityMatrix(page){
 
 
 async function verifyVisualLayouts(page){
- // 8 deterministic Android views: 2 map providers × 2 journey types ×
- // 2 handset widths. No live tiles/Google calls or user GPS tracks.
+ // 16 deterministic Android views: 2 providers × 2 journeys ×
+ // 2 handset widths × normal/fullscreen. No live tiles or GPS tracks.
  const dir=path.join(root,'test-results','visual','current');
  fs.mkdirSync(dir,{recursive:true});
  const manifest={version:1,scenes:[]};
  const selectors={
   plan:'.plan-picker',search:'#place-search',
-  tour:'#tour-map-tools',actions:'.map-actions'
+  tour:'#tour-map-tools',actions:'.map-actions',
+  workspace:'.workspace'
  };
  // Test-only map masking avoids false positives from changing third-party tiles.
  // The actual overlays still render in Chrome at their real dimensions.
@@ -724,7 +725,8 @@ async function verifyVisualLayouts(page){
     {key:'nikko-rail',id:'ride-nikko'},
     {key:'nara-day',id:'town-kyoto',day:'2026-11-04'}
    ]){
-    for(const provider of ['osm','google']){
+    for(const expanded of [false,true]){
+     for(const provider of ['osm','google']){
      if(provider==='osm'){
       await page.locator('#provider-osm').click();
      }else{
@@ -741,8 +743,16 @@ async function verifyVisualLayouts(page){
        assert.equal(active,'true');
       });
      }
+     const expand=page.locator('#expand-map');
+     if((await expand.getAttribute('aria-pressed'))!==String(expanded))
+       await expand.click();
+     assert.equal(await expand.getAttribute('aria-pressed'),String(expanded),
+       'Fullscreen state must remain switchable on both providers');
      const state=await measure();
-     const id=plan.key+'-'+viewport.width+'-'+provider;
+     const mode=expanded?'fullscreen':'standard';
+     const sceneKey=expanded?plan.key+'-fullscreen':plan.key;
+     // Keep existing standard IDs stable for comparison with #136 baseline.
+     const id=sceneKey+'-'+viewport.width+'-'+provider;
      const screenshots={};
      for(const [name,selector] of Object.entries(selectors)){
       const filename=id+'-'+name+'.png';
@@ -751,16 +761,64 @@ async function verifyVisualLayouts(page){
       });
       screenshots[name]=filename;
      }
-     manifest.scenes.push({id,key:plan.key,width:viewport.width,
+     manifest.scenes.push({id,key:sceneKey,mode,width:viewport.width,
       provider,...state,screenshots});
+     }
     }
    }
   }
+  // Place popups are provider-specific, so compare them to previous green
+  // releases rather than requiring Google/Leaflet popups to look identical.
+  const popupStyle=await page.addStyleTag({content:
+   '#map .leaflet-popup-pane,#map .leaflet-popup-pane *{visibility:visible!important;}'});
+  try{
+   for(const viewport of [{width:393,height:852},{width:360,height:780}]){
+    await page.setViewportSize(viewport);
+    await page.locator('#provider-osm').click();
+    if(await page.locator('#expand-map').getAttribute('aria-pressed')==='true')
+      await page.locator('#expand-map').click();
+    await page.locator('#plan-select').selectOption('town-kyoto');
+    await page.locator('#city-days-list button[data-day-date="2026-11-04"]').click();
+    const popup=await openPlacePopup(page,'Nara-Park');
+    const state=await page.evaluate(()=>{
+     const el=document.querySelector('.leaflet-popup-content .place-popup-pan-surface');
+     const action=el?.querySelector('button.walk-start');
+     const rect=el?.getBoundingClientRect();
+     const map=document.getElementById('map').getBoundingClientRect();
+     const box=action?.getBoundingClientRect();
+     return {visible:!!rect&&rect.width>150&&rect.height>70,
+      actionVisible:!!box&&box.width>=30&&box.height>=30,
+      clipped:!rect||rect.left<map.left-3||rect.right>map.right+3||
+       rect.top<map.top-3||rect.bottom>map.bottom+3};
+    });
+    assert.ok(state.visible&&state.actionVisible&&!state.clipped,
+      'Nara popup or its action is clipped/hidden on '+viewport.width+'px screen: '+
+      JSON.stringify(state));
+    const id='nara-popup-'+viewport.width+'-osm';
+    const filename=id+'-popup.png';
+    // Leaflet may replace an open popup node after auto-pan. A page-level
+    // fixed clip avoids Playwright's element-scroll retry on a detached node.
+    const clip=await page.evaluate(()=>{
+     const r=document.querySelector('.leaflet-popup-content .place-popup-pan-surface')
+      .getBoundingClientRect();
+     return {x:Math.max(0,r.left+window.scrollX),
+      y:Math.max(0,r.top+window.scrollY),
+      width:Math.ceil(r.width),height:Math.ceil(r.height)};
+    });
+    await page.screenshot({path:path.join(dir,filename),clip,
+     animations:'disabled',caret:'hide'});
+    manifest.scenes.push({id,key:'nara-popup',kind:'popup',width:viewport.width,
+     provider:'osm',popup:state,screenshots:{popup:filename}});
+    await page.locator('.leaflet-popup-close-button').first().click();
+   }
+  }finally{await popupStyle.evaluate(el=>el.remove());}
   fs.writeFileSync(path.join(dir,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
-  assert.equal(manifest.scenes.length,8,'Visual matrix must include all required layouts');
-  console.log('PASS captured 8 offline mobile visual snapshots for OSM/Google × journey/day × 393/360px');
+  assert.equal(manifest.scenes.length,18,'Visual matrix must include 16 maps and 2 popups');
+  console.log('PASS captured 18 visual snapshots: normal/fullscreen maps and Nara popups at two widths');
  }finally{
   await page.setViewportSize({width:393,height:852});
+  if(await page.locator('#expand-map').getAttribute('aria-pressed')==='true')
+    await page.locator('#expand-map').click();
   await style.evaluate(el=>el.remove());
  }
 }

@@ -75,11 +75,24 @@ function main(){
  if(!fs.existsSync(manifestFile))throw Error('Missing mobile visual manifest');
  const manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8'));
  const entries=manifest.scenes;
- assert.ok(Array.isArray(entries)&&entries.length>=8,'Insufficient visual scenes');
+ assert.ok(Array.isArray(entries)&&entries.length>=18,'Insufficient visual scenes');
  const labels=new Set(entries.map(e=>e.id));
  assert.equal(labels.size,entries.length,'Duplicate visual scene IDs');
+ const requiredScenes=[];
+ for(const key of ['nikko-rail','nara-day','nikko-rail-fullscreen','nara-day-fullscreen'])
+  for(const width of [360,393])
+   for(const provider of ['osm','google'])
+    requiredScenes.push(key+'-'+width+'-'+provider);
+ for(const width of [360,393])requiredScenes.push('nara-popup-'+width+'-osm');
  const errors=[],warnings=[],pairs=new Map();
+ for(const id of requiredScenes)if(!labels.has(id))
+  errors.push('Missing required visual scenario '+id);
  for(const scene of entries){
+  if(scene.kind==='popup'){
+   if(!scene.popup?.visible||!scene.popup.actionVisible||scene.popup.clipped)
+    errors.push(scene.id+': popup is clipped or its walk button is unusable');
+   continue;
+  }
   try{checkLayout(scene,scene.id);}catch(error){errors.push(error.message);}
   const token=scene.key+'-'+scene.width;
   if(!pairs.has(token))pairs.set(token,{});
@@ -90,6 +103,10 @@ function main(){
    errors.push(token+': missing OSM/Google parity scene');continue;
   }
   for(const selector of Object.keys(pair.osm.screenshots)){
+   // The Google and Leaflet map containers differ even after third-party
+   // tiles are masked. Compare complete workspaces only across releases,
+   // while shared controls must remain visually identical across providers.
+   if(selector==='workspace')continue;
    const osm=path.join(current,pair.osm.screenshots[selector]);
    const googleName=pair.google.screenshots[selector];
    if(!googleName){errors.push(token+': missing Google '+selector);continue;}
@@ -132,4 +149,4 @@ function main(){
  console.log('PASS '+entries.length+' visual scenes: provider parity, layout collisions, screenshot regression.');
 }
 if(require.main===module)try{main();}catch(error){console.error(error.stack);process.exitCode=1;}
-module.exports={compare,overlaps,checkLayout};
+module.exports={compare,overlaps,checkLayout,LIMIT_PROVIDER,LIMIT_RELEASE};

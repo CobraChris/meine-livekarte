@@ -35,6 +35,8 @@ jobs:
               break
             fi
           done
+      - name: Prove visual regression gate catches intentionally damaged layouts
+        run: node --test scripts/visual-mutation.cjs
       - name: Test real Android-size Chrome touch interactions (offline from third parties)
         run: node tests/mobile-browser.e2e.cjs
       - name: Compare screenshots, detect hidden and overlapping map controls
