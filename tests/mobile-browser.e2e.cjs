@@ -676,7 +676,8 @@ async function verifyVisualLayouts(page){
  const manifest={version:1,scenes:[]};
  const selectors={
   plan:'.plan-picker',search:'#place-search',
-  tour:'#tour-map-tools',actions:'.map-actions'
+  tour:'#tour-map-tools',actions:'.map-actions',
+  workspace:'.workspace'
  };
  // Test-only map masking avoids false positives from changing third-party tiles.
  // The actual overlays still render in Chrome at their real dimensions.
