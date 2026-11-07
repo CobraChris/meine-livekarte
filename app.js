@@ -225,13 +225,10 @@
   const googleDemo=window.LivekarteGoogleDemo?.init({
     map,places:()=>visiblePlaces(),placeKey:C.placePlanKey,
     osmStyle:()=>osmStyle,onOSMStyleChange:setOSMStyle,
-    // The same stop order used by renderDayRoutePreview() on Leaflet.
-    // After a real foot-route optimization, preserve its displayed order.
-    stops:()=>currentDayRoute()?.stops||[],
-    route:()=>{
-      const view=currentDayRoute();
-      return view?{real:view.real,points:view.points}:null;
-    },
+    // A single route contract for providers: city footpaths and schematic
+    // intercity rail journeys share stops, geometry and semantics.
+    stops:()=>currentMapRoute()?.stops||[],
+    route:()=>currentMapRoute(),
     // Same day-goal set on both providers; no hotel stretching a Nara day trip.
     goals:()=>dailyStops(),
     fitOSM:()=>fit(mapFocusPlaces()),
@@ -1683,6 +1680,11 @@
       route:actual,key,purpose:'day'
     }):RM.preview(ordered,key);
   }
+  function currentMapRoute(){
+    // A travel day's rail route takes priority over city walking goals.
+    // Neither provider may derive its own stops, track geometry or times.
+    return journey?RM.rail(journey):currentDayRoute();
+  }
   function renderDayRoutePreview(){
     const panel=$('day-route-preview'),view=currentDayRoute();
     dayRouteLayers.clearLayers();
@@ -2416,7 +2418,10 @@
   function fitJourney() {
     if (!journey) return;
     const coords = journey.stops.flatMap(stop => [[stop.lat,stop.lng], ...stop.via]);
-    if (coords.length) fitMapArea(coords,{padding:[38,38],maxZoom:13});
+    if (coords.length) {
+      fitMapArea(coords,{padding:[38,38],maxZoom:13});
+      googleDemo?.syncFromOSM();
+    }
   }
   const ticketSymbols={unknown:'❗',missing:'⛔',booked:'◔',ready:'✓'};
   const kyotoRailInfographic=$('kyoto-rail-infographic');
@@ -3234,7 +3239,7 @@
     journey=null;
     planJourneys[activePlanId]=null;
     persistPlanState();
-    renderJourney();renderPlanPicker();
+    renderJourney();renderPlanPicker();googleDemo?.refresh();
     say('Nur der Reiseplan dieses Abschnitts wurde entfernt. Andere Abschnitte und Orte bleiben erhalten.');
   };
   $('fit').onclick = () => {
