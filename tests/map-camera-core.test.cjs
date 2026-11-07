@@ -113,12 +113,16 @@ test('station, search, route and tour focus never accidentally enable GPS follow
    setView:(...args)=>{calls.push(['point',...args]);return 'point-ok';},
    fitBounds:(...args)=>{calls.push(['bounds',...args]);return 'bounds-ok';}
  };
+ const googleFocus=[];
  const ctx={camera,map,
+   googleDemo:{focus:(point,zoom)=>googleFocus.push({point,zoom})},
    withCameraView:(mode,action)=>camera.move(mode,action)};
  vm.runInNewContext(fragment+'\nthis.focusMapPoint=focusMapPoint;this.fitMapArea=fitMapArea;',ctx);
  assert.equal(ctx.focusMapPoint([35,135],16),'point-ok');
  assert.equal(camera.mode,'manual');
  assert.equal(calls[0][3].animate,false);
+ assert.equal(googleFocus.length,1,'shared focus also reaches the Google provider');
+ assert.equal(googleFocus[0].zoom,16);
  camera.transition('gps-follow');
  assert.equal(ctx.fitMapArea([[34.7,135.8],[35.0,135.7]],{maxZoom:16}),'bounds-ok');
  assert.equal(camera.mode,'day-goals');
