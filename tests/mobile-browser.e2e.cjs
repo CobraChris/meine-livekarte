@@ -796,7 +796,16 @@ async function verifyVisualLayouts(page){
       JSON.stringify(state));
     const id='nara-popup-'+viewport.width+'-osm';
     const filename=id+'-popup.png';
-    await popup.screenshot({path:path.join(dir,filename),
+    // Leaflet may replace an open popup node after auto-pan. A page-level
+    // fixed clip avoids Playwright's element-scroll retry on a detached node.
+    const clip=await page.evaluate(()=>{
+     const r=document.querySelector('.leaflet-popup-content .place-popup-pan-surface')
+      .getBoundingClientRect();
+     return {x:Math.max(0,r.left+window.scrollX),
+      y:Math.max(0,r.top+window.scrollY),
+      width:Math.ceil(r.width),height:Math.ceil(r.height)};
+    });
+    await page.screenshot({path:path.join(dir,filename),clip,
      animations:'disabled',caret:'hide'});
     manifest.scenes.push({id,key:'nara-popup',kind:'popup',width:viewport.width,
      provider:'osm',popup:state,screenshots:{popup:filename}});
