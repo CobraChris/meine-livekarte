@@ -83,7 +83,9 @@ function main(){
   for(const width of [360,393])
    for(const provider of ['osm','google'])
     requiredScenes.push(key+'-'+width+'-'+provider);
- for(const width of [360,393])requiredScenes.push('nara-popup-'+width+'-osm');
+ // v2 snapshots capture the real popup and deliberately reset only the
+ // invalid prior baseline, which photographed the scrolled page instead.
+ for(const width of [360,393])requiredScenes.push('nara-popup-v2-'+width+'-osm');
  const errors=[],warnings=[],pairs=new Map();
  for(const id of requiredScenes)if(!labels.has(id))
   errors.push('Missing required visual scenario '+id);
