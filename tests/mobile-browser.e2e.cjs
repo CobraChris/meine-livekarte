@@ -749,7 +749,9 @@ async function verifyVisualLayouts(page){
        'Fullscreen state must remain switchable on both providers');
      const state=await measure();
      const mode=expanded?'fullscreen':'standard';
-     const id=plan.key+'-'+mode+'-'+viewport.width+'-'+provider;
+     const sceneKey=expanded?plan.key+'-fullscreen':plan.key;
+     // Keep existing standard IDs stable for comparison with #136 baseline.
+     const id=sceneKey+'-'+viewport.width+'-'+provider;
      const screenshots={};
      for(const [name,selector] of Object.entries(selectors)){
       const filename=id+'-'+name+'.png';
@@ -758,7 +760,7 @@ async function verifyVisualLayouts(page){
       });
       screenshots[name]=filename;
      }
-     manifest.scenes.push({id,key:plan.key+'-'+mode,mode,width:viewport.width,
+     manifest.scenes.push({id,key:sceneKey,mode,width:viewport.width,
       provider,...state,screenshots});
      }
     }
