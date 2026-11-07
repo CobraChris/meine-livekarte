@@ -800,20 +800,35 @@ async function verifyVisualLayouts(page){
     assert.ok(state.visible&&state.actionVisible&&!state.clipped,
       'Nara popup or its action is clipped/hidden on '+viewport.width+'px screen: '+
       JSON.stringify(state));
-    const id='nara-popup-'+viewport.width+'-osm';
+    // v2 captures the actual popup, not the scrolled document behind it.
+    // The old page-level clip mixed viewport/document coordinates, causing
+    // false visual regressions whenever the travel plan changed height.
+    const id='nara-popup-v2-'+viewport.width+'-osm';
     const filename=id+'-popup.png';
-    // Leaflet may replace an open popup node after auto-pan. A page-level
-    // fixed clip avoids Playwright's element-scroll retry on a detached node.
-    const clip=await page.evaluate(()=>{
-     const r=document.querySelector('.leaflet-popup-content .place-popup-pan-surface')
-      .getBoundingClientRect();
-     return {x:Math.max(0,r.left+window.scrollX),
-      y:Math.max(0,r.top+window.scrollY),
-      width:Math.ceil(r.width),height:Math.ceil(r.height)};
+    const cloned=await page.evaluate(()=>{
+     const source=document.querySelector('.leaflet-popup-content-wrapper');
+     const content=source?.querySelector('.place-popup-pan-surface');
+     if(!source||!content)throw Error('Popup snapshot source not found');
+     const r=source.getBoundingClientRect();
+     const host=document.createElement('div');
+     host.id='visual-popup-snapshot';
+     Object.assign(host.style,{
+      position:'fixed',left:'8px',top:'8px',zIndex:'2147483647',
+      width:Math.ceil(r.width)+'px',pointerEvents:'none'
+     });
+     const clone=source.cloneNode(true);
+     clone.style.margin='0';
+     host.append(clone);
+     document.body.append(host);
+     return {width:Math.ceil(r.width),name:host.textContent};
     });
-    await page.screenshot({path:path.join(dir,filename),clip,
-     animations:'disabled',caret:'hide'});
-    manifest.scenes.push({id,key:'nara-popup',kind:'popup',width:viewport.width,
+    assert.ok(cloned.width>150 && cloned.name.includes('Nara-Park'),
+     'Visual snapshot must contain the actual Nara popup rather than the map background');
+    await page.locator('#visual-popup-snapshot').screenshot({
+     path:path.join(dir,filename),animations:'disabled',caret:'hide'
+    });
+    await page.evaluate(()=>document.getElementById('visual-popup-snapshot')?.remove());
+    manifest.scenes.push({id,key:'nara-popup-v2',kind:'popup',width:viewport.width,
      provider:'osm',popup:state,screenshots:{popup:filename}});
     await page.locator('.leaflet-popup-close-button').first().click();
    }
