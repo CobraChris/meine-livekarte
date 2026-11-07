@@ -85,6 +85,7 @@
     if (visualHeading === null) visualHeading = heading;
     else visualHeading += ((heading - visualHeading + 540) % 360) - 180;
     arrow.style.transform = `rotate(${visualHeading}deg)`;
+    googleDemo?.updateGPS(position,positionAccuracy,heading);
   }
   function onOrientation(e) {
     if (watch === null) return;
@@ -234,7 +235,13 @@
     fitOSM:()=>fit(mapFocusPlaces()),
     onWalk:place=>{void showWalkingRoute(place);},
     onToggleTour:place=>toggleTourPlace(place,true),
-    tourSelected:place=>tourIsSelected(place)
+    tourSelected:place=>tourIsSelected(place),
+    isTourPicking:()=>mapTourPickMode,
+    onTapTour:place=>{pauseGPSFollow();toggleTourPlace(place,true);},
+    onMapTap:point=>{
+      if(mapPlacePicking&&!mapPlaceDialog.open)openMapPlaceDialog(point);
+    },
+    onPan:()=>{pauseGPSFollow();refreshGPSFollowControl();}
   });
   let tileWarning = false;
   tiles.on('tileerror', () => {
@@ -304,7 +311,6 @@
   function setMapPlacePicking(value){
     mapPlacePicking=!!value;
     if(mapPlacePicking){
-      googleDemo?.forceOSM();
       pauseGPSFollow();
       if(mapTourPickMode)setMapTourPickMode(false);
       map.closePopup();
@@ -318,6 +324,7 @@
       throw new Error('Ungültiger Kartenpunkt. Bitte erneut auswählen.');
     mapPlacePoint={lat,lng};
     mapPlacePreview.clearLayers();
+    googleDemo?.setPreview('bookmark',{lat,lng});
     L.circleMarker([lat,lng],{radius:10,color:'#ffffff',weight:2,
       fillColor:'#70d3ec',fillOpacity:.85,interactive:false}).addTo(mapPlacePreview);
     $('map-place-coordinates').textContent='📍 Markierung: '+
@@ -395,6 +402,7 @@
   mapPlaceDialog.addEventListener('close',()=>{
     mapPlacePoint=null;
     mapPlacePreview.clearLayers();
+    googleDemo?.setPreview('bookmark',null);
     mapPlaceError.textContent='';
     setMapPlacePicking(false);
   });
@@ -493,6 +501,7 @@
     searchPicked.hidden=true;
     selectedSearchPlace=null;
     searchPreview.clearLayers();
+    googleDemo?.setPreview('search',null);
     if(clearInput)searchInput.value='';
     searchMessage('');
   }
@@ -507,6 +516,7 @@
       radius:11,color:'#ffffff',weight:3,fillColor:'#6cddbb',
       fillOpacity:.94,interactive:false
     }).addTo(searchPreview);
+    googleDemo?.setPreview('search',place);
     focusMapPoint([place.lat,place.lng],Math.max(15,Math.min(17,map.getZoom())));
     $('place-search-picked-name').textContent=place.name;
     $('place-search-picked-info').textContent=place.label;
@@ -544,7 +554,7 @@
   }
   async function searchOnlinePlaces(query,localResults=[]){
     let url;
-    const center=map.getCenter();
+    const center=googleDemo?.center()||map.getCenter();
     try{url=S.requestUrl(query,center);}
     catch(error){searchMessage(error.message);return;}
     if(navigator.onLine===false){
@@ -615,7 +625,7 @@
     if(!searchInput.value.trim()){resetPlaceSearch(true);return;}
     if(!S){searchMessage('Ortssuche nicht geladen. Bitte App aktualisieren.');return;}
     const query=searchInput.value;
-    try{S.requestUrl(query,map.getCenter());}
+    try{S.requestUrl(query,googleDemo?.center()||map.getCenter());}
     catch(error){searchMessage(error.message);return;}
     resetPlaceSearch(false);
     // Local results always win; no provider call for an already saved hotel.
@@ -1164,7 +1174,6 @@
   }
   function setMapTourPickMode(enabled,focusMap=false){
     mapTourPickMode=!!enabled;
-    if(mapTourPickMode)googleDemo?.forceOSM();
     if(mapTourPickMode&&mapPlacePicking)setMapPlacePicking(false);
     if(mapTourPickMode)pauseGPSFollow();
     if(mapTourPickMode&&filter!=='all'){
@@ -3252,6 +3261,7 @@
         }
       }else fit();
     }else if(currentPlan().center) focusMapPoint(currentPlan().center,currentPlan().kind==='city'?14:8);
+    googleDemo?.syncFromOSM();
   };
   function setCameraMode(mode){
     if(camera.transition(mode))refreshGPSFollowControl();
@@ -3265,7 +3275,9 @@
   // All travel sections go through these functions; synchronous Leaflet moves
   // avoid a delayed zoom event turning a programmatic fit into "manual".
   function focusMapPoint(point,zoom,options={}){
-    return withCameraView('manual',()=>map.setView(point,zoom,{...options,animate:false}));
+    const result=withCameraView('manual',()=>map.setView(point,zoom,{...options,animate:false}));
+    googleDemo?.focus({lat:point[0],lng:point[1]},zoom);
+    return result;
   }
   function fitMapArea(bounds,options={}){
     return withCameraView('day-goals',()=>map.fitBounds(bounds,{...options,animate:false}));
@@ -3293,6 +3305,7 @@
   }
   function centerOnGPS(ll,zoom) {
     withCameraView('gps-follow',()=>map.setView(ll,zoom,{animate:false}));
+    googleDemo?.focus({lat:ll[0],lng:ll[1]},zoom);
   }
   // A programmatic map fit/zoom is not an accidental manual gesture.
   // GPS samples keep updating without moving the camera unless following.
@@ -3306,6 +3319,7 @@
     setCameraMode('manual'); stopCompass(); refreshGPSFollowControl();
     if (userDot) { map.removeLayer(userDot); userDot = null; }
     if (accuracy) { map.removeLayer(accuracy); accuracy = null; }
+    googleDemo?.updateGPS(null,null,null);
     refreshGPSFollowControl();
     refreshDistances(); say(message);
   }
@@ -3359,6 +3373,7 @@
           });
           renderHeading();
         } else { userDot.setLatLng(ll); accuracy.setLatLng(ll).setRadius(result.coords.accuracy); }
+        googleDemo?.updateGPS(position,positionAccuracy,heading);
         if (camera.isFollowing()) centerOnGPS(ll,Math.max(map.getZoom(),15));
         refreshGPSFollowControl();
         refreshDistances();
