@@ -78,7 +78,7 @@ test('Nikko itinerary panel is informational with hotel links and no false compl
   assert.match(section,/JR Nikkō-Linie/);
   assert.match(section,/15:58/);
   assert.match(section,/Fairfield by Marriott Tochigi Nikko/);
-  assert.match(section,/keine Live-Fahrzeiten/);
+  assert.match(section,/ohne Live-Fahrplan/);
   assert.match(section,/Gleise oder Ticketstatus werden live abgeglichen/);
   assert.match(section,/www\.marriott\.com/);
   assert.match(section,/www\.google\.com\/maps\/search/);
