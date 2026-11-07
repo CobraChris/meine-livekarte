@@ -529,7 +529,7 @@ test('Google adapter uses same tour click, map bookmark click and GPS position w
    Map:class{constructor(){return googleMap;}},
    Marker:class{
      constructor(config){this.config=config;markers.push(this);}
-     addListener(name,fn){this[name]=fn;}setMap(){},
+     addListener(name,fn){this[name]=fn;}setMap(){}
    },
    InfoWindow:class{},
    Circle:class{constructor(config){this.config=config;}setMap(){}},
