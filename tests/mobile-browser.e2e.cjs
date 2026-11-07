@@ -480,6 +480,193 @@ async function verifyOSMGermanStyle(page){
  assert.equal(await page.locator('#provider-google').getAttribute('aria-pressed'),'false');
  console.log('PASS OSM Deutsch/Standard labels, choice persistence, map and ticket preservation');
 }
+
+async function verifyProviderParityMatrix(page){
+ // Exercise the real PWA UI in Chrome, with the paid Google SDK replaced
+ // by a fully local in-memory drawing adapter. No Google key or API request.
+ // This intentionally tests our integration, NOT Google's own map renderer.
+ await page.evaluate(()=>{
+  const telemetry={maps:[],markers:[],polylines:[],circles:[]};
+  class MapFake{
+   constructor(el,opts){
+    this.el=el;this.center={...opts.center};this.zoom=opts.zoom;
+    this.callbacks={};telemetry.maps.push(this);
+   }
+   setCenter(point){this.center={lat:point.lat,lng:point.lng};}
+   setZoom(zoom){this.zoom=zoom;}
+   getCenter(){return {lat:()=>this.center.lat,lng:()=>this.center.lng};}
+   getZoom(){return this.zoom;}
+   addListener(event,fn){this.callbacks[event]=fn;}
+   emit(event,data){this.callbacks[event]?.(data);}
+   fitBounds(bounds){
+    if(!bounds.points.length)return;
+    this.center={lat:bounds.points.reduce((sum,p)=>sum+p.lat,0)/bounds.points.length,
+      lng:bounds.points.reduce((sum,p)=>sum+p.lng,0)/bounds.points.length};
+   }
+  }
+  class Overlay{
+   constructor(opts){this.options=opts;this.active=!!opts.map;this.callbacks={};}
+   setMap(map){this.active=!!map;}
+   addListener(event,fn){this.callbacks[event]=fn;}
+   emit(event,data){this.callbacks[event]?.(data);}
+  }
+  class MarkerFake extends Overlay{
+   constructor(opts){super(opts);telemetry.markers.push(this);}
+  }
+  class PolylineFake extends Overlay{
+   constructor(opts){super(opts);telemetry.polylines.push(this);}
+  }
+  class CircleFake extends Overlay{
+   constructor(opts){super(opts);telemetry.circles.push(this);}
+  }
+  class InfoWindowFake{
+   setContent(content){this.content=content;}
+   open(){this.isOpen=true;}
+   close(){this.isOpen=false;}
+  }
+  class BoundsFake{
+   constructor(){this.points=[];}
+   extend(point){this.points.push(point);}
+  }
+  window.google={maps:{
+   Map:MapFake,Marker:MarkerFake,Polyline:PolylineFake,
+   Circle:CircleFake,InfoWindow:InfoWindowFake,LatLngBounds:BoundsFake,
+   Size:class{constructor(width,height){this.width=width;this.height=height;}},
+   Point:class{constructor(x,y){this.x=x;this.y=y;}}
+  }};
+  window.__providerParity=telemetry;
+  localStorage.setItem('livekarte-google-demo-key-v1','AIza'+'x'.repeat(35));
+ });
+ const storage=()=>page.evaluate(()=>({
+  places:localStorage.getItem('livekarte-places-v1'),
+  tickets:localStorage.getItem('livekarte-ticket-status-v1'),
+  legs:localStorage.getItem('livekarte-rail-leg-details-v1')
+ }));
+ const initial=await storage();
+ const provider=page.locator('.workspace');
+ await page.locator('#plan-select').selectOption('ride-nikko');
+ await page.locator('#provider-google').click();
+ await page.waitForFunction(()=>document.querySelector('.workspace')?.dataset.provider==='google');
+ for(const control of ['#place-search','#tour-map-tools','#map-save-place',
+   '#map-save-gps','#fit','#gps','#expand-map','#plan-select']){
+  assert.equal(await page.locator(control).isVisible(),true,
+   'Google provider must retain the common mobile control: '+control);
+ }
+ assert.equal(await page.locator('#provider-google').getAttribute('aria-pressed'),'true');
+
+ async function checkRail(planId,slug){
+  await page.locator('#plan-select').selectOption(planId);
+  const snapshot=await page.evaluate(slug=>{
+   const route=window.LivekarteRouteModel.rail(window.MapCore.presetJourney(slug));
+   const drawn=window.__providerParity.polylines.filter(line=>line.active);
+   const active=window.__providerParity.markers.filter(marker=>marker.active);
+   return {
+    expected:route.points,
+    drawn:drawn.map(line=>line.options.path.map(p=>[p.lat,p.lng])),
+    expectedStops:route.stops.map((p,i)=>(i+1)+'. '+p.name),
+    displayedStops:active.map(m=>m.options.title),
+    routeNote:document.getElementById('google-demo-route-meaning').textContent,
+    workspace:document.querySelector('.workspace').dataset.provider
+   };
+  },slug);
+  assert.equal(snapshot.workspace,'google',planId+' changed provider unexpectedly');
+  assert.equal(snapshot.drawn.length,1,planId+' must draw exactly one rail route');
+  assert.deepEqual(snapshot.drawn[0],snapshot.expected,
+   planId+' must show the exact common OSM railway route geometry');
+  for(const stop of snapshot.expectedStops)
+   assert.ok(snapshot.displayedStops.includes(stop),planId+' is missing '+stop);
+  assert.match(snapshot.routeNote,/Schematische Bahnverbindung/);
+  assert.equal(await page.locator('#place-search').isVisible(),true);
+  assert.equal(await page.locator('#gps').isVisible(),true);
+  console.log('PASS provider journey parity '+planId+' ('+snapshot.expectedStops.length+' stops)');
+ }
+ await checkRail('ride-nikko','kyoto-nikko-2026-11-07');
+ await checkRail('ride-kyoto','takayama-kyoto-2026-11-01');
+ await checkRail('ride-takayama','hakone-takayama-2026-10-30');
+ await page.locator('#plan-select').selectOption('town-kyoto');
+ await page.locator('#city-days-list button[data-day-date="2026-11-04"]').click();
+ const city=await page.evaluate(()=>({
+  provider:document.querySelector('.workspace').dataset.provider,
+  previewLines:window.__providerParity.polylines.filter(p=>p.active).length,
+  places:window.__providerParity.markers.filter(m=>m.active).map(m=>m.options.title)
+ }));
+ assert.equal(city.provider,'google','changing day must not force OSM');
+ assert.equal(city.previewLines,1,'Nara day should retain a route preview in Google');
+ assert.ok(city.places.some(name=>name.includes('Nara-Park')));
+ assert.equal(await page.locator('#tour-map-mode').isVisible(),true);
+ await page.locator('#tour-map-mode').click();
+ const picked=await page.evaluate(()=>{
+  const marker=window.__providerParity.markers.filter(
+   m=>m.active&&m.options.title.includes('Nara-Park')).at(-1);
+  if(!marker)throw Error('Nara-Park marker unavailable in Google');
+  marker.emit('click');
+  return document.querySelector('.workspace').dataset.provider;
+ });
+ assert.equal(picked,'google','tapping a tour stop must not change the provider');
+ assert.ok((await page.locator('#tour-count').innerText()).includes('1/6'),
+  'Google marker tap must use the same tour draft');
+ await page.locator('#map-save-place').click();
+ await page.evaluate(()=>{
+  const map=window.__providerParity.maps[0];
+  map.emit('click',{latLng:{lat:()=>34.682,lng:()=>135.834}});
+ });
+ await page.locator('#map-place-dialog').waitFor({state:'visible'});
+ assert.match(await page.locator('#map-place-coordinates').innerText(),/34\.682000, 135\.834000/);
+ await page.locator('#map-place-cancel').click();
+ assert.equal(await page.locator('#map-place-dialog').isVisible(),false);
+ assert.equal(await provider.getAttribute('data-provider'),'google',
+  'cancelling a bookmark must not switch providers');
+
+ await page.locator('#place-search-input').fill('Nara-Park');
+ await page.locator('#place-search-go').click();
+ const localHit=page.locator('#place-search-results button.place-search-result').first();
+ await localHit.waitFor({state:'visible'});
+ await localHit.click();
+ assert.equal(await page.locator('#place-search-picked').isVisible(),true,
+  'search results must be usable on Google');
+ assert.equal(await provider.getAttribute('data-provider'),'google');
+ const preview=await page.evaluate(()=>window.__providerParity.markers
+  .filter(m=>m.active&&m.options.title==='Gesuchter Ort').length);
+ assert.equal(preview,1,'shared search selection must be marked on Google');
+ await page.locator('#place-search-input').fill('');
+
+ // A fresh mocked location uses the existing app GPS watcher and its
+ // provider-independent coordinate update; no simulated movement history is saved.
+ await page.context().setGeolocation({latitude:35.016,longitude:135.779,accuracy:11});
+ await page.waitForFunction(()=>window.__providerParity.markers
+  .some(m=>m.active&&m.options.title==='Mein GPS-Standort'),null,{timeout:12000});
+ assert.equal(await page.locator('#gps').isVisible(),true);
+ await page.locator('#gps').click();
+ assert.equal(await provider.getAttribute('data-provider'),'google');
+ await page.locator('#fit').click();
+ assert.equal(await provider.getAttribute('data-provider'),'google');
+ assert.equal(await page.locator('#provider-osm').isVisible(),true);
+
+ // Small Android screens: control toolbars cannot silently vanish.
+ await page.setViewportSize({width:360,height:780});
+ for(const selector of ['#place-search','#tour-map-tools','#gps','#provider-google']){
+  const control=page.locator(selector);
+  assert.ok(await control.isVisible(),selector+' disappears on a narrow phone');
+  const bounds=await control.boundingBox();
+  assert.ok(bounds&&bounds.width>15&&bounds.height>15,
+   selector+' has no usable touch target on 360px viewport');
+ }
+ await page.setViewportSize({width:393,height:852});
+
+ await page.locator('#provider-osm-de').click();
+ assert.equal(await provider.getAttribute('data-provider'),'osm');
+ assert.equal(await page.locator('#place-search').isVisible(),true);
+ assert.equal(await page.locator('#tour-map-tools').isVisible(),true);
+ await page.locator('#provider-google').click();
+ assert.equal(await provider.getAttribute('data-provider'),'google');
+ const after=await storage();
+ assert.deepEqual(after,initial,
+  'Switching providers and using unsaved search/tour/bookmark must not mutate trips or tickets');
+ await page.locator('#provider-osm').click();
+ assert.equal(await provider.getAttribute('data-provider'),'osm');
+ console.log('PASS full OSM ↔ Google provider parity, trip matrix, route, GPS, search, tour, bookmark, 360px layout and persistence');
+}
+
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -548,6 +735,7 @@ async function main(){
   await verifyCurrentPositionBookmark(page);
   await verifyFujiNatureCategory(page);
   await verifyOSMGermanStyle(page);
+  await verifyProviderParityMatrix(page);
   assert.deepEqual(uncaught,[],'No uncaught runtime errors during real mobile interactions');
   console.log('PASS complete Android-size Chrome regression: Kyoto, Nara, Osaka, Nikkō');
  }catch(error){
