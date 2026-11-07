@@ -439,6 +439,47 @@ async function verifyFujiNatureCategory(page){
   'Fuji landmark is only seeded once and survives updates');
  console.log('PASS Fuji summit global Nature pin, local search and unchanged trip/tickets');
 }
+async function verifyOSMGermanStyle(page){
+ await page.locator('#plan-select').selectOption('ride-nikko');
+ await page.waitForFunction(()=>document.querySelector('.journey-nature-marker')!==null);
+ const snapshot=()=>page.evaluate(()=>({
+  plan:document.getElementById('plan-select')?.value,
+  markers:document.querySelectorAll('.leaflet-marker-icon').length,
+  mapTransform:document.querySelector('.leaflet-map-pane')?.style.transform,
+  tickets:localStorage.getItem('livekarte-ticket-status-v1'),
+  places:localStorage.getItem('livekarte-places-v1')
+ }));
+ const before=await snapshot();
+ const standard=page.locator('#provider-osm'),german=page.locator('#provider-osm-de');
+ assert.equal(await standard.getAttribute('aria-pressed'),'true');
+ const dock=await page.locator('#map-provider-switch').boundingBox();
+ const button=await german.boundingBox();
+ assert.ok(dock&&button&&button.y>=dock.y&&button.y+button.height<=dock.y+dock.height+2,
+  'Three styles must fit the existing single-row mobile provider strip');
+ await german.click();
+ await page.waitForFunction(()=>[...document.querySelectorAll('.leaflet-tile-pane img')]
+  .some(img=>img.src.includes('tile.openstreetmap.de/')));
+ assert.equal(await german.getAttribute('aria-pressed'),'true');
+ assert.equal(await standard.getAttribute('aria-pressed'),'false');
+ assert.match(await page.locator('.leaflet-control-attribution').innerText(),/OSM Deutschland/);
+ assert.equal(await page.evaluate(()=>localStorage.getItem('livekarte-osm-style-v1')),'de');
+ assert.deepEqual(await snapshot(),before,
+  'Changing tile style must preserve selected journey, markers, map camera, tickets and places');
+ await page.reload({waitUntil:'domcontentloaded'});
+ await german.waitFor({state:'visible'});
+ assert.equal(await german.getAttribute('aria-pressed'),'true');
+ await page.waitForFunction(()=>[...document.querySelectorAll('.leaflet-tile-pane img')]
+  .some(img=>img.src.includes('tile.openstreetmap.de/')));
+ await standard.click();
+ await page.waitForFunction(()=>[...document.querySelectorAll('.leaflet-tile-pane img')]
+  .some(img=>img.src.includes('tile.openstreetmap.org/')));
+ assert.equal(await standard.getAttribute('aria-pressed'),'true');
+ assert.equal(await german.getAttribute('aria-pressed'),'false');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('livekarte-osm-style-v1')),'standard');
+ assert.doesNotMatch(await page.locator('.leaflet-control-attribution').innerText(),/OSM Deutschland/);
+ assert.equal(await page.locator('#provider-google').getAttribute('aria-pressed'),'false');
+ console.log('PASS OSM Deutsch/Standard labels, choice persistence, map and ticket preservation');
+}
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -506,6 +547,7 @@ async function main(){
   await verifyUpdateGuardAndPersistence(page);
   await verifyCurrentPositionBookmark(page);
   await verifyFujiNatureCategory(page);
+  await verifyOSMGermanStyle(page);
   assert.deepEqual(uncaught,[],'No uncaught runtime errors during real mobile interactions');
   console.log('PASS complete Android-size Chrome regression: Kyoto, Nara, Osaka, Nikkō');
  }catch(error){
