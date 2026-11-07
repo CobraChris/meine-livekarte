@@ -40,6 +40,9 @@
        (key==='building'&&value==='hotel'))return 'hotel';
     if((key==='amenity'&&['restaurant','cafe','fast_food','bar','pub','food_court','biergarten'].includes(value))||
        (key==='shop'&&['bakery','coffee'].includes(value)))return 'restaurant';
+    // Preserve natural landmarks as Nature, rather than generic sights.
+    if((key==='natural'&&['peak','volcano','ridge','valley','waterfall','lake','wood','glacier','cave_entrance','beach'].includes(value))||
+       (key==='leisure'&&['nature_reserve','park'].includes(value)))return 'nature';
     return 'sight';
   }
   function parse(data){
@@ -88,7 +91,7 @@
       matches.push({name:p.name,lat:p.lat,lng:p.lng,category:p.category,
         saved:true,inSection,
         label:(inSection?'✓ In dieser Karte gespeichert':'✓ In deinen Orten gespeichert')+
-          ' · '+({hotel:'Hotel',station:'Bahnhof',restaurant:'Restaurant',sight:'Sehenswürdigkeit'}[p.category]||'Ort'),
+          ' · '+({hotel:'Hotel',station:'Bahnhof',restaurant:'Restaurant',sight:'Sehenswürdigkeit',nature:'Natur'}[p.category]||'Ort'),
         score:(inSection?1000:0)+(name===q?400:name.startsWith(q)?200:0)
       });
     }

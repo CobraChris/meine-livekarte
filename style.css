@@ -2415,3 +2415,12 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 #rail-ticket-dialog .rail-ticket-file-label{display:flex;flex-direction:column;gap:3px}
 #rail-ticket-dialog .rail-ticket-file-label strong{font-size:13px;color:#c4f8de}
 #rail-ticket-dialog .rail-ticket-file-label small{font-size:11px;overflow-wrap:anywhere;line-height:1.4;color:#c7ddd4}
+
+/* Shared mountain landmark icon and Nature category styling on OSM maps.
+ * No additional layers or external images, and no changes to map camera.
+ */
+.pin-inner.pin-nature{
+ background:#85cda9;color:#122e28;border-color:#e6fff1;
+ box-shadow:0 4px 13px #09281f99;
+}
+.pin-nature span{font-weight:800;font-size:19px}

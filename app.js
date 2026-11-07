@@ -1,7 +1,7 @@
 'use strict';
 (() => {
   const $ = id => document.getElementById(id), C = MapCore;
-  const symbols = { restaurant: '♨', sight: '◇', station: '▤', hotel: '⌂' };
+  const symbols = { restaurant: '♨', sight: '◇', nature: '⛰', station: '▤', hotel: '⌂' };
   const JP=window.JapaneseDestination;
   const MD=window.LivekarteMultiDay;
   const DC=window.LivekarteDayContext;
@@ -494,7 +494,7 @@
       }
       const button=node('button',undefined,'place-search-result');
       button.type='button';
-      const symbol=({hotel:'⌂',restaurant:'♨',station:'▤',sight:'◇'})[place.category]||'◇';
+      const symbol=({hotel:'⌂',restaurant:'♨',station:'▤',sight:'◇',nature:'⛰'})[place.category]||'◇';
       button.append(node('strong',symbol+' '+place.name),node('small',place.label));
       button.onclick=()=>pickSearchResult(place);
       searchResults.append(button);
@@ -3706,6 +3706,29 @@
     }
   }
   seedTogetsukyoBridge();
+  // The Fuji summit belongs to the global Nature collection, not to any
+  // travel-day itinerary or route. Add exactly once, leaving private places,
+  // assignments, ticket statuses and camera position unchanged.
+  function seedMountFuji(){
+    const marker='livekarte-nature-mount-fuji-20261107-v1';
+    try{
+      if(localStorage.getItem(marker)==='1')return;
+      const summit=C.presetNaturePlaces()[0];
+      const exact=C.placePlanKey(summit);
+      const existing=places.find(p=>C.placePlanKey(p)===exact);
+      // An already saved identical summit retains its name and notes.
+      const updated=existing&&existing.category!=='nature'
+        ?places.map(p=>C.placePlanKey(p)===exact?{...p,category:'nature'}:p)
+        :places;
+      const merged=C.merge(updated,existing?[]:[summit]);
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(merged));
+      localStorage.setItem(marker,'1');
+      places=merged;
+    }catch{
+      say('Mount Fuji konnte nicht automatisch gespeichert werden. Bestehende Orte bleiben erhalten.');
+    }
+  }
+  seedMountFuji();
 
   // Persist only chosen place identifiers, never the GPS start or a route.
   try{

@@ -1,7 +1,7 @@
 /* Pure import and sharing helpers; also usable in Node tests. */
 (function (root) {
   'use strict';
-  const categories = { restaurant: 'Restaurant', sight: 'Sehenswürdigkeit', station: 'Bahnhof', hotel: 'Hotel' };
+  const categories = { restaurant: 'Restaurant', sight: 'Sehenswürdigkeit', nature: 'Natur', station: 'Bahnhof', hotel: 'Hotel' };
   function normalize(items) {
     if (!Array.isArray(items) || items.length > 200) throw new Error('Bitte eine Liste mit maximal 200 Orten verwenden.');
     return items.map((p, i) => {
@@ -9,7 +9,7 @@
       const number = v => (typeof v === 'number' || (typeof v === 'string' && v.trim())) ? Number(v) : NaN;
       const lat = number(p.lat), lng = number(p.lng ?? p.lon);
       if (typeof p.name !== 'string' || !p.name.trim() || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new Error(`Ort ${i + 1}: Name oder Koordinaten fehlen bzw. sind ungültig.`);
-      const aliases = { restaurant:'restaurant', restaurants:'restaurant', sight:'sight', sehenswürdigkeit:'sight', station:'station', bahnhof:'station', hotel:'hotel', hotels:'hotel' };
+      const aliases = { restaurant:'restaurant', restaurants:'restaurant', sight:'sight', sehenswürdigkeit:'sight', nature:'nature', natur:'nature', berg:'nature', mountain:'nature', station:'station', bahnhof:'station', hotel:'hotel', hotels:'hotel' };
       const category = aliases[String(p.category || 'sight').toLowerCase()];
       if (!category) throw new Error(`Ort ${i + 1}: Unbekannte Kategorie.`);
       const priority = String(p.priority || '').trim().slice(0, 10);
@@ -302,6 +302,14 @@
     try {return normalizeTicketUpdate(JSON.parse(decodeURIComponent(hash.slice(8))));}
     catch(e) {throw new Error('Ticket-Link ungültig: '+e.message);}
   }
+  // Global nature landmarks are optional, user-editable places. Their
+  // summit coordinates are not a hiking entrance, parking or viewing point.
+  const natureLandmarks = [
+    {name:'Mount Fuji (富士山)',lat:35.3606,lng:138.7274,category:'nature',
+     description:'Japans höchster Berg und Vulkan (3.776 m). Markierung des Gipfels, kein Ausgangspunkt einer Wanderung.',
+     note:'Gipfelkoordinate – keine direkte Zufahrt. Aussichtspunkte und Aufstiegsrouten sind separate Ziele; aktuelle Zugangsregeln vor Ort prüfen.'}
+  ];
+  function presetNaturePlaces(){return normalize(natureLandmarks);}
   // Curated city presets. They are ordinary place records and are only seeded
   // once into local browser storage, so users can still edit or clear them.
   const townPlacePresets = {
@@ -543,7 +551,7 @@
     const h = Math.sin(dlat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dlng/2)**2;
     return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1,h)));
   }
-  const api = { categories, normalize, merge, changeSavedPlace, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, presetPlaces, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides, isNagoyaKyotoTrip, ticketStates, ticketLegKey, normalizeTicketUpdate, encodeTicketUpdate, decodeTicketUpdate };
+  const api = { categories, normalize, merge, changeSavedPlace, parse, encode, decode, distance, compassHeading, normalizeJourney, encodeJourney, decodeJourney, presetJourney, presetPlaces, presetNaturePlaces, planPresets, placePlanKey, placesForPlan, validCustomPlans, stationGuides, isNagoyaKyotoTrip, ticketStates, ticketLegKey, normalizeTicketUpdate, encodeTicketUpdate, decodeTicketUpdate };
   if (typeof module !== 'undefined') module.exports = api;
   else root.MapCore = api;
 })(globalThis);

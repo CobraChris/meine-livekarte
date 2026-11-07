@@ -393,6 +393,52 @@ async function verifyJourneyTicketAttachment(page){
  await page.locator('#rail-ticket-close').click();
  console.log('PASS camera-photo ticket, clear saved status, notes, pickup flag and reload persistence');
 }
+async function verifyFujiNatureCategory(page){
+ // The summit belongs to global saved places, not any Kyoto itinerary day.
+ assert.equal(await page.locator('#plan-select').inputValue(),'town-kyoto');
+ const dayBefore=await page.evaluate(()=>localStorage.getItem('livekarte-city-day-assignments-v1'));
+ const ticketBefore=await page.evaluate(()=>localStorage.getItem('livekarte-ticket-status-v1'));
+ await page.locator('#place-search-input').fill('Mount Fuji');
+ await page.locator('#place-search-go').click();
+ const searchItem=page.locator('#place-search-results button.place-search-result').first();
+ await searchItem.waitFor({state:'visible'});
+ assert.match(await searchItem.innerText(),/Mount Fuji/);
+ assert.match(await searchItem.innerText(),/Natur/);
+ await page.locator('#place-search-input').fill('');
+ await page.locator('#plan-select').selectOption('all');
+ const nature=page.locator('[data-filter="nature"]');
+ await nature.click();
+ assert.equal(await nature.getAttribute('aria-pressed'),'true');
+ assert.equal(await page.locator('#places .place').count(),1,
+  'Mount Fuji is the sole initial global nature landmark');
+ assert.match(await page.locator('#places .place h3').innerText(),/Mount Fuji/);
+ assert.equal(await page.locator('.leaflet-marker-icon .pin-nature').count(),1,
+  'Nature pin must use the distinct mountain icon');
+ await page.locator('#places .place .place-actions button').first().click();
+ const center=await page.evaluate(()=>({lat:window.__livekarteMap?.getCenter()?.lat,
+  lng:window.__livekarteMap?.getCenter()?.lng}));
+ // App does not expose Leaflet globally: the selected popup and card must
+ // still display the correct known landmark without changing today's plan.
+ assert.match(await page.locator('.leaflet-popup-content').first().innerText(),/Mount Fuji/);
+ const data=await page.evaluate(()=>({
+  fuji:JSON.parse(localStorage.getItem('livekarte-places-v1')||'[]')
+   .filter(p=>p.name==='Mount Fuji (富士山)'),
+  days:localStorage.getItem('livekarte-city-day-assignments-v1'),
+  tickets:localStorage.getItem('livekarte-ticket-status-v1')
+ }));
+ assert.equal(data.fuji.length,1);
+ assert.equal(data.fuji[0].category,'nature');
+ assert.equal(data.fuji[0].lat,35.3606);
+ assert.equal(data.fuji[0].lng,138.7274);
+ assert.equal(data.days,dayBefore,'Adding Fuji does not alter Kyoto day schedules');
+ assert.equal(data.tickets,ticketBefore,'Adding Fuji does not alter tickets');
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#plan-select').waitFor({state:'visible'});
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('livekarte-places-v1')||'[]')
+  .filter(p=>p.name==='Mount Fuji (富士山)').length),1,
+  'Fuji landmark is only seeded once and survives updates');
+ console.log('PASS Fuji summit global Nature pin, local search and unchanged trip/tickets');
+}
 async function main(){
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
@@ -444,6 +490,7 @@ async function main(){
   await verifyCompassDiagnostics(page);
   await verifyUpdateGuardAndPersistence(page);
   await verifyCurrentPositionBookmark(page);
+  await verifyFujiNatureCategory(page);
   assert.deepEqual(uncaught,[],'No uncaught runtime errors during real mobile interactions');
   console.log('PASS complete Android-size Chrome regression: Kyoto, Nara, Osaka, Nikkō');
  }catch(error){
