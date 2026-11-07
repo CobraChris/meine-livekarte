@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: true
@@ -17,19 +18,44 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --check google-demo.js && node --check map-popup-core.js && node --check map-camera-core.js && node --check core.js && node --check walking-core.js && node --check routing-requests.js && node --check tour-navigation-core.js && node --check day-plan-core.js && node --check multi-day-core.js && node --check day-context-core.js && node --check day-selector-ui.js && node --check place-ui.js && node --check tour-ui.js && node --check route-model-core.js && node --check route-discovery.js && node --check next-step-core.js && node --check japanese-destination.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --check pwa.js && node --check ticket-vault.js && node --check ticket-library.js && node --check rail-leg-details-core.js && node --check rail-leg-ticket-ui.js && node --check ticket-library-ui.js && node --check ticket-share-inbox.js && node --check sw.js && node --test tests/*.test.cjs
+      - run: node --check scripts/visual-check.cjs && node --check google-demo.js && node --check map-popup-core.js && node --check map-camera-core.js && node --check core.js && node --check walking-core.js && node --check routing-requests.js && node --check tour-navigation-core.js && node --check day-plan-core.js && node --check multi-day-core.js && node --check day-context-core.js && node --check day-selector-ui.js && node --check place-ui.js && node --check tour-ui.js && node --check route-model-core.js && node --check route-discovery.js && node --check next-step-core.js && node --check japanese-destination.js && node --check app.js && node --check sync.js && node --check outbox-core.js && node --check sync-out.js && node --check pwa.js && node --check ticket-vault.js && node --check ticket-library.js && node --check rail-leg-details-core.js && node --check rail-leg-ticket-ui.js && node --check ticket-library-ui.js && node --check ticket-share-inbox.js && node --check sw.js && node --test tests/*.test.cjs
       - name: Install browser test runner without downloading a browser
         run: |
           command -v google-chrome || command -v google-chrome-stable || command -v chromium
-          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright-core@1.55.1
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright-core@1.55.1 pngjs@7.0.0
+      - name: Restore last successful main visual reference (optional bootstrap)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p test-results/visual/reference
+          RUNS="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow pages.yml --branch main --status success --limit 8 --json databaseId --jq '.[].databaseId' || true)"
+          for RUN in $RUNS; do
+            if gh run download "$RUN" --repo "$GITHUB_REPOSITORY" --name livekarte-ui-reference --dir test-results/visual/reference >/dev/null 2>&1; then
+              echo "Visual reference: last green main run $RUN"
+              break
+            fi
+          done
       - name: Test real Android-size Chrome touch interactions (offline from third parties)
         run: node tests/mobile-browser.e2e.cjs
-      - name: Save mobile screenshot if a regression fails
+      - name: Compare screenshots, detect hidden and overlapping map controls
+        run: node scripts/visual-check.cjs
+      - name: Save accepted main visual reference for future pull requests
+        if: success() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: livekarte-ui-reference
+          path: test-results/visual/current/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Save visual diffs and mobile screenshot if a regression fails
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: mobile-ui-failure-${{ github.run_id }}
-          path: test-results/mobile/
+          path: |
+            test-results/mobile/
+            test-results/visual/current/
+            test-results/visual/diff/
           if-no-files-found: ignore
           retention-days: 7
   deploy:
