@@ -3770,7 +3770,14 @@
         matches.push({suggested,place:existing||suggested});
         if(!existing)additions.push(suggested);
       }
-      const nextPlaces=C.merge(places,additions);
+      // Correct only the obsolete original Fairfield schedule. Respect any
+      // user-edited date, notes, hotel marker and booking metadata.
+      const oldFairfieldSchedule='Nikkō · geplantes Hotel nach der Anreise am 07.11. · Check-in ab 15:00';
+      const nextPlaces=C.merge(places,additions).map(place=>
+        place.name==='Fairfield by Marriott Tochigi Nikko' &&
+        place.schedule===oldFairfieldSchedule
+          ?{...place,schedule:'08.11. · Hotelwechsel vom HaruNikko New Wing · Check-in ab 15:00'}
+          :place);
       const nextPlans=Object.assign(Object.create(null),planAssignments);
       const nextDays=Object.assign(Object.create(null),cityDayAssignments);
       for(const {suggested,place} of matches){
