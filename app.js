@@ -643,7 +643,12 @@
     await searchOnlinePlaces(query,[]);
   };
   $('place-search-walk').onclick=()=>{
-    if(selectedSearchPlace)void showWalkingRoute(selectedSearchPlace);
+    if(!selectedSearchPlace)return;
+    const destination=selectedSearchPlace;
+    // A completed search must not leave its expanded preview overlay blocking
+    // the route panel, its close button or the navigation controls.
+    resetPlaceSearch(false);
+    void showWalkingRoute(destination);
   };
   $('place-search-save').onclick=()=>{
     if(!selectedSearchPlace||selectedSearchPlace.saved)return;
