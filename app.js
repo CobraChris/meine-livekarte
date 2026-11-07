@@ -188,10 +188,43 @@
   L.control.zoom({ position:'topright' }).addTo(map);
   // Keep the required OpenStreetMap map-data credit, omit optional Leaflet prefix.
   map.attributionControl.setPrefix(false);
-  const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>' }).addTo(map);
-  // Explicit opt-in only: OSM stays usable without a Demo Key.
+  const OSM_STYLE_STORE='livekarte-osm-style-v1';
+  const osmStyles={
+    standard:{
+      url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>'
+    },
+    de:{
+      // Small, noncommercial online use only; never prefetch/download tiles.
+      url:'https://tile.openstreetmap.de/{z}/{x}/{y}.png',
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> · <a href="https://openstreetmap.de/germanstyle/" target="_blank" rel="noopener noreferrer">OSM Deutschland</a>'
+    }
+  };
+  // Keep the existing OSM standard until the user opts into German tiles.
+  let osmStyle='standard';
+  try{if(localStorage.getItem(OSM_STYLE_STORE)==='de')osmStyle='de';}catch{}
+  const tiles = L.tileLayer(osmStyles[osmStyle].url,{
+    maxZoom:19,attribution:osmStyles[osmStyle].attribution
+  }).addTo(map);
+  function setOSMStyle(requested){
+    const nextStyle=requested==='de'?'de':'standard';
+    if(nextStyle===osmStyle)return;
+    // Update only the basemap raster. All Leaflet markers, GPS, routes,
+    // current camera, selected trip and local tickets stay untouched.
+    const previousAttribution=tiles.options.attribution;
+    osmStyle=nextStyle;
+    map.attributionControl.removeAttribution(previousAttribution);
+    tiles.options.attribution=osmStyles[osmStyle].attribution;
+    map.attributionControl.addAttribution(tiles.options.attribution);
+    tiles.setUrl(osmStyles[osmStyle].url);
+    tileWarning=false;
+    try{localStorage.setItem(OSM_STYLE_STORE,osmStyle);}catch{}
+  }
+  // Explicit opt-in only: no tile requests to the German server or Google
+  // unless that style/provider was chosen previously on this device.
   const googleDemo=window.LivekarteGoogleDemo?.init({
     map,places:()=>visiblePlaces(),placeKey:C.placePlanKey,
+    osmStyle:()=>osmStyle,onOSMStyleChange:setOSMStyle,
     // The same stop order used by renderDayRoutePreview() on Leaflet.
     // After a real foot-route optimization, preserve its displayed order.
     stops:()=>currentDayRoute()?.stops||[],
@@ -207,7 +240,13 @@
     tourSelected:place=>tourIsSelected(place)
   });
   let tileWarning = false;
-  tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
+  tiles.on('tileerror', () => {
+    if (tileWarning)return;
+    tileWarning=true;
+    say(osmStyle==='de'
+      ?'OSM Deutsch lädt nicht. Bitte Internet prüfen oder OSM Standard wählen.'
+      :'Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.');
+  });
   const pins = L.layerGroup().addTo(map);
   // Nature landmarks remain visible on country-scale train journeys without
   // becoming scheduled stops or changing fit bounds.
