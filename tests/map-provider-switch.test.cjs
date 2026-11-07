@@ -148,7 +148,7 @@ test('Google shares map tools and search rather than hiding the Leaflet toolbar'
   assert.match(app,/googleDemo\?\.setPreview\('search',place\)/);
   assert.match(app,/googleDemo\?\.setPreview\('bookmark',\{lat,lng\}\)/);
   assert.match(app,/googleDemo\?\.center\(\)\|\|map\.getCenter\(\)/);
-  assert.match(app,/\$\('day-route-foot'\)\.onclick=\(\)=>\{\s*googleDemo\?\.forceOSM\(\)/);
+  assert.match(app,/\$\('day-route-foot'\)\.onclick=\(\)=>\{void calculateDailyFootRoute\(\);\}/);
   assert.doesNotMatch(read('sw.js'),/maps\.googleapis\.com/);
 });
 
