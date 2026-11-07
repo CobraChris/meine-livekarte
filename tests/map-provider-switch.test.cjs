@@ -54,6 +54,10 @@ function appFixture(options={}){
     onWalk:options.onWalk||(()=>{}),
     onToggleTour:options.onToggleTour||(()=>{}),
     tourSelected:options.tourSelected||(()=>false),
+    isTourPicking:options.isTourPicking||(()=>false),
+    onTapTour:options.onTapTour||(()=>{}),
+    onMapTap:options.onMapTap||(()=>{}),
+    onPan:options.onPan||(()=>{}),
     placeKey:options.placeKey
   });
   assert.ok(widget);
