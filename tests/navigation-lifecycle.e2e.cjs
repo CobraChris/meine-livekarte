@@ -207,7 +207,7 @@ async function main(){
   const saved=await important();
   assert.deepEqual(saved,snapshot,'Navigation must not mutate saved places or tickets');
   assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>
-   /gps-track|walk-geometry|live-route-history/.test(k)),false);
+   /gps-track|walk-geometry|live-route-history/.test(k))),false);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#plan-select').waitFor({state:'visible'});
   assert.equal(await page.locator('#walk-route-panel').isVisible(),false);
