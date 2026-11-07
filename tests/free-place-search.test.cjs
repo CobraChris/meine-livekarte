@@ -60,7 +60,8 @@ test('search UI is mobile-first with manual submit, location privacy and ephemer
  assert.ok(app.includes('S.requestUrl(query,googleDemo?.center()||map.getCenter())'));
  assert.ok(app.includes('S.parse(JSON.parse(raw))'));
  assert.ok(app.includes('searchPreview.clearLayers()'));
- assert.ok(app.includes('showWalkingRoute(selectedSearchPlace)'));
+ assert.ok(app.includes('const destination=selectedSearchPlace;'));
+ assert.match(app,/resetPlaceSearch\(false\);\s*void showWalkingRoute\(destination\)/);
  assert.ok(app.includes('openMapPlaceDialog(selectedSearchPlace)'));
  assert.ok(app.includes("$('map-place-name').value=selectedSearchPlace.name"));
  assert.ok(app.includes('searchGo.disabled=true'));
