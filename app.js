@@ -209,6 +209,9 @@
   let tileWarning = false;
   tiles.on('tileerror', () => { if (!tileWarning) { say('Kartenkacheln nicht erreichbar. Bitte Internetverbindung prüfen.'); tileWarning = true; } });
   const pins = L.layerGroup().addTo(map);
+  // Nature landmarks remain visible on country-scale train journeys without
+  // becoming scheduled stops or changing fit bounds.
+  const journeyNaturePins=L.layerGroup().addTo(map);
   const walkingLayers=L.layerGroup().addTo(map);
   const tourLayers=L.layerGroup().addTo(map);
   const dayRouteLayers=L.layerGroup().addTo(map);
@@ -1774,9 +1777,35 @@
       marker,content,map,L,onPanStart:pauseGPSFollow,options
     });
   }
+  function renderJourneyNaturePins(){
+    journeyNaturePins.clearLayers();
+    // Only saved, explicitly categorized Nature places; not hard-coded pins.
+    // The full "Alle Orte" view already renders these in the standard layer.
+    if(currentPlan().kind!=='journey')return;
+    for(const place of places){
+      if(place.category!=='nature')continue;
+      const popup=node('div',undefined,'journey-nature-popup');
+      popup.append(
+        node('strong','⛰ '+place.name),
+        node('p',place.description||'Gespeicherter Naturort.'),
+        node('p',place.note||'')
+      );
+      const pin=L.marker([place.lat,place.lng],{
+        title:place.name+' · Natur',
+        zIndexOffset:350,
+        icon:L.divIcon({
+          className:'pin journey-nature-marker',
+          html:'<div class="pin-inner pin-nature"><span>⛰</span></div>',
+          iconSize:[36,36],iconAnchor:[18,36]
+        })
+      }).addTo(journeyNaturePins);
+      bindMapPopup(pin,popup);
+    }
+  }
   function render() {
     googleDemo?.refresh();
     pins.clearLayers();distanceDisplays=[];
+    renderJourneyNaturePins();
     renderCityDays();
     const planPlaces=visiblePlaces();
     placeUI.begin({planPlacesCount:planPlaces.length,
