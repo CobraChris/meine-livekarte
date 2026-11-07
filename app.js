@@ -42,7 +42,7 @@
       planAssignments[key]=[...new Set([...list,activePlanId])];
     });
     persistPlanState();
-    if(activePlanId==='town-kyoto'&&MD.days('town-kyoto').includes(activeCityDay)){
+    if(MD.days(activePlanId).includes(activeCityDay)){
       const next=Object.assign(Object.create(null),cityDayAssignments);
       for(const p of items){
         const key=C.placePlanKey(p);
@@ -66,7 +66,8 @@
     if (Object.prototype.hasOwnProperty.call(planJourneys,activePlanId)) return planJourneys[activePlanId];
     return activePlanId === 'ride-takayama' ? C.presetJourney('hakone-takayama-2026-10-30')
       : activePlanId === 'ride-kyoto' ? C.presetJourney('takayama-kyoto-2026-11-01')
-      : activePlanId === 'ride-nikko' ? C.presetJourney('kyoto-nikko-2026-11-07') : null;
+      : activePlanId === 'ride-nikko' ? C.presetJourney('kyoto-nikko-2026-11-07')
+      : activePlanId === 'ride-tokyo' ? C.presetJourney('nikko-tokyo-2026-11-10') : null;
   }
 
   let heading = null, visualHeading = null, compassGeneration = 0;
@@ -1631,7 +1632,7 @@
     const visible = items.filter(p => filter === 'all' || p.category === filter);
     // The old uniform 45px padding clipped outer day stops behind the
     // mobile picker and right-side controls, especially on Nara day trips.
-    const day=activePlanId==='town-kyoto'&&MD.days('town-kyoto').includes(activeCityDay);
+    const day=MD.days(activePlanId).includes(activeCityDay);
     const padding=day?mapOverviewPadding():{padding:[45,45]};
     if(visible.length)withCameraView('day-goals',()=>map.fitBounds(
       visible.map(p=>[p.lat,p.lng]), {...padding,maxZoom:16,animate:false}));
@@ -1682,10 +1683,16 @@
   const daySelector=DayUI.create({document,calendar:MD,placeKey:C.placePlanKey});
   const dayBriefOpen=$('city-day-brief-open');
   dayBriefOpen.onclick=()=>{
-    const index=MD.days('town-kyoto').indexOf(activeCityDay);
+    const index=MD.days(activePlanId).indexOf(activeCityDay);
     if(index<0)return;
-    focusKyotoOverviewDay(index);
-    kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
+    if(activePlanId==='town-nikko'){
+      const sections=$('nikko-days').querySelectorAll('details.kyoto-day');
+      sections.forEach((section,i)=>{section.open=index===i;});
+      nikkoOverview.scrollIntoView({behavior:'smooth',block:'start'});
+    }else{
+      focusKyotoOverviewDay(index);
+      kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
+    }
   };
   // The first planned stop is kept fixed (e.g. Nara Park after the train).
   // Optimize the rest by straight-line distances on this device. Never pretend
@@ -1803,10 +1810,10 @@
   $('day-route-foot').onclick=()=>{void calculateDailyFootRoute();};
   function renderCityDays(){
     daySelector.render({context:currentDayContext(),activeDay:activeCityDay,
-      overview:kyotoOverview,onSelect:selectCityDay});
+      overview:activePlanId==='town-nikko'?$('nikko-days'):kyotoOverview,onSelect:selectCityDay});
   }
   function selectCityDay(day){
-    if(!MD.allowed('town-kyoto',day)||day===activeCityDay)return;
+    if(!MD.allowed(activePlanId,day)||day===activeCityDay)return;
     ++dayFootGeneration;
     if(dayFootController)dayFootController.abort();
     dayFootController=null;dayFootRoute=null;
@@ -1815,19 +1822,19 @@
     if(mapTourPickMode)mapTourPickMode=false;
     activeCityDay=day;
     pauseGPSFollow();
-    try{localStorage.setItem('livekarte-active-city-day-v1',day);}
+    try{localStorage.setItem(activePlanId==='town-kyoto'?'livekarte-active-city-day-v1':'livekarte-active-city-day-'+activePlanId+'-v1',day);}
     catch{say('Tagesauswahl konnte nicht gespeichert werden.');}
     render();
     const p=mapFocusPlaces();
     if(p.length)fit(p);
     googleDemo?.syncFromOSM();
-    say('Kyoto · '+MD.dayLabel(day)+' ausgewählt.');
+    say(currentPlan().name+' · '+MD.dayLabel(day)+' ausgewählt.');
   }
   function setDayAssignment(place,day){
-    if(activePlanId!=='town-kyoto'||place.category==='hotel')return;
+    if(!MD.days(activePlanId).length||place.category==='hotel')return;
     const key=C.placePlanKey(place);
     let next;
-    try{next=MD.change(cityDayAssignments,key,day);}
+    try{next=MD.change(cityDayAssignments,key,day,activePlanId);}
     catch(error){say(error.message);return;}
     try{localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(next));}
     catch{say('Tageszuordnung konnte nicht gespeichert werden.');return;}
@@ -2205,15 +2212,19 @@
   window.addEventListener('focus',renderNextAction);
   const kyotoOverview=$('kyoto-overview'),nikkoOverview=$('nikko-overview');
   function renderNikkoOverview(){
-    const visiting=activePlanId==='town-nikko',travel=activePlanId==='ride-nikko';
-    nikkoOverview.hidden=!visiting&&!travel;
+    const visiting=activePlanId==='town-nikko',travel=activePlanId==='ride-nikko',returnTravel=activePlanId==='ride-tokyo';
+    nikkoOverview.hidden=!visiting&&!travel&&!returnTravel;
     if(nikkoOverview.hidden)return;
     const label=nikkoOverview.querySelector('.kyoto-eyebrow');
     const title=nikkoOverview.querySelector('.kyoto-day-heading h2');
-    label.textContent=visiting?'🏨 NIKKŌ · AUFENTHALT':'🚄 NÄCHSTE ETAPPE · 07.11.2026';
-    title.textContent=visiting?'Nikkō · Hotel und Orientierung':'Kyoto → Tokio → Nikkō';
+    label.textContent=visiting?'🏨 NIKKŌ · 07.–10.11.2026':returnTravel?'🚄 RÜCKREISE · 10.11.2026':'🚄 ANREISE · 07.11.2026';
+    title.textContent=visiting?'Nikkō · Tagespläne und Ausflüge':returnTravel?'Nikkō → Tokio · SPACIA X 6':'Kyoto → Tokio → Nikkō';
     $('nikko-tokyo-transfer').hidden=!travel;
+    $('nikko-rail-steps').hidden=!travel;
     $('nikko-rail-steps').open=travel;
+    $('nikko-days').hidden=returnTravel;
+    $('nikko-return-steps').hidden=!returnTravel;
+    nikkoOverview.querySelector('.kyoto-day-stats').hidden=returnTravel;
   }
   let lastOverviewDay=null;
   function focusKyotoOverviewDay(index){
@@ -2242,7 +2253,7 @@
   const todayPanel=$('today-panel');
   function renderTodayDashboard(){
     const suggestion=NS.todaySuggestion();
-    todayPanel.hidden=activePlanId==='town-kyoto';
+    todayPanel.hidden=activePlanId==='town-kyoto'||activePlanId==='town-nikko';
     const date=NS.localDate(),text=date.slice(8,10)+'.'+date.slice(5,7)+'.'+date.slice(0,4);
     $('today-date').textContent=text;
     $('today-title').textContent=suggestion?suggestion.title:'Kein fester Tagesplan hinterlegt';
@@ -2268,7 +2279,8 @@
         selectCityDay(today);
       focusKyotoOverviewDay(suggestion.dayIndex);
       kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
-    }else if(suggestion.planId==='ride-nikko'||suggestion.planId==='town-nikko'){
+    }else if(suggestion.planId==='ride-nikko'||suggestion.planId==='town-nikko'||suggestion.planId==='ride-tokyo'){
+      if(suggestion.planId==='town-nikko'&&MD.days('town-nikko').includes(NS.localDate()))selectCityDay(NS.localDate());
       renderNikkoOverview();
       nikkoOverview.scrollIntoView({behavior:'smooth',block:'start'});
     }else{
@@ -3194,6 +3206,12 @@
     if(activePlanId!==id)mapTourPickMode=false;
     if(activePlanId!==id)setMapPlacePicking(false);
     if(activePlanId!==id)oldTravelExpanded=false;
+    if(activePlanId!==id&&MD.days(id).length){
+      const key=id==='town-kyoto'?'livekarte-active-city-day-v1':'livekarte-active-city-day-'+id+'-v1';
+      let selected=null;
+      try{selected=localStorage.getItem(key);}catch{}
+      activeCityDay=selected&&MD.allowed(id,selected)?selected:MD.defaultDay(id,NS.localDate());
+    }
     activePlanId=id;
     journey=activeJourney();
     pauseGPSFollow();
@@ -3275,7 +3293,7 @@
     pauseGPSFollow();
     if(journey) fitJourney();
     else if(currentPlaces().length){
-      if(activePlanId==='town-kyoto'&&MD.days('town-kyoto').includes(activeCityDay)){
+      if(MD.days(activePlanId).includes(activeCityDay)){
         if(!fitDayGoalsAndPosition()){
           say('Tagesziele angezeigt. GPS-Position noch nicht verfügbar – nach der Ortung erneut auf 📍 tippen.');
         }
@@ -3369,7 +3387,7 @@
         position = {lat:result.coords.latitude,lng:result.coords.longitude};
         // The auto-start GPS fix must not pull the camera back to Kyoto
         // when the chosen day has goals far away (for example Nara).
-        if(automatic && firstFix && camera.isFollowing() && activePlanId==='town-kyoto' &&
+        if(automatic && firstFix && camera.isFollowing() && (activePlanId==='town-kyoto'||activePlanId==='town-nikko') &&
           MD.preferDistantDayView(visiblePlaces(),activeCityDay,position,C.distance)){
           setCameraMode('day-goals');
         }
@@ -3731,6 +3749,49 @@
     }
   }
   seedApprovedKyotoDays();
+  // Add the approved Nikko 07–10 Nov itinerary without touching any saved tickets
+  // or manual calendar choices. v1 imported only the first Fairfield/station pins.
+  function seedApprovedNikkoDays(){
+    const marker='livekarte-nikko-days-2026-11-07-v2';
+    try{
+      if(localStorage.getItem(marker)==='1')return;
+      const approved=C.presetPlaces('town-nikko');
+      if(approved.length<12)return;
+      const additions=[],matches=[];
+      for(const suggested of approved){
+        const existing=places.find(place=>
+          C.placePlanKey(place)===C.placePlanKey(suggested)||
+          (place.name.toLocaleLowerCase('de-DE')===suggested.name.toLocaleLowerCase('de-DE')&&
+           C.distance(place,suggested)<75));
+        matches.push({suggested,place:existing||suggested});
+        if(!existing)additions.push(suggested);
+      }
+      const nextPlaces=C.merge(places,additions);
+      const nextPlans=Object.assign(Object.create(null),planAssignments);
+      const nextDays=Object.assign(Object.create(null),cityDayAssignments);
+      for(const {suggested,place} of matches){
+        const key=C.placePlanKey(place);
+        const tags=Array.isArray(nextPlans[key])?nextPlans[key]:[];
+        const journeyTags=place.name==='HaruNikko New Wing'?['ride-nikko']:
+          place.name==='Tōbu-Nikkō Station'?['ride-tokyo']:[];
+        nextPlans[key]=[...new Set([...tags,'town-nikko',...journeyTags])];
+        if(place.category==='hotel')continue;
+        const day=place.name==='Tōbu-Nikkō Station'?'2026-11-10':
+          MD.fromSchedule(suggested.schedule);
+        if(MD.days('town-nikko').includes(day)&&!Object.hasOwn(nextDays,key))
+          nextDays[key]=day;
+      }
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(nextPlaces));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(nextPlans));
+      localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(nextDays));
+      localStorage.setItem(marker,'1');
+      places=nextPlaces;planAssignments=nextPlans;cityDayAssignments=nextDays;
+    }catch{
+      say('Nikkō-Tagesziele konnten nicht automatisch ergänzt werden; bestehende Orte und Tickets bleiben erhalten.');
+    }
+  }
+  seedApprovedNikkoDays();
+
   // Add the three personally requested Osaka shops on 05.11., without
   // replacing saved place notes, past visits, custom days, drafts or tickets.
   function seedOsakaSouvenirPlaces(){
