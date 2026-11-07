@@ -302,7 +302,8 @@ test('no Google routing/search/billing requests are introduced for day line',()=
  assert.match(source,/routeLegend\.hidden=false/);
  assert.match(source,/function clearRoute\(\)/);
  assert.match(app,/route:\(\)=>currentMapRoute\(\)/);
- assert.match(app,/return journey\?RM\.rail\(journey\):currentDayRoute\(\)/);
+ assert.match(app,/return walkRouteView\|\|tourRouteView\|\|/);
+ assert.match(app,/\(journey\?RM\.rail\(journey\):currentDayRoute\(\)\)/);
  assert.match(app,/const actual=dayFootRoute\?\.key===key\?dayFootRoute:null/);
  assert.match(html,/<details id="google-demo-route-legend"[^>]*hidden/);
  assert.match(html,/id="google-demo-route-meaning"/);
