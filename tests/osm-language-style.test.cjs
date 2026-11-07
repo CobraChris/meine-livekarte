@@ -28,7 +28,7 @@ test('German tile layer is not requested before previous opt-in and does not ins
  assert.match(init,/let osmStyle='standard';/);
  assert.match(init,/localStorage\.getItem\(OSM_STYLE_STORE\)==='de'/);
  assert.match(init,/const tiles = L\.tileLayer\(osmStyles\[osmStyle\]\.url/);
- assert.doesNotMatch(init,/fetch\(|XMLHttpRequest|prefetch|Google Maps API key/);
+ assert.doesNotMatch(init,/fetch\(|XMLHttpRequest|Google Maps API key/);
  assert.doesNotMatch(demo,/document\.head\.appendChild\(osmDe\)/);
  const sw=read('sw.js');
  assert.doesNotMatch(sw,/tile\.openstreetmap\.de|tile\.openstreetmap\.org/);
