@@ -235,7 +235,7 @@ test('multi-day presets separate journey days from city stays', () => {
  const expected=[
   ['all','all'],['ride-takayama','journey'],['town-takayama','city'],
   ['ride-kyoto','journey'],['town-kyoto','city'],
-  ['ride-nikko','journey'],['town-nikko','city']
+  ['ride-nikko','journey'],['town-nikko','city'],['ride-tokyo','journey']
  ];
  assert.deepEqual(C.planPresets.map(p=>[p.id,p.kind]),expected);
  assert.deepEqual(C.planPresets.find(p=>p.id==='town-takayama').center,[36.141062,137.251454]);

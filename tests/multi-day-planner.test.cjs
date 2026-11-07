@@ -119,7 +119,7 @@ test('GPS auto-start keeps far day-trip view while recording location; nearby go
  assert.match(source,/function fit\(items = mapFocusPlaces\(\)\)/);
  assert.match(source,/const matching=mapFocusPlaces\(\)/);
  assert.match(source,/const p=mapFocusPlaces\(\)/);
- assert.match(source,/if\(automatic && firstFix && camera\.isFollowing\(\) && activePlanId==='town-kyoto' &&/);
+ assert.match(source,/if\(automatic && firstFix && camera\.isFollowing\(\) && \(activePlanId==='town-kyoto'\|\|activePlanId==='town-nikko'\) &&/);
  assert.match(source,/MD\.preferDistantDayView\(visiblePlaces\(\),activeCityDay,position,C\.distance\)/);
  assert.match(source,/if \(camera\.isFollowing\(\)\) centerOnGPS\(ll,Math\.max\(map\.getZoom\(\),15\)\)/);
  const ui=read('day-selector-ui.js');

@@ -27,15 +27,18 @@ test('Nikko itinerary is a standalone date-bounded journey; Kyoto remains intact
   assert.ok(journey.stops[1].leg.includes('Yamabiko 141'));
   assert.ok(journey.stops[2].leg.includes('JR Nikkō-Linie'));
   assert.match(journey.stops[0].description,/prüfen/);
-  assert.match(journey.stops[3].description,/nicht direkt am Bahnhof/);
+  assert.match(journey.stops[3].description,/HaruNikko New Wing/);
   assert.equal(Core.presetJourney('takayama-kyoto-2026-11-01').stops.length,3);
   assert.match(Core.planPresets.find(x=>x.id==='town-nikko').name,/Nikkō/);
 });
 
 test('Nikko hotel and both distinct stations have markers but never masquerade as identical interchange',()=>{
   const places=Core.presetPlaces('town-nikko');
-  assert.equal(places.length,3);
-  const hotel=places.find(x=>x.category==='hotel');
+  assert.ok(places.length>=15,'Nikko has all dated sightseeing stops and two hotels');
+  const hotel=places.find(x=>x.name==='Fairfield by Marriott Tochigi Nikko');
+  const firstHotel=places.find(x=>x.name==='HaruNikko New Wing');
+  assert.equal(firstHotel?.category,'hotel');
+  assert.match(firstHotel.note,/1323-10 Tokorono/);
   const jr=places.find(x=>x.name==='Nikkō Station (JR)');
   const tobu=places.find(x=>x.name==='Tōbu-Nikkō Station');
   assert.ok(hotel&&jr&&tobu);
@@ -58,7 +61,8 @@ test('Nikko suggestions arrive on Nov 7 and stop guessing beyond known dates',()
   assert.match(leaving.summary,/Utsunomiya/);
   assert.match(leaving.hint,/keine Live-Fahrzeiten/);
   assert.equal(NS.todaySuggestion(at('2026-11-07T15:00:00Z')).planId,'town-nikko');
-  assert.equal(NS.todaySuggestion(at('2026-11-08T15:00:00Z')),null);
+  assert.equal(NS.todaySuggestion(at('2026-11-08T15:00:00Z')).planId,'town-nikko');
+  assert.equal(NS.todaySuggestion(at('2026-11-09T15:00:00Z')).planId,'ride-tokyo');
   assert.equal(NS.isPastTravelView('ride-nikko',at('2026-11-07T14:59:00Z')),false);
   assert.equal(NS.isPastTravelView('ride-nikko',at('2026-11-07T15:00:00Z')),true);
 });
@@ -74,7 +78,7 @@ test('Nikko itinerary panel is informational with hotel links and no false compl
   assert.match(section,/JR Nikkō-Linie/);
   assert.match(section,/15:58/);
   assert.match(section,/Fairfield by Marriott Tochigi Nikko/);
-  assert.match(section,/keine Live-Fahrzeiten/);
+  assert.match(section,/ohne Live-Fahrplan/);
   assert.match(section,/Gleise oder Ticketstatus werden live abgeglichen/);
   assert.match(section,/www\.marriott\.com/);
   assert.match(section,/www\.google\.com\/maps\/search/);
