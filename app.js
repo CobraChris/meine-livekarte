@@ -884,12 +884,13 @@
       if(generation!==walkRequestGeneration || watch===null)return;
       walkRouteData=result;
       walkingNavButton.disabled=false;
-      walkRouteView=RM.walking({start:startedAt,stops:[place],route:result,purpose:'single'});
-      L.polyline(walkRouteView.points,{color:'#10364e',weight:11,opacity:.90,
+      const walkingView=RM.walking({start:startedAt,stops:[place],route:result,purpose:'single'});
+      walkRouteView=walkingView;
+      L.polyline(walkingView.points,{color:'#10364e',weight:11,opacity:.90,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
-      L.polyline(walkRouteView.points,{color:'#f5fcff',weight:6,opacity:1,
+      L.polyline(walkingView.points,{color:'#f5fcff',weight:6,opacity:1,
         dashArray:'2 13',lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
-      L.polyline(walkRouteView.points,{color:'#4da4ff',weight:3,opacity:1,
+      L.polyline(walkingView.points,{color:'#4da4ff',weight:3,opacity:1,
         dashArray:'2 13',lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
       googleDemo?.refresh();
       walkingStats.textContent=W.distanceText(result.distance)+' · ca. '+
@@ -1425,12 +1426,13 @@
         render();
       }
       tourRoute={...result,stops:ordered.map(p=>({...p})),start:from,planId:activePlanId};
-      tourRouteView=RM.walking({start:from,stops:ordered,route:result,purpose:'tour'});
+      const tourView=RM.walking({start:from,stops:ordered,route:result,purpose:'tour'});
+      tourRouteView=tourView;
       googleDemo?.refresh();
       renderRouteDiscoveryUI();
-      L.polyline(tourRouteView.points,{color:'#12313b',opacity:.9,weight:10,
+      L.polyline(tourView.points,{color:'#12313b',opacity:.9,weight:10,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
-      L.polyline(tourRouteView.points,{color:'#ffdb74',opacity:1,weight:5,
+      L.polyline(tourView.points,{color:'#ffdb74',opacity:1,weight:5,
         dashArray:'4 12',lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
       ordered.forEach((place,i)=>{
         const marker=L.marker([place.lat,place.lng],{
