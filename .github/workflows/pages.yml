@@ -39,6 +39,8 @@ jobs:
         run: node --test scripts/visual-mutation.cjs
       - name: Test real Android-size Chrome touch interactions (offline from third parties)
         run: node tests/mobile-browser.e2e.cjs
+      - name: Test complete navigation lifecycle with offline routing and Google mocks
+        run: node tests/navigation-lifecycle.e2e.cjs
       - name: Compare screenshots, detect hidden and overlapping map controls
         run: node scripts/visual-check.cjs
       - name: Save accepted main visual reference for future pull requests
