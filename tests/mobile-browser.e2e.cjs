@@ -484,12 +484,8 @@ async function main(){
   assert.match(await naturePins.first().getAttribute('title'),/Mount Fuji/);
   assert.equal(await page.locator('#plan-select').inputValue(),'ride-nikko',
    'The nature landmark must not switch the active journey');
-  await page.locator('#journey-panel .journey-item').first().click();
-  const stationPopup=page.locator('.leaflet-popup-content .place-popup-pan-surface').first();
-  await stationPopup.waitFor({state:'visible'});
-  assert.ok((await stationPopup.innerText()).length>8,
-   'Rail station must open the same accessible popup surface as day places');
-  console.log('PASS Nikkō station popup uses the shared map-popup contract');
+  // Open Fuji while the route is still fitted across Japan; clicking a
+  // station afterward intentionally zooms in and moves Fuji off-screen.
   await naturePins.first().click();
   const fujiPopup=page.locator('.leaflet-popup-content .journey-nature-popup');
   await fujiPopup.waitFor({state:'visible'});
@@ -497,6 +493,12 @@ async function main(){
   assert.match(await fujiPopup.innerText(),/Gipfel/);
   assert.equal(await page.locator('#plan-select').inputValue(),'ride-nikko');
   console.log('PASS Mount Fuji Nature pin visible and tappable on Nikkō train overview');
+  await page.locator('#journey-panel .journey-item').first().click();
+  const stationPopup=page.locator('.leaflet-popup-content .place-popup-pan-surface').first();
+  await stationPopup.waitFor({state:'visible'});
+  assert.ok((await stationPopup.innerText()).length>8,
+   'Rail station must open the same accessible popup surface as day places');
+  console.log('PASS Nikkō station popup uses the shared map-popup contract');
   await verifyJourneyTicketAttachment(page);
   await page.locator('#plan-select').selectOption('town-kyoto');
   await testDay(page,'2026-11-04',4);
