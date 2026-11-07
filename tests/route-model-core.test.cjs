@@ -127,7 +127,8 @@ test('Leaflet, Google, day visit, walking tour and railway all use this route co
  assert.match(app,/return actual\?RM\.walking\(\{/);
  assert.match(app,/stops:\(\)=>currentMapRoute\(\)\?\.stops\|\|\[\]/);
  assert.match(app,/function currentMapRoute\(\)\{/);
- assert.match(app,/return journey\?RM\.rail\(journey\):currentDayRoute\(\)/);
+ assert.match(app,/return walkRouteView\|\|tourRouteView\|\|/);
+ assert.match(app,/\(journey\?RM\.rail\(journey\):currentDayRoute\(\)\)/);
  assert.match(app,/L\.polyline\(view\.points,\{/);
  assert.match(app,/\.\.\.view\.style/);
  assert.match(app,/const walkingView=RM\.walking\(\{start:startedAt,stops:\[place\],route:result,purpose:'single'\}\)/);

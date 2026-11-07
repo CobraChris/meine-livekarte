@@ -274,6 +274,9 @@
   let mapTourPickMode=false; // UI only. Tap selected POI markers to toggle tour membership.
   let mapPlacePicking=false,mapPlacePoint=null; // UI only; never store until user confirms.
 
+  // Derived route geometry is transient. Only tour stop identifiers persist;
+  // never retain GPS, walked paths or navigation progress across reloads.
+  let walkRouteView=null,tourRouteView=null;
   let walkDestination=null,walkController=null,walkRequestGeneration=0;
   let positionUpdatedAt=0,positionAccuracy=null;
   const node = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
@@ -640,7 +643,12 @@
     await searchOnlinePlaces(query,[]);
   };
   $('place-search-walk').onclick=()=>{
-    if(selectedSearchPlace)void showWalkingRoute(selectedSearchPlace);
+    if(!selectedSearchPlace)return;
+    const destination=selectedSearchPlace;
+    // A completed search must not leave its expanded preview overlay blocking
+    // the route panel, its close button or the navigation controls.
+    resetPlaceSearch(false);
+    void showWalkingRoute(destination);
   };
   $('place-search-save').onclick=()=>{
     if(!selectedSearchPlace||selectedSearchPlace.saved)return;
@@ -804,6 +812,8 @@
     if(walkController)walkController.abort();
     stopWalkingNavigation();
     walkController=null;walkDestination=null;walkRouteData=null;
+    walkRouteView=null;
+    googleDemo?.refresh();
     walkingNavButton.disabled=true;
     walkingLayers.clearLayers();
     walkingPanel.hidden=true;
@@ -830,7 +840,6 @@
   // User-triggered ONLY: we never post GPS coordinates on watchPosition updates,
   // while showing a place, or merely by opening the app.
   async function showWalkingRoute(place){
-    googleDemo?.forceOSM();
     if(!W) { say('Fußwegfunktion ist noch nicht geladen. Bitte App aktualisieren.');return; }
     if(watch===null||!position||!positionUpdatedAt){
       say('Bitte zuerst GPS einschalten und den Standort abwarten, um einen Fußweg anzuzeigen.');
@@ -856,6 +865,8 @@
       walkDestination.lat===place.lat&&walkDestination.lng===place.lng;
     if(!continueNavigation)stopWalkingNavigation();
     walkRouteData=null;
+    walkRouteView=null;
+    googleDemo?.refresh();
     walkingNavButton.disabled=true;
     walkDestination=place;
     walkingLayers.clearLayers();
@@ -879,12 +890,14 @@
       walkRouteData=result;
       walkingNavButton.disabled=false;
       const walkingView=RM.walking({start:startedAt,stops:[place],route:result,purpose:'single'});
+      walkRouteView=walkingView;
       L.polyline(walkingView.points,{color:'#10364e',weight:11,opacity:.90,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
       L.polyline(walkingView.points,{color:'#f5fcff',weight:6,opacity:1,
         dashArray:'2 13',lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
       L.polyline(walkingView.points,{color:'#4da4ff',weight:3,opacity:1,
         dashArray:'2 13',lineCap:'round',lineJoin:'round',interactive:false}).addTo(walkingLayers);
+      googleDemo?.refresh();
       walkingStats.textContent=W.distanceText(result.distance)+' · ca. '+
         W.durationText(result.duration);
       // Keep the collapsed summary synchronized even when the info panel
@@ -912,6 +925,7 @@
         }catch(e){stopWalkingNavigation();say(e.message);}
       }else{
         fitMapArea(L.latLngBounds(result.points),{padding:[55,55],maxZoom:17});
+        googleDemo?.syncFromOSM();
       }
     }catch(e){
       if(generation!==walkRequestGeneration)return;
@@ -923,6 +937,8 @@
           :e.message||'Fußweg nicht verfügbar.';
       }
       walkingMiniText.textContent='🚶 Fußweg nicht verfügbar';
+      walkRouteView=null;
+      googleDemo?.refresh();
       if(walkingNavigation)stopWalkingNavigation();
       walkingNavButton.disabled=true;
       walkingNote.textContent='Bitte später erneut versuchen oder „Google Maps“ verwenden. Es wird keine Luftlinie als echter Fußweg angezeigt.';
@@ -1203,7 +1219,8 @@
     stopTourNavigation();
     ++tourRequestGeneration;
     if(tourController)tourController.abort();
-    tourController=null;tourRoute=null;
+    tourController=null;tourRoute=null;tourRouteView=null;
+    googleDemo?.refresh();
     tourLayers.clearLayers();
     tourHud.hidden=true;
     tourResult.hidden=true;
@@ -1366,7 +1383,6 @@
     tourBuilderStatus.textContent='Rundgang von der Karte entfernt. Deine Zielauswahl bleibt erhalten.';
   };
   async function calculateTour(optimized=false,remaining=false){
-    googleDemo?.forceOSM();
     if(tourController)return;
     const selected=remaining&&tourNavigation&&tourRoute
       ?tourRoute.stops.slice(tourNavigation.stage):tourSelection();
@@ -1416,6 +1432,8 @@
       }
       tourRoute={...result,stops:ordered.map(p=>({...p})),start:from,planId:activePlanId};
       const tourView=RM.walking({start:from,stops:ordered,route:result,purpose:'tour'});
+      tourRouteView=tourView;
+      googleDemo?.refresh();
       renderRouteDiscoveryUI();
       L.polyline(tourView.points,{color:'#12313b',opacity:.9,weight:10,
         lineCap:'round',lineJoin:'round',interactive:false}).addTo(tourLayers);
@@ -1440,6 +1458,7 @@
       renderNextAction();
       map.closePopup();
       fitMapArea(L.latLngBounds(result.points),{padding:[52,52],maxZoom:16});
+      googleDemo?.syncFromOSM();
       $('map').scrollIntoView({behavior:'smooth',block:'start'});
     }catch(error){
       if(generation!==tourRequestGeneration)return;
@@ -1690,9 +1709,11 @@
     }):RM.preview(ordered,key);
   }
   function currentMapRoute(){
-    // A travel day's rail route takes priority over city walking goals.
-    // Neither provider may derive its own stops, track geometry or times.
-    return journey?RM.rail(journey):currentDayRoute();
+    // One authoritative active route for both providers. An explicitly
+    // calculated footpath supersedes an itinerary preview until dismissed.
+    // These paths remain in-memory only and never become user history.
+    return walkRouteView||tourRouteView||
+      (journey?RM.rail(journey):currentDayRoute());
   }
   function renderDayRoutePreview(){
     const panel=$('day-route-preview'),view=currentDayRoute();
@@ -1761,8 +1782,10 @@
         distance:result.distance,duration:result.duration
       };
       renderDayRoutePreview();
+      googleDemo?.refresh();
       fitMapArea(result.points,{paddingTopLeft:[38,170],
         paddingBottomRight:[78,50],maxZoom:16});
+      googleDemo?.syncFromOSM();
       $('map').scrollIntoView({behavior:'smooth',block:'start'});
     }catch(error){
       if(generation!==dayFootGeneration)return;
@@ -1777,10 +1800,7 @@
       }
     }
   }
-  $('day-route-foot').onclick=()=>{
-    googleDemo?.forceOSM();
-    void calculateDailyFootRoute();
-  };
+  $('day-route-foot').onclick=()=>{void calculateDailyFootRoute();};
   function renderCityDays(){
     daySelector.render({context:currentDayContext(),activeDay:activeCityDay,
       overview:kyotoOverview,onSelect:selectCityDay});

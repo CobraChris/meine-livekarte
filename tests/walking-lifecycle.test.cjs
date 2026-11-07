@@ -25,7 +25,8 @@ test('closing walking info keeps rendered route while separate End route removes
  const walkController={aborts:0,abort(){this.aborts++;}};
  const context={
    $,walkingPanel,walkingRetry,walkingLayers,walkDestination:destination,
-   walkController,walkRequestGeneration:0,showWalkingRoute(){}
+   walkController,walkRequestGeneration:0,showWalkingRoute(){},
+   googleDemo:{refresh(){}},walkRouteView:null
  };
  vm.runInNewContext(lifecycle,context,{filename:'walking-lifecycle.js'});
  assert.equal(typeof $('walk-route-close').onclick,'function');

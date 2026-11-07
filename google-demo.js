@@ -292,7 +292,7 @@
           if(!railwayNumber){
             const walk=document.createElement('button');
             walk.type='button';
-            walk.textContent='🚶 Fußweg (OSM)';
+            walk.textContent='🚶 Fußweg (OSM-Routing)';
             walk.addEventListener('click',()=>onWalk(place));
             actions.append(walk);
             const tour=document.createElement('button');
@@ -312,7 +312,7 @@
     function fitGoogleGoals(){
       // Preserve the manually chosen OSM railway viewport when switching maps.
       // An explicit "Route zeigen" action handles fitting the whole rail trip.
-      if(route()?.kind==='rail')return false;
+      if(['rail','walking'].includes(route()?.kind))return false;
       if(!active||!googleMap?.fitBounds||!root.google?.maps?.LatLngBounds)return false;
       const selected=goals().filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
       if(selected.length<2)return false;
@@ -368,7 +368,9 @@
       notice.hidden=true;
       say(route()?.kind==='rail'
         ?'Google-Karte aktiv. Die schematische Bahnroute wird angezeigt.'
-        :'Google-Demokarte aktiv. Eigene Touren und Fußwege bleiben in OSM.');
+        :route()?.kind==='walking'
+          ?'Google-Karte aktiv. Berechneter OSM-Fußweg sichtbar.'
+          :'Google-Karte aktiv. Für Wegberechnungen wird OSM-Routing verwendet.');
       updateUI();
     }
     function fail(reason){
