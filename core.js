@@ -373,7 +373,7 @@
       {name:'Kegon-Wasserfall',lat:36.7389,lng:139.5018,category:'nature',
         schedule:'09.11. · Vormittag · Bus nach Chūzenji Onsen, dann kurzer Fußweg',
         duration:'45–60 Min.',priority:'1',
-        note:'Kegon (Wasserfall) · Tagesausflug über Irohazaka (Bergstraße). Fahrzeiten und mögliche November-Staus prüfen; Lift-Aussichtsplattform separat.',
+        note:'Kegon (Wasserfall) · mit dem Bus über Irohazaka (Bergstraße). Fahrzeiten und mögliche November-Staus prüfen; Lift-Aussichtsplattform separat.',
         description:'97 Meter hoher Wasserfall westlich von Nikkō; mit Bus erreichbar, keine reine Fußtour.'},
       {name:'Chūzenji-See (Ufer)',lat:36.7395,lng:139.4932,category:'nature',
         schedule:'09.11. · Mittags/Nachmittag · Seeufer und Mittagessen',
