@@ -633,8 +633,12 @@ async function verifyProviderParityMatrix(page){
  // A fresh mocked location uses the existing app GPS watcher and its
  // provider-independent coordinate update; no simulated movement history is saved.
  await page.context().setGeolocation({latitude:35.016,longitude:135.779,accuracy:11});
+ // Activate GPS explicitly through the real UI: earlier privacy tests may
+ // have left the watcher stopped, so a passive location update is not enough.
+ // The test must still fail if the Google provider never draws its marker.
+ await page.locator('#gps').click();
  await page.waitForFunction(()=>window.__providerParity.markers
-  .some(m=>m.active&&m.options.title==='Mein GPS-Standort'),null,{timeout:12000});
+  .some(m=>m.active&&m.options.title==='Mein GPS-Standort'),null,{timeout:15000});
  assert.equal(await page.locator('#gps').isVisible(),true);
  await page.locator('#gps').click();
  assert.equal(await provider.getAttribute('data-provider'),'google');
