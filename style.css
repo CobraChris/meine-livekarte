@@ -2222,10 +2222,8 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .workspace[data-provider="google"] #nagoya-guide-trigger,
 .workspace[data-provider="google"] #nagoya-kyoto-guide-trigger,
 .workspace[data-provider="google"] #station-transfer{display:none!important}
-.workspace[data-provider="google"] #place-search,
-.workspace[data-provider="google"] #tour-map-tools,
-.workspace[data-provider="google"] .map-actions,
-.workspace[data-provider="google"] #status{pointer-events:auto}
+/* Preserve .tour-map-tools{pointer-events:none} so unused toolbar
+   space never blocks Google map dragging; only buttons catch taps. */
 
 
 /* Reserve a map-edge dock instead of overlaying Google copyright/logo or
