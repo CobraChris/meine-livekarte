@@ -37,7 +37,10 @@
          Math.abs(point[0])>90||Math.abs(point[1])>180)return null;
       path.push({lat:point[0],lng:point[1]});
     }
-    return {path,real:source.real===true};
+    // The authoritative route model distinguishes a schematic railway from
+    // a straight-line day preview and a calculated walking route.
+    const rail=source.kind==='rail'&&source.geometry==='schematic-rail'&&source.real!==true;
+    return {path,real:source.real===true,kind:rail?'rail':source.real===true?'walking':'preview'};
   }
   // Google Maps URLs are free and need no Places API or billing account.
   // Without a trusted Place ID, a name search may show several matches;
@@ -123,14 +126,14 @@
       routeLegend.open=false;
       routeLegend.hidden=true;
     }
-    function refreshRoute(){
+    function refreshRoute(view){
       clearRoute();
       if(!active||!googleMap||!root.google?.maps?.Polyline)return;
       let prepared;
-      try{prepared=normalizedDayRoute(route());}
+      try{prepared=normalizedDayRoute(view===undefined?route():view);}
       catch{return;}
       if(!prepared)return;
-      const {path,real}=prepared;
+      const {path,real,kind}=prepared;
       const options={
         map:googleMap,path,geodesic:false,clickable:false,zIndex:800,
         strokeColor:real?'#D58A13':'#FDB72A',
@@ -147,11 +150,13 @@
       ];
       try{routeLine=new google.maps.Polyline(options);}
       catch{clearRoute();return;}
-      routeMeaning.textContent=real
-        ?'━ Berechneter Fußweg aus OpenStreetMap-Routing'
+      routeMeaning.textContent=kind==='rail'
+        ?'┄ Schematische Bahnverbindung zwischen Stationen – kein tatsächlicher Gleisverlauf oder Live-Zugstandort'
+        :real?'━ Berechneter Fußweg aus OpenStreetMap-Routing'
         :'┄ Luftlinie zwischen Tageszielen – kein berechneter Fußweg';
-      routeLegend.setAttribute('aria-label',real
-        ?'Information zur berechneten Fußroute'
+      routeLegend.setAttribute('aria-label',kind==='rail'
+        ?'Information zur schematischen Bahnverbindung'
+        :real?'Information zur berechneten Fußroute'
         :'Information zur gestrichelten Luftlinien-Vorschau');
       routeLegend.hidden=false;
     }
@@ -160,14 +165,27 @@
       if(info?.close)info.close();
       for(const marker of markers)marker.setMap(null);
       markers=[];
+      const view=route();
       const all=places().slice(0,250);
-      const ordered=stops().slice(0,20);
+      const ordered=stops().slice(0,40);
       const keyOf=p=>typeof placeKey==='function'
         ?placeKey(p):String(p.name)+'|'+p.lat+'|'+p.lng;
+      // Travel stations are not saved POIs. Display them from the same
+      // immutable rail route as Leaflet, without writing to the place store.
+      const railStops=view?.kind==='rail'&&Array.isArray(view.stops)
+        ?view.stops.slice(0,40):[];
+      const railwayNumbers=new Map(railStops.map((p,i)=>[keyOf(p),i+1]));
+      const present=new Set(all.map(keyOf));
+      for(const stop of railStops){
+        if(!Number.isFinite(stop.lat)||!Number.isFinite(stop.lng))continue;
+        const key=keyOf(stop);
+        if(!present.has(key)){all.push(stop);present.add(key);}
+      }
       const byKey=new Map(ordered.map((p,i)=>[keyOf(p),i+1]));
       for(const place of all){
         if(!Number.isFinite(place.lat)||!Number.isFinite(place.lng))continue;
-        const number=byKey.get(keyOf(place))||null;
+        const railwayNumber=railwayNumbers.get(keyOf(place))||null;
+        const number=railwayNumber||byKey.get(keyOf(place))||null;
         const marker=new google.maps.Marker({
           map:googleMap,position:{lat:place.lat,lng:place.lng},
           title:number?number+'. '+place.name:place.name,
@@ -185,36 +203,44 @@
           title.textContent=number?number+'. '+place.name:place.name;
           node.className='google-place-popup';
           const note=document.createElement('p');
-          note.textContent='Die Google-Demo zeigt hier noch keine Sterne oder Rezensionen.';
+          note.textContent=railwayNumber
+            ?'Station dieser Zugreise. Verbindungslinien sind schematisch; keine echten Gleise oder Live-Fahrzeiten.'
+            :'Die Google-Demo zeigt hier noch keine Sterne oder Rezensionen.';
           const actions=document.createElement('div');
           actions.className='google-place-actions';
           const details=document.createElement('a');
           details.href=placeDetailsUrl(place);
           details.target='_blank';
           details.rel='noopener noreferrer';
-          details.textContent=place.category==='restaurant'
-            ?'⭐ Bewertungen in Google Maps':'↗ Details in Google Maps';
+          details.textContent=railwayNumber?'↗ Bahnhof in Google Maps'
+            :place.category==='restaurant'
+              ?'⭐ Bewertungen in Google Maps':'↗ Details in Google Maps';
           details.setAttribute('aria-label','Google Maps zu '+place.name+' öffnen');
           actions.append(details);
-          const walk=document.createElement('button');
-          walk.type='button';
-          walk.textContent='🚶 Fußweg (OSM)';
-          walk.addEventListener('click',()=>onWalk(place));
-          actions.append(walk);
-          const tour=document.createElement('button');
-          tour.type='button';
-          tour.textContent=tourSelected(place)?'✓ In Tour':'＋ In Tour';
-          tour.addEventListener('click',()=>onToggleTour(place));
-          actions.append(tour);
+          if(!railwayNumber){
+            const walk=document.createElement('button');
+            walk.type='button';
+            walk.textContent='🚶 Fußweg (OSM)';
+            walk.addEventListener('click',()=>onWalk(place));
+            actions.append(walk);
+            const tour=document.createElement('button');
+            tour.type='button';
+            tour.textContent=tourSelected(place)?'✓ In Tour':'＋ In Tour';
+            tour.addEventListener('click',()=>onToggleTour(place));
+            actions.append(tour);
+          }
           node.append(title,note,actions);
           info.setContent(node);
           info.open({map:googleMap,anchor:marker});
         });
         markers.push(marker);
       }
-      refreshRoute();
+      refreshRoute(view);
     }
     function fitGoogleGoals(){
+      // Preserve the manually chosen OSM railway viewport when switching maps.
+      // An explicit "Route zeigen" action handles fitting the whole rail trip.
+      if(route()?.kind==='rail')return false;
       if(!active||!googleMap?.fitBounds||!root.google?.maps?.LatLngBounds)return false;
       const selected=goals().filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
       if(selected.length<2)return false;
@@ -258,7 +284,9 @@
       panel.open=false;
       notice.textContent='';
       notice.hidden=true;
-      say('Google-Demokarte aktiv. Eigene Touren und Fußwege bleiben in OSM.');
+      say(route()?.kind==='rail'
+        ?'Google-Karte aktiv. Die schematische Bahnroute wird angezeigt.'
+        :'Google-Demokarte aktiv. Eigene Touren und Fußwege bleiben in OSM.');
       updateUI();
     }
     function fail(reason){
