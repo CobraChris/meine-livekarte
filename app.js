@@ -1861,6 +1861,10 @@
     if(currentPlan().kind!=='journey')return;
     for(const place of places){
       if(place.category!=='nature')continue;
+      // A city-day excursion is not a worldwide landmark on unrelated train
+      // routes. Keep global nature pins (e.g. Mount Fuji) separate from city pins.
+      const assigned=planAssignments[C.placePlanKey(place)]||[];
+      if(assigned.some(id=>allPlans().some(plan=>plan.id===id&&plan.kind==='city')))continue;
       const popup=node('div',undefined,'journey-nature-popup');
       popup.append(
         node('strong','⛰ '+place.name),
@@ -3775,7 +3779,7 @@
         const journeyTags=place.name==='HaruNikko New Wing'?['ride-nikko']:
           place.name==='Tōbu-Nikkō Station'?['ride-tokyo']:[];
         nextPlans[key]=[...new Set([...tags,'town-nikko',...journeyTags])];
-        if(place.category==='hotel')continue;
+        if(place.category==='hotel'||place.name==='Nikkō Station (JR)')continue;
         const day=place.name==='Tōbu-Nikkō Station'?'2026-11-10':
           MD.fromSchedule(suggested.schedule);
         if(MD.days('town-nikko').includes(day)&&!Object.hasOwn(nextDays,key))
@@ -4027,6 +4031,14 @@
   const requestedView=queryView||savedView||dailyDefault||
     (Object.prototype.hasOwnProperty.call(planJourneys,'ride-takayama')?'ride-takayama':'all');
   activePlanId=allPlans().some(p=>p.id===requestedView)?requestedView:'all';
+  if(MD.days(activePlanId).length){
+    const key=activePlanId==='town-kyoto'?'livekarte-active-city-day-v1':
+      'livekarte-active-city-day-'+activePlanId+'-v1';
+    let selected=null;
+    try{selected=localStorage.getItem(key);}catch{}
+    activeCityDay=selected&&MD.allowed(activePlanId,selected)?selected:
+      MD.defaultDay(activePlanId,NS.localDate());
+  }
   journey=activeJourney();
   renderPlanPicker();renderJourney();renderKyotoOverview();render();
   if (!readTicketUpdate() && !readJourneyLink() && !readLink()) {
