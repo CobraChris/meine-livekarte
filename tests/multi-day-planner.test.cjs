@@ -251,7 +251,7 @@ test('auto day itinerary is local, numbered and honest; foot-route is a delibera
  assert.match(app,/\.\.\.view\.style,lineCap:'round'/);
  assert.match(app,/className:'day-route-label'/);
  assert.match(app,/dayRouteLayers\.clearLayers\(\)/);
- assert.match(app,/\$\('day-route-foot'\)\.onclick=\(\)=>\{\s*googleDemo\?\.forceOSM\(\);\s*void calculateDailyFootRoute\(\);\s*\}/);
+ assert.match(app,/\$\('day-route-foot'\)\.onclick=\(\)=>\{void calculateDailyFootRoute\(\);\}/);
  const fn=app.slice(app.indexOf('  async function calculateDailyFootRoute(){'),
     app.indexOf("  $('day-route-foot').onclick=",app.indexOf('  async function calculateDailyFootRoute(){')));
  assert.match(fn,/W\.optimizedTourRequestUrl\(from,remaining\)/);
