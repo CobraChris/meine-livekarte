@@ -59,18 +59,20 @@
     if(instance)return instance;
     const {map,places,stops=()=>[],route=()=>null,
       goals=()=>[],fitOSM=()=>{},onWalk=()=>{},onToggleTour=()=>{},
-      tourSelected=()=>false,placeKey}=options;
+      tourSelected=()=>false,placeKey,
+      osmStyle=()=> 'standard',onOSMStyleChange=()=>{}}=options;
     const $=id=>document.getElementById(id);
     const panel=$('google-demo-control'), googleEl=$('google-demo-map'),
       routeLegend=$('google-demo-route-legend'),
       routeMeaning=$('google-demo-route-meaning');
     const input=$('google-demo-key'),open=$('google-demo-start'),
       forget=$('google-demo-forget'),state=$('google-demo-status'),
-      osm=$('provider-osm'),googleButton=$('provider-google'),
+      osm=$('provider-osm'),osmDe=$('provider-osm-de'),
+      googleButton=$('provider-google'),
       settings=$('provider-settings'),notice=$('provider-notice'),
       heading=$('google-demo-summary'),workspace=googleEl.closest('.workspace');
     if(!panel||!googleEl||!routeLegend||!routeMeaning||!input||!open||!forget||!state||
-       !osm||!googleButton||!settings||!notice||!heading||!workspace)
+       !osm||!osmDe||!googleButton||!settings||!notice||!heading||!workspace)
       return null;
     let googleMap=null,markers=[],routeLine=null,info=null,active=false,loading=false;
     let sdkKey=null,pending=null,expiry=null;
@@ -83,7 +85,8 @@
       workspace.dataset.provider=provider;
       panel.dataset.provider=provider;
       heading.textContent='⚙ Google-Demo-Einstellungen';
-      osm.setAttribute('aria-pressed',String(!active));
+      osm.setAttribute('aria-pressed',String(!active&&osmStyle()!=='de'));
+      osmDe.setAttribute('aria-pressed',String(!active&&osmStyle()==='de'));
       googleButton.setAttribute('aria-pressed',String(active));
       googleButton.disabled=loading;
       googleButton.textContent=loading?'Google lädt …':'Google';
@@ -312,7 +315,16 @@
       expiry=setTimeout(()=>fail('Google lädt zu lange. OpenStreetMap bleibt verfügbar.'),18000);
       document.head.append(script);
     });
-    osm.addEventListener('click',()=>resetToOSM('OpenStreetMap aktiv. Google wird nicht erneut geladen.',true));
+    function activateOSMStyle(style){
+      const leavingGoogle=active;
+      onOSMStyleChange(style);
+      resetToOSM(style==='de'
+        ?'OSM Deutsch aktiv. Ortsnamen auf Deutsch oder in lateinischer Schrift.'
+        :'OSM Standard aktiv. Ortsnamen bevorzugt in der Landessprache.',
+        leavingGoogle);
+    }
+    osm.addEventListener('click',()=>activateOSMStyle('standard'));
+    osmDe.addEventListener('click',()=>activateOSMStyle('de'));
     googleButton.addEventListener('click',()=>{
       if(active||loading)return;
       if(!haveKey()){
