@@ -57,7 +57,7 @@ test('search UI is mobile-first with manual submit, location privacy and ephemer
  assert.ok(css.includes('.place-search-results'));
  assert.ok(css.includes('.place-search[hidden]'));
  assert.ok(app.includes("searchForm.onsubmit=async event=>"));
- assert.ok(app.includes('S.requestUrl(query,map.getCenter())'));
+ assert.ok(app.includes('S.requestUrl(query,googleDemo?.center()||map.getCenter())'));
  assert.ok(app.includes('S.parse(JSON.parse(raw))'));
  assert.ok(app.includes('searchPreview.clearLayers()'));
  assert.ok(app.includes('showWalkingRoute(selectedSearchPlace)'));

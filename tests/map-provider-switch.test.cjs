@@ -54,6 +54,10 @@ function appFixture(options={}){
     onWalk:options.onWalk||(()=>{}),
     onToggleTour:options.onToggleTour||(()=>{}),
     tourSelected:options.tourSelected||(()=>false),
+    isTourPicking:options.isTourPicking||(()=>false),
+    onTapTour:options.onTapTour||(()=>{}),
+    onMapTap:options.onMapTap||(()=>{}),
+    onPan:options.onPan||(()=>{}),
     placeKey:options.placeKey
   });
   assert.ok(widget);
@@ -126,18 +130,24 @@ test('Google error switches to OSM and visibly reports why',()=>{
   assert.equal(t.get('provider-notice').hidden,false);
   assert.match(t.get('provider-notice').textContent,/OpenStreetMap bleibt verfügbar/);
 });
-test('Google mode hides Leaflet-only map controls but preserves day picker/fullscreen',()=>{
+test('Google shares map tools and search rather than hiding the Leaflet toolbar',()=>{
   const css=read('style.css'),html=read('index.html'),app=read('app.js');
   assert.match(html,/id="map-provider-switch"[^>]*role="group"/);
   assert.match(html,/id="provider-settings"[^>]*aria-controls="google-demo-control"/);
   assert.match(html,/<details id="google-demo-control" class="google-demo-control">/);
-  for(const sel of ['#tour-map-tools','#place-search','#fit','#gps']){
-    assert.ok(css.includes('.workspace[data-provider="google"] '+sel),sel);
+  const googleHides=css.slice(css.indexOf('/* Shared controls remain ABOVE both map canvases'),
+    css.indexOf('/* Reserve a map-edge dock instead'));
+  for(const sel of ['#tour-map-tools','#place-search','#fit','#gps','#status']){
+    assert.doesNotMatch(googleHides,new RegExp(sel.replace('#','\\#')+'[^\\n]*display:none'),'shared '+sel+' must stay visible');
   }
-  assert.ok(!css.includes('.workspace[data-provider="google"] #expand-map'));
-  assert.ok(!css.includes('.workspace[data-provider="google"] .plan-picker'));
-  assert.match(app,/googleDemo\?\.forceOSM\(\)/);
+  assert.ok(!googleHides.includes('google"] .plan-picker'));
   assert.match(app,/googleDemo\?\.syncFromOSM\(\)/);
+  assert.match(app,/onMapTap:point=>/);
+  assert.match(app,/isTourPicking:\(\)=>mapTourPickMode/);
+  assert.match(app,/googleDemo\?\.updateGPS\(position,positionAccuracy,heading\)/);
+  assert.match(app,/googleDemo\?\.setPreview\('search',place\)/);
+  assert.match(app,/googleDemo\?\.setPreview\('bookmark',\{lat,lng\}\)/);
+  assert.match(app,/googleDemo\?\.center\(\)\|\|map\.getCenter\(\)/);
   assert.match(app,/\$\('day-route-foot'\)\.onclick=\(\)=>\{\s*googleDemo\?\.forceOSM\(\)/);
   assert.doesNotMatch(read('sw.js'),/maps\.googleapis\.com/);
 });
@@ -499,4 +509,58 @@ test('Kyoto–Nikko schematic railway and numbered stations survive OSM-to-Googl
  assert.ok(markers.every(marker=>marker.removed));
  t.get('provider-osm').click();
  assert.equal(t.get('workspace').dataset.provider,'osm');
+});
+
+test('Google adapter uses same tour click, map bookmark click and GPS position without provider resets',()=>{
+ const events=[],selected=[],mapClicks=[],pans=[],markers=[];
+ const place={id:'p',name:'Cafe',lat:35.01,lng:135.79};
+ let picking=true;
+ const t=appFixture({places:[place],stops:[],isTourPicking:()=>picking,
+   onTapTour:p=>selected.push(p.name),onMapTap:p=>mapClicks.push(p),
+   onPan:()=>pans.push('drag')});
+ const googleMap={
+   center:{lat:35.02,lng:135.78},zoom:14,
+   getCenter(){return {lat:()=>this.center.lat,lng:()=>this.center.lng};},
+   getZoom(){return this.zoom;},
+   setCenter(p){this.center=p;},setZoom(z){this.zoom=z;},
+   addListener(name,fn){events[name]=fn;}
+ };
+ t.context.google={maps:{
+   Map:class{constructor(){return googleMap;}},
+   Marker:class{
+     constructor(config){this.config=config;markers.push(this);}
+     addListener(name,fn){this[name]=fn;}setMap(){}
+   },
+   InfoWindow:class{},
+   Circle:class{constructor(config){this.config=config;}setMap(){}},
+ }};
+ t.get('google-demo-key').value='AIza'+'x'.repeat(35);
+ t.get('google-demo-start').click();
+ assert.equal(t.get('workspace').dataset.provider,'google');
+ assert.equal(typeof events.click,'function');
+ assert.equal(typeof events.dragstart,'function');
+ markers[0].click();
+ assert.deepEqual(selected,['Cafe']);
+ assert.equal(t.get('workspace').dataset.provider,'google');
+ events.click({latLng:{lat:()=>35.2,lng:()=>135.3}});
+ assert.deepEqual(Array.from(mapClicks,p=>[p.lat,p.lng]),[[35.2,135.3]]);
+ events.click({latLng:{lat:()=>-120,lng:()=>135.3}});
+ assert.equal(mapClicks.length,1,'invalid map coordinates must be rejected');
+ events.dragstart();
+ assert.deepEqual(pans,['drag']);
+ t.widget.setPreview('search',{lat:35.2,lng:135.3});
+ t.widget.setPreview('bookmark',{lat:35.3,lng:135.4});
+ assert.equal(markers.length,3);
+ t.widget.focus({lat:35.15,lng:135.65},16);
+ assert.deepEqual([googleMap.center.lat,googleMap.center.lng,googleMap.zoom],[35.15,135.65,16]);
+ assert.deepEqual([t.widget.center().lat,t.widget.center().lng],[35.15,135.65]);
+ t.widget.updateGPS({lat:35.17,lng:135.77},12,94);
+ assert.equal(markers.length,4);
+ assert.equal(markers[3].config.title,'Mein GPS-Standort');
+ assert.equal(t.get('workspace').dataset.provider,'google');
+ t.widget.updateGPS(null,null,null);
+ picking=false;
+ t.get('provider-osm').click();
+ assert.equal(t.get('workspace').dataset.provider,'osm');
+ assert.equal(t.leafletMap.invalidations,1);
 });

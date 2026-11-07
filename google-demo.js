@@ -63,6 +63,7 @@
     const {map,places,stops=()=>[],route=()=>null,
       goals=()=>[],fitOSM=()=>{},onWalk=()=>{},onToggleTour=()=>{},
       tourSelected=()=>false,placeKey,
+      isTourPicking=()=>false,onTapTour=()=>{},onMapTap=()=>{},onPan=()=>{},
       osmStyle=()=> 'standard',onOSMStyleChange=()=>{}}=options;
     const $=id=>document.getElementById(id);
     const panel=$('google-demo-control'), googleEl=$('google-demo-map'),
@@ -79,6 +80,67 @@
       return null;
     let googleMap=null,markers=[],routeLine=null,info=null,active=false,loading=false;
     let sdkKey=null,pending=null,expiry=null;
+    let gpsMarker=null,gpsCircle=null,gpsState=null;
+    const previewPoints={search:null,bookmark:null},previewMarkers={search:null,bookmark:null};
+    function validPoint(point){
+      const lat=Number(point?.lat),lng=Number(point?.lng);
+      return Number.isFinite(lat)&&Math.abs(lat)<=90&&
+        Number.isFinite(lng)&&Math.abs(lng)<=180?{lat,lng}:null;
+    }
+    function selectedCenter(){
+      const center=active?googleMap?.getCenter?.():null;
+      if(center&&typeof center.lat==='function'&&typeof center.lng==='function'){
+        const point=validPoint({lat:center.lat(),lng:center.lng()});
+        if(point)return point;
+      }
+      return null;
+    }
+    // Purely local markers; GPS and search do not call Google geocoding,
+    // Directions, Places or other paid APIs and are never persisted here.
+    function spotIcon(kind){
+      const fill=kind==='bookmark'?'#ffe09c':'#6cddbb';
+      const svg='<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42">'+
+        '<circle cx="21" cy="21" r="12" fill="'+fill+'" stroke="#173b36" stroke-width="3"/>'+
+        '<circle cx="21" cy="21" r="4" fill="#173b36"/></svg>';
+      return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
+    }
+    function gpsIcon(headingValue){
+      const angle=Number.isFinite(headingValue)?((headingValue%360)+360)%360:0;
+      const arrow=Number.isFinite(headingValue)
+        ?'<path d="M24 4 L32 18 L24 15 L16 18 Z" fill="#2479f4" stroke="#fff" stroke-width="1.5" transform="rotate('+angle+' 24 24)"/>':'';
+      const svg='<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">'+
+        arrow+'<circle cx="24" cy="24" r="11" fill="#2584fb" stroke="#fff" stroke-width="4"/></svg>';
+      return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
+    }
+    function refreshPreview(kind){
+      if(previewMarkers[kind])previewMarkers[kind].setMap(null);
+      previewMarkers[kind]=null;
+      const point=previewPoints[kind];
+      if(!active||!googleMap||!point||!root.google?.maps?.Marker)return;
+      previewMarkers[kind]=new google.maps.Marker({
+        map:googleMap,position:point,title:kind==='search'?'Gesuchter Ort':'Neuer Kartenpunkt',
+        clickable:false,zIndex:1800,
+        icon:{url:spotIcon(kind)}
+      });
+    }
+    function refreshGPS(){
+      if(gpsMarker){gpsMarker.setMap(null);gpsMarker=null;}
+      if(gpsCircle){gpsCircle.setMap(null);gpsCircle=null;}
+      const point=validPoint(gpsState?.position);
+      if(!active||!googleMap||!point||!root.google?.maps?.Marker)return;
+      gpsMarker=new google.maps.Marker({
+        map:googleMap,position:point,title:'Mein GPS-Standort',
+        clickable:false,zIndex:2200,
+        icon:{url:gpsIcon(gpsState?.heading)}
+      });
+      const radius=Number(gpsState?.accuracy);
+      if(Number.isFinite(radius)&&radius>0&&radius<=10000&&root.google.maps.Circle)
+        gpsCircle=new google.maps.Circle({
+          map:googleMap,center:point,radius,strokeColor:'#2584fb',
+          strokeOpacity:.45,strokeWeight:1,fillColor:'#2584fb',
+          fillOpacity:.10,clickable:false
+        });
+    }
     const say=text=>{state.textContent=text;};
     const haveKey=()=>{try{return localStorage.getItem(KEY_STORE)||'';}catch{return '';}};
     const setKey=key=>{localStorage.setItem(KEY_STORE,key);};
@@ -104,6 +166,12 @@
       clearRoute();
       const center=active?googleMap?.getCenter?.():null;
       const zoom=active?googleMap?.getZoom?.():null;
+      if(gpsMarker){gpsMarker.setMap(null);gpsMarker=null;}
+      if(gpsCircle){gpsCircle.setMap(null);gpsCircle=null;}
+      for(const kind of Object.keys(previewMarkers)){
+        if(previewMarkers[kind])previewMarkers[kind].setMap(null);
+        previewMarkers[kind]=null;
+      }
       active=false;
       if(center&&typeof center.lat==='function'&&typeof center.lng==='function'&&
          Number.isFinite(zoom)){
@@ -197,6 +265,10 @@
           }
         });
         marker.addListener('click',()=>{
+          if(!railwayNumber&&isTourPicking()){
+            onTapTour(place);
+            return;
+          }
           if(!info)info=new google.maps.InfoWindow();
           const node=document.createElement('div');
           const title=document.createElement('strong');
@@ -275,11 +347,21 @@
           mapTypeControl:false,fullscreenControl:false,streetViewControl:true,
           gestureHandling:'greedy', clickableIcons:true
         });
+        // One shared bookmark dialog: only the coordinates originate in Google.
+        googleMap.addListener?.('click',event=>{
+          if(!active)return;
+          const lat=event?.latLng?.lat?.(),lng=event?.latLng?.lng?.();
+          const point=validPoint({lat,lng});
+          if(point)onMapTap(point);
+        });
+        googleMap.addListener?.('dragstart',()=>{if(active)onPan();});
       }else{
         googleMap.setCenter({lat:center.lat,lng:center.lng});
         googleMap.setZoom(zoom);
       }
       refreshPins();
+      refreshGPS();
+      for(const kind of Object.keys(previewPoints))refreshPreview(kind);
       fitGoogleGoals();
       panel.open=false;
       notice.textContent='';
@@ -384,6 +466,23 @@
     instance={
       refresh(){if(active)refreshPins();},
       refreshRoute(){if(active)refreshRoute();},
+      center(){return selectedCenter();},
+      focus(point,zoom){
+        const target=validPoint(point);
+        if(!active||!googleMap||!target)return false;
+        googleMap.setCenter(target);
+        if(Number.isFinite(zoom))googleMap.setZoom(Math.max(2,Math.min(19,zoom)));
+        return true;
+      },
+      updateGPS(position,accuracy,heading){
+        gpsState=position?{position:validPoint(position),accuracy,heading}:null;
+        if(active)refreshGPS();
+      },
+      setPreview(kind,point){
+        if(!Object.hasOwn(previewPoints,kind))return;
+        previewPoints[kind]=validPoint(point);
+        if(active)refreshPreview(kind);
+      },
       syncFromOSM(){
         if(!active||!googleMap)return;
         const center=map.getCenter();

@@ -2215,17 +2215,15 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .map-provider-switch #provider-settings[aria-expanded="true"]{background:#385a53;border-color:#a4ecc9}
 .provider-notice{margin:3px 0 8px;padding:7px 10px;border:1px solid #997d48;border-radius:8px;background:#393a2b;color:#ffe6b2;font-size:11px;line-height:1.4}
 .provider-notice[hidden]{display:none!important}
-/* Google and Leaflet have separate canvases. Hide misleading Leaflet-only
-   controls over Google; restore them automatically in OSM mode. */
-.workspace[data-provider="google"] #tour-map-tools,
-.workspace[data-provider="google"] #place-search,
-.workspace[data-provider="google"] #fit,
-.workspace[data-provider="google"] #gps,
-.workspace[data-provider="google"] #status,
+/* Shared controls remain ABOVE both map canvases (Leaflet and Google).
+   Only Leaflet-specific railway insets stay hidden until provider parity is
+   implemented for those local guides. Never hide search/GPS/tour/bookmarks. */
 .workspace[data-provider="google"] #recenter-gps,
 .workspace[data-provider="google"] #nagoya-guide-trigger,
 .workspace[data-provider="google"] #nagoya-kyoto-guide-trigger,
 .workspace[data-provider="google"] #station-transfer{display:none!important}
+/* Preserve .tour-map-tools{pointer-events:none} so unused toolbar
+   space never blocks Google map dragging; only buttons catch taps. */
 
 
 /* Reserve a map-edge dock instead of overlaying Google copyright/logo or
