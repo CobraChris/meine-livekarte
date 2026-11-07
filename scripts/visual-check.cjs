@@ -75,7 +75,7 @@ function main(){
  if(!fs.existsSync(manifestFile))throw Error('Missing mobile visual manifest');
  const manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8'));
  const entries=manifest.scenes;
- assert.ok(Array.isArray(entries)&&entries.length>=16,'Insufficient visual scenes');
+ assert.ok(Array.isArray(entries)&&entries.length>=18,'Insufficient visual scenes');
  const labels=new Set(entries.map(e=>e.id));
  assert.equal(labels.size,entries.length,'Duplicate visual scene IDs');
  const requiredScenes=[];
@@ -83,10 +83,16 @@ function main(){
   for(const width of [360,393])
    for(const provider of ['osm','google'])
     requiredScenes.push(key+'-'+width+'-'+provider);
+ for(const width of [360,393])requiredScenes.push('nara-popup-'+width+'-osm');
  const errors=[],warnings=[],pairs=new Map();
  for(const id of requiredScenes)if(!labels.has(id))
   errors.push('Missing required visual scenario '+id);
  for(const scene of entries){
+  if(scene.kind==='popup'){
+   if(!scene.popup?.visible||!scene.popup.actionVisible||scene.popup.clipped)
+    errors.push(scene.id+': popup is clipped or its walk button is unusable');
+   continue;
+  }
   try{checkLayout(scene,scene.id);}catch(error){errors.push(error.message);}
   const token=scene.key+'-'+scene.width;
   if(!pairs.has(token))pairs.set(token,{});
