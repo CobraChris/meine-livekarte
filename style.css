@@ -2209,7 +2209,7 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 /* Compact provider switch below map; keep Demo Key in closed settings. */
 .map-provider-switch{display:flex;gap:6px;align-items:center;padding:5px;margin:0 0 6px;border:1px solid #4f736b;border-radius:12px;background:#183337}
 .map-provider-switch button{min-width:0;min-height:42px;padding:7px 9px;border:1px solid #4c7468;border-radius:9px;background:#233e40;color:#d7ebdf;font-size:12px;font-weight:750}
-.map-provider-switch #provider-osm,.map-provider-switch #provider-google{flex:1}
+.map-provider-switch #provider-osm,.map-provider-switch #provider-osm-de,.map-provider-switch #provider-google{flex:1}
 .map-provider-switch button[aria-pressed="true"]{background:#a4ecc9;color:#15362d;border-color:#c9ffe1;box-shadow:inset 0 0 0 1px #609d80}
 .map-provider-switch #provider-settings{flex:0 0 42px;width:42px;height:42px;padding:5px;font-size:18px;border-color:#5d8279}
 .map-provider-switch #provider-settings[aria-expanded="true"]{background:#385a53;border-color:#a4ecc9}
@@ -2424,3 +2424,17 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
  box-shadow:0 4px 13px #09281f99;
 }
 .pin-nature span{font-weight:800;font-size:19px}
+/* Three provider/style choices share the existing 48px dock, without a
+ * second row over the map or its gesture targets. */
+.workspace>.map-provider-switch #provider-osm,
+.workspace>.map-provider-switch #provider-osm-de,
+.workspace>.map-provider-switch #provider-google{
+  flex:1 1 0;min-width:0;white-space:normal;
+  line-height:1.1;font-size:11px;
+}
+@media(max-width:360px){
+  .workspace>.map-provider-switch{gap:4px;padding-inline:5px}
+  .workspace>.map-provider-switch #provider-osm,
+  .workspace>.map-provider-switch #provider-osm-de,
+  .workspace>.map-provider-switch #provider-google{font-size:10px;padding-inline:3px}
+}
