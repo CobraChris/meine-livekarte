@@ -607,7 +607,7 @@
   </div>
 </details>
 <div class="list-heading"><h2>Orte in dieser Ansicht <span id="count">0</span></h2><button id="clear" class="text-button" title="Alle gespeicherten Orte löschen – auch aus anderen Abschnitten">Alle löschen</button></div>
-<div class="filters" aria-label="Kategoriefilter"><button data-filter="all" aria-pressed="true">Alle</button><button data-filter="restaurant" aria-pressed="false">♨ Essen</button><button data-filter="sight" aria-pressed="false">◇ Sehenswert</button><button data-filter="station" aria-pressed="false">▤ Bahnhof</button><button data-filter="hotel" aria-pressed="false">⌂ Hotel</button></div>
+<div class="filters" aria-label="Kategoriefilter"><button data-filter="all" aria-pressed="true">Alle</button><button data-filter="restaurant" aria-pressed="false">♨ Essen</button><button data-filter="sight" aria-pressed="false">◇ Sehenswert</button><button data-filter="nature" aria-pressed="false">⛰ Natur</button><button data-filter="station" aria-pressed="false">▤ Bahnhof</button><button data-filter="hotel" aria-pressed="false">⌂ Hotel</button></div>
 <div id="places"></div><div id="empty"><div class="empty-icon">⌖</div><h3>Hier beginnt dein nächster Ausflug</h3><p>Füge deine Empfehlungen hinzu oder erkunde eine kleine Beispielroute durch Berlin.</p><button id="demo">Beispielorte entdecken →</button></div>
 <footer><span>◉ Dein Standort bleibt auf deinem Gerät.</span><button id="privacy" class="text-button">Datenschutz & Hilfe</button></footer>
 </aside>
@@ -811,6 +811,7 @@
     <select id="map-place-category">
       <option value="restaurant">♨ Essen &amp; Trinken</option>
       <option value="sight">◇ Sehenswürdigkeit</option>
+      <option value="nature">⛰ Natur &amp; Landschaft</option>
       <option value="station">▤ Bahnhof / Haltestelle</option>
       <option value="hotel">⌂ Unterkunft</option>
     </select>
@@ -833,6 +834,7 @@
     <select id="edit-place-category">
       <option value="restaurant">♨ Essen &amp; Trinken</option>
       <option value="sight">◇ Sehenswürdigkeit</option>
+      <option value="nature">⛰ Natur &amp; Landschaft</option>
       <option value="station">▤ Bahnhof / Haltestelle</option>
       <option value="hotel">⌂ Unterkunft</option>
     </select>
@@ -846,7 +848,7 @@
     <p class="hint">Nur dieser Marker wird geändert. Beim Löschen wird er nach Bestätigung entfernt; bestehende andere Orte bleiben erhalten. Falls er Teil einer Tour war, ist deren Strecke neu zu berechnen.</p>
   </form>
 </dialog>
-<dialog id="import-dialog"><form id="import-form"><div class="dialog-heading"><h2>Empfehlungen hinzufügen</h2><button type="button" data-close aria-label="Schließen">×</button></div><p>JSON oder eine Zeile pro Ort: <code>Name; Breitengrad; Längengrad; Kategorie; Beschreibung</code></p><p id="import-target" class="import-target">Abschnitt: Alle Orte</p><label for="import-text">Deine Orte</label><textarea id="import-text" rows="8" required maxlength="100000" placeholder="Brandenburger Tor; 52.5163; 13.3777; sight; Wahrzeichen Berlins"></textarea><p class="hint">Kategorien: restaurant, sight, station, hotel. Koordinaten sind erforderlich; reine Adressen werden nicht automatisch gesucht.</p><p id="import-error" role="alert"></p><button class="primary" type="submit">Orte zur Karte hinzufügen</button></form></dialog>
+<dialog id="import-dialog"><form id="import-form"><div class="dialog-heading"><h2>Empfehlungen hinzufügen</h2><button type="button" data-close aria-label="Schließen">×</button></div><p>JSON oder eine Zeile pro Ort: <code>Name; Breitengrad; Längengrad; Kategorie; Beschreibung</code></p><p id="import-target" class="import-target">Abschnitt: Alle Orte</p><label for="import-text">Deine Orte</label><textarea id="import-text" rows="8" required maxlength="100000" placeholder="Brandenburger Tor; 52.5163; 13.3777; sight; Wahrzeichen Berlins"></textarea><p class="hint">Kategorien: restaurant, sight, nature (Natur), station, hotel. Koordinaten sind erforderlich; reine Adressen werden nicht automatisch gesucht.</p><p id="import-error" role="alert"></p><button class="primary" type="submit">Orte zur Karte hinzufügen</button></form></dialog>
 <dialog id="share-dialog"><div class="dialog-heading"><h2>Deine Karte teilen</h2><button data-close aria-label="Schließen">×</button></div><p>Der Link enthält die Orte der aktuellen Ansicht (oder alle Orte, wenn „Alle Orte“ aktiv ist), niemals deinen GPS-Standort.</p><label for="share-url">Kartenlink</label><textarea id="share-url" rows="4" readonly></textarea><button id="copy" class="primary">Link kopieren</button></dialog>
 <dialog id="help-dialog"><div class="dialog-heading"><h2>Unterwegs mit deiner Karte</h2><button data-close aria-label="Schließen">×</button></div><p>Bitte ChatGPT um Orte mit Name, Breitengrad (lat), Längengrad (lng), Kategorie (category) und Beschreibung (description) als JSON. Die App verbindet sich nicht mit ChatGPT.</p><p>GPS benötigt HTTPS und deine Erlaubnis. Beim Öffnen startet GPS automatisch, sofern du es nicht zuvor bewusst ausgeschaltet hast. Der Kartenbutton „Mein Standort“ schaltet GPS bei Bedarf ein oder zentriert auf deine Position und setzt das Folgen fort. Wenn du die Karte verschiebst, läuft GPS weiter, aber die Karte folgt nicht automatisch. Mit „GPS ausschalten“ unten stoppst du die Standorterfassung, entfernst den Standortpunkt und deaktivierst den automatischen GPS-Start bis zum nächsten manuellen Einschalten. Entfernungen sind Luftlinien, keine Weglängen.</p>
 <div class="gps-privacy-control" role="group" aria-label="GPS und Standorterfassung einstellen">
