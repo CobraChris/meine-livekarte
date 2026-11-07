@@ -448,3 +448,55 @@ test('non-restaurant marker is correctly labelled as external place details',()=
  assert.match(external.textContent,/Details in Google Maps/);
  assert.doesNotMatch(external.textContent,/Bewertungen/);
 });
+
+
+test('Kyoto–Nikko schematic railway and numbered stations survive OSM-to-Google switching',()=>{
+ const Core=require('../core.js'),RM=require('../route-model-core.js');
+ const rail=RM.rail(Core.presetJourney('kyoto-nikko-2026-11-07'));
+ const G=require('../google-demo.js');
+ const normalized=G.normalizedDayRoute(rail);
+ assert.equal(normalized.kind,'rail');
+ assert.equal(normalized.real,false);
+ assert.equal(normalized.path.length,rail.points.length);
+ let current=rail;
+ const t=appFixture({places:[],route:()=>current,
+   stops:()=>current?.stops||[],goals:()=>[]});
+ const markers=[],lines=[];
+ let fits=0;
+ const googleMap={
+   fitBounds(){fits++;},setCenter(){},setZoom(){},
+   getCenter(){return {lat:()=>36.55,lng:()=>139.9};},getZoom(){return 12;}
+ };
+ t.context.google={maps:{
+   Map:class{constructor(){return googleMap;}},
+   Marker:class{
+     constructor(config){this.config=config;this.removed=false;markers.push(this);}
+     addListener(){}setMap(value){if(value===null)this.removed=true;}
+   },
+   InfoWindow:class{},
+   Polyline:class{
+     constructor(config){this.config=config;this.removed=false;lines.push(this);}
+     setMap(value){if(value===null)this.removed=true;}
+   }
+ }};
+ t.get('google-demo-key').value='AIza'+'x'.repeat(35);
+ t.get('google-demo-start').click();
+ assert.equal(lines.length,1,'rail line is drawn immediately when Google opens');
+ assert.deepEqual(Array.from(lines[0].config.path,p=>[p.lat,p.lng]),rail.points);
+ assert.equal(lines[0].config.geodesic,false);
+ assert.equal(lines[0].config.strokeOpacity,0,'schematic train path stays dashed');
+ assert.equal(lines[0].config.icons.length,2);
+ assert.match(t.get('google-demo-route-meaning').textContent,/Bahnverbindung/);
+ assert.doesNotMatch(t.get('google-demo-route-meaning').textContent,/Fußweg/);
+ assert.deepEqual(markers.map(m=>m.config.title),
+   rail.stops.map((stop,i)=>(i+1)+'. '+stop.name));
+ assert.equal(fits,0,'provider switch must preserve the Nikko viewport');
+ current=null;
+ t.widget.refresh();
+ assert.equal(lines.length,1);
+ assert.equal(lines[0].removed,true);
+ assert.equal(t.get('google-demo-route-legend').hidden,true);
+ assert.ok(markers.every(marker=>marker.removed));
+ t.get('provider-osm').click();
+ assert.equal(t.get('workspace').dataset.provider,'osm');
+});
