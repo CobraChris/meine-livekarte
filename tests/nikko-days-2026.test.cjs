@@ -81,9 +81,14 @@ test('return journey and hotel changes are modeled without public booking refere
 test('the Nov 8 Kegon bus departure is a separate, uniquely named map marker',()=>{
   const list=Core.presetPlaces('town-nikko');
   const stop=list.find(p=>p.name==='Nikkō Gyōsei Center-mae (Bushaltestelle)');
+  const departure=list.find(p=>p.name==='🚌 START – Tōbu-Nikkō Bussteig 2A');
   const falls=list.filter(p=>p.name==='Kegon-Wasserfall');
   assert.equal(falls.length,1,'existing waterfall marker must not be duplicated');
-  assert.ok(stop,'departure stop must exist');
+  assert.ok(stop,'alternative stop must exist');
+  assert.ok(departure,'actual bus departure stop 2A must be on the map');
+  assert.equal(departure.category,'station');
+  assert.match(departure.note,/2A/);
+  assert.match(departure.schedule,/08.11./);
   assert.equal(stop.category,'station');
   assert.equal(falls[0].category,'nature');
   assert.match(stop.schedule,/08.11./);
@@ -92,6 +97,7 @@ test('the Nov 8 Kegon bus departure is a separate, uniquely named map marker',()
   const assignments=Object.fromEntries(list.map(p=>[Core.placePlanKey(p),['town-nikko']]));
   const dateMap=MD.seedDayAssignments(list,assignments,Core.placePlanKey,'town-nikko');
   assert.equal(dateMap[Core.placePlanKey(stop)],'2026-11-08');
+  assert.equal(dateMap[Core.placePlanKey(departure)],'2026-11-08');
   assert.equal(dateMap[Core.placePlanKey(falls[0])],'2026-11-08');
   const app=read('app.js');
   const from=app.indexOf('function seedNikkoKegonBusStops(){'),
@@ -99,7 +105,9 @@ test('the Nov 8 Kegon bus departure is a separate, uniquely named map marker',()
   assert.ok(from>=0&&to>from,'additive one-time import is wired');
   const body=app.slice(from,to);
   assert.match(body,/const existingBus=places.find/);
-  assert.match(body,/C.merge\(places,existingBus\?\[\]:\[bus\]\)/);
+  assert.match(body,/C.merge\(places,additions\)/);
+  assert.match(body,/existingDeparture/);
+  assert.match(app,/p.name.startsWith\('🚌 START'\)\?'🚌':symbols\[p.category\]/);
   assert.match(body,/nextDays\[key\]==='2026-11-09'/);
   assert.match(body,/localStorage.setItem\('livekarte-city-day-assignments-v1'/);
   assert.doesNotMatch(body,/ticketStatuses\[|localStorage.clear|indexedDB/);
