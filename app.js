@@ -3802,6 +3802,50 @@
     }
   }
   seedApprovedNikkoDays();
+  // 08 Nov request: add the verified departure stop and show the existing
+  // Kegon Falls marker in today's Nikko view. No duplicate place, no tickets.
+  function seedNikkoKegonBusStops(){
+    const marker='livekarte-nikko-kegon-bus-2026-11-08-v1';
+    try{
+      if(localStorage.getItem(marker)==='1')return;
+      const presets=C.presetPlaces('town-nikko');
+      const bus=presets.find(p=>p.name==='Nikkō Gyōsei Center-mae (Bushaltestelle)');
+      const kegon=presets.find(p=>p.name==='Kegon-Wasserfall');
+      if(!bus||!kegon)return;
+      const existingBus=places.find(p=>
+        C.placePlanKey(p)===C.placePlanKey(bus)||
+        (p.name.toLocaleLowerCase('de-DE')===bus.name.toLocaleLowerCase('de-DE')&&
+          C.distance(p,bus)<75));
+      const selectedBus=existingBus||bus;
+      const nextPlaces=C.merge(places,existingBus?[]:[bus]);
+      const nextPlans=Object.assign(Object.create(null),planAssignments);
+      const nextDays=Object.assign(Object.create(null),cityDayAssignments);
+      const busKey=C.placePlanKey(selectedBus);
+      nextPlans[busKey]=[...new Set([...(nextPlans[busKey]||[]),'town-nikko'])];
+      if(!Object.hasOwn(nextDays,busKey))nextDays[busKey]='2026-11-08';
+      const oldKegon='09.11. · Vormittag · Bus nach Chūzenji Onsen, dann kurzer Fußweg';
+      const existingKegon=nextPlaces.find(p=>p.name===kegon.name&&C.distance(p,kegon)<75);
+      const changedPlaces=existingKegon&&existingKegon.schedule===oldKegon
+        ?nextPlaces.map(p=>p===existingKegon?{...p,schedule:kegon.schedule}:p)
+        :nextPlaces;
+      if(existingKegon){
+        const key=C.placePlanKey(existingKegon);
+        nextPlans[key]=[...new Set([...(nextPlans[key]||[]),'town-nikko'])];
+        // Change only the original, unchanged preset day; respect manual edits.
+        if(existingKegon.schedule===oldKegon&&nextDays[key]==='2026-11-09')
+          nextDays[key]='2026-11-08';
+      }
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(changedPlaces));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(nextPlans));
+      localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(nextDays));
+      localStorage.setItem(marker,'1');
+      places=changedPlaces;planAssignments=nextPlans;cityDayAssignments=nextDays;
+    }catch{
+      say('Bushaltestelle konnte nicht ergänzt werden; vorhandene Orte und Tickets bleiben erhalten.');
+    }
+  }
+  seedNikkoKegonBusStops();
+
 
   // Add the three personally requested Osaka shops on 05.11., without
   // replacing saved place notes, past visits, custom days, drafts or tickets.
