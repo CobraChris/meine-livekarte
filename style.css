@@ -2407,6 +2407,36 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
 }
+/* The expanded disclosure is a different interaction state: restore the
+   proven two-row layout so its buttons stay below the fixed search toolbar.
+   Only the everyday collapsed marker card uses the miniature arrangement. */
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]){
+  display:block;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .place-popup-header{
+  padding-right:24px;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .place-day-picker{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:6px;
+  padding:6px 0;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .place-day-picker label{
+  position:static;
+  width:auto;
+  height:auto;
+  overflow:visible;
+  clip-path:none;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .popup-compact-actions{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  margin-top:7px;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .popup-more{
+  grid-column:1/-1;
+}
 .google-place-popup{
   min-width:0;
   width:min(240px,calc(100vw - 82px));
