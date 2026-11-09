@@ -798,7 +798,10 @@ async function verifyVisualLayouts(page){
      const actions=[action,tour,more,select].map(btn=>btn?.getBoundingClientRect());
      return {visible:!!rect&&rect.width>150&&rect.height>70,
       height:rect?.height||0,
-      actionVisible:actions.every(b=>b&&b.width>=44&&b.height>=44),
+      // Browser zoom/device-pixel snapping may report 43.999px for a
+      // CSS min-height of 44px; retain a 1px measurement tolerance.
+      actionVisible:actions.every(b=>b&&b.width>=43&&b.height>=43),
+      actionSizes:actions.map(b=>b?{width:b.width,height:b.height}:null),
       actionRows:actions.map(b=>b?.top),
       clipped:!rect||rect.left<map.left-3||rect.right>map.right+3||
        rect.top<map.top-3||rect.bottom>map.bottom+3};
