@@ -2401,6 +2401,11 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .leaflet-popup-content .popup-more-body{
   margin-top:5px;
   padding-top:6px;
+  max-height:112px;
+  overflow-y:auto;
+  touch-action:pan-y;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
 }
 .google-place-popup{
   min-width:0;
