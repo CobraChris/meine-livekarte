@@ -422,7 +422,8 @@ test('journey ticket UI supports user and chat link state changes without overri
  assert.match(app,/livekarte-ticket-status-v1/);
  assert.match(app,/function ticketStatusFor/);
  assert.match(app,/const picker=node\('select',undefined,'ticket-choice'\)/);
- assert.match(app,/if \(i<journey\.stops\.length-1\)/);
+  // Ticket selectors belong only to reserved train legs, not footpaths or IC metro travel.
+  assert.match(app,/if \(i<journey\.stops\.length-1 && stop\.mode!=='walk' && stop\.ticketRequired!==false\)/);
  assert.match(app,/unresolved/);
  assert.match(app,/\$\('ticket-update-apply'\)\.onclick/);
  assert.match(app,/if\s*\(!readTicketUpdate\(\) && !readJourneyLink\(\) && !readLink\(\)\)/);
