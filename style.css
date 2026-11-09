@@ -2329,6 +2329,134 @@ font-size:15px;font-weight:850;box-shadow:0 2px 8px #0007}
 .google-place-actions a:focus-visible,.google-place-actions button:focus-visible{
   outline:3px solid #1c6b45;outline-offset:2px}
 
+/* Compact marker cards on BOTH map providers, without reducing touch targets.
+   A dated OSM marker puts its day picker beside the heading and keeps the
+   three main actions on one 44px row. The expanded More area still wraps. */
+.leaflet-popup-content{margin:10px 12px}
+.leaflet-popup-content .place-popup-pan-surface{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 88px;
+  align-items:center;
+  column-gap:6px;
+  row-gap:3px;
+}
+.leaflet-popup-content .place-popup-header{
+  grid-column:1;
+  min-width:0;
+  padding-right:0;
+  margin:0;
+}
+.leaflet-popup-content .place-popup-header strong{
+  font-size:13px;
+  line-height:1.3;
+}
+.leaflet-popup-content .place-day-picker{
+  grid-column:2;
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:none;
+  padding:0;
+  margin:0;
+  border:0;
+}
+.leaflet-popup-content .place-day-picker label{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  white-space:nowrap;
+  clip-path:inset(50%);
+}
+.leaflet-popup-content .place-day-picker select{
+  width:100%;
+  min-height:44px;
+  padding:6px 5px;
+  font-size:12px;
+}
+.leaflet-popup-content .popup-compact-actions{
+  grid-column:1/-1;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+  margin:3px 0 0;
+}
+.leaflet-popup-content .popup-compact-actions>.walk-start,
+.leaflet-popup-content .popup-compact-actions>.tour-pick{
+  min-height:44px;
+  padding:5px 3px;
+  font-size:11px;
+  line-height:1.2;
+}
+.leaflet-popup-content .popup-compact-actions>.popup-more{
+  grid-column:auto;
+}
+.leaflet-popup-content .popup-more>summary{
+  min-height:44px;
+  padding:5px 3px;
+  font-size:11px;
+}
+.leaflet-popup-content .popup-more[open]{
+  grid-column:1/-1;
+}
+.leaflet-popup-content .popup-more-body{
+  margin-top:5px;
+  padding-top:6px;
+  max-height:112px;
+  overflow-y:auto;
+  touch-action:pan-y;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+/* The expanded disclosure is a different interaction state: restore the
+   proven two-row layout so its buttons stay below the fixed search toolbar.
+   Only the everyday collapsed marker card uses the miniature arrangement. */
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]){
+  display:block;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .place-popup-header{
+  padding-right:24px;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .place-day-picker{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:6px;
+  padding:6px 0;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .place-day-picker label{
+  position:static;
+  width:auto;
+  height:auto;
+  overflow:visible;
+  clip-path:none;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .popup-compact-actions{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  margin-top:7px;
+}
+.leaflet-popup-content .place-popup-pan-surface:has(.popup-more[open]) .popup-more{
+  grid-column:1/-1;
+}
+.google-place-popup{
+  min-width:0;
+  width:min(240px,calc(100vw - 82px));
+  max-width:240px;
+}
+.google-place-popup strong{font-size:14px;line-height:1.3;margin-bottom:5px}
+.google-place-popup p{margin:0 0 6px}
+.google-place-popup p[hidden]{display:none!important}
+.google-place-actions{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+}
+.google-place-actions a{grid-column:auto}
+.google-place-actions a,.google-place-actions button{
+  min-height:44px;
+  padding:6px 3px;
+  font-size:10.5px;
+  line-height:1.2;
+}
+
 /* Compass diagnostics live only in the existing privacy/settings dialog. */
 .compass-diagnostics{margin-top:12px;padding:11px 12px;border:1px solid #446b65;
   border-radius:12px;background:#17352e}

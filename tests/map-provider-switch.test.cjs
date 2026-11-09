@@ -425,9 +425,10 @@ test('tapping Google restaurant marker offers real Google reviews link and OSM a
  assert.equal(latestInfo.opened,true);
  const [title,note,actions]=latestInfo.content.children;
  assert.equal(title.textContent,'Restaurant Nanzen');
- assert.match(note.textContent,/noch keine Sterne/);
+ assert.equal(note.hidden,true,'regular place popup does not waste vertical space on a fixed disclaimer');
+ assert.equal(note.textContent,'');
  const [reviews,walk,tour]=actions.children;
- assert.equal(reviews.textContent,'⭐ Bewertungen in Google Maps');
+ assert.equal(reviews.textContent,'⭐ Bewertungen');
  assert.equal(reviews.target,'_blank');
  assert.equal(reviews.rel,'noopener noreferrer');
  const maps=new URL(reviews.href);
@@ -456,7 +457,8 @@ test('non-restaurant marker is correctly labelled as external place details',()=
  t.get('google-demo-start').click();
  created[0].click();
  const external=win.content.children[2].children[0];
- assert.match(external.textContent,/Details in Google Maps/);
+ assert.equal(win.content.children[1].hidden,true);
+ assert.equal(external.textContent,'↗ Maps');
  assert.doesNotMatch(external.textContent,/Bewertungen/);
 });
 
@@ -564,4 +566,17 @@ test('Google adapter uses same tour click, map bookmark click and GPS position w
  t.get('provider-osm').click();
  assert.equal(t.get('workspace').dataset.provider,'osm');
  assert.equal(t.leafletMap.invalidations,1);
+});
+
+test('compact Google and OSM popups keep three primary actions at touch-safe height',()=>{
+ const css=read('style.css'),google=read('google-demo.js');
+ assert.match(css,/\.leaflet-popup-content \.place-popup-pan-surface\{\s*display:grid;\s*grid-template-columns:minmax\(0,1fr\) 88px/);
+ assert.match(css,/\.leaflet-popup-content \.place-day-picker\{\s*grid-column:2;/);
+ assert.match(css,/\.leaflet-popup-content \.popup-compact-actions\{\s*grid-column:1\/-1;\s*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.google-place-actions\{\s*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.google-place-actions a\{grid-column:auto\}/);
+ assert.match(css,/min-height:44px;/);
+ assert.match(google,/note\.hidden=!railwayNumber/);
+ assert.match(google,/new google\.maps\.InfoWindow\(\{maxWidth:290\}\)/);
+ assert.doesNotMatch(google,/DirectionsService|PlacesService|fetch\(/);
 });
