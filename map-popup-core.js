@@ -98,9 +98,7 @@
       minWidth:Math.min(286,Math.max(205,map.getSize().x-76)),
       maxWidth:320,maxHeight:300,
       offset:L.point(0,-24),autoPan:true,
-      // Keep expanded marker cards BELOW the shared search/tour toolbars;
-      // a shorter card alone can still overlap controls after auto-pan.
-      autoPanPaddingTopLeft:L.point(18,132),
+      autoPanPaddingTopLeft:L.point(18,76),
       autoPanPaddingBottomRight:L.point(18,40),
       ...options
     });
