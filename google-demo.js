@@ -269,30 +269,33 @@
             onTapTour(place);
             return;
           }
-          if(!info)info=new google.maps.InfoWindow();
+          if(!info)info=new google.maps.InfoWindow({maxWidth:290});
           const node=document.createElement('div');
           const title=document.createElement('strong');
           title.textContent=number?number+'. '+place.name:place.name;
           node.className='google-place-popup';
           const note=document.createElement('p');
+          // Reviews are deliberately not fetched; a permanent disclaimer
+          // made every ordinary marker popup needlessly tall. Railway safety
+          // information remains visible where it is relevant.
+          note.hidden=!railwayNumber;
           note.textContent=railwayNumber
-            ?'Station dieser Zugreise. Verbindungslinien sind schematisch; keine echten Gleise oder Live-Fahrzeiten.'
-            :'Die Google-Demo zeigt hier noch keine Sterne oder Rezensionen.';
+            ?'Schematische Bahnlinie · keine Live-Fahrzeiten oder Gleisangaben.'
+            :'';
           const actions=document.createElement('div');
           actions.className='google-place-actions';
           const details=document.createElement('a');
           details.href=placeDetailsUrl(place);
           details.target='_blank';
           details.rel='noopener noreferrer';
-          details.textContent=railwayNumber?'↗ Bahnhof in Google Maps'
-            :place.category==='restaurant'
-              ?'⭐ Bewertungen in Google Maps':'↗ Details in Google Maps';
+          details.textContent=place.category==='restaurant'&&!railwayNumber
+            ?'⭐ Bewertungen':'↗ Maps';
           details.setAttribute('aria-label','Google Maps zu '+place.name+' öffnen');
           actions.append(details);
           if(!railwayNumber){
             const walk=document.createElement('button');
             walk.type='button';
-            walk.textContent='🚶 Fußweg (OSM-Routing)';
+            walk.textContent='🚶 Fußweg';
             walk.addEventListener('click',()=>onWalk(place));
             actions.append(walk);
             const tour=document.createElement('button');
