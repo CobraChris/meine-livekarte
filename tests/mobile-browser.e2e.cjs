@@ -792,18 +792,29 @@ async function verifyVisualLayouts(page){
      const rect=el?.getBoundingClientRect();
      const map=document.getElementById('map').getBoundingClientRect();
      const box=action?.getBoundingClientRect();
+     const tour=el?.querySelector('.popup-compact-actions>.tour-pick');
+     const more=el?.querySelector('.popup-more>summary');
+     const select=el?.querySelector('.place-day-picker select');
+     const actions=[action,tour,more,select].map(btn=>btn?.getBoundingClientRect());
      return {visible:!!rect&&rect.width>150&&rect.height>70,
-      actionVisible:!!box&&box.width>=30&&box.height>=30,
+      height:rect?.height||0,
+      actionVisible:actions.every(b=>b&&b.width>=44&&b.height>=44),
+      actionRows:actions.map(b=>b?.top),
       clipped:!rect||rect.left<map.left-3||rect.right>map.right+3||
        rect.top<map.top-3||rect.bottom>map.bottom+3};
     });
     assert.ok(state.visible&&state.actionVisible&&!state.clipped,
       'Nara popup or its action is clipped/hidden on '+viewport.width+'px screen: '+
       JSON.stringify(state));
-    // v2 captures the actual popup, not the scrolled document behind it.
-    // The old page-level clip mixed viewport/document coordinates, causing
-    // false visual regressions whenever the travel plan changed height.
-    const id='nara-popup-v2-'+viewport.width+'-osm';
+    assert.ok(state.height<185,'Compact marker popup must not cover the map: '+
+      JSON.stringify(state));
+    assert.ok(Math.max(...state.actionRows.slice(0,3))-
+      Math.min(...state.actionRows.slice(0,3))<3,
+      'Walking, Tour and More must occupy the same touch-safe action row');
+    // v3 is an intentional compact-layout redesign. Preserve release
+    // comparison for all other scenes and start a fresh verified reference
+    // only for this approved popup shape.
+    const id='nara-popup-v3-'+viewport.width+'-osm';
     const filename=id+'-popup.png';
     const cloned=await page.evaluate(()=>{
      const source=document.querySelector('.leaflet-popup-content-wrapper');
@@ -828,7 +839,7 @@ async function verifyVisualLayouts(page){
      path:path.join(dir,filename),animations:'disabled',caret:'hide'
     });
     await page.evaluate(()=>document.getElementById('visual-popup-snapshot')?.remove());
-    manifest.scenes.push({id,key:'nara-popup-v2',kind:'popup',width:viewport.width,
+    manifest.scenes.push({id,key:'nara-popup-v3',kind:'popup',width:viewport.width,
      provider:'osm',popup:state,screenshots:{popup:filename}});
     await page.locator('.leaflet-popup-close-button').first().click();
    }
