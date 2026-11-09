@@ -83,10 +83,11 @@
   function rail(journey){
     const ordered=stopsOf(journey?.stops,2);
     const segments=Object.freeze(ordered.slice(0,-1).map((from,i)=>{
-      const to=ordered[i+1];
+      const to=ordered[i+1],mode=from.mode==='walk'?'walk':'rail';
       const points=geometry([point(from),...(from.via||[]).map(point),point(to)]);
       return Object.freeze({
-        mode:'rail',geometry:'schematic-rail',from,to,
+        mode,geometry:mode==='walk'?'straight':'schematic-rail',
+        style:mode==='walk'?styles.preview:styles.rail,from,to,
         points,distance:null,duration:null,
         label:from.leg||'',departure:from.departure||'',arrival:to.arrival||''
       });
@@ -96,7 +97,10 @@
     return Object.freeze({
       kind:'rail',geometry:'schematic-rail',real:false,
       stops:ordered,points,segments,legs:Object.freeze([]),
-      distance:null,duration:null,style:styles.rail,note:note.rail,
+      distance:null,duration:null,style:styles.rail,
+      note:segments.some(s=>s.mode==='walk')
+        ?'Gestrichelte Linien = schematische Reihenfolge von Fußwegen und Zugfahrten; keine echten Gehwege oder Gleisgeometrien. Für Fußwege Google Maps öffnen.'
+        :note.rail,
       title:journey.title||'',date:journey.date||''
     });
   }
