@@ -819,6 +819,14 @@ async function verifyVisualLayouts(page){
     // only for this approved popup shape.
     const id='nara-popup-v3-'+viewport.width+'-osm';
     const filename=id+'-popup.png';
+    // The previous green release captured the expanded More menu, but
+    // earlier navigation tests may leave the reused popup open or closed.
+    // Set the exact same interaction state deterministically before capture.
+    await page.evaluate(()=>{
+      const disclosure=document.querySelector('.leaflet-popup-content .popup-more');
+      if(!disclosure)throw Error('Nara popup disclosure missing');
+      disclosure.open=true;
+    });
     const cloned=await page.evaluate(()=>{
      const source=document.querySelector('.leaflet-popup-content-wrapper');
      const content=source?.querySelector('.place-popup-pan-surface');
