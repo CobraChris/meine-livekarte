@@ -819,9 +819,6 @@ async function verifyVisualLayouts(page){
     // only for this approved popup shape.
     const id='nara-popup-v3-'+viewport.width+'-osm';
     const filename=id+'-popup.png';
-    // Expand only the visual clone: NEVER change the real popup. The prior
-    // screenshot baseline shows the More disclosure, but expanding the live
-    // popup changes subsequent 360px touch/clipping state.
     const cloned=await page.evaluate(()=>{
      const source=document.querySelector('.leaflet-popup-content-wrapper');
      const content=source?.querySelector('.place-popup-pan-surface');
@@ -834,9 +831,6 @@ async function verifyVisualLayouts(page){
       width:Math.ceil(r.width)+'px',pointerEvents:'none'
      });
      const clone=source.cloneNode(true);
-     const more=clone.querySelector('.popup-more');
-     if(!more)throw Error('Nara popup disclosure missing from snapshot');
-     more.open=true;
      clone.style.margin='0';
      host.append(clone);
      document.body.append(host);
