@@ -70,12 +70,14 @@
       routeLegend=$('google-demo-route-legend'),
       routeMeaning=$('google-demo-route-meaning');
     const input=$('google-demo-key'),open=$('google-demo-start'),
-      forget=$('google-demo-forget'),state=$('google-demo-status'),
+      forget=$('google-demo-forget'),copyFahrCockpit=$('google-demo-copy-fahrcockpit'),
+      state=$('google-demo-status'),
       osm=$('provider-osm'),osmDe=$('provider-osm-de'),
       googleButton=$('provider-google'),
       settings=$('provider-settings'),notice=$('provider-notice'),
       heading=$('google-demo-summary'),workspace=googleEl.closest('.workspace');
-    if(!panel||!googleEl||!routeLegend||!routeMeaning||!input||!open||!forget||!state||
+    if(!panel||!googleEl||!routeLegend||!routeMeaning||!input||!open||!forget||
+       !copyFahrCockpit||!state||
        !osm||!osmDe||!googleButton||!settings||!notice||!heading||!workspace)
       return null;
     let googleMap=null,markers=[],routeLine=null,info=null,active=false,loading=false;
@@ -458,6 +460,35 @@
       if(panel.open)panel.scrollIntoView({behavior:'smooth',block:'nearest'});
     });
     panel.addEventListener('toggle',updateUI);
+    copyFahrCockpit.addEventListener('click',async()=>{
+      const key=haveKey();
+      if(!keyLooksValid(key)){
+        say('Hier ist kein Google-Demokey gespeichert. Öffne Google zuerst in dieser Live-Karte.');
+        return;
+      }
+      // Explicitly initiated local clipboard handoff. Never place the key in
+      // a URL, console message, page text, repository or network request.
+      let copied=false;
+      if(navigator.clipboard?.writeText){
+        try{await navigator.clipboard.writeText(key);copied=true;}catch{}
+      }
+      if(!copied){
+        // Fallback for a standalone Android PWA without Async Clipboard support.
+        const box=document.createElement('textarea');
+        box.value=key;
+        box.readOnly=true;
+        box.setAttribute('aria-hidden','true');
+        box.style.position='fixed';
+        box.style.left='-10000px';
+        document.body.append(box);
+        box.select();
+        try{copied=document.execCommand('copy')===true;}catch{}
+        box.remove();
+      }
+      say(copied
+        ?'Google-Demoschlüssel kopiert. Wechsle jetzt zurück zur Chrome-Seite „Google mit FahrCockpit verbinden“ und tippe dort „Aus Zwischenablage übernehmen“.'
+        :'Zwischenablage nicht verfügbar. Den Google-Schlüssel bitte in Chrome manuell aus dem bestehenden Schlüsselmanager übertragen.');
+    });
     forget.addEventListener('click',()=>{
       clearKey();input.value='';
       resetToOSM('Demo-Key nur auf diesem Gerät aus dem Browser-Speicher entfernt.');
