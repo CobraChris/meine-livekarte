@@ -60,3 +60,13 @@ test('build ships only first-party module, never user key or external Google ass
  assert.match(workflow,/cp google-demo\.js public\//);
  assert.match(stamp,/\("src", "google-demo\.js"\)/);
 });
+
+test('explicit FahrCockpit copy uses the existing locally stored Demo Key without uploading it',()=>{
+ const code=read('google-demo.js'),html=read('index.html');
+ assert.match(html,/id="google-demo-copy-fahrcockpit"/);
+ assert.match(code,/copyFahrCockpit=\$\('google-demo-copy-fahrcockpit'\)/);
+ assert.match(code,/copyFahrCockpit.addEventListener\('click',async\(\)=>/);
+ assert.match(code,/const key=haveKey\(\)/);
+ assert.match(code,/navigator.clipboard.writeText\(key\)/);
+ assert.doesNotMatch(code,/fetch\(|sendBeacon|postMessage\(/);
+});
