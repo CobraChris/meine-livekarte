@@ -1685,7 +1685,11 @@
   dayBriefOpen.onclick=()=>{
     const index=MD.days(activePlanId).indexOf(activeCityDay);
     if(index<0)return;
-    if(activePlanId==='town-nikko'){
+    if(activePlanId==='town-tokyo'){
+      const sections=$('tokyo-days').querySelectorAll('details.kyoto-day');
+      sections.forEach((section,i)=>{section.open=index===i;});
+      tokyoOverview.scrollIntoView({behavior:'smooth',block:'start'});
+    }else if(activePlanId==='town-nikko'){
       const sections=$('nikko-days').querySelectorAll('details.kyoto-day');
       sections.forEach((section,i)=>{section.open=index===i;});
       nikkoOverview.scrollIntoView({behavior:'smooth',block:'start'});
@@ -1810,7 +1814,8 @@
   $('day-route-foot').onclick=()=>{void calculateDailyFootRoute();};
   function renderCityDays(){
     daySelector.render({context:currentDayContext(),activeDay:activeCityDay,
-      overview:activePlanId==='town-nikko'?$('nikko-days'):kyotoOverview,onSelect:selectCityDay});
+      overview:activePlanId==='town-nikko'?$('nikko-days'):
+        activePlanId==='town-tokyo'?$('tokyo-days'):kyotoOverview,onSelect:selectCityDay});
   }
   function selectCityDay(day){
     if(!MD.allowed(activePlanId,day)||day===activeCityDay)return;
@@ -2214,7 +2219,8 @@
     if(document.visibilityState==='visible')renderNextAction();
   });
   window.addEventListener('focus',renderNextAction);
-  const kyotoOverview=$('kyoto-overview'),nikkoOverview=$('nikko-overview');
+  const kyotoOverview=$('kyoto-overview'),nikkoOverview=$('nikko-overview'),
+    tokyoOverview=$('tokyo-overview');
   function renderNikkoOverview(){
     const visiting=activePlanId==='town-nikko',travel=activePlanId==='ride-nikko',returnTravel=activePlanId==='ride-tokyo';
     nikkoOverview.hidden=!visiting&&!travel&&!returnTravel;
@@ -2236,6 +2242,17 @@
     sections.forEach((section,i)=>{section.open=index===i;});
   }
   function renderKyotoOverview(){
+    tokyoOverview.hidden=activePlanId!=='town-tokyo';
+    if(!tokyoOverview.hidden){
+      const today=NS.localDate();
+      if(tokyoOverview.dataset.autoDay!==today){
+        const index=MD.days('town-tokyo').indexOf(today);
+        if(index>=0)tokyoOverview.querySelectorAll('details.kyoto-day').forEach((section,i)=>{
+          section.open=i===index;
+        });
+        tokyoOverview.dataset.autoDay=today;
+      }
+    }
     kyotoOverview.hidden=!['ride-kyoto','town-kyoto'].includes(activePlanId);
     // Default day depends on Japan date. Don't close a day the user
     // explicitly opened unless the local calendar day actually changes.
@@ -2257,7 +2274,7 @@
   const todayPanel=$('today-panel');
   function renderTodayDashboard(){
     const suggestion=NS.todaySuggestion();
-    todayPanel.hidden=activePlanId==='town-kyoto'||activePlanId==='town-nikko';
+    todayPanel.hidden=['town-kyoto','town-nikko','town-tokyo'].includes(activePlanId);
     const date=NS.localDate(),text=date.slice(8,10)+'.'+date.slice(5,7)+'.'+date.slice(0,4);
     $('today-date').textContent=text;
     $('today-title').textContent=suggestion?suggestion.title:'Kein fester Tagesplan hinterlegt';
@@ -2283,6 +2300,13 @@
         selectCityDay(today);
       focusKyotoOverviewDay(suggestion.dayIndex);
       kyotoOverview.scrollIntoView({behavior:'smooth',block:'start'});
+    }else if(suggestion.planId==='town-tokyo'){
+      const day=NS.localDate();
+      if(MD.days('town-tokyo').includes(day))selectCityDay(day);
+      renderKyotoOverview();
+      const index=MD.days('town-tokyo').indexOf(day);
+      tokyoOverview.querySelectorAll('details.kyoto-day').forEach((section,i)=>{section.open=i===index;});
+      tokyoOverview.scrollIntoView({behavior:'smooth',block:'start'});
     }else if(suggestion.planId==='ride-nikko'||suggestion.planId==='town-nikko'||suggestion.planId==='ride-tokyo'){
       if(suggestion.planId==='town-nikko'&&MD.days('town-nikko').includes(NS.localDate()))selectCityDay(NS.localDate());
       renderNikkoOverview();
@@ -3802,6 +3826,46 @@
     }
   }
   seedApprovedNikkoDays();
+
+  // Add the final Tokyo days additively; never overwrite private places, day
+  // changes, ticket states, GPS, tour drafts or previously saved itineraries.
+  function seedTokyoFinalDays(){
+    const marker='livekarte-tokyo-final-days-2026-11-11-v1';
+    try{
+      if(localStorage.getItem(marker)==='1')return;
+      const suggested=C.presetPlaces('town-tokyo');
+      if(suggested.length!==7)return;
+      const additions=[],matched=[];
+      for(const proposal of suggested){
+        const existing=places.find(place=>
+          C.placePlanKey(place)===C.placePlanKey(proposal)||
+          place.name.toLocaleLowerCase('de-DE')===proposal.name.toLocaleLowerCase('de-DE'));
+        matched.push({proposal,place:existing||proposal});
+        if(!existing)additions.push(proposal);
+      }
+      const nextPlaces=C.merge(places,additions);
+      const nextPlans=Object.assign(Object.create(null),planAssignments);
+      const nextDays=Object.assign(Object.create(null),cityDayAssignments);
+      for(const {proposal,place} of matched){
+        const key=C.placePlanKey(place);
+        const current=Array.isArray(nextPlans[key])?nextPlans[key]:[];
+        nextPlans[key]=[...new Set([...current,'town-tokyo'])];
+        if(place.category==='hotel')continue;
+        const day=MD.fromSchedule(proposal.schedule);
+        if(MD.days('town-tokyo').includes(day)&&!Object.hasOwn(nextDays,key))
+          nextDays[key]=day;
+      }
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(nextPlaces));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(nextPlans));
+      localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(nextDays));
+      localStorage.setItem(marker,'1');
+      places=nextPlaces;planAssignments=nextPlans;cityDayAssignments=nextDays;
+    }catch{
+      say('Die Tokio-Tagesziele konnten nicht ergänzt werden. Bereits gespeicherte Daten bleiben erhalten.');
+    }
+  }
+  seedTokyoFinalDays();
+
 
   // Add the three personally requested Osaka shops on 05.11., without
   // replacing saved place notes, past visits, custom days, drafts or tickets.

@@ -325,6 +325,37 @@
   // Curated city presets. They are ordinary place records and are only seeded
   // once into local browser storage, so users can still edit or clear them.
   const townPlacePresets = {
+
+    'town-tokyo': [
+      {name:'THE skM TOKYO HOTEL & DINING',lat:35.6947,lng:139.8165,category:'hotel',
+        schedule:'10.–12.11. · Hotel in Kinshichō · Check-out am 12.11.',
+        note:'Adresse: 4-25-5 Kōtōbashi, Sumida, Tokio. Hotelmarkierung zur Orientierung (Koordinate näherungsweise). Eingang über die Adresse in Google Maps prüfen. Kein automatischer Check-out.',
+        description:'Eure Unterkunft für die letzten Nächte in Tokio; ca. 3 Minuten Fußweg zum Bahnhof Kinshichō.'},
+      {name:'Shinjuku Gyoen National Garden (新宿御苑)',lat:35.68484,lng:139.71027,category:'sight',
+        priority:'1',duration:'75–90 Min.',schedule:'11.11. · ca. 10:45–12:00 · Vormittag',
+        note:'Nationalgarten Shinjuku Gyoen. Am 11.11. Chrysanthemenausstellung; geöffnet 09:00–16:30, letzter Eintritt 16:00. Eintritt Erwachsene 500 ¥. Bahn vom Hotel; tatsächliche Anfahrt prüfen.',
+        description:'Großer japanischer Landschafts- und Gartenpark. Vorher oder nachher genug Zeit für den Transfer nach Mejiro lassen.'},
+      {name:'Yoshioka-Ramen Mejiro (自家製熟成麺 吉岡)',lat:35.7212,lng:139.7065,category:'restaurant',
+        priority:'1',duration:'45 Min.',schedule:'11.11. · ca. 12:45–13:30 · nur falls geöffnet',
+        note:'Adresse: Toshima, Mejiro 3-5-13, Fujiya Building M2F, nahe JR Mejiro (Bahnhof). Tabelog nennt Ramen 11:00–14:00; offizielle Website nennt bis 15:00. Wegen widersprüchlicher Angaben spätestens vor 14:00 ankommen und tagesaktuell prüfen. Kein Tisch reserviert. Bahn ab Shinjuku.',
+        description:'Ramenladen für das Mittagessen; falls geschlossen ohne Umweg alternative Gastronomie nahe Mejiro wählen.'},
+      {name:'Rikugien-Garten (六義園)',lat:35.7331,lng:139.7464,category:'sight',
+        priority:'1',duration:'60–75 Min.',schedule:'11.11. · ca. 15:00–16:15 · Nachmittag',
+        note:'Landschaftsgarten am Bahnhof Komagome; regulär 09:00–17:00, letzter Einlass 16:30, Erwachsene 300 ¥. Am 11.11. kein Abend-Light-up (erst ab 25.11.). Bahn ab Mejiro statt langer Fußweg.',
+        description:'Historischer Edo-Wandelgarten mit Teich und Gartenwegen.'},
+      {name:'Akihabara Electric Town (秋葉原)',lat:35.69876,lng:139.7731,category:'sight',
+        priority:'1',duration:'90–150 Min.',schedule:'11.11. · ab ca. 17:15 · Abend',
+        note:'Anime, Elektronik, Games, Souvenirs. Zug von Komagome/Akazara; konkrete Verbindung mit Google Maps prüfen. Abendessen entweder spontan hier oder später in Kinshichō beim Hotel. Geschäfte schließen unterschiedlich.',
+        description:'Elektronik- und Popkulturviertel nahe Akihabara (Bahnhof), abends stimmungsvoll.'},
+      {name:'Kinshichō PARCO (optionale Einkäufe)',lat:35.6961,lng:139.8163,category:'sight',
+        priority:'2',duration:'60–90 Min.',schedule:'12.11. · ab ca. 11:00 · letzte Einkäufe optional',
+        note:'Einkaufszentrum nahe Kinshichō (Bahnhof), Adresse Kōtōbashi 4-27-14; regulär 10:30–21:00. Reine Option; ihr könnt stattdessen entspannen oder in einem anderen Viertel einkaufen.',
+        description:'Praktischer Vorschlag für letzte Besorgungen in Hotelnähe ohne zusätzlichen Stadtteilwechsel.'},
+      {name:'Kinshichō Station (錦糸町)',lat:35.6969,lng:139.8144,category:'station',
+        priority:'1',duration:'15 Min.',schedule:'12.11. · Abreise zum Flughafen · Uhrzeit noch offen',
+        note:'Bahn-Ausgangspunkt für die Flughafenanreise. Abflug 21:55 Uhr laut Reiseplan; Flughafen (Haneda oder Narita), Terminal und Check-in-Vorgaben fehlen noch. Keine Zugzeit, Gleis- oder Ticketbuchung als bestätigt darstellen. Vor Abfahrt Flughafenverbindung individuell prüfen.',
+        description:'JR- und Metro-Bahnhof Kinshichō. Vom Hotel in wenigen Minuten zu Fuß erreichbar.'}
+    ],
     'town-nikko': [
       {name:'HaruNikko New Wing',lat:36.7522,lng:139.6158,category:'hotel',
         schedule:'07.11. · Übernachtung 07.–08.11. · Check-in ca. 16:20',
@@ -540,7 +571,8 @@
     {id:'town-kyoto',name:'01.–06.11. · Kyoto',kind:'city',center:[35.0100,135.7710]},
     {id:'ride-nikko',name:'07.11. · Fahrt Kyoto → Nikkō',kind:'journey',center:[36.55916,139.89851]},
     {id:'town-nikko',name:'07.–10.11. · Nikkō',kind:'city',center:[36.752,139.621]},
-    {id:'ride-tokyo',name:'10.11. · Fahrt Nikkō → Tokio',kind:'journey',center:[36.2,139.72]}
+    {id:'ride-tokyo',name:'10.11. · Fahrt Nikkō → Tokio',kind:'journey',center:[36.2,139.72]},
+    {id:'town-tokyo',name:'11.–12.11. · Tokio & Rückflug',kind:'city',center:[35.705,139.766]}
   ];
   function placePlanKey(place) {
     return JSON.stringify([place.name,place.lat,place.lng]);
