@@ -82,7 +82,8 @@
       return null;
     let googleMap=null,markers=[],routeLine=null,info=null,active=false,loading=false;
     let sdkKey=null,pending=null,expiry=null;
-    let gpsMarker=null,gpsCircle=null,gpsState=null;
+    let gpsMarker=null,gpsBearingMarker=null,gpsCircle=null,gpsState=null;
+    let gpsDisplayedPoint=null,gpsBearingAngle=null,gpsCircleRadius=null;
     const previewPoints={search:null,bookmark:null},previewMarkers={search:null,bookmark:null};
     function validPoint(point){
       const lat=Number(point?.lat),lng=Number(point?.lng);
@@ -106,13 +107,21 @@
         '<circle cx="21" cy="21" r="4" fill="#173b36"/></svg>';
       return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
     }
-    function gpsIcon(headingValue){
-      const angle=Number.isFinite(headingValue)?((headingValue%360)+360)%360:0;
-      const arrow=Number.isFinite(headingValue)
-        ?'<path d="M24 4 L32 18 L24 15 L16 18 Z" fill="#2479f4" stroke="#fff" stroke-width="1.5" transform="rotate('+angle+' 24 24)"/>':'';
+    function gpsIcon(){
+      // The blue location dot is never re-rendered for compass changes.
       const svg='<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">'+
-        arrow+'<circle cx="24" cy="24" r="11" fill="#2584fb" stroke="#fff" stroke-width="4"/></svg>';
+        '<circle cx="24" cy="24" r="11" fill="#2584fb" stroke="#fff" stroke-width="4"/></svg>';
       return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
+    }
+    function gpsBearingIcon(angle){
+      const svg='<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">'+
+        '<path d="M24 4 L32 18 L24 15 L16 18 Z" fill="#2479f4" stroke="#fff" stroke-width="1.5" transform="rotate('+angle+' 24 24)"/></svg>';
+      return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
+    }
+    function gpsImage(url){
+      const icon={url};
+      if(root.google?.maps?.Point)icon.anchor=new google.maps.Point(24,24);
+      return icon;
     }
     function refreshPreview(kind){
       if(previewMarkers[kind])previewMarkers[kind].setMap(null);
@@ -125,23 +134,73 @@
         icon:{url:spotIcon(kind)}
       });
     }
+    function clearGPS(){
+      for(const marker of [gpsMarker,gpsBearingMarker,gpsCircle]){
+        if(marker)marker.setMap(null);
+      }
+      gpsMarker=null;gpsBearingMarker=null;gpsCircle=null;
+      gpsDisplayedPoint=null;gpsBearingAngle=null;gpsCircleRadius=null;
+    }
     function refreshGPS(){
-      if(gpsMarker){gpsMarker.setMap(null);gpsMarker=null;}
-      if(gpsCircle){gpsCircle.setMap(null);gpsCircle=null;}
       const point=validPoint(gpsState?.position);
-      if(!active||!googleMap||!point||!root.google?.maps?.Marker)return;
-      gpsMarker=new google.maps.Marker({
-        map:googleMap,position:point,title:'Mein GPS-Standort',
-        clickable:false,zIndex:2200,
-        icon:{url:gpsIcon(gpsState?.heading)}
-      });
-      const radius=Number(gpsState?.accuracy);
-      if(Number.isFinite(radius)&&radius>0&&radius<=10000&&root.google.maps.Circle)
-        gpsCircle=new google.maps.Circle({
-          map:googleMap,center:point,radius,strokeColor:'#2584fb',
-          strokeOpacity:.45,strokeWeight:1,fillColor:'#2584fb',
-          fillOpacity:.10,clickable:false
+      if(!active||!googleMap||!point||!root.google?.maps?.Marker){
+        clearGPS();
+        return;
+      }
+      // Never remove and recreate the location dot on position or compass
+      // events. Ignore sub-2m indoor GPS jitter while stationary.
+      const previous=gpsDisplayedPoint;
+      const distance=previous?Math.hypot(
+        (point.lat-previous.lat)*111320,
+        (point.lng-previous.lng)*111320*Math.cos(point.lat*Math.PI/180)
+      ):Infinity;
+      const positionChanged=!previous||distance>=2;
+      if(positionChanged)gpsDisplayedPoint=point;
+      const shown=gpsDisplayedPoint;
+      if(!gpsMarker){
+        gpsMarker=new google.maps.Marker({
+          map:googleMap,position:shown,title:'Mein GPS-Standort',
+          clickable:false,zIndex:2200,icon:gpsImage(gpsIcon())
         });
+      }else if(positionChanged)gpsMarker.setPosition(shown);
+      // Update only the small directional arrow, leaving the blue dot
+      // untouched. Compass noise below 8° is ignored to avoid icon flashing.
+      const raw=gpsState?.heading;
+      const bearing=Number.isFinite(raw)?((raw%360)+360)%360:null;
+      if(bearing===null){
+        if(gpsBearingMarker){gpsBearingMarker.setMap(null);gpsBearingMarker=null;}
+        gpsBearingAngle=null;
+      }else if(!gpsBearingMarker){
+        gpsBearingAngle=bearing;
+        gpsBearingMarker=new google.maps.Marker({
+          map:googleMap,position:shown,title:'Blickrichtung',
+          clickable:false,zIndex:2201,
+          icon:gpsImage(gpsBearingIcon(bearing))
+        });
+      }else{
+        if(positionChanged)gpsBearingMarker.setPosition(shown);
+        const delta=Math.abs(((bearing-gpsBearingAngle+540)%360)-180);
+        if(delta>=8){
+          gpsBearingAngle=bearing;
+          gpsBearingMarker.setIcon(gpsImage(gpsBearingIcon(bearing)));
+        }
+      }
+      const radius=Number(gpsState?.accuracy);
+      if(Number.isFinite(radius)&&radius>0&&radius<=10000&&root.google.maps.Circle){
+        if(!gpsCircle){
+          gpsCircle=new google.maps.Circle({
+            map:googleMap,center:shown,radius,strokeColor:'#2584fb',
+            strokeOpacity:.45,strokeWeight:1,fillColor:'#2584fb',
+            fillOpacity:.10,clickable:false
+          });
+        }else{
+          if(positionChanged)gpsCircle.setCenter(shown);
+          if(radius!==gpsCircleRadius)gpsCircle.setRadius(radius);
+        }
+        gpsCircleRadius=radius;
+      }else if(gpsCircle){
+        gpsCircle.setMap(null);gpsCircle=null;gpsCircleRadius=null;
+      }
     }
     const say=text=>{state.textContent=text;};
     const haveKey=()=>{try{return localStorage.getItem(KEY_STORE)||'';}catch{return '';}};
@@ -168,8 +227,7 @@
       clearRoute();
       const center=active?googleMap?.getCenter?.():null;
       const zoom=active?googleMap?.getZoom?.():null;
-      if(gpsMarker){gpsMarker.setMap(null);gpsMarker=null;}
-      if(gpsCircle){gpsCircle.setMap(null);gpsCircle=null;}
+      clearGPS();
       for(const kind of Object.keys(previewMarkers)){
         if(previewMarkers[kind])previewMarkers[kind].setMap(null);
         previewMarkers[kind]=null;

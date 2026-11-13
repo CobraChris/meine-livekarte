@@ -85,7 +85,8 @@ function main(){
     requiredScenes.push(key+'-'+width+'-'+provider);
  // v2 snapshots capture the real popup and deliberately reset only the
  // invalid prior baseline, which photographed the scrolled page instead.
- for(const width of [360,393])requiredScenes.push('nara-popup-v3-'+width+'-osm');
+ // v4 verifies the complete unscrolled default popup, not a clipped fragment.
+ for(const width of [360,393])requiredScenes.push('nara-popup-v4-'+width+'-osm');
  const errors=[],warnings=[],pairs=new Map();
  for(const id of requiredScenes)if(!labels.has(id))
   errors.push('Missing required visual scenario '+id);

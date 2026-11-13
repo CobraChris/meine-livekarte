@@ -558,8 +558,9 @@ test('Google adapter uses same tour click, map bookmark click and GPS position w
  assert.deepEqual([googleMap.center.lat,googleMap.center.lng,googleMap.zoom],[35.15,135.65,16]);
  assert.deepEqual([t.widget.center().lat,t.widget.center().lng],[35.15,135.65]);
  t.widget.updateGPS({lat:35.17,lng:135.77},12,94);
- assert.equal(markers.length,4);
+ assert.equal(markers.length,5);
  assert.equal(markers[3].config.title,'Mein GPS-Standort');
+ assert.equal(markers[4].config.title,'Blickrichtung');
  assert.equal(t.get('workspace').dataset.provider,'google');
  t.widget.updateGPS(null,null,null);
  picking=false;
@@ -579,4 +580,74 @@ test('compact Google and OSM popups keep three primary actions at touch-safe hei
  assert.match(google,/note\.hidden=!railwayNumber/);
  assert.match(google,/new google\.maps\.InfoWindow\(\{maxWidth:290\}\)/);
  assert.doesNotMatch(google,/DirectionsService|PlacesService|fetch\(/);
+});
+
+
+test('Google GPS remains continuously mounted through repeated GPS and compass events',()=>{
+ const t=appFixture({places:[],stops:[],goals:[]});
+ const markers=[],circles=[];
+ const map={setCenter(){},setZoom(){},getCenter(){return {lat:()=>60.32,lng:()=>24.97};},
+   getZoom(){return 15;}};
+ class Marker{
+  constructor(config){
+   this.config=config;this.positions=[];this.iconUpdates=[];this.removals=0;
+   markers.push(this);
+  }
+  addListener(){}
+  setMap(map){if(map===null)this.removals++;}
+  setPosition(point){this.positions.push(point);}
+  setIcon(icon){this.iconUpdates.push(icon);}
+ }
+ class Circle{
+  constructor(config){this.config=config;this.centers=[];this.radii=[];this.removals=0;circles.push(this);}
+  setMap(map){if(map===null)this.removals++;}
+  setCenter(point){this.centers.push(point);}
+  setRadius(value){this.radii.push(value);}
+ }
+ t.context.google={maps:{
+  Map:class{constructor(){return map;}},Marker,Circle,InfoWindow:class{},
+  Point:class{constructor(x,y){this.x=x;this.y=y;}}
+ }};
+ t.get('google-demo-key').value='AIza'+'x'.repeat(35);
+ t.get('google-demo-start').click();
+ // One blue dot and one independent bearing arrow, never new blue dots.
+ const point={lat:60.321,lng:24.970};
+ t.widget.updateGPS(point,18,90);
+ assert.equal(markers.length,2);
+ assert.equal(circles.length,1);
+ const dot=markers[0],arrow=markers[1],circle=circles[0];
+ assert.equal(dot.config.title,'Mein GPS-Standort');
+ assert.equal(arrow.config.title,'Blickrichtung');
+ assert.equal(dot.config.icon.anchor.x,24);
+ assert.equal(dot.config.icon.anchor.y,24);
+ for(let n=0;n<25;n++)
+   t.widget.updateGPS({lat:point.lat+n*.00000008,lng:point.lng},18,90+(n%6));
+ assert.equal(markers.length,2,'GPS samples must not recreate the blue dot or arrow');
+ assert.equal(circles.length,1,'accuracy circle must be updated in place');
+ assert.equal(dot.removals,0,'blue dot must never disappear between samples');
+ assert.equal(arrow.removals,0);
+ assert.equal(circle.removals,0);
+ assert.equal(dot.positions.length,0,'sub-2m GPS noise must not move the blue dot');
+ assert.equal(dot.iconUpdates.length,0,'compass must not touch blue dot icon');
+ assert.equal(arrow.iconUpdates.length,0,'small heading noise must not reload arrow icon');
+ t.widget.updateGPS({lat:60.322,lng:24.970},25,120);
+ assert.equal(markers.length,2);
+ assert.equal(circles.length,1);
+ assert.equal(dot.positions.length,1);
+ assert.equal(arrow.positions.length,1);
+ assert.equal(circle.centers.length,1);
+ assert.deepEqual(circle.radii,[25]);
+ assert.equal(arrow.iconUpdates.length,1,'heading arrow updates independently');
+ assert.equal(dot.removals,0);
+ t.widget.updateGPS({lat:60.322,lng:24.970},25,null);
+ assert.equal(arrow.removals,1,'lost compass heading removes only the arrow');
+ assert.equal(dot.removals,0);
+ t.widget.updateGPS(null,null,null);
+ assert.equal(dot.removals,1,'explicit GPS stop removes the blue dot');
+ assert.equal(circle.removals,1);
+ assert.equal(markers.length,2,'stopping GPS must not create new markers');
+ t.widget.updateGPS({lat:60.321,lng:24.970},12,null);
+ assert.equal(markers.length,3,'GPS reactivation creates exactly one dot');
+ t.get('provider-osm').click();
+ assert.equal(markers[2].removals,1,'provider switching detaches Google-only overlay');
 });
