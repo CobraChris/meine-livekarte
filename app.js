@@ -1906,7 +1906,7 @@
         icon:L.divIcon({
           className:'pin'+(chosenIndex>=0?' pin-tour-selected':'')+
             (mapTourPickMode?' pin-tour-picking':''),
-          html:`<div class="pin-inner pin-${p.category}"><span>${symbols[p.category]}</span></div>`+badge,
+          html:`<div class="pin-inner pin-${p.category}"><span>${p.name.startsWith('🚌 START')?'🚌':symbols[p.category]}</span></div>`+badge,
           iconSize:[36,36],iconAnchor:[18,36]
         })
       }).addTo(pins);
@@ -3802,6 +3802,57 @@
     }
   }
   seedApprovedNikkoDays();
+  // 08 Nov request: add the verified departure stop and show the existing
+  // Kegon Falls marker in today's Nikko view. No duplicate place, no tickets.
+  function seedNikkoKegonBusStops(){
+    const marker='livekarte-nikko-kegon-bus-2026-11-08-v2';
+    try{
+      if(localStorage.getItem(marker)==='1')return;
+      const presets=C.presetPlaces('town-nikko');
+      const bus=presets.find(p=>p.name==='Nikkō Gyōsei Center-mae (Bushaltestelle)');
+      const departure=presets.find(p=>p.name==='🚌 START – Tōbu-Nikkō Bussteig 2A');
+      const kegon=presets.find(p=>p.name==='Kegon-Wasserfall');
+      if(!bus||!departure||!kegon)return;
+      const existingBus=places.find(p=>
+        C.placePlanKey(p)===C.placePlanKey(bus)||
+        (p.name.toLocaleLowerCase('de-DE')===bus.name.toLocaleLowerCase('de-DE')&&
+          C.distance(p,bus)<75));
+      const existingDeparture=places.find(p=>
+        C.placePlanKey(p)===C.placePlanKey(departure)||
+        (p.name.toLocaleLowerCase('de-DE')===departure.name.toLocaleLowerCase('de-DE')&&
+          C.distance(p,departure)<75));
+      const additions=[...(existingBus?[]:[bus]),...(existingDeparture?[]:[departure])];
+      const nextPlaces=C.merge(places,additions);
+      const nextPlans=Object.assign(Object.create(null),planAssignments);
+      const nextDays=Object.assign(Object.create(null),cityDayAssignments);
+      for(const candidate of [existingBus||bus,existingDeparture||departure]){
+        const key=C.placePlanKey(candidate);
+        nextPlans[key]=[...new Set([...(nextPlans[key]||[]),'town-nikko'])];
+        if(!Object.hasOwn(nextDays,key))nextDays[key]='2026-11-08';
+      }
+      const oldKegon='09.11. · Vormittag · Bus nach Chūzenji Onsen, dann kurzer Fußweg';
+      const existingKegon=nextPlaces.find(p=>p.name===kegon.name&&C.distance(p,kegon)<75);
+      const changedPlaces=existingKegon&&existingKegon.schedule===oldKegon
+        ?nextPlaces.map(p=>p===existingKegon?{...p,schedule:kegon.schedule}:p)
+        :nextPlaces;
+      if(existingKegon){
+        const key=C.placePlanKey(existingKegon);
+        nextPlans[key]=[...new Set([...(nextPlans[key]||[]),'town-nikko'])];
+        // Change only the original, unchanged preset day; respect manual edits.
+        if(existingKegon.schedule===oldKegon&&nextDays[key]==='2026-11-09')
+          nextDays[key]='2026-11-08';
+      }
+      localStorage.setItem('livekarte-places-v1',JSON.stringify(changedPlaces));
+      localStorage.setItem('livekarte-plan-assignments-v1',JSON.stringify(nextPlans));
+      localStorage.setItem('livekarte-city-day-assignments-v1',JSON.stringify(nextDays));
+      localStorage.setItem(marker,'1');
+      places=changedPlaces;planAssignments=nextPlans;cityDayAssignments=nextDays;
+    }catch{
+      say('Bushaltestelle konnte nicht ergänzt werden; vorhandene Orte und Tickets bleiben erhalten.');
+    }
+  }
+  seedNikkoKegonBusStops();
+
 
   // Add the three personally requested Osaka shops on 05.11., without
   // replacing saved place notes, past visits, custom days, drafts or tickets.

@@ -21,7 +21,7 @@ test('07–10 Nov Nikko is one date-aware city itinerary with optional places',(
   const key=name=>Core.placePlanKey(places.find(p=>p.name===name));
   assert.equal(days[key('Shōyō-en (Lichtergarten)')],'2026-11-07');
   assert.equal(days[key('Nikkō Tōshō-gū')],'2026-11-08');
-  assert.equal(days[key('Kegon-Wasserfall')],'2026-11-09');
+  assert.equal(days[key('Kegon-Wasserfall')],'2026-11-08');
   assert.equal(days[key('HaruNikko New Wing')],undefined,'hotels remain visible but unassigned');
   const day7=MD.selected(places,days,'2026-11-07',Core.placePlanKey);
   assert.ok(day7.some(p=>p.name==='Shōyō-en (Lichtergarten)'));
@@ -76,4 +76,39 @@ test('return journey and hotel changes are modeled without public booking refere
     app.indexOf('seedApprovedNikkoDays();',app.indexOf('function seedApprovedNikkoDays'))),
     /localStorage\.clear|ticketStatuses\[|indexedDB\.deleteDatabase/);
   assert.ok(!html.includes('5592209030'),'No public booking number');
+});
+
+test('the Nov 8 Kegon bus departure is a separate, uniquely named map marker',()=>{
+  const list=Core.presetPlaces('town-nikko');
+  const stop=list.find(p=>p.name==='Nikkō Gyōsei Center-mae (Bushaltestelle)');
+  const departure=list.find(p=>p.name==='🚌 START – Tōbu-Nikkō Bussteig 2A');
+  const falls=list.filter(p=>p.name==='Kegon-Wasserfall');
+  assert.equal(falls.length,1,'existing waterfall marker must not be duplicated');
+  assert.ok(stop,'alternative stop must exist');
+  assert.ok(departure,'actual bus departure stop 2A must be on the map');
+  assert.equal(departure.category,'station');
+  assert.match(departure.note,/2A/);
+  assert.match(departure.schedule,/08.11./);
+  assert.equal(stop.category,'station');
+  assert.equal(falls[0].category,'nature');
+  assert.match(stop.schedule,/08.11./);
+  assert.match(stop.note,/Straßenseite/);
+  assert.match(stop.note,/中禅寺温泉/);
+  const assignments=Object.fromEntries(list.map(p=>[Core.placePlanKey(p),['town-nikko']]));
+  const dateMap=MD.seedDayAssignments(list,assignments,Core.placePlanKey,'town-nikko');
+  assert.equal(dateMap[Core.placePlanKey(stop)],'2026-11-08');
+  assert.equal(dateMap[Core.placePlanKey(departure)],'2026-11-08');
+  assert.equal(dateMap[Core.placePlanKey(falls[0])],'2026-11-08');
+  const app=read('app.js');
+  const from=app.indexOf('function seedNikkoKegonBusStops(){'),
+    to=app.indexOf('seedNikkoKegonBusStops();',from);
+  assert.ok(from>=0&&to>from,'additive one-time import is wired');
+  const body=app.slice(from,to);
+  assert.match(body,/const existingBus=places.find/);
+  assert.match(body,/C.merge\(places,additions\)/);
+  assert.match(body,/existingDeparture/);
+  assert.match(app,/p.name.startsWith\('🚌 START'\)\?'🚌':symbols\[p.category\]/);
+  assert.match(body,/nextDays\[key\]==='2026-11-09'/);
+  assert.match(body,/localStorage.setItem\('livekarte-city-day-assignments-v1'/);
+  assert.doesNotMatch(body,/ticketStatuses\[|localStorage.clear|indexedDB/);
 });
