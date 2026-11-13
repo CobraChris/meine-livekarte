@@ -786,6 +786,14 @@ async function verifyVisualLayouts(page){
     await page.locator('#plan-select').selectOption('town-kyoto');
     await page.locator('#city-days-list button[data-day-date="2026-11-04"]').click();
     const popup=await openPlacePopup(page,'Nara-Park');
+    // The previous interaction test may leave the More disclosure open or
+    // its internal content scrolled. Snapshot only the reproducible compact
+    // default state; expanded state is tested independently above.
+    await popup.locator('details.popup-more').evaluate(details=>{
+     details.open=false;
+     const scroller=details.closest('.leaflet-popup-content');
+     if(scroller)scroller.scrollTop=0;
+    });
     const state=await page.evaluate(()=>{
      const el=document.querySelector('.leaflet-popup-content .place-popup-pan-surface');
      const action=el?.querySelector('button.walk-start');
@@ -814,10 +822,11 @@ async function verifyVisualLayouts(page){
     assert.ok(Math.max(...state.actionRows.slice(0,3))-
       Math.min(...state.actionRows.slice(0,3))<3,
       'Walking, Tour and More must occupy the same touch-safe action row');
-    // v3 is an intentional compact-layout redesign. Preserve release
-    // comparison for all other scenes and start a fresh verified reference
-    // only for this approved popup shape.
-    const id='nara-popup-v3-'+viewport.width+'-osm';
+    // v4 corrects the historical screenshot capture: the v3 reference was
+    // clipped to an old scrolled content height, so its pixels depended on
+    // prior gestures. Capture the whole collapsed popup at a stable scroll
+    // offset, then retain this deterministic reference for future releases.
+    const id='nara-popup-v4-'+viewport.width+'-osm';
     const filename=id+'-popup.png';
     const cloned=await page.evaluate(()=>{
      const source=document.querySelector('.leaflet-popup-content-wrapper');
@@ -832,17 +841,30 @@ async function verifyVisualLayouts(page){
      });
      const clone=source.cloneNode(true);
      clone.style.margin='0';
+     clone.style.maxHeight='none';
+     const scroll=clone.querySelector('.leaflet-popup-content');
+     if(scroll){
+      scroll.style.maxHeight='none';
+      scroll.style.height='auto';
+      scroll.style.overflowY='visible';
+      scroll.scrollTop=0;
+     }
+     const details=clone.querySelector('details.popup-more');
+     if(details)details.open=false;
      host.append(clone);
      document.body.append(host);
-     return {width:Math.ceil(r.width),name:host.textContent};
+     const snap=host.getBoundingClientRect();
+     return {width:Math.ceil(r.width),height:Math.ceil(snap.height),
+      name:host.textContent};
     });
-    assert.ok(cloned.width>150 && cloned.name.includes('Nara-Park'),
-     'Visual snapshot must contain the actual Nara popup rather than the map background');
+    assert.ok(cloned.width>150 && cloned.height>=70 && cloned.height<=400 &&
+      cloned.name.includes('Nara-Park'),
+     'Visual snapshot must contain the full Nara popup rather than a scrolled fragment');
     await page.locator('#visual-popup-snapshot').screenshot({
      path:path.join(dir,filename),animations:'disabled',caret:'hide'
     });
     await page.evaluate(()=>document.getElementById('visual-popup-snapshot')?.remove());
-    manifest.scenes.push({id,key:'nara-popup-v3',kind:'popup',width:viewport.width,
+    manifest.scenes.push({id,key:'nara-popup-v4',kind:'popup',width:viewport.width,
      provider:'osm',popup:state,screenshots:{popup:filename}});
     await page.locator('.leaflet-popup-close-button').first().click();
    }
