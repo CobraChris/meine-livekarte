@@ -58,9 +58,9 @@ test('current-day guidance moves from rail to light-up and does not assert ticke
 test('return journey and hotel changes are modeled without public booking references',()=>{
   const journey=Core.presetJourney('nikko-tokyo-2026-11-10');
   assert.equal(journey.date,'10.11.2026');
-  assert.equal(journey.stops[0].departure,'12:55');
-  assert.equal(journey.stops[1].arrival,'14:40');
-  assert.match(journey.stops[0].description,/Grundfahrkarte/);
+  assert.equal(journey.stops[1].departure,'12:55');
+  assert.equal(journey.stops[2].arrival,'14:40');
+  assert.match(journey.stops[1].description,/Grundfahrpreis/);
   assert.ok(Core.planPresets.some(p=>p.id==='ride-tokyo'));
   const html=read('index.html'),app=read('app.js');
   for(const id of ['nikko-days','nikko-day-07','nikko-day-08','nikko-day-09','nikko-day-10','nikko-return-steps'])

@@ -113,7 +113,9 @@
       const via = stop.via ?? [];
       if (!Array.isArray(via) || via.length > 20) throw new Error('Zu viele Streckenpunkte.');
       return {name:trim(stop.name,100),lat,lng,arrival:time(stop.arrival),departure:time(stop.departure),
-        description:trim(stop.description,250),leg:trim(stop.leg,140),via:via.map(coords)};
+        description:trim(stop.description,250),leg:trim(stop.leg,140),via:via.map(coords),
+        mode:['walk','rail'].includes(stop.mode)?stop.mode:'rail',
+        ticketRequired:stop.ticketRequired!==false};
     });
     return {title:trim(journey.title,120) || 'Mein Reiseplan',date:trim(journey.date,10),stops};
   }
@@ -219,16 +221,34 @@
           description:'Nikkō (JR-Bahnhof) · 07.11. zuerst ins HaruNikko New Wing (1323-10 Tokorono), ca. 15–20 Min. Fußweg; Fairfield erst ab 08.11.'}
       ]
     },
-    // Tobu SPACIA X 6 is a separate itinerary; rail lines are schematic.
+    // Confirmed Klook express seat reservation plus separate IC-card base fares.
+    // Mixed-mode transfer legs are schematic; walking lines are NOT street routes.
+    // No booking reference, voucher photo, user ID or payment credential in public code.
     'nikko-tokyo-2026-11-10': {
-      title:'10.11. · Nikkō → Tokyo Skytree → Kinshichō',
+      title:'10.11. · Fairfield Nikkō → THE skM TOKYO · ohne Taxi',
       date:'10.11.2026',
       stops:[
+        {name:'Fairfield by Marriott Tochigi Nikko (Hotel)',lat:36.76169,lng:139.61775,
+          departure:'11:00',mode:'walk',ticketRequired:false,
+          description:'Check-out bis 11:00. Zu Fuß mit Gepäck ca. 30 Min. zum Tōbu-Bahnhof (Weg vor Ort prüfen). Alternative: kostenfreier Hotelshuttle um 11:00 nur mit vorheriger Reservierung.',
+          leg:'🚶 Fußweg zum Tōbu-Nikkō-Bahnhof, ca. 30 Min. · alternativ Hotelshuttle nach Anmeldung'},
         {name:'Tōbu-Nikkō Station',lat:36.74806,lng:139.62008,departure:'12:55',
-          description:'Tōbu-Nikkō (Tōbu-Bahnhof) · SPACIA X 6, Cockpit-Sitze laut Buchungsplanung. Express- und Grundfahrkarte separat prüfen.',
-          leg:'SPACIA X 6 (Tōbu-Limited-Express) · 12:55–14:40'},
+          description:'Tōbu-Nikkō (Tōbu-Bahnhof) · Klook-Expressreservierung für 2 Personen bestätigt: SPACIA X 6, STANDARD, Wagen 4, Plätze 05C/05D. KEINE Cockpit Lounge. Klook-Bestätigung bereithalten; Grundfahrpreis 1.393 ¥ pro Person per Suica.',
+          leg:'🚄 SPACIA X 6 (Tōbu-Limited-Express) · 12:55–14:40 · Wagen 4 / 05C & 05D'},
         {name:'Tokyo Skytree Station (Tōbu)',lat:35.7109,lng:139.8093,arrival:'14:40',
-          description:'Tōkyō Skytree (Tōbu-Bahnhof) · Weiter zum SKM Tokyo Hotel (Kinshichō); konkrete Nahverkehrsverbindung oder Taxi vor Ort wählen.'}
+          mode:'walk',ticketRequired:false,
+          description:'Hier um 14:40 aussteigen (nicht bis Asakusa!). Mit Suica auschecken. Zum Oshiage-U-Bahnhof Richtung Hanzōmon-Linie zu Fuß, ca. 5–10 Min. Keine Zugabfahrt im Fernzug nach Oshiage.',
+          leg:'🚶 Zu Fuß 5–10 Min. zu Oshiage (Skytree-mae), Metro Z14'},
+        {name:'Oshiage (Skytree-mae) Station · Hanzōmon Z14',lat:35.7110,lng:139.8133,
+          mode:'rail',ticketRequired:false,
+          description:'Tokyo Metro Hanzōmon-Linie Z14 Richtung Shibuya / Chūō-Rinkan. Eine Station bis Kinshichō Z13, Fahrt ca. 2 Min., IC-Preis 178 ¥ pro Person. Mit Suica einchecken. Gleis und Abfahrt vor Ort prüfen.',
+          leg:'🚇 Hanzōmon-Linie Z14 → Kinshichō Z13 · eine Station · 178 ¥ IC'},
+        {name:'Kinshichō Station · Metro Z13',lat:35.697441,lng:139.814957,
+          mode:'walk',ticketRequired:false,
+          description:'An Kinshichō Z13 mit Suica auschecken; Ausgang 2 zum skM Hotel laut Unterkunft. Zum THE skM TOKYO HOTEL & DINING ca. 3 Min. zu Fuß.',
+          leg:'🚶 Zum THE skM TOKYO HOTEL & DINING · etwa 3 Min. zu Fuß'},
+        {name:'THE skM TOKYO HOTEL & DINING (Hotel)',lat:35.69554,lng:139.81709,
+          description:'Zielhotel am 10.11. · 4-25-5 Kōtōbashi, Sumida, Tokio. Voraussichtliche Ankunft etwa 15:00–15:20, abhängig von Umstieg und Gehwegen.'}
       ]
     },
     // Timetable plus user-confirmed booking details for the 01.11.2026 itinerary.

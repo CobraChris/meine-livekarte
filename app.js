@@ -3067,8 +3067,10 @@
     if (!journey) { renderKyotoRailInfographic();updateStationTransfer(); updateNagoyaTrigger(); return; }
     const railView=RM.rail(journey);
     info.append(node('h2',journey.title),node('p',journey.date + ' · Alle Zeiten Ortszeit Japan','journey-date'));
-    const totalLegs=railView.segments.length;
-    const unresolved=journey.stops.slice(0,-1).filter((_,i)=>ticketStatusFor(activePlanId,journey,i)!=='ready').length;
+    const ticketLegs=journey.stops.slice(0,-1).map((stop,i)=>({stop,i}))
+      .filter(({stop})=>stop.mode!=='walk'&&stop.ticketRequired!==false);
+    const totalLegs=ticketLegs.length;
+    const unresolved=ticketLegs.filter(({i})=>ticketStatusFor(activePlanId,journey,i)!=='ready').length;
     const summary=node('div',unresolved
       ? '❗ '+unresolved+' von '+totalLegs+' Fahrtickets noch nicht als vollständig bestätigt'
       : '✓ Alle '+totalLegs+' Fahrtickets als vorhanden markiert',
@@ -3077,14 +3079,16 @@
     journey.stops.forEach((stop,i) => {
       if (i < railView.segments.length) {
         const segment=railView.segments[i];
-        L.polyline(segment.points,railView.style).addTo(journeyLayer);
+        if(segment.mode==='walk')
+          L.polyline(segment.points,segment.style).addTo(journeyLayer);
+        else L.polyline(segment.points,railView.style).addTo(journeyLayer);
       }
       const item = node('div',undefined,'journey-item');
       const times = [stop.arrival && stop.arrival+' an',stop.departure && stop.departure+' ab'].filter(Boolean).join(' · ');
       item.append(node('span',times,'times'),node('strong',(i+1)+'. '+stop.name));
       if (stop.description) item.append(node('span',stop.description,'stop-note'));
       if (stop.leg) item.append(node('span','Weiter: '+stop.leg,'leg'));
-      if (i<journey.stops.length-1) {
+      if (i<journey.stops.length-1 && stop.mode!=='walk' && stop.ticketRequired!==false) {
         const state=ticketStatusFor(activePlanId,journey,i);
         const ticketRow=node('div',undefined,'ticket-row ticket-state-'+state);
         const badge=node('span',ticketSymbols[state]+' '+C.ticketStates[state],'ticket-badge');
@@ -3123,9 +3127,24 @@
         };
         item.append(addTicket);
       }
+      if(i<journey.stops.length-1 && stop.mode==='walk'){
+        // Routing happens only when the user opens the external Google Maps link.
+        const to=journey.stops[i+1];
+        const mapLink=node('a','↗ Fußweg in Google Maps','transfer-details-button');
+        mapLink.href='https://www.google.com/maps/dir/?api=1&origin='+
+          encodeURIComponent(stop.lat+','+stop.lng)+'&destination='+
+          encodeURIComponent(to.lat+','+to.lng)+'&travelmode=walking';
+        mapLink.target='_blank';mapLink.rel='noopener noreferrer';
+        item.append(mapLink);
+      }
       info.append(item);
       const popup = node('div');
       popup.append(node('strong',(i+1)+'. '+stop.name),node('p',times),node('p',stop.description),node('p',stop.leg ? 'Weiter: '+stop.leg : 'Ankunft'));
+      const placeLink=node('a','↗ In Google Maps ansehen');
+      placeLink.href='https://www.google.com/maps/search/?api=1&query='+
+        encodeURIComponent(stop.lat+','+stop.lng);
+      placeLink.target='_blank';placeLink.rel='noopener noreferrer';
+      popup.append(placeLink);
       // Use DOM text nodes, not HTML interpolation, for untrusted station names.
       const label = node('div',undefined,'trip-marker'+(i===1?' trip-marker-alt trip-hakone-yumoto':''));
       label.append(node('span',String(i+1),'trip-number'),node('span',stop.name,'trip-marker-name'));

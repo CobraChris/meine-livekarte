@@ -81,8 +81,8 @@
     if(day==='2026-11-10')
       return {date:day,planId:'ride-tokyo',dayIndex:null,
         title:'Nikkō → Tokio · SPACIA X 6',
-        summary:'Tōbu-Nikkō 12:55 → Tokyo Skytree 14:40 → SKM Tokyo Hotel',
-        hint:'Fairfield-Check-out und Transfer zum Tōbu-Bahnhof; Cockpit-Reservierung und Grundfahrkarte prüfen.'};
+        summary:'Fairfield → Tōbu-Nikkō 12:55 → Tokyo Skytree 14:40 → Oshiage (Hanzōmon) → Kinshichō → THE skM TOKYO',
+        hint:'Ohne Taxi: zum Tōbu-Bahnhof ca. 30 Min. zu Fuß (Shuttle 11:00 nur mit Reservierung); Klook Standard Wagen 4, 05C/05D. Suica mindestens 1.571 ¥ je Person, empfohlen 2.000 ¥.'};
     return null;
   }
   function isPastTravelView(view,at=new Date()){
