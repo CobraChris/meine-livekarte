@@ -7,7 +7,8 @@
     'town-kyoto':Object.freeze([
       '2026-11-01','2026-11-02','2026-11-03',
       '2026-11-04','2026-11-05','2026-11-06']),
-    'town-nikko':Object.freeze(['2026-11-07','2026-11-08','2026-11-09','2026-11-10'])
+    'town-nikko':Object.freeze(['2026-11-07','2026-11-08','2026-11-09','2026-11-10']),
+    'town-tokyo':Object.freeze(['2026-11-11','2026-11-12'])
   });
   const UNASSIGNED='unassigned',ALL='all';
   const days=planId=>CITY_DAYS[planId]||[];

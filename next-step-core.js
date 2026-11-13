@@ -83,6 +83,16 @@
         title:'Nikkō → Tokio · SPACIA X 6',
         summary:'Tōbu-Nikkō 12:55 → Tokyo Skytree 14:40 → SKM Tokyo Hotel',
         hint:'Fairfield-Check-out und Transfer zum Tōbu-Bahnhof; Cockpit-Reservierung und Grundfahrkarte prüfen.'};
+    if(day==='2026-11-11')
+      return {date:day,planId:'town-tokyo',dayIndex:0,
+        title:'Tokio · Akihabara & Gärten',
+        summary:'Shinjuku Gyoen → Yoshioka-Ramen (nur mittags) → Rikugien → Akihabara',
+        hint:'Per Bahn zwischen den Stadtteilen. Yoshioka-Ramen möglichst vor 14:00 erreichen; Öffnung prüfen. Danach Akihabara und Abendessen flexibel.'};
+    if(day==='2026-11-12')
+      return {date:day,planId:'town-tokyo',dayIndex:1,
+        title:'Abreise aus Tokio · Flug 21:55',
+        summary:'Entspannt frühstücken · letzte Einkäufe · Hotel → Flughafen per Bahn',
+        hint:'Flughafen und Terminal noch offen: Verbindungs- und Check-in-Zeit erst nach Abgleich mit der Flugbuchung festlegen. Keine Zugbuchung bestätigt.'};
     return null;
   }
   function isPastTravelView(view,at=new Date()){
@@ -92,7 +102,8 @@
       view==='town-takayama'&&today>'2026-11-01'||
       view==='town-kyoto'&&today>'2026-11-06'||
       view==='ride-nikko'&&today>'2026-11-07'||
-      view==='ride-tokyo'&&today>'2026-11-10';
+      view==='ride-tokyo'&&today>'2026-11-10'||
+      view==='town-tokyo'&&today>'2026-11-12';
   }
   // Scheduled milestones only. All minute arithmetic uses Japan local clock,
   // never the device timezone or a guessed real-time train position.
