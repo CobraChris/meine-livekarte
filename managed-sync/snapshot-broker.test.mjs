@@ -24,7 +24,7 @@ test("refreshes on 401, retries conflict, writes only scoped snapshot",async()=>
  const broker=createSnapshotBroker({auth,core,repository:repo,fetchImpl:async(url,opts)=>{
   calls++;
   assert.ok(url==="https://api.github.com/repos/"+repo||url==="https://api.github.com/repos/"+repo+"/contents/livekarte/status/"+device+".json");
-  assert.equal(opts.redirect,"error");
+  assert.equal(opts.redirect,"manual");
   if(calls===1)return resp(401);
   assert.equal(opts.headers.Authorization,"Bearer 1");
   if(!url.includes("/contents/"))return resp(200,{private:true,full_name:repo});

@@ -8,7 +8,8 @@ export function createSnapshotBroker({auth,core,repository,fetchImpl=fetch}) {
   async function request(url,method="GET",body){
     for(let attempt=0;attempt<2;attempt++){
       const token=await auth.getToken();
-      const res=await fetchImpl(url,{method,redirect:"error",headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github+json","Content-Type":"application/json","X-GitHub-Api-Version":"2022-11-28"},...(body?{body:JSON.stringify(body)}:{})});
+      const res=await fetchImpl(url,{method,redirect:"manual",headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github+json","User-Agent":"Livekarte-Private-Sync","Content-Type":"application/json","X-GitHub-Api-Version":"2022-11-28"},...(body?{body:JSON.stringify(body)}:{})});
+      if(res.status>=300&&res.status<400)throw new Error("GitHub redirect refused");
       if(res.status===401&&attempt===0){auth.invalidate(token);continue;}
       return res;
     }

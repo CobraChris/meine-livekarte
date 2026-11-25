@@ -87,6 +87,9 @@ jobs:
           cp rail-leg-details-core.js rail-leg-ticket-ui.js public/
           cp -r vendor public/
           cp -r sync public/
+          cp managed-sync-config.js public/
+          mkdir -p public/managed-sync
+          cp managed-sync/bootstrap.mjs managed-sync/browser-ui.mjs managed-sync/browser-auth.mjs managed-sync/device-store.mjs public/managed-sync/
           mkdir -p public/icons
           cp icons/livekarte.svg public/icons/
       - name: Stamp deployed PWA version and cache-bust local assets

@@ -1,0 +1,8 @@
+{
+  "name": "Livekarte Private Sync",
+  "url": "https://github.com/CobraChris/meine-livekarte",
+  "public": false,
+  "hook_attributes": {"active": false},
+  "default_permissions": {"contents": "write", "metadata": "read"},
+  "default_events": []
+}

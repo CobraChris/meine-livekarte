@@ -51,6 +51,7 @@ assets = [
     ("src", "app.js"),
     ("src", "sync.js"),
     ("src", "outbox-core.js"),
+    ("src", "managed-sync-config.js"),
     ("src", "sync-out.js"),
     ("src", "build-version.js"),
     ("src", "pwa.js"),

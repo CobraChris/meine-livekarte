@@ -1,15 +1,8 @@
-import {generateDeviceKey,signedSnapshot} from "./browser-auth.mjs";
-const open=()=>new Promise((resolve,reject)=>{const r=indexedDB.open("livekarte-managed-sync-v1",1);r.onupgradeneeded=()=>r.result.createObjectStore("device");r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
-async function access(mode,fn){const db=await open();try{return await new Promise((resolve,reject)=>{const tx=db.transaction("device",mode);const r=fn(tx.objectStore("device"));tx.oncomplete=()=>resolve(r.result);tx.onabort=()=>reject(tx.error);tx.onerror=()=>reject(tx.error);});}finally{db.close();}}
-const load=()=>access("readonly",s=>s.get("active"));
-async function prepare(device){
- let record=await load();
- if(record&&record.device===device)return record;
- const keys=await generateDeviceKey();
- record={device,...keys};
- await access("readwrite",s=>s.put(record,"active"));
- return record;
-}
+import {signedSnapshot} from "./browser-auth.mjs";
+import {createDeviceStore} from './device-store.mjs';
+const store=createDeviceStore();
+const load=store.load;
+const prepare=store.prepare;
 export async function activateManagedSync({endpoint}){
  const status=document.getElementById("outbox-status");
  const connect=document.getElementById("outbox-connect");
@@ -39,6 +32,7 @@ export async function activateManagedSync({endpoint}){
    const device=await window.LivekarteGetDeviceId?.();
    if(!device)throw new Error("Zuerst geschützte Geräteverbindung vorbereiten.");
    record=await prepare(device);
+   record.paused=false;await store.save(record);
    const response=await fetch(endpoint.replace(/\/$/,"")+"/challenge",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({device}),credentials:"omit",redirect:"error",cache:"no-store"});
    if(!response.ok){
     enabled=false;
@@ -58,9 +52,9 @@ export async function activateManagedSync({endpoint}){
  token.hidden=true;token.disabled=true;token.value="";repo.hidden=true;repo.disabled=true;
  connect.textContent="Gerät verbinden";connect.hidden=false;upload.hidden=true;disconnect.hidden=true;
  connect.onclick=start;upload.onclick=publish;
- disconnect.onclick=()=>{enabled=false;clearTimeout(timer);connect.hidden=false;upload.hidden=true;disconnect.hidden=true;note("Synchronisierung auf diesem Gerät pausiert.");};
+ disconnect.onclick=async()=>{enabled=false;record.paused=true;await store.save(record);clearTimeout(timer);connect.hidden=false;upload.hidden=true;disconnect.hidden=true;note("Synchronisierung auf diesem Gerät pausiert.");};
  window.addEventListener("livekarte:ticket-updated",()=>{dirty++;schedule();});
- window.addEventListener("online",()=>{if(enabled){dirty++;schedule();}else if(record)void start();});
+ window.addEventListener("online",()=>{if(enabled){dirty++;schedule();}else if(record&&!record.paused)void start();});
  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&enabled&&dirty!==done)schedule();});
- record=await load();if(record)await start();else note("Einmalige Geräteverbindung erforderlich.");
+ record=await load();if(record&&!record.paused)await start();else note("Einmalige Geräteverbindung erforderlich.");
 }

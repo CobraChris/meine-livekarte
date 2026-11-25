@@ -10,7 +10,7 @@ export function createInstallationAuth({appId,installationId,repositoryId,signJw
     const iat=Math.floor(now()/1000)-60;
     const jwt=await signJwt({iss:String(appId),iat,exp:iat+540});
     const response=await fetchImpl("https://api.github.com/app/installations/"+installationId+"/access_tokens",{
-      method:"POST",headers:{Authorization:"Bearer "+jwt,Accept:"application/vnd.github+json","Content-Type":"application/json","X-GitHub-Api-Version":"2022-11-28"},
+      method:"POST",headers:{Authorization:"Bearer "+jwt,Accept:"application/vnd.github+json","User-Agent":"Livekarte-Private-Sync","Content-Type":"application/json","X-GitHub-Api-Version":"2022-11-28"},
       body:JSON.stringify({repository_ids:[Number(repositoryId)],permissions:{contents:"write"}})
     });
     if(!response.ok) throw new Error("GitHub installation authentication failed ("+response.status+")");

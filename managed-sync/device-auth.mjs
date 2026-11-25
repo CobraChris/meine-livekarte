@@ -1,4 +1,4 @@
-import {randomBytes, createPublicKey, verify, createHash} from "node:crypto";
+import {randomBytes, createPublicKey, createHash} from "node:crypto";
 // The store must be durable and atomically consume challenges, even across instances.
 // Enrollment is privileged and must never be exposed as an unauthenticated route.
 export function createDeviceAuth({store,now=Date.now}) {
@@ -18,7 +18,8 @@ export function createDeviceAuth({store,now=Date.now}) {
       const key=createPublicKey(record.publicKey);
       if(key.asymmetricKeyType!=="ec"||key.asymmetricKeyDetails?.namedCurve!=="prime256v1")throw new Error("Invalid device key");
       const message=Buffer.from("livekarte-sync-v1\nPOST\n/snapshot\n"+device+"\n"+nonce+"\n"+bodyHash);
-      if(!verify("sha256",message,{key,dsaEncoding:"ieee-p1363"},Buffer.from(signature,"base64url")))throw new Error("Unauthorized device");
+      const publicKey=await crypto.subtle.importKey('spki',key.export({type:'spki',format:'der'}),{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+      if(!await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},publicKey,Buffer.from(signature,'base64url'),message))throw new Error("Unauthorized device");
       const challenge=await store.consumeChallenge(hash(nonce),device,now());
       if(!challenge)throw new Error("Expired or used challenge");
       return {authenticated:true,device};
