@@ -64,7 +64,7 @@ test('PWA can display non-destructive update prompt and reload after user action
   assert.match(pwa,/window\.addEventListener\('focus',requestUpdateCheck\)/);
   assert.match(pwa,/window\.addEventListener\('load',requestUpdateCheck\)/);
   assert.doesNotMatch(pwa,/localStorage\.clear\(|indexedDB\.deleteDatabase\(|deleteItem\(/);
-  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v22'/);
+  assert.match(sw,/const CACHE_NAME='livekarte-shell-pwa-v23'/);
   assert.match(sw,/'build-version\.js'/);
   assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
   assert.doesNotMatch(sw,/app-version\.json/);
@@ -88,7 +88,7 @@ test('GitHub publish script stamps unique current SHA on every app asset and pro
       ['src','walking-core.js'],['src','routing-requests.js'],['src','tour-navigation-core.js'],['src','day-plan-core.js'],['src','multi-day-core.js'],['src','day-context-core.js'],['src','day-selector-ui.js'],['src','place-ui.js'],['src','tour-ui.js'],['src','route-model-core.js'],['src','route-discovery.js'],['src','place-search-core.js'],
       ['src','next-step-core.js'],['src','japanese-destination.js'],['src','google-demo.js'],['src','rail-leg-details-core.js'],['src','rail-leg-ticket-ui.js'],['src','app.js'],
       ['src','sync.js'],['src','outbox-core.js'],
-      ['src','sync-out.js'],['src','build-version.js'],['src','pwa.js']
+      ['src','managed-sync-config.js'],['src','sync-out.js'],['src','build-version.js'],['src','pwa.js']
     ];
     const html=assetTags.map(([k,v])=>'<script '+k+'="'+v+'"></script>').join('\n');
     fs.writeFileSync(path.join(dir,'public/index.html'),html);
@@ -97,7 +97,7 @@ test('GitHub publish script stamps unique current SHA on every app asset and pro
       fs.mkdirSync(path.dirname(target),{recursive:true});
       fs.writeFileSync(target,'');
     }
-    cp.execFileSync('python3',[path.join(dir,'scripts/stamp_pwa_version.py')],{
+    cp.execFileSync(process.env.PYTHON||'python3',[path.join(dir,'scripts/stamp_pwa_version.py')],{
       env:{...process.env,GITHUB_SHA:sha}
     });
     const output=fs.readFileSync(path.join(dir,'public/index.html'),'utf8');

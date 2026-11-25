@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "livekarte-private-sync-staging",
+  "account_id": "80d6d85dee4d54c74f6968f721c85215",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "keep_vars": true,
+  "vars": {
+    "GITHUB_APP_ID": "5925948",
+    "GITHUB_INSTALLATION_ID": "185879301",
+    "ALLOWED_ORIGIN": "https://staging.livekarte.invalid"
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "livekarte-sync-staging",
+    "database_id": "d1786a67-95ce-47df-a010-c282ee932ad7"
+  }]
+}

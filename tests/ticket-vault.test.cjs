@@ -164,7 +164,7 @@ test('new app ships password-free local library while legacy crypto remains only
   assert.doesNotMatch(html,/src="ticket-vault-ui\.js"/);
   assert.match(html,/id="ticket-files"/);
   assert.match(html,/ohne Passwort, PIN oder Fingerabdruck/);
-  assert.match(sw,/livekarte-shell-pwa-v22/);
+  assert.match(sw,/livekarte-shell-pwa-v23/);
 });
 
 test('first-time setup returns independent recovery key; forgotten password can be safely reset',async()=>{

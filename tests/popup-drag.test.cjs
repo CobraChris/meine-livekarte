@@ -40,7 +40,7 @@ test('the same shared module loads online and is cached for offline PWA travel',
  assert.match(html,/<script defer src="map-popup-core\.js"><\/script>/);
  assert.ok(html.indexOf('map-popup-core.js')<html.indexOf('app.js'));
  assert.match(sw,/'map-popup-core\.js'/);
- assert.match(sw,/livekarte-shell-pwa-v22/);
+ assert.match(sw,/livekarte-shell-pwa-v23/);
 });
 
 test('Nara day popup is ordinary place popup, including preserved compact actions',()=>{
