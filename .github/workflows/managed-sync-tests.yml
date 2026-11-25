@@ -1,0 +1,18 @@
+name: Managed sync tests
+on:
+  pull_request:
+    paths:
+      - 'managed-sync/**'
+      - 'outbox-core.js'
+      - '.github/workflows/managed-sync-tests.yml'
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test managed-sync/*.test.mjs
