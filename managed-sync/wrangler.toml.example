@@ -1,0 +1,11 @@
+name = "livekarte-private-sync"
+main = "worker.mjs"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+[vars]
+GITHUB_APP_ID = "REPLACE"
+GITHUB_INSTALLATION_ID = "REPLACE"
+[[d1_databases]]
+binding = "DB"
+database_name = "livekarte-sync"
+database_id = "REPLACE"
