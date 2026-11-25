@@ -1,0 +1,27 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {webcrypto,createPublicKey,createHash} from "node:crypto";
+import {createDeviceAuth} from "./device-auth.mjs";
+import {createHandler} from "./http-handler.mjs";
+import {signedSnapshot,generateDeviceKey} from "./browser-auth.mjs";
+if(!globalThis.crypto)globalThis.crypto=webcrypto;
+test("browser to HTTP: signed body, replay, tamper, revocation",async()=>{
+ const device="a".repeat(24),origin="https://cobrachris.github.io",endpoint="https://mock.invalid";
+ const keys=await generateDeviceKey();
+ assert.equal(keys.privateKey.extractable,false);
+ const record={enabled:true,publicKey:createPublicKey({key:Buffer.from(keys.publicKey,"base64url"),format:"der",type:"spki"}).export({type:"spki",format:"pem"})};
+ const challenges=new Map();
+ const store={getDevice:async id=>id===device?record:null,saveChallenge:async(h,v)=>challenges.set(h,v),consumeChallenge:async(h,d,n)=>{const c=challenges.get(h);if(c?.device!==d||c.expires<=n||!record.enabled)return false;challenges.delete(h);return true;}};
+ let calls=0,last;
+ const handle=createHandler({deviceAuth:createDeviceAuth({store}),broker:{publish:async(session,input)=>{assert.equal(session.device,device);assert.equal(input.device,device);calls++;return {ok:true,count:0};}},origin});
+ const fetchImpl=async(url,options)=>{const headers=new Headers(options.headers);headers.set("Origin",origin);const r=new Request(url,{...options,headers});if(url.endsWith("/snapshot"))last=r.clone();return handle(r);};
+ const snapshot={v:1,device,tickets:[]};
+ assert.deepEqual(await signedSnapshot({endpoint,device,privateKey:keys.privateKey,snapshot,fetchImpl}),{ok:true,count:0});
+ assert.equal((await handle(last.clone())).status,400);
+ const altered=new Request(last.url,{method:"POST",headers:last.headers,body:JSON.stringify({...snapshot,extra:true})});
+ assert.equal((await handle(altered)).status,400);
+ assert.equal(calls,1);
+ assert.equal((await handle(new Request(endpoint+"/challenge",{method:"POST",headers:{"Origin":"https://evil.invalid","Content-Type":"application/json"},body:JSON.stringify({device})}))).status,403);
+ record.enabled=false;
+ await assert.rejects(signedSnapshot({endpoint,device,privateKey:keys.privateKey,snapshot,fetchImpl}),/authorization/);
+});
