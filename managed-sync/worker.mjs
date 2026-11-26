@@ -4,12 +4,14 @@ import {createDeviceAuth} from "./device-auth.mjs";
 import {createSnapshotBroker} from "./snapshot-broker.mjs";
 import {createHandler} from "./http-handler.mjs";
 import {createD1Store} from "./d1-store.mjs";
+import {applyApprovedDevices} from './approved-devices.mjs';
 import core from "../outbox-core.js";
 const handlers=new WeakMap();
 export default {async fetch(request,env){
  try{
   let handle=handlers.get(env);
   if(!handle){
+   await applyApprovedDevices(env.DB,env.APPROVED_DEVICES_JSON,env.APPROVED_DEVICE_REVISION);
    const key=createPrivateKey(env.GITHUB_APP_PRIVATE_KEY);
    if(key.asymmetricKeyType!=="rsa")throw new Error("Invalid signer");
    const signer=await crypto.subtle.importKey('pkcs8',key.export({type:'pkcs8',format:'der'}),{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
