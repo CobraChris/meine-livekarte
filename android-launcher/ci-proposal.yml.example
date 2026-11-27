@@ -1,0 +1,13 @@
+# Proposal only — not an active workflow; review required.
+name: Livekarte Android launcher check
+on:
+  pull_request:
+    paths: ['android-launcher/**', '.github/workflows/android-launcher-check.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    uses: CobraChris/app-fabrik-template/.github/workflows/reusable-android-check.yml@0c489dfc856c9e847b907e701d829d5bfc93865a
+    with:
+      project_path: android-launcher
+      module: app
