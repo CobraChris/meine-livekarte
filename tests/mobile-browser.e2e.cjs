@@ -7,8 +7,9 @@ const {chromium}=require('playwright-core');
 const fs=require('node:fs');
 const path=require('node:path');
 const http=require('node:http');
-const root=path.resolve(__dirname,'..');
-const results=path.join(root,'test-results','mobile');
+const root=path.resolve(process.env.LIVEKARTE_VISUAL_SITE_ROOT||path.resolve(__dirname,'..'));
+const outputRoot=path.resolve(process.env.LIVEKARTE_VISUAL_OUTPUT_ROOT||root);
+const results=path.join(outputRoot,'test-results','mobile');
 fs.mkdirSync(results,{recursive:true});
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8',
  '.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8',
@@ -674,10 +675,65 @@ async function verifyProviderParityMatrix(page){
 }
 
 
+async function captureIsolatedPopup(page,viewport,filename){
+ const source=await page.evaluate(()=>{
+  const wrapper=document.querySelector('.leaflet-popup-content-wrapper');
+  if(!wrapper?.querySelector('.place-popup-pan-surface'))throw Error('Missing popup source');
+  const clone=wrapper.cloneNode(true);
+  clone.style.margin='0';
+  clone.style.maxHeight='none';
+  const content=clone.querySelector('.leaflet-popup-content');
+  content.style.maxHeight='none';
+  content.style.height='auto';
+  content.style.overflowY='visible';
+  const more=clone.querySelector('details.popup-more');
+  more.open=false;
+  return {markup:clone.outerHTML,width:Math.ceil(wrapper.getBoundingClientRect().width),
+   css:[...document.querySelectorAll('link[rel="stylesheet"]')].map(e=>e.href),
+   font:getComputedStyle(wrapper).font,origin:location.origin};
+ });
+ const shot=await page.context().newPage();
+ try{
+  await shot.setViewportSize(viewport);
+  // Only test-local CSS/markup. Never navigate this document to a live site.
+  const escapeAttr=v=>v.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
+  const css=source.css.filter(url=>new URL(url).origin===source.origin)
+    .map(url=>'<link rel="stylesheet" href="'+escapeAttr(url)+'">').join('');
+  assert.ok(css.includes('style.css'),'Missing real application stylesheet');
+  await shot.setContent('<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">'+css+
+   '<style>html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:#172b35}'+
+   '*,*::before,*::after{transition:none!important;animation:none!important;caret-color:transparent!important}'+
+   '#visual-popup-snapshot{display:block;position:relative;margin:0;padding:0;overflow:visible}</style></head>'+
+   '<body><div id="visual-popup-snapshot" class="leaflet-container" style="width:'+source.width+'px;font:'+escapeAttr(source.font)+'">'+source.markup+'</div></body></html>',{waitUntil:'load'});
+  await shot.evaluate(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});
+  const bounds=await shot.evaluate(()=>{
+   const host=document.getElementById('visual-popup-snapshot');
+   const rect=host.getBoundingClientRect();
+   const title=host.querySelector('.place-popup-header strong');
+   const required=[title,host.querySelector('button.walk-start'),host.querySelector('.popup-compact-actions>.tour-pick'),
+    host.querySelector('.popup-more>summary'),host.querySelector('.place-day-picker select')];
+   const complete=required.every(el=>{
+    if(!el)return false;
+    const r=el.getBoundingClientRect(),hit=document.elementFromPoint((r.left+r.right)/2,(r.top+r.bottom)/2);
+    return r.width>0&&r.height>0&&r.left>=rect.left-1&&r.top>=rect.top-1&&r.right<=rect.right+1&&r.bottom<=rect.bottom+1&&
+     !!hit&&el.contains(hit);
+   });
+   return {width:rect.width,height:rect.height,complete,title:title?.textContent,
+    origin:rect.x===0&&rect.y===0&&scrollX===0&&scrollY===0,
+    closed:!host.querySelector('details.popup-more').open,
+    fit:rect.right<=innerWidth&&rect.bottom<=innerHeight};
+  });
+  assert.ok(bounds.complete&&bounds.origin&&bounds.closed&&bounds.fit&&bounds.width>150&&bounds.height>=70&&bounds.height<=400&&
+   bounds.title.includes('Nara-Park'),'Isolated popup must contain every visible control and title: '+JSON.stringify(bounds));
+  await shot.screenshot({path:filename,clip:{x:0,y:0,width:Math.ceil(bounds.width),height:Math.ceil(bounds.height)},
+   animations:'disabled',caret:'hide'});
+ }finally{await shot.close();}
+}
+
 async function verifyVisualLayouts(page){
  // 16 deterministic Android views: 2 providers × 2 journeys ×
  // 2 handset widths × normal/fullscreen. No live tiles or GPS tracks.
- const dir=path.join(root,'test-results','visual','current');
+ const dir=path.join(outputRoot,'test-results','visual','current');
  fs.mkdirSync(dir,{recursive:true});
  const manifest={version:1,scenes:[]};
  const selectors={
@@ -822,49 +878,13 @@ async function verifyVisualLayouts(page){
     assert.ok(Math.max(...state.actionRows.slice(0,3))-
       Math.min(...state.actionRows.slice(0,3))<3,
       'Walking, Tour and More must occupy the same touch-safe action row');
-    // v4 corrects the historical screenshot capture: the v3 reference was
-    // clipped to an old scrolled content height, so its pixels depended on
-    // prior gestures. Capture the whole collapsed popup at a stable scroll
-    // offset, then retain this deterministic reference for future releases.
-    const id='nara-popup-v4-'+viewport.width+'-osm';
+    // The v4 fixed-position clone was sometimes photographed at the wrong
+    // scrolled page coordinate. Use a separate blank document with the same
+    // CSS, viewport and actual popup markup: no underlying app can leak in.
+    const id='nara-popup-v5-'+viewport.width+'-osm';
     const filename=id+'-popup.png';
-    const cloned=await page.evaluate(()=>{
-     const source=document.querySelector('.leaflet-popup-content-wrapper');
-     const content=source?.querySelector('.place-popup-pan-surface');
-     if(!source||!content)throw Error('Popup snapshot source not found');
-     const r=source.getBoundingClientRect();
-     const host=document.createElement('div');
-     host.id='visual-popup-snapshot';
-     Object.assign(host.style,{
-      position:'fixed',left:'8px',top:'8px',zIndex:'2147483647',
-      width:Math.ceil(r.width)+'px',pointerEvents:'none'
-     });
-     const clone=source.cloneNode(true);
-     clone.style.margin='0';
-     clone.style.maxHeight='none';
-     const scroll=clone.querySelector('.leaflet-popup-content');
-     if(scroll){
-      scroll.style.maxHeight='none';
-      scroll.style.height='auto';
-      scroll.style.overflowY='visible';
-      scroll.scrollTop=0;
-     }
-     const details=clone.querySelector('details.popup-more');
-     if(details)details.open=false;
-     host.append(clone);
-     document.body.append(host);
-     const snap=host.getBoundingClientRect();
-     return {width:Math.ceil(r.width),height:Math.ceil(snap.height),
-      name:host.textContent};
-    });
-    assert.ok(cloned.width>150 && cloned.height>=70 && cloned.height<=400 &&
-      cloned.name.includes('Nara-Park'),
-     'Visual snapshot must contain the full Nara popup rather than a scrolled fragment');
-    await page.locator('#visual-popup-snapshot').screenshot({
-     path:path.join(dir,filename),animations:'disabled',caret:'hide'
-    });
-    await page.evaluate(()=>document.getElementById('visual-popup-snapshot')?.remove());
-    manifest.scenes.push({id,key:'nara-popup-v4',kind:'popup',width:viewport.width,
+    await captureIsolatedPopup(page,viewport,path.join(dir,filename));
+    manifest.scenes.push({id,key:'nara-popup-v5',kind:'popup',width:viewport.width,
      provider:'osm',popup:state,screenshots:{popup:filename}});
     await page.locator('.leaflet-popup-close-button').first().click();
    }
@@ -880,7 +900,50 @@ async function verifyVisualLayouts(page){
  }
 }
 
+// One-time migration of the invalid v4 popup reference, never from PR output.
+// Render the previously accepted main commit with this exact capture harness.
+// The remaining 16 archived reference scenes are retained unchanged.
+function ensureCorrectedPopupReference(){
+ if(process.env.GITHUB_ACTIONS!=='true'||process.env.LIVEKARTE_VISUAL_SITE_ROOT)return;
+ const refDir=path.join(outputRoot,'test-results','visual','reference');
+ const refManifest=path.join(refDir,'manifest.json');
+ const previous=fs.existsSync(refManifest)?JSON.parse(fs.readFileSync(refManifest,'utf8')):null;
+ const ids=[360,393].map(w=>'nara-popup-v5-'+w+'-osm');
+ if(previous&&ids.every(id=>previous.scenes.some(s=>s.id===id&&s.screenshots?.popup&&
+    fs.existsSync(path.join(refDir,s.screenshots.popup)))))return;
+ const accepted='21a4620e473462d96a5ff81580ef69fd28013e79';
+ const {execFileSync}=require('node:child_process');
+ const tmp=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'livekarte-visual-base-'));
+ const checkout=path.join(tmp,'site');
+ try{
+  execFileSync('git',['fetch','--no-tags','--depth=1','origin',accepted],{cwd:root,stdio:'inherit'});
+  execFileSync('git',['worktree','add','--detach',checkout,accepted],{cwd:root,stdio:'inherit'});
+  assert.equal(execFileSync('git',['rev-parse','HEAD'],{cwd:checkout,encoding:'utf8'}).trim(),accepted);
+  execFileSync(process.execPath,[__filename],{cwd:root,stdio:'inherit',
+   env:{...process.env,LIVEKARTE_VISUAL_SITE_ROOT:checkout,LIVEKARTE_VISUAL_OUTPUT_ROOT:tmp}});
+  const generatedDir=path.join(tmp,'test-results','visual','current');
+  const generated=JSON.parse(fs.readFileSync(path.join(generatedDir,'manifest.json'),'utf8'));
+  const corrected=generated.scenes.filter(s=>ids.includes(s.id));
+  assert.equal(corrected.length,2,'Both corrected baseline scenes required');
+  fs.mkdirSync(refDir,{recursive:true});
+  if(previous){
+   for(const scene of corrected)fs.copyFileSync(path.join(generatedDir,scene.screenshots.popup),path.join(refDir,scene.screenshots.popup));
+   previous.scenes=previous.scenes.filter(s=>!/^nara-popup-v[45]-/.test(s.id)).concat(corrected);
+   fs.writeFileSync(refManifest,JSON.stringify(previous,null,2)+'\n');
+  }else{
+   // If the archived baseline is unavailable, compare all scenes to the
+   // pinned previously accepted source, not to the candidate itself.
+   fs.cpSync(generatedDir,refDir,{recursive:true});
+  }
+  console.log('Corrected popup reference rendered from accepted main '+accepted+'; existing other references preserved.');
+ }finally{
+  if(fs.existsSync(checkout))execFileSync('git',['worktree','remove','--force',checkout],{cwd:root,stdio:'inherit'});
+  fs.rmSync(tmp,{recursive:true,force:true});
+ }
+}
+
 async function main(){
+ ensureCorrectedPopupReference();
  const s=server();let browser,page;
  await new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
  try{
