@@ -1,7 +1,7 @@
 name: "Livekarte: signierte APK automatisch bereitstellen"
 
 # Only a reviewed main-branch owner push changing this ONE request can issue a release.
-# The source stays in its separate draft PR until Samsung acceptance.
+# Source is the exact previously reviewed main commit, not the request commit.
 on:
   push:
     branches: [main]
