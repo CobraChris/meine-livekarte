@@ -1,0 +1,24 @@
+name: Managed sync tests
+on:
+  pull_request:
+    paths:
+      - 'managed-sync/**'
+      - 'outbox-core.js'
+      - 'sync-out.js'
+      - 'managed-sync-config.js'
+      - '.github/workflows/managed-sync-tests.yml'
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test managed-sync/*.test.mjs
+      - name: Browser key persistence across restart
+        run: |
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright-core@1.55.1
+          CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node --test managed-sync/browser-storage.test.cjs

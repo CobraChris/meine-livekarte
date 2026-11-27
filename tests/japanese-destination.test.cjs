@@ -79,6 +79,6 @@ test('large Japanese card does not use geocoding, persist codes or access GPS',(
  assert.match(body,/driverDialog\.addEventListener\('close'/);
  assert.match(body,/\$\('japanese-driver-map'\)\.href=JP\.googleMapsLink\(target\)/);
  assert.doesNotMatch(body,/fetch\(|geolocation|watchPosition|localStorage|innerHTML|document\.cookie/);
- assert.match(read('sw.js'),/livekarte-shell-pwa-v22/);
+ assert.match(read('sw.js'),/livekarte-shell-pwa-v23/);
  assert.match(read('sw.js'),/japanese-destination\.js/);
 });

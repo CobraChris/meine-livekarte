@@ -66,7 +66,7 @@ test('mobile checklist has numbered steps, clear task action and no map popup ch
  assert.match(css,/\.kyoto-pickup-status button:disabled/);
  assert.match(css,/\.kyoto-pickup\.is-complete/);
  assert.match(css,/@media\(max-width:390px\)/);
- assert.match(read('sw.js'),/livekarte-shell-pwa-v22/);
+ assert.match(read('sw.js'),/livekarte-shell-pwa-v23/);
  assert.match(app,/function bindMapPopup\(marker,content,options=\{\}\)/);
  assert.match(read('map-popup-core.js'),/function attachPan\(\{marker,surface,map,onPanStart\}\)/);
 });

@@ -43,6 +43,9 @@ jobs:
         run: node tests/mobile-browser.e2e.cjs
       - name: Compare screenshots, detect hidden and overlapping map controls
         run: node scripts/visual-check.cjs
+      - name: Diagnose only public deterministic Nara popup snapshots
+        if: failure()
+        run: node scripts/visual-diagnostics.cjs
       - name: Save accepted main visual reference for future pull requests
         if: success() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
@@ -87,6 +90,9 @@ jobs:
           cp rail-leg-details-core.js rail-leg-ticket-ui.js public/
           cp -r vendor public/
           cp -r sync public/
+          cp managed-sync-config.js public/
+          mkdir -p public/managed-sync
+          cp managed-sync/bootstrap.mjs managed-sync/browser-ui.mjs managed-sync/browser-auth.mjs managed-sync/device-store.mjs public/managed-sync/
           mkdir -p public/icons
           cp icons/livekarte.svg public/icons/
       - name: Stamp deployed PWA version and cache-bust local assets
