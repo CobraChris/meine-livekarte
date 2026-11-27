@@ -83,10 +83,9 @@ function main(){
   for(const width of [360,393])
    for(const provider of ['osm','google'])
     requiredScenes.push(key+'-'+width+'-'+provider);
- // v2 snapshots capture the real popup and deliberately reset only the
- // invalid prior baseline, which photographed the scrolled page instead.
- // v4 verifies the complete unscrolled default popup, not a clipped fragment.
- for(const width of [360,393])requiredScenes.push('nara-popup-v4-'+width+'-osm');
+ // v5 captures the complete real popup in a separate document. The
+ // corrected baseline is rendered from the pinned accepted main, never PR output.
+ for(const width of [360,393])requiredScenes.push('nara-popup-v5-'+width+'-osm');
  const errors=[],warnings=[],pairs=new Map();
  for(const id of requiredScenes)if(!labels.has(id))
   errors.push('Missing required visual scenario '+id);
@@ -128,13 +127,23 @@ function main(){
   const byId=new Map((old.scenes||[]).map(e=>[e.id,e]));
   for(const scene of entries){
    const previous=byId.get(scene.id);
-   if(!previous){warnings.push('New visual scenario '+scene.id+' has no reference yet');continue;}
+   if(!previous){
+    if(scene.kind==='popup')errors.push('Missing corrected popup reference '+scene.id);
+    else warnings.push('New visual scenario '+scene.id+' has no reference yet');
+    continue;
+   }
    for(const [selector,rel] of Object.entries(scene.screenshots)){
     const oldRel=previous.screenshots?.[selector];
-    if(!oldRel)continue;
+    if(!oldRel){
+     if(scene.kind==='popup')errors.push('Missing popup reference PNG mapping '+scene.id);
+     continue;
+    }
     const oldPng=path.join(reference,oldRel);
     const newPng=path.join(current,rel);
-    if(!fs.existsSync(oldPng))continue;
+    if(!fs.existsSync(oldPng)){
+     if(scene.kind==='popup')errors.push('Missing popup reference PNG '+scene.id);
+     continue;
+    }
     const ratio=compare(oldPng,newPng,path.join(diffDir,'release-'+scene.id+'-'+selector+'.png')).ratio;
     if(ratio>LIMIT_RELEASE)
      errors.push(scene.id+' '+selector+': prior-release pixel diff '+(ratio*100).toFixed(1)+'%');
@@ -143,7 +152,8 @@ function main(){
    }
   }
   console.log('Compared '+entries.length+' scenes with last green main release.');
- }else console.log('No prior visual reference found. Bootstrap mode: provider parity and layout checks still enforced.');
+ }else if(process.env.GITHUB_ACTIONS==='true')errors.push('Missing accepted main visual reference in CI');
+ else console.log('No prior visual reference found. Local bootstrap mode: provider parity and layout checks still enforced.');
  for(const warning of warnings)console.warn('VISUAL NOTE:',warning);
  if(errors.length){
   for(const error of errors)console.error('VISUAL FAIL:',error);
