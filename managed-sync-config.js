@@ -1,2 +1,2 @@
-// Changed only by an explicitly approved release; never accept browser overrides.
-window.LivekarteManagedSyncEndpoint = null;
+// Owner-approved production release; never accept browser overrides.
+window.LivekarteManagedSyncEndpoint = "https://livekarte-private-sync.christopher-guenther-mail.workers.dev";
