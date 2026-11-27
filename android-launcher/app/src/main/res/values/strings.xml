@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Live-Karte</string>
+    <string name="browser_missing_title">Chrome nicht verfügbar</string>
+    <string name="browser_missing_message">Aktiviere Google Chrome in deinem bisherigen Android-Profil. Die Livekarte soll mit demselben Browser geöffnet werden, damit ihre vorhandenen Daten erreichbar bleiben. Es wird nicht automatisch in einen anderen Browser gewechselt.</string>
+    <string name="retry">Erneut öffnen</string>
+    <string name="copy_link">Link kopieren</string>
+</resources>

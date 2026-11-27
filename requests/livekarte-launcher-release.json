@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "intent": "livekarte-launcher-signed-release",
+  "request_id": "2026-11-27-first-launcher",
+  "source_sha": "5949e4ad9beeb42bcaba42249ba3e16e7350c4cc",
+  "expected_version_code": 1
+}

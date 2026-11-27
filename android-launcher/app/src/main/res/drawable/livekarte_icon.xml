@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="512" android:viewportHeight="512">
+    <path android:fillColor="#053631" android:pathData="M0,0 L512,0 L512,512 L0,512 Z"/>
+    <path android:fillColor="#56DCA2" android:pathData="M94,150 L200,108 L200,386 L94,424 Z"/>
+    <path android:fillColor="#08704D" android:pathData="M200,108 L302,146 L302,424 L200,386 Z"/>
+    <path android:fillColor="#0B846C" android:pathData="M302,146 L418,108 L418,382 L302,424 Z"/>
+    <path android:strokeColor="#D5FFE0" android:strokeWidth="6" android:strokeLineJoin="round" android:pathData="M94,150 L200,108 L302,146 L418,108 L418,382 L302,424 L200,386 L94,424 Z"/>
+    <path android:strokeColor="#FFD44E" android:strokeWidth="19" android:strokeLineCap="round" android:pathData="M352,169 C248,145 184,183 184,264 C184,335 242,371 352,345"/>
+    <path android:fillColor="#FFD45C" android:pathData="M373,101 C337,101 315,127 315,158 C315,188 345,214 373,239 C401,214 431,188 431,158 C431,127 409,101 373,101 Z"/>
+    <path android:fillColor="#06463A" android:pathData="M373,139 A19,19 0,1 0,373 177 A19,19 0,1 0,373 139 Z"/>
+</vector>
