@@ -1,0 +1,21 @@
+name: Livekarte Android launcher signieren
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release:
+    if: github.repository == 'CobraChris/meine-livekarte' && github.actor == 'CobraChris' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: CobraChris/app-fabrik-template/.github/workflows/reusable-android-release.yml@0c489dfc856c9e847b907e701d829d5bfc93865a
+    with:
+      project_path: android-launcher
+      module: app
+      release_prefix: livekarte-launcher
+      package_id: de.cobrachris.livekarte.launcher
+    secrets:
+      signing_keystore_base64: ${{ secrets.APP_SIGNING_KEYSTORE_BASE64 }}
+      signing_store_password: ${{ secrets.APP_SIGNING_STORE_PASSWORD }}
+      signing_key_alias: ${{ secrets.APP_SIGNING_KEY_ALIAS }}
+      signing_key_password: ${{ secrets.APP_SIGNING_KEY_PASSWORD }}
