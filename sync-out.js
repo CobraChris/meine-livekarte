@@ -13,6 +13,12 @@
     return;
   }
   if(window.LivekarteManagedSyncEndpoint){
+    // Do not suggest creating a PAT when the managed transport is configured.
+    const legacySetup=$('outbox-legacy-setup'), legacyHelp=$('outbox-legacy-help'), managedHelp=$('outbox-managed-help');
+    if(legacySetup)legacySetup.hidden=true;
+    if(legacyHelp)legacyHelp.hidden=true;
+    if(managedHelp)managedHelp.hidden=false;
+    tokenInput.value='';tokenInput.disabled=true;repoInput.disabled=true;
     import('./managed-sync/bootstrap.mjs').then(m=>m.startManagedSync(window.LivekarteManagedSyncEndpoint)).catch(()=>{
       tokenInput.disabled=true;connect.disabled=true;upload.disabled=true;
       status.textContent='Geschützte Synchronisierung nicht verfügbar. Bitte App aktualisieren.';
